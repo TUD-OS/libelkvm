@@ -1,14 +1,20 @@
 
 #include <CUnit/Basic.h>
-#include <linux/kvm.h>
 
-#include <vm.h>
+#include <kvm.h>
+#include <elkvm.h>
+
+#include "test_vm.h"
+
+struct kvm_opts vm_test_opts;
 
 int init_vm_suite() {
-	return 0;
+	int err = kvm_init(&vm_test_opts);
+	return err;
 }
 
 int clean_vm_suite() {
+	kvm_cleanup(&vm_test_opts);
 	return 0;
 }
 
@@ -19,41 +25,25 @@ void test_kvm_vm_create() {
 	int enough_memory = 256*1024*1024;
 	int barely_enough_memory = 4*1024*1024 + 4*1024;
 
-	int err = kvm_vm_create(&the_vm, VM_MODE_X86_64, cpus, memory);
+	int err = kvm_vm_create(&vm_test_opts, &the_vm, VM_MODE_X86_64, cpus, enough_memory);
 	CU_ASSERT(0 == err);
+	CU_ASSERT(0 < the_vm.fd);
+	CU_ASSERT(NULL != the_vm.vcpu);
 
 	kvm_vm_destroy(&the_vm);
 
-	err = kvm_vm_create(&the_vm, VM_MODE_X86_64, cpus, barely_enough_memory);
+	err = kvm_vm_create(&vm_test_opts, &the_vm, VM_MODE_X86_64, cpus, barely_enough_memory);
 	CU_ASSERT(0 == err);
+	CU_ASSERT(0 < the_vm.fd);
+	CU_ASSERT(NULL != the_vm.vcpu);
 
 	kvm_vm_destroy(&the_vm);
 
-	err = kvm_vm_create(&the_vm, VM_MODE_X86_64, cpus, barely_enough_memory -1);
+	err = kvm_vm_create(&vm_test_opts, &the_vm, VM_MODE_X86_64, cpus, barely_enough_memory -1);
 	CU_ASSERT(0 > err);
+	CU_ASSERT(0 == the_vm.fd);
+	CU_ASSERT(NULL == the_vm.vcpu);
+
+	//TODO test for -ENOMEM
 }
 
-int main() {
-	CU_pSuite pSuite = NULL;
-
-	if(CUE_SUCCESS != CU_initialize_registry()) {
-		return CU_get_error();
-	}
-
-	pSuite = CU_add_suite("VM_Suite", init_vm_suite, clean_vm_suite);
-	if(NULL == pSuite) {
-		CU_cleanup_registry();
-		return CU_get_error();
-	}
-
-	if((NULL == CU_add_test(pSuite, "Test kvm_vm_create()", test_kvm_vm_create))
-		) {
-		CU_cleanup_registry();
-		return CU_get_error();
-	}
-
-	CU_basic_set_mode(CU_BRM_VERBOSE);
-	CU_basic_run_tests();
-	CU_cleanup_registry();
-	return CU_get_error();
-}
