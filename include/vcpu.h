@@ -6,12 +6,12 @@ struct kvm_vcpu {
 	int fd;
 	struct kvm_regs regs;
 	struct kvm_sregs sregs;
-}
+};
 
 /*
 	Creates a runnable VCPU in the mode given by the parameter
 */
-int kvm_vcpu_create(struct kvm_vcpu *, int);
+int kvm_vcpu_create(struct kvm_vm *, int);
 
 /*
 	Set the VCPU's rip to a specific value

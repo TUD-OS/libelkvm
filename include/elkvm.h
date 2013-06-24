@@ -2,6 +2,9 @@
 
 #include <libelf.h>
 
+#include <kvm.h>
+#include <pager.h>
+
 #define VM_MODE_X86    1
 #define VM_MODE_PAGING 2
 #define VM_MODE_X86_64 3
@@ -9,14 +12,14 @@
 struct kvm_vm {
 	int fd;
 	struct kvm_vcpu *vcpu;
-	struct pager pager;
-}
+	struct kvm_pager pager;
+};
 
 /*
 	Create a new VM, with the given mode, cpu count and memory
 	Return 0 on success, -1 on error
 */
-int kvm_vm_create(struct kvm_vm *, int, int, int);
+int kvm_vm_create(struct kvm_opts *, struct kvm_vm *, int, int, int);
 
 /*
 	Load an ELF binary, given by the filename into the VM
