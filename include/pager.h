@@ -16,7 +16,7 @@ struct kvm_pager {
 	int mode;
 	struct kvm_vm *vm;
 	struct mem_chunk system_chunk;
-	struct mem_chunk *other_chunks;
+	struct chunk_list *other_chunks;
 };
 
 /*

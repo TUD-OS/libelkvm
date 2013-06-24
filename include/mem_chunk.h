@@ -8,3 +8,9 @@ struct mem_chunk {
 	uint64_t size;
 };
 
+struct chunk_list {
+	struct mem_chunk *chunk;
+	struct chunk_list *next;
+};
+
+
