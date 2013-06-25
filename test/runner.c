@@ -2,12 +2,14 @@
 
 #include "test_kvm.h"
 #include "test_pager.h"
+#include "test_vcpu.h"
 #include "test_vm.h"
 
 int main() {
 	CU_pSuite kvm_suite = NULL;
 	CU_pSuite vm_suite = NULL;
 	CU_pSuite pager_suite = NULL;
+	CU_pSuite vcpu_suite = NULL;
 
 	if(CUE_SUCCESS != CU_initialize_registry()) {
 		return CU_get_error();
@@ -24,6 +26,21 @@ int main() {
 	(NULL == CU_add_test(pager_suite, "kvm_pager_is_invalid_guest_base", test_kvm_pager_is_invalid_guest_base)) ||
 	(NULL == CU_add_test(pager_suite, "kvm_pager_create_mem_chunk", test_kvm_pager_create_mem_chunk)) ||
 	(NULL == CU_add_test(pager_suite, "kvm_pager_create_page_table", test_kvm_pager_create_page_tables))
+		) {
+		CU_cleanup_registry();
+		return CU_get_error();
+	}
+
+	/* add the vcpu test suite */
+	vcpu_suite = CU_add_suite("VCPU Test Suite", init_vcpu_suite, clean_vcpu_suite);
+	if(NULL == vcpu_suite) {
+		CU_cleanup_registry();
+		return CU_get_error();
+	}
+
+	if((NULL == CU_add_test(vcpu_suite, "kvm_vcpu_get_regs", test_kvm_vcpu_get_regs)) ||
+		(NULL == CU_add_test(vcpu_suite, "kvm_vcpu_set_regs", test_kvm_vcpu_set_regs)) ||
+		(NULL == CU_add_test(vcpu_suite, "kvm_vcpu_create", test_kvm_vcpu_create))
 		) {
 		CU_cleanup_registry();
 		return CU_get_error();
