@@ -21,28 +21,24 @@ int clean_vm_suite() {
 void test_kvm_vm_create() {
 
 	struct kvm_vm the_vm;
+	the_vm.fd = 0;
+	the_vm.vcpus = NULL;
 	int cpus = 1;
-	int enough_memory = 256*1024*1024;
-	int barely_enough_memory = 4*1024*1024 + 4*1024;
+	int memory = 256*1024*1024;
 
-	int err = kvm_vm_create(&vm_test_opts, &the_vm, VM_MODE_X86_64, cpus, enough_memory);
+	struct kvm_opts uninitialized_opts;
+	uninitialized_opts.fd = 0;
+	int err = kvm_vm_create(&uninitialized_opts, &the_vm, VM_MODE_X86_64, cpus, memory);
+	CU_ASSERT(err == -EIO);
+	CU_ASSERT(the_vm.fd == 0);
+	CU_ASSERT(the_vm.vcpus == NULL);
+
+	err = kvm_vm_create(&vm_test_opts, &the_vm, VM_MODE_X86_64, cpus, memory);
 	CU_ASSERT(0 == err);
 	CU_ASSERT(0 < the_vm.fd);
-	CU_ASSERT(NULL != the_vm.vcpu);
+	CU_ASSERT(NULL != the_vm.vcpus);
 
 	kvm_vm_destroy(&the_vm);
-
-	err = kvm_vm_create(&vm_test_opts, &the_vm, VM_MODE_X86_64, cpus, barely_enough_memory);
-	CU_ASSERT(0 == err);
-	CU_ASSERT(0 < the_vm.fd);
-	CU_ASSERT(NULL != the_vm.vcpu);
-
-	kvm_vm_destroy(&the_vm);
-
-	err = kvm_vm_create(&vm_test_opts, &the_vm, VM_MODE_X86_64, cpus, barely_enough_memory -1);
-	CU_ASSERT(0 > err);
-	CU_ASSERT(0 == the_vm.fd);
-	CU_ASSERT(NULL == the_vm.vcpu);
 
 	//TODO test for -ENOMEM
 }
