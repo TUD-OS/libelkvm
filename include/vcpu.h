@@ -2,6 +2,8 @@
 
 #include <linux/kvm.h>
 
+#include <elkvm.h>
+
 struct kvm_vcpu {
 	int fd;
 	struct kvm_regs regs;
