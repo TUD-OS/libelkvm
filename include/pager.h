@@ -38,3 +38,8 @@ int kvm_pager_create_mem_chunk(struct kvm_pager *, int, uint64_t);
 */
 int kvm_pager_create_page_tables(struct kvm_pager *, int);
 
+/*
+	Check if the given base address already exists in the guest
+*/
+int kvm_pager_is_invalid_guest_base(struct kvm_pager *, uint64_t);
+
