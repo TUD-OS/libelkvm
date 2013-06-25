@@ -1,5 +1,6 @@
 #include <CUnit/Basic.h>
 
+#include <stdlib.h>
 #include <stropts.h>
 
 #include <elkvm.h>
@@ -51,22 +52,25 @@ void test_kvm_pager_create_mem_chunk() {
 
 void test_kvm_pager_add_mem_chunk() {
 	struct kvm_pager pager;
+	pager.other_chunks = NULL;
 	struct mem_chunk chunk;
 	struct mem_chunk chunk2;
 	struct mem_chunk chunk3;
 
+	CU_ASSERT(pager.other_chunks == NULL);
 	kvm_pager_add_mem_chunk(&pager, &chunk);
+	CU_ASSERT(pager.other_chunks != NULL);
 	CU_ASSERT(pager.other_chunks->chunk == &chunk);
 	CU_ASSERT(pager.other_chunks->next == NULL);
 
-	kvm_pager_add_mem_chunk(&pager, &chunk);
+	kvm_pager_add_mem_chunk(&pager, &chunk2);
 	struct chunk_list *cl = pager.other_chunks;
 	CU_ASSERT(cl->chunk == &chunk);
 	cl = cl->next;
 	CU_ASSERT(cl->chunk == &chunk2);
 	CU_ASSERT(cl->next == NULL);
 
-	kvm_pager_add_mem_chunk(&pager, &chunk);
+	kvm_pager_add_mem_chunk(&pager, &chunk3);
 	cl = pager.other_chunks;
 	CU_ASSERT(cl->chunk == &chunk);
 	cl = cl->next;
@@ -75,3 +79,29 @@ void test_kvm_pager_add_mem_chunk() {
 	CU_ASSERT(cl->chunk == &chunk3);
 	CU_ASSERT(cl->next == NULL);
 }
+
+void test_kvm_pager_create_page_tables() {
+	struct kvm_pager pager;
+	int size = 0x400000;
+
+	pager.system_chunk.host_base_p = malloc(size);
+	pager.system_chunk.size = 0;
+
+	int err = kvm_pager_create_page_tables(&pager, PAGER_MODE_X86_64);
+	CU_ASSERT(err < 0);
+
+	err = kvm_pager_create_page_tables(NULL, PAGER_MODE_X86_64);
+	CU_ASSERT(err < 0);
+
+	err = kvm_pager_create_page_tables(&pager, 9999);
+	CU_ASSERT(err < 0);
+	
+	pager.system_chunk.size = size;
+	err = kvm_pager_create_page_tables(&pager, PAGER_MODE_X86_64);
+	CU_ASSERT(err == 0);
+	CU_ASSERT(pager.host_pml4_p == pager.system_chunk.host_base_p);
+	CU_ASSERT(pager.host_next_free_tbl_p == pager.host_pml4_p + 0x1000);
+
+	free(pager.system_chunk.host_base_p);
+}
+

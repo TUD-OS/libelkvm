@@ -49,7 +49,8 @@ int main() {
 
 	if((NULL == CU_add_test(pager_suite, "kvm_pager_initialize", test_kvm_pager_initialize)) ||
 	(NULL == CU_add_test(pager_suite, "kvm_pager_create_mem_chunk", test_kvm_pager_create_mem_chunk)) ||
-	(NULL == CU_add_test(pager_suite, "kvm_pager_add_mem_chunk", test_kvm_pager_add_mem_chunk))
+	(NULL == CU_add_test(pager_suite, "kvm_pager_add_mem_chunk", test_kvm_pager_add_mem_chunk)) ||
+	(NULL == CU_add_test(pager_suite, "kvm_pager_create_page_table", test_kvm_pager_create_page_tables))
 		) {
 		CU_cleanup_registry();
 		return CU_get_error();
