@@ -19,6 +19,8 @@ struct kvm_pager {
 	struct kvm_vm *vm;
 	struct mem_chunk system_chunk;
 	struct chunk_list *other_chunks;
+	void *host_pml4_p;
+	void *host_next_free_tbl_p;
 };
 
 /*
