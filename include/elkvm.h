@@ -33,4 +33,8 @@ int kvm_vm_load_binary(struct kvm_vm *, const char *);
 */
 void kvm_dump_vm(struct kvm_vm *, int);
 
+/*
+	Destroys a VM and all its data structures
+*/
 int kvm_vm_destroy(struct kvm_vm *);
+
