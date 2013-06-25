@@ -1,5 +1,6 @@
 #include <linux/kvm.h>
 
+#include <errno.h>
 #include <fcntl.h>
 #include <stropts.h>
 #include <sys/stat.h>
@@ -11,10 +12,13 @@
 #include <elkvm.h>
 
 int kvm_vm_create(struct kvm_opts *opts, struct kvm_vm *vm, int mode, int cpus, int memory_size) {
+	if(opts->fd <= 0) {
+		return -EIO;
+	}
 
 	vm->fd = ioctl(opts->fd, KVM_CREATE_VM, 0);
 	if(vm->fd < 0) {
-		return -1;
+		return -errno;
 	}
 
 	int err = kvm_pager_initialize(vm, mode);
