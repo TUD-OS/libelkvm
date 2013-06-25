@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -10,28 +11,37 @@ int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
 	}
 
 	/* create a chunk for system data
-	   TODO for now use a fixed size */	
-	struct mem_chunk *sys_chunk = kvm_pager_create_mem_chunk(&vm->pager, KVM_SYSTEM_MEMSIZE);
-	if(sys_chunk == NULL) {
-		return -1;
+	   TODO for now use a fixed size, what if bin is too large for that */	
+	vm->pager.system_chunk.host_base_p = malloc(ELKVM_SYSTEM_MEMSIZE);
+	if(vm->pager.system_chunk.host_base_p == NULL) {
+		return -ENOMEM;
 	}
-
-	vm->pager.system_chunk = *sys_chunk;
+	vm->pager.system_chunk.guest_base = 0x0;
+	vm->pager.system_chunk.size = ELKVM_SYSTEM_MEMSIZE;
 
 	int err = kvm_pager_create_page_tables(&vm->pager, mode);
 	if(err) {
-		return -1;
+		return err;
 	}
 
 	return 0;
 }
 
-void kvm_pager_add_mem_chunk(struct kvm_pager *pager, struct mem_chunk *chunk) {
+int kvm_pager_create_mem_chunk(struct kvm_pager *pager, int chunk_size, uint64_t guest_base) {
+	struct mem_chunk *chunk = malloc(sizeof(struct mem_chunk));
+	if(chunk == NULL) {
+		return -ENOMEM;
+	}
+
+	chunk->host_base_p = malloc(chunk_size);
+	chunk->guest_base = guest_base;
+	chunk->size = chunk_size;
+
 	if(pager->other_chunks == NULL) {
 		pager->other_chunks = malloc(sizeof(struct chunk_list));
 		pager->other_chunks->chunk = chunk;
 		pager->other_chunks->next = NULL;
-		return;
+		return 0;
 	}
 
 	struct chunk_list *current = pager->other_chunks;
@@ -43,10 +53,8 @@ void kvm_pager_add_mem_chunk(struct kvm_pager *pager, struct mem_chunk *chunk) {
 	current = current->next;
 	current->chunk = chunk;
 	current->next = NULL;
-}
 
-struct mem_chunk *kvm_pager_create_mem_chunk(struct kvm_pager *pager, int chunk_size) {
-	return NULL;
+	return 0;
 }
 
 int kvm_pager_create_page_tables(struct kvm_pager *pager, int mode) {

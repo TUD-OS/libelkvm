@@ -9,6 +9,8 @@
 #define VM_MODE_PAGING 2
 #define VM_MODE_X86_64 3
 
+#define ELKVM_USER_CHUNK_OFFSET 1024*1024*1024
+
 struct kvm_vm {
 	int fd;
 	struct kvm_vcpu *vcpu;

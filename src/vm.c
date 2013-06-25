@@ -22,13 +22,15 @@ int kvm_vm_create(struct kvm_opts *opts, struct kvm_vm *vm, int mode, int cpus, 
 		return err;
 	}
 
-	struct mem_chunk *user_chunk = kvm_pager_create_mem_chunk(&vm->pager, memory_size);
-	kvm_pager_add_mem_chunk(&vm->pager, user_chunk);
+	err = kvm_pager_create_mem_chunk(&vm->pager, memory_size, ELKVM_USER_CHUNK_OFFSET);
+	if(err) {
+		return err;
+	}
 
 	for(int i = 0; i < cpus; i++) {
 		err = kvm_vcpu_create(vm, mode);
 		if(err) {
-			return -1;
+			return err;
 		}
 	}
 
