@@ -13,7 +13,7 @@
 
 struct kvm_vm {
 	int fd;
-	struct kvm_vcpu *vcpu;
+	struct vcpu_list *vcpus;
 	struct kvm_pager pager;
 };
 

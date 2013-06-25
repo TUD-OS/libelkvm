@@ -10,6 +10,11 @@ struct kvm_vcpu {
 	struct kvm_sregs sregs;
 };
 
+struct vcpu_list {
+	struct kvm_vcpu *vcpu;
+	struct vcpu_list *next;
+};
+
 /*
 	Creates a runnable VCPU in the mode given by the parameter
 */
