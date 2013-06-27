@@ -41,12 +41,16 @@ int kvm_vm_create(struct kvm_opts *opts, struct kvm_vm *vm, int mode, int cpus, 
 	return 0;
 }
 
-int kvm_vm_check_cap(struct kvm_vm *vm, int cap) {
-	if(vm->fd < 1) {
+int kvm_check_cap(struct kvm_opts *kvm, int cap) {
+	if(kvm->fd < 1) {
 		return -EIO;
 	}
 
-	return ioctl(vm->fd, KVM_CHECK_EXTENSION, cap);
+	int r = ioctl(kvm->fd, KVM_CHECK_EXTENSION, cap);
+	if(r < 0) {
+		return -errno;
+	}
+	return r;
 }
 
 int kvm_vm_vcpu_count(struct kvm_vm *vm) {
