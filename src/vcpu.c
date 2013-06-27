@@ -67,11 +67,39 @@ int kvm_vcpu_set_rip(struct kvm_vcpu * vcpu, uint64_t rip) {
 }
 
 int kvm_vcpu_get_regs(struct kvm_vcpu *vcpu) {
-	return -1;
+	if(vcpu->fd < 1) {
+		return -EIO;
+	}
+
+	int err = ioctl(vcpu->fd, KVM_GET_REGS, &vcpu->regs);
+	if(err) {
+		return -errno;
+	}
+
+	err = ioctl(vcpu->fd, KVM_GET_SREGS, &vcpu->sregs);
+	if(err) {
+		return -errno;
+	}
+
+	return 0;
 }
 
 int kvm_vcpu_set_regs(struct kvm_vcpu *vcpu) {
-	return -1;
+	if(vcpu->fd < 1) {
+		return -EIO;
+	}
+
+	int err = ioctl(vcpu->fd, KVM_SET_REGS, &vcpu->regs);
+	if(err) {
+		return -errno;
+	}
+
+	err = ioctl(vcpu->fd, KVM_SET_SREGS, &vcpu->sregs);
+	if(err) {
+		return -errno;
+	}
+
+	return 0;
 }
 
 int kvm_vcpu_destroy(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
