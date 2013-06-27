@@ -41,6 +41,14 @@ int kvm_vm_create(struct kvm_opts *opts, struct kvm_vm *vm, int mode, int cpus, 
 	return 0;
 }
 
+int kvm_vm_check_cap(struct kvm_vm *vm, int cap) {
+	if(vm->fd < 1) {
+		return -EIO;
+	}
+
+	return ioctl(vm->fd, KVM_CHECK_EXTENSION, cap);
+}
+
 int kvm_vm_destroy(struct kvm_vm *vm) {
 	return -1;
 }
@@ -70,3 +78,4 @@ int kvm_cleanup(struct kvm_opts *opts) {
 	opts->run_struct_size = 0;
 	return 0;
 }
+
