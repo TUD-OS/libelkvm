@@ -49,6 +49,22 @@ int kvm_vm_check_cap(struct kvm_vm *vm, int cap) {
 	return ioctl(vm->fd, KVM_CHECK_EXTENSION, cap);
 }
 
+int kvm_vm_vcpu_count(struct kvm_vm *vm) {
+	int count = 0;
+	struct vcpu_list *vl = vm->vcpus;
+	if(vl == NULL) {
+		return 0;
+	}
+
+	while(vl != NULL) {
+		if(vl->vcpu != NULL) {
+			count++;
+		}
+		vl = vl->next;
+	}
+	return count;
+}
+
 int kvm_vm_destroy(struct kvm_vm *vm) {
 	return -1;
 }
