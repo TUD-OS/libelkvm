@@ -1,6 +1,7 @@
 test_libelkvm
 
 *.swp
+*.swo
 *.o
 *.lo
 *.a
