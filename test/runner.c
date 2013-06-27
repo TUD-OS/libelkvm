@@ -67,7 +67,8 @@ int main() {
 		return CU_get_error();
 	}
 
-	if((NULL == CU_add_test(vm_suite, "Test kvm_vm_create()", test_kvm_vm_create))
+	if((NULL == CU_add_test(vm_suite, "Test kvm_vm_create()", test_kvm_vm_create)) ||
+		(NULL == CU_add_test(vm_suite, "kvm_vm_vcpu_count()", test_kvm_vm_vcpu_count))
 		) {
 		CU_cleanup_registry();
 		return CU_get_error();

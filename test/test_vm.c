@@ -3,6 +3,7 @@
 
 #include <kvm.h>
 #include <elkvm.h>
+#include <vcpu.h>
 
 #include "test_vm.h"
 
@@ -43,3 +44,38 @@ void test_kvm_vm_create() {
 	//TODO test for -ENOMEM
 }
 
+void test_kvm_vm_vcpu_count() {
+	struct kvm_vm the_vm;
+	the_vm.vcpus = NULL;
+
+	int cpus = kvm_vm_vcpu_count(&the_vm);
+	CU_ASSERT(cpus == 0);
+
+	the_vm.vcpus = malloc(sizeof(struct vcpu_list));
+	the_vm.vcpus->vcpu = NULL;
+	the_vm.vcpus->next = NULL;
+
+	cpus = kvm_vm_vcpu_count(&the_vm);
+	CU_ASSERT(cpus == 0);
+
+	the_vm.vcpus->vcpu = malloc(sizeof(struct kvm_vcpu));
+
+	cpus = kvm_vm_vcpu_count(&the_vm);
+	CU_ASSERT(cpus == 1);
+
+	the_vm.vcpus->next = malloc(sizeof(struct vcpu_list));
+
+	cpus = kvm_vm_vcpu_count(&the_vm);
+	CU_ASSERT(cpus == 1);
+
+	the_vm.vcpus->next->vcpu = malloc(sizeof(struct kvm_vcpu));
+
+	cpus = kvm_vm_vcpu_count(&the_vm);
+	CU_ASSERT(cpus == 2);
+
+	the_vm.vcpus->next->next = malloc(sizeof(struct vcpu_list));
+	the_vm.vcpus->next->next->vcpu = malloc(sizeof(struct kvm_vcpu));
+
+	cpus = kvm_vm_vcpu_count(&the_vm);
+	CU_ASSERT(cpus == 3);
+}
