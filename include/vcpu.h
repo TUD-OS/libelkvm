@@ -32,7 +32,7 @@ int kvm_vcpu_create(struct kvm_vm *, int);
 /*
 	Remove and clean up the VCPU
 */
-int kvm_vcpu_destroy(struct kvm_vcpu *);
+int kvm_vcpu_destroy(struct kvm_vm *, struct kvm_vcpu *);
 
 /*
 	Set the VCPU's rip to a specific value

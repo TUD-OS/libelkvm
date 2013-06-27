@@ -74,7 +74,7 @@ int kvm_vcpu_set_regs(struct kvm_vcpu *vcpu) {
 	return -1;
 }
 
-int kvm_vcpu_destroy(struct kvm_vcpu *vcpu) {
+int kvm_vcpu_destroy(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 	return -1;
 }
 
