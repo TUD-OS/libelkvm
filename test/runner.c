@@ -38,9 +38,12 @@ int main() {
 		return CU_get_error();
 	}
 
-	if((NULL == CU_add_test(vcpu_suite, "kvm_vcpu_get_regs", test_kvm_vcpu_get_regs)) ||
-		(NULL == CU_add_test(vcpu_suite, "kvm_vcpu_set_regs", test_kvm_vcpu_set_regs)) ||
-		(NULL == CU_add_test(vcpu_suite, "kvm_vcpu_create", test_kvm_vcpu_create))
+	if(
+		(NULL == CU_add_test(vcpu_suite, "kvm_vcpu_create", test_kvm_vcpu_create)) ||
+		(NULL == CU_add_test(vcpu_suite, "kvm_vcpu_add_tail", test_kvm_vcpu_add_tail)) ||
+		(NULL == CU_add_test(vcpu_suite, "kvm_vcpu_destroy", test_kvm_vcpu_destroy)) ||
+		(NULL == CU_add_test(vcpu_suite, "kvm_vcpu_get_regs", test_kvm_vcpu_get_regs)) ||
+		(NULL == CU_add_test(vcpu_suite, "kvm_vcpu_set_regs", test_kvm_vcpu_set_regs))
 		) {
 		CU_cleanup_registry();
 		return CU_get_error();
