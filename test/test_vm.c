@@ -30,14 +30,14 @@ void test_kvm_vm_create() {
 	struct kvm_opts uninitialized_opts;
 	uninitialized_opts.fd = 0;
 	int err = kvm_vm_create(&uninitialized_opts, &the_vm, VM_MODE_X86_64, cpus, memory);
-	CU_ASSERT(err == -EIO);
-	CU_ASSERT(the_vm.fd == 0);
-	CU_ASSERT(the_vm.vcpus == NULL);
+	CU_ASSERT_EQUAL_FATAL(err, -EIO);
+	CU_ASSERT_EQUAL(the_vm.fd, 0);
+	CU_ASSERT_EQUAL(the_vm.vcpus, NULL);
 
 	err = kvm_vm_create(&vm_test_opts, &the_vm, VM_MODE_X86_64, cpus, memory);
-	CU_ASSERT(0 == err);
+	CU_ASSERT_EQUAL_FATAL(err, 0);
 	CU_ASSERT(0 < the_vm.fd);
-	CU_ASSERT(NULL != the_vm.vcpus);
+	CU_ASSERT_PTR_NOT_NULL_FATAL(the_vm.vcpus);
 
 	kvm_vm_destroy(&the_vm);
 
@@ -49,33 +49,33 @@ void test_kvm_vm_vcpu_count() {
 	the_vm.vcpus = NULL;
 
 	int cpus = kvm_vm_vcpu_count(&the_vm);
-	CU_ASSERT(cpus == 0);
+	CU_ASSERT_EQUAL(cpus, 0);
 
 	the_vm.vcpus = malloc(sizeof(struct vcpu_list));
 	the_vm.vcpus->vcpu = NULL;
 	the_vm.vcpus->next = NULL;
 
 	cpus = kvm_vm_vcpu_count(&the_vm);
-	CU_ASSERT(cpus == 0);
+	CU_ASSERT_EQUAL(cpus, 0);
 
 	the_vm.vcpus->vcpu = malloc(sizeof(struct kvm_vcpu));
 
 	cpus = kvm_vm_vcpu_count(&the_vm);
-	CU_ASSERT(cpus == 1);
+	CU_ASSERT_EQUAL(cpus, 1);
 
 	the_vm.vcpus->next = malloc(sizeof(struct vcpu_list));
 
 	cpus = kvm_vm_vcpu_count(&the_vm);
-	CU_ASSERT(cpus == 1);
+	CU_ASSERT_EQUAL(cpus, 1);
 
 	the_vm.vcpus->next->vcpu = malloc(sizeof(struct kvm_vcpu));
 
 	cpus = kvm_vm_vcpu_count(&the_vm);
-	CU_ASSERT(cpus == 2);
+	CU_ASSERT_EQUAL(cpus, 2);
 
 	the_vm.vcpus->next->next = malloc(sizeof(struct vcpu_list));
 	the_vm.vcpus->next->next->vcpu = malloc(sizeof(struct kvm_vcpu));
 
 	cpus = kvm_vm_vcpu_count(&the_vm);
-	CU_ASSERT(cpus == 3);
+	CU_ASSERT_EQUAL(cpus, 3);
 }
