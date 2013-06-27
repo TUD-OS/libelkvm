@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stropts.h>
+#include <unistd.h>
 
 #include <elkvm.h>
 #include <vcpu.h>
@@ -12,11 +13,29 @@ int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
 		return -EIO;
 	}
 
-	int vcpu_fd = ioctl(vm->fd, KVM_CREATE_VCPU, 0);
-	if(vcpu_fd <= 0) {
-		return -errno;
+	struct kvm_vcpu *vcpu = malloc(sizeof(struct kvm_vcpu));
+	memset(&vcpu->regs, 0, sizeof(struct kvm_regs));
+	memset(&vcpu->sregs, 0, sizeof(struct kvm_sregs));
+
+	int vcpu_count = kvm_vm_vcpu_count(vm);
+	vcpu->fd = ioctl(vm->fd, KVM_CREATE_VCPU, vcpu_count);
+	if(vcpu->fd <= 0) {
+		free(vcpu);
+		return -1;
 	}
 
+
+
+	int err = kvm_vcpu_initialize_regs(vcpu, mode);
+	if(err) {
+		return err;
+	}
+
+	err = kvm_vcpu_add_tail(vm, vcpu);
+	return err;
+}
+
+int kvm_vcpu_add_tail(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 	/* find the last entry in the vcpu list for this vm */
 	struct vcpu_list *vl = vm->vcpus;
 	while(vl != NULL && vl->next != NULL) {
@@ -29,25 +48,11 @@ int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
 	}
 
 	new_item->next = NULL;
-	new_item->vcpu = malloc(sizeof(struct kvm_vcpu));
-	if(new_item->vcpu == NULL) {
-		free(new_item);
-		return -ENOMEM;
-	}
+	new_item->vcpu = vcpu;
 	if(vl == NULL) {
-		vm->vcpus = vl = new_item;
+		vm->vcpus = new_item;
 	} else {
 		vl->next = new_item;
-		vl = vl->next;
-	}
-
-	vl->vcpu->fd = vcpu_fd;
-	memset(&vl->vcpu->regs, 0, sizeof(struct kvm_regs));
-	memset(&vl->vcpu->sregs, 0, sizeof(struct kvm_sregs));
-
-	int err = kvm_vcpu_initialize_regs(vl->vcpu, mode);
-	if(err) {
-		return err;
 	}
 
 	return 0;

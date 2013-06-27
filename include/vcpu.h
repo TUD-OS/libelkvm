@@ -30,6 +30,11 @@ struct vcpu_list {
 int kvm_vcpu_create(struct kvm_vm *, int);
 
 /*
+	Add a new VCPU entry to the tail of the VCPU list
+*/
+int kvm_vcpu_add_tail(struct kvm_vm *, struct kvm_vcpu *);
+
+/*
 	Remove and clean up the VCPU
 */
 int kvm_vcpu_destroy(struct kvm_vm *, struct kvm_vcpu *);
