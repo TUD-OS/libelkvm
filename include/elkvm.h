@@ -36,7 +36,7 @@ void kvm_dump_vm(struct kvm_vm *, int);
 /*
 	Check if a given KVM capability exists, will return the result of the ioctl
 */
-int kvm_vm_check_cap(struct kvm_vm *, int);
+int kvm_check_cap(struct kvm_opts *, int);
 
 /*
 	Returns the number of VCPUs in a VM
