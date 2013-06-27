@@ -39,6 +39,11 @@ void kvm_dump_vm(struct kvm_vm *, int);
 int kvm_vm_check_cap(struct kvm_vm *, int);
 
 /*
+	Returns the number of VCPUs in a VM
+*/
+int kvm_vm_vcpu_count(struct kvm_vm *);
+
+/*
 	Destroys a VM and all its data structures
 */
 int kvm_vm_destroy(struct kvm_vm *);
