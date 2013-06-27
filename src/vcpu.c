@@ -103,7 +103,36 @@ int kvm_vcpu_set_regs(struct kvm_vcpu *vcpu) {
 }
 
 int kvm_vcpu_destroy(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
-	return -1;
+	struct vcpu_list *vl = vm->vcpus;
+	int found = 0;
+
+	if(vl != NULL && vl->vcpu == vcpu) {
+		vm->vcpus = vl->next;
+		close(vl->vcpu->fd);
+		free(vl->vcpu);
+		free(vl);
+		return 0;
+	}
+
+	while(vl != NULL && vl->next != NULL) {
+		if(vl->next->vcpu == vcpu) {
+			found = 1;
+			break;
+		}
+		vl = vl->next;
+	}
+
+	if(!found) {
+		return -1;
+	}
+
+	struct vcpu_list *old = vl->next;
+	vl->next = vl->next->next;
+	free(old);
+	close(vcpu->fd);
+	free(vcpu);
+
+	return 0;
 }
 
 int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
