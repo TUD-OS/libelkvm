@@ -23,17 +23,23 @@ int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
 		vl = vl->next;
 	}
 
-	vl->next = malloc(sizeof(struct vcpu_list));
-	if(vl->next == NULL) {
+	struct vcpu_list *new_item = malloc(sizeof(struct vcpu_list));
+	if(new_item == NULL) {
 		return -ENOMEM;
 	}
-	vl->next->next = NULL;
-	vl->next->vcpu = malloc(sizeof(struct kvm_vcpu));
-	if(vl->next->vcpu == NULL) {
-		free(vl->next);
+	new_item->next = NULL;
+	new_item->vcpu = malloc(sizeof(struct kvm_vcpu));
+	if(new_item->vcpu == NULL) {
+		free(new_item);
 		return -ENOMEM;
 	}
-	vl = vl->next;
+	if(vl == NULL) {
+		vm->vcpus = vl = new_item;
+		printf("vl: %p\n", vl);
+	} else {
+		vl->next = new_item;
+		vl = vl->next;
+	}
 
 	vl->vcpu->fd = vcpu_fd;
 	memset(&vl->vcpu->regs, 0, sizeof(struct kvm_regs));
