@@ -27,6 +27,7 @@ int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
 	if(new_item == NULL) {
 		return -ENOMEM;
 	}
+
 	new_item->next = NULL;
 	new_item->vcpu = malloc(sizeof(struct kvm_vcpu));
 	if(new_item->vcpu == NULL) {
@@ -35,7 +36,6 @@ int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
 	}
 	if(vl == NULL) {
 		vm->vcpus = vl = new_item;
-		printf("vl: %p\n", vl);
 	} else {
 		vl->next = new_item;
 		vl = vl->next;
