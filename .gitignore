@@ -1,4 +1,5 @@
 test_libelkvm
+compile
 
 *.swp
 *.swo
