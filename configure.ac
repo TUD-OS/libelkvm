@@ -1,11 +1,12 @@
 #Prelude
 AC_INIT([libelkvm], [0.1], [florian.pester@tu-dresden.de])
-AM_INIT_AUTOMAKE([foreign -Wall -Werror dist-bzip2])
+AM_INIT_AUTOMAKE([foreign -Wall -Werror 1.9.6])
 
 #Check for programs
 AC_PROG_CC
 AC_PROG_CC_STDC
 AC_PROG_LIBTOOL
+AM_PROG_CC_C_O
 
 #Check for libraries
 AC_CHECK_LIB([cunit], [CU_add_suite])
@@ -17,6 +18,7 @@ AC_CHECK_HEADERS([stdint.h])
 AC_TYPE_UINT64_T
 
 #Check for lib funcs
+PKG_CHECK_MODULES([CHECK], [check >= 0.9.4])
 
 #Output files
 AC_CONFIG_HEADERS([config.h])
