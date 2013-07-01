@@ -10,6 +10,8 @@ int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
 		return -1;
 	}
 
+	vm->pager.mode = mode;
+
 	/* create a chunk for system data
 	   TODO for now use a fixed size, what if bin is too large for that */	
 	vm->pager.system_chunk.userspace_addr = (__u64)malloc(ELKVM_SYSTEM_MEMSIZE);
@@ -18,6 +20,8 @@ int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
 	}
 	vm->pager.system_chunk.guest_phys_addr = 0x0;
 	vm->pager.system_chunk.memory_size = ELKVM_SYSTEM_MEMSIZE;
+
+	vm->pager.other_chunks = NULL;
 
 	int err = kvm_pager_create_page_tables(&vm->pager, mode);
 	if(err) {
