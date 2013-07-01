@@ -1,5 +1,8 @@
 #include <check.h>
 #include <errno.h>
+#include <stdlib.h>
+#include <stropts.h>
+#include <unistd.h>
 
 #include <kvm.h>
 #include <elkvm.h>
@@ -8,12 +11,15 @@
 #include "test_vm.h"
 
 struct kvm_opts vm_test_opts;
+int vm_fd;
 
 void vm_setup() {
 	kvm_init(&vm_test_opts);
+	vm_fd = ioctl(vm_test_opts.fd, KVM_CREATE_VM, 0);
 }
 
 void vm_teardown() {
+	close(vm_fd);
 	kvm_cleanup(&vm_test_opts);
 }
 
@@ -83,6 +89,68 @@ START_TEST(test_kvm_vm_vcpu_count) {
 }
 END_TEST
 
+START_TEST(test_kvm_vm_map_system_chunk_valid) {
+	struct kvm_vm the_vm;
+	the_vm.fd = vm_fd;
+
+	struct kvm_pager pager;
+	pager.system_chunk.size = 0x400000;
+	int err = posix_memalign(pager.system_chunk.host_base_p, 0x1000, 
+			pager.system_chunk.size);
+	ck_assert_int_eq(err, 0);
+	pager.system_chunk.guest_base = 0x0;
+
+	err = kvm_vm_map_chunk(&the_vm, &pager.system_chunk);
+	ck_assert_int_eq(err, 0);
+}
+END_TEST
+
+START_TEST(test_kvm_vm_map_system_chunk_invalid) {
+	struct kvm_vm the_vm;
+	the_vm.fd = vm_fd;
+
+	struct kvm_pager pager;
+	pager.system_chunk.size = 0x400000;
+	pager.system_chunk.host_base_p = malloc(pager.system_chunk.size);
+	ck_assert_ptr_ne(pager.system_chunk.host_base_p, NULL);
+	pager.system_chunk.guest_base = 0x0;
+
+	int err = kvm_vm_map_chunk(&the_vm, &pager.system_chunk);
+	ck_assert_int_ne(err, 0);
+}
+END_TEST
+
+START_TEST(test_kvm_vm_map_system_chunk_multiple) {
+	struct kvm_vm the_vm;
+	the_vm.fd = vm_fd;
+
+	struct kvm_pager pager;
+	pager.system_chunk.size = 0x400000;
+	int err = posix_memalign(pager.system_chunk.host_base_p, 0x1000,
+			pager.system_chunk.size);
+	ck_assert_int_eq(err, 0);
+	pager.system_chunk.guest_base = 0x0;
+
+	err = kvm_vm_map_chunk(&the_vm, &pager.system_chunk);
+	ck_assert_int_eq(err, 0);
+
+	pager.other_chunks = malloc(sizeof(struct chunk_list));
+	ck_assert_ptr_ne(pager.other_chunks, NULL);
+	pager.other_chunks->next = NULL;
+	pager.other_chunks->chunk = malloc(sizeof(struct mem_chunk));
+	ck_assert_ptr_ne(pager.other_chunks->next, NULL);
+
+	struct mem_chunk *chunk = pager.other_chunks->chunk;
+	chunk->size = 0x1600000;
+	err = posix_memalign(chunk->host_base_p, 0x1000, chunk->size);
+	ck_assert_int_eq(err, 0);
+	chunk->guest_base = 0x400000;
+
+	err = kvm_vm_map_chunk(&the_vm, chunk);
+	ck_assert_int_eq(err, 0);
+}
+END_TEST
+
 Suite *vm_suite() {
 	Suite *s = suite_create("VM");
 
@@ -94,5 +162,13 @@ Suite *vm_suite() {
 	tcase_add_checked_fixture(tc_create, vm_setup, vm_teardown);
 	tcase_add_test(tc_create, test_kvm_vm_create);
 	suite_add_tcase(s, tc_create);
+
+	TCase *tc_map = tcase_create("Map mem_chunk");
+	tcase_add_checked_fixture(tc_map, vm_setup, vm_teardown);
+	tcase_add_test(tc_map, test_kvm_vm_map_system_chunk_valid);
+	tcase_add_test(tc_map, test_kvm_vm_map_system_chunk_invalid);
+	tcase_add_test(tc_map, test_kvm_vm_map_system_chunk_multiple);
+	suite_add_tcase(s, tc_map);
+
 	return s;
 }
