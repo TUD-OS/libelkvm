@@ -67,30 +67,13 @@ int kvm_pager_create_mem_chunk(struct kvm_pager *pager, int chunk_size, uint64_t
 	chunk->guest_phys_addr = guest_base;
 	chunk->memory_size = chunk_size;
 	chunk->flags = 0;
-	chunk->slot = 1;
 
-	if(pager->other_chunks == NULL) {
-		pager->other_chunks = malloc(sizeof(struct chunk_list));
-		if(pager->other_chunks == NULL) {
-			goto out_free_chunk_base;
-		}
-		pager->other_chunks->chunk = chunk;
-		pager->other_chunks->next = NULL;
-		return 0;
-	}
-
-	struct chunk_list *current = pager->other_chunks;
-	while(current->next != NULL) {
-		current = current->next;
-	}
-
-	current->next = malloc(sizeof(struct chunk_list));
-	if(current->next == NULL) {
+	int chunk_count = kvm_pager_append_mem_chunk(pager, chunk);
+	if(chunk_count < 0) {
 		goto out_free_chunk_base;
 	}
-	current = current->next;
-	current->chunk = chunk;
-	current->next = NULL;
+	/* system chunk has slot 0, so we need to add 1 to all user chunks */
+	chunk->slot = chunk_count + 1;
 
 	return 0;
 
@@ -99,6 +82,39 @@ out_free_chunk_base:
 out_free_chunk:
 	free(chunk);
 	return -ENOMEM;	
+}
+
+int kvm_pager_append_mem_chunk(struct kvm_pager *pager,
+		struct kvm_userspace_memory_region *chunk) {
+
+	if(pager->other_chunks == NULL) {
+		pager->other_chunks = malloc(sizeof(struct chunk_list));
+		if(pager->other_chunks == NULL) {
+			return -ENOMEM;
+		}
+		pager->other_chunks->chunk = chunk;
+		pager->other_chunks->next = NULL;
+		return 0;
+	}
+
+	int chunk_count = 0;
+	struct chunk_list *current = pager->other_chunks;
+	while(current->next != NULL) {
+		chunk_count++;
+		current = current->next;
+	}
+
+	current->next = malloc(sizeof(struct chunk_list));
+	if(current->next == NULL) {
+		return -ENOMEM;
+	}
+
+	chunk_count++;
+	current = current->next;
+	current->chunk = chunk;
+	current->next = NULL;
+
+	return chunk_count;
 }
 
 int kvm_pager_create_page_tables(struct kvm_pager *pager, int mode) {
