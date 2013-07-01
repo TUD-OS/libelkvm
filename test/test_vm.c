@@ -96,9 +96,10 @@ START_TEST(test_kvm_vm_map_system_chunk_valid) {
 
 	struct kvm_pager pager;
 	pager.system_chunk.memory_size = 0x400000;
-	int err = posix_memalign((void *)pager.system_chunk.userspace_addr, 0x1000, 
-			pager.system_chunk.memory_size);
+	void *ram_p;
+	int err = posix_memalign(&ram_p, 0x1000, pager.system_chunk.memory_size);
 	ck_assert_int_eq(err, 0);
+	pager.system_chunk.userspace_addr = (__u64)ram_p;
 	pager.system_chunk.guest_phys_addr = 0x0;
 
 	err = kvm_vm_map_chunk(&the_vm, &pager.system_chunk);
