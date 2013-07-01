@@ -14,16 +14,21 @@ int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
 
 	/* create a chunk for system data
 	   TODO for now use a fixed size, what if bin is too large for that */	
-	vm->pager.system_chunk.userspace_addr = (__u64)malloc(ELKVM_SYSTEM_MEMSIZE);
-	if(vm->pager.system_chunk.userspace_addr == 0) {
-		return -ENOMEM;
+	void *system_chunk_p;
+	int err = posix_memalign(&system_chunk_p, 0x1000, ELKVM_SYSTEM_MEMSIZE);
+	if(err) {
+		return err;
 	}
+
+	vm->pager.system_chunk.userspace_addr = (__u64)system_chunk_p;
 	vm->pager.system_chunk.guest_phys_addr = 0x0;
 	vm->pager.system_chunk.memory_size = ELKVM_SYSTEM_MEMSIZE;
+	vm->pager.system_chunk.flags = 0;
+	vm->pager.system_chunk.slot = 0;
 
 	vm->pager.other_chunks = NULL;
 
-	int err = kvm_pager_create_page_tables(&vm->pager, mode);
+	err = kvm_pager_create_page_tables(&vm->pager, mode);
 	if(err) {
 		return err;
 	}
@@ -52,12 +57,17 @@ int kvm_pager_create_mem_chunk(struct kvm_pager *pager, int chunk_size, uint64_t
 		return -ENOMEM;
 	}
 
-	chunk->userspace_addr = (__u64)malloc(chunk_size);
-	if(chunk->userspace_addr == 0) {
-		goto out_free_chunk;
+	void *chunk_host_p;
+	int err = posix_memalign(&chunk_host_p, 0x1000, chunk_size);
+	if(err) {
+		return err;
 	}
+
+	chunk->userspace_addr = (__u64)chunk_host_p; 
 	chunk->guest_phys_addr = guest_base;
 	chunk->memory_size = chunk_size;
+	chunk->flags = 0;
+	chunk->slot = 1;
 
 	if(pager->other_chunks == NULL) {
 		pager->other_chunks = malloc(sizeof(struct chunk_list));
