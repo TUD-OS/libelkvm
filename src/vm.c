@@ -2,6 +2,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <string.h>
 #include <stropts.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -100,5 +101,9 @@ int kvm_cleanup(struct kvm_opts *opts) {
 }
 
 int kvm_vm_map_chunk(struct kvm_vm *vm, struct kvm_userspace_memory_region *chunk) {
-	return -1;
+	errno = 0;
+	long sz = sysconf(_SC_PAGESIZE);
+	errno = 0;
+	int err = ioctl(vm->fd, KVM_SET_USER_MEMORY_REGION, chunk);
+	return err;
 }
