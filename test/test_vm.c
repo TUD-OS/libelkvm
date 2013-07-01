@@ -101,6 +101,8 @@ START_TEST(test_kvm_vm_map_system_chunk_valid) {
 	ck_assert_int_eq(err, 0);
 	pager.system_chunk.userspace_addr = (__u64)ram_p;
 	pager.system_chunk.guest_phys_addr = 0x0;
+	pager.system_chunk.flags = 0;
+	pager.system_chunk.slot = 0;
 
 	err = kvm_vm_map_chunk(&the_vm, &pager.system_chunk);
 	ck_assert_int_eq(err, 0);
@@ -115,7 +117,10 @@ START_TEST(test_kvm_vm_map_system_chunk_invalid) {
 	pager.system_chunk.memory_size = 0x400000;
 	pager.system_chunk.userspace_addr = (__u64)malloc(pager.system_chunk.memory_size);
 	ck_assert_uint_ne(pager.system_chunk.userspace_addr, 0);
+	ck_assert_uint_ne((pager.system_chunk.userspace_addr & ~0xFFF), 0);
 	pager.system_chunk.guest_phys_addr = 0x0;
+	pager.system_chunk.flags = 0;
+	pager.system_chunk.slot = 0;
 
 	int err = kvm_vm_map_chunk(&the_vm, &pager.system_chunk);
 	ck_assert_int_ne(err, 0);
@@ -127,11 +132,14 @@ START_TEST(test_kvm_vm_map_system_chunk_multiple) {
 	the_vm.fd = vm_fd;
 
 	struct kvm_pager pager;
+	void *ram_p;
 	pager.system_chunk.memory_size = 0x400000;
-	int err = posix_memalign((void *)pager.system_chunk.userspace_addr, 0x1000,
-			pager.system_chunk.memory_size);
+	int err = posix_memalign(&ram_p, 0x1000, pager.system_chunk.memory_size);
 	ck_assert_int_eq(err, 0);
+	pager.system_chunk.userspace_addr = (__u64)ram_p;
 	pager.system_chunk.guest_phys_addr = 0x0;
+	pager.system_chunk.flags = 0;
+	pager.system_chunk.slot = 0;
 
 	err = kvm_vm_map_chunk(&the_vm, &pager.system_chunk);
 	ck_assert_int_eq(err, 0);
@@ -140,13 +148,16 @@ START_TEST(test_kvm_vm_map_system_chunk_multiple) {
 	ck_assert_ptr_ne(pager.other_chunks, NULL);
 	pager.other_chunks->next = NULL;
 	pager.other_chunks->chunk = malloc(sizeof(struct kvm_userspace_memory_region));
-	ck_assert_ptr_ne(pager.other_chunks->next, NULL);
+	ck_assert_ptr_ne(pager.other_chunks->chunk, NULL);
 
 	struct kvm_userspace_memory_region *chunk = pager.other_chunks->chunk;
 	chunk->memory_size = 0x1600000;
-	err = posix_memalign((void *)chunk->userspace_addr, 0x1000, chunk->memory_size);
+	err = posix_memalign(&ram_p, 0x1000, chunk->memory_size);
 	ck_assert_int_eq(err, 0);
+	chunk->userspace_addr = (__u64)ram_p;
 	chunk->guest_phys_addr = 0x400000;
+	chunk->flags = 0;
+	chunk->slot = 1;
 
 	err = kvm_vm_map_chunk(&the_vm, chunk);
 	ck_assert_int_eq(err, 0);
