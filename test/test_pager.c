@@ -174,8 +174,31 @@ START_TEST(test_kvm_pager_is_invalid_guest_base) {
 }
 END_TEST
 
+START_TEST(test_kvm_pager_append_mem_chunk) {
+	struct kvm_pager pager;
+	pager.other_chunks = NULL;
+
+	struct kvm_userspace_memory_region r0;
+	int count = kvm_pager_append_mem_chunk(&pager, &r0);
+	ck_assert_int_eq(count, 0);
+
+	struct kvm_userspace_memory_region r1;
+	count = kvm_pager_append_mem_chunk(&pager, &r1);
+	ck_assert_int_eq(count, 1);
+
+	struct kvm_userspace_memory_region r2;
+	count = kvm_pager_append_mem_chunk(&pager, &r2);
+	ck_assert_int_eq(count, 2);
+
+}
+END_TEST
+
 Suite *pager_suite() {
 	Suite *s = suite_create("Pager");
+
+	TCase *tc_append_mem_chunk = tcase_create("Append Mem Chunk");
+	tcase_add_test(tc_append_mem_chunk, test_kvm_pager_append_mem_chunk);
+	suite_add_tcase(s, tc_append_mem_chunk);
 
 	TCase *tc_guest_base = tcase_create("Guest Base");
 	tcase_add_test(tc_guest_base, test_kvm_pager_is_invalid_guest_base);
