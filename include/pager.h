@@ -3,8 +3,6 @@
 #include <inttypes.h>
 #include <stdint.h>
 
-#include <mem_chunk.h>
-
 #define PAGER_MODE_X86     1
 #define PAGER_MODE_X86_E   2
 #define PAGER_MODE_X86_64  3
@@ -13,11 +11,16 @@
 
 struct kvm_vm;
 
+struct chunk_list {
+	struct chunk_list *next;
+	struct kvm_userspace_memory_region *chunk;
+};
+
 struct kvm_pager {
 	uint64_t guest_top_pm;
 	int mode;
 	struct kvm_vm *vm;
-	struct mem_chunk system_chunk;
+	struct kvm_userspace_memory_region system_chunk;
 	struct chunk_list *other_chunks;
 	void *host_pml4_p;
 	void *host_next_free_tbl_p;

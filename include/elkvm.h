@@ -48,3 +48,8 @@ int kvm_vm_vcpu_count(struct kvm_vm *);
 */
 int kvm_vm_destroy(struct kvm_vm *);
 
+/*
+ * Maps a new mem chunk into the VM
+*/
+int kvm_vm_map_chunk(struct kvm_vm *, struct kvm_userspace_memory_region *);
+

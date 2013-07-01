@@ -33,7 +33,8 @@ START_TEST(test_kvm_vm_create) {
 
 	struct kvm_opts uninitialized_opts;
 	uninitialized_opts.fd = 0;
-	int err = kvm_vm_create(&uninitialized_opts, &the_vm, VM_MODE_X86_64, cpus, memory);
+	int err = kvm_vm_create(&uninitialized_opts, &the_vm, VM_MODE_X86_64, cpus, 
+			memory);
 	ck_assert_int_eq(err, -EIO);
 	ck_assert_int_eq(the_vm.fd, 0);
 	ck_assert_ptr_eq(the_vm.vcpus, NULL);
@@ -94,11 +95,11 @@ START_TEST(test_kvm_vm_map_system_chunk_valid) {
 	the_vm.fd = vm_fd;
 
 	struct kvm_pager pager;
-	pager.system_chunk.size = 0x400000;
-	int err = posix_memalign(pager.system_chunk.host_base_p, 0x1000, 
-			pager.system_chunk.size);
+	pager.system_chunk.memory_size = 0x400000;
+	int err = posix_memalign((void *)pager.system_chunk.userspace_addr, 0x1000, 
+			pager.system_chunk.memory_size);
 	ck_assert_int_eq(err, 0);
-	pager.system_chunk.guest_base = 0x0;
+	pager.system_chunk.guest_phys_addr = 0x0;
 
 	err = kvm_vm_map_chunk(&the_vm, &pager.system_chunk);
 	ck_assert_int_eq(err, 0);
@@ -110,10 +111,10 @@ START_TEST(test_kvm_vm_map_system_chunk_invalid) {
 	the_vm.fd = vm_fd;
 
 	struct kvm_pager pager;
-	pager.system_chunk.size = 0x400000;
-	pager.system_chunk.host_base_p = malloc(pager.system_chunk.size);
-	ck_assert_ptr_ne(pager.system_chunk.host_base_p, NULL);
-	pager.system_chunk.guest_base = 0x0;
+	pager.system_chunk.memory_size = 0x400000;
+	pager.system_chunk.userspace_addr = (__u64)malloc(pager.system_chunk.memory_size);
+	ck_assert_uint_ne(pager.system_chunk.userspace_addr, 0);
+	pager.system_chunk.guest_phys_addr = 0x0;
 
 	int err = kvm_vm_map_chunk(&the_vm, &pager.system_chunk);
 	ck_assert_int_ne(err, 0);
@@ -125,11 +126,11 @@ START_TEST(test_kvm_vm_map_system_chunk_multiple) {
 	the_vm.fd = vm_fd;
 
 	struct kvm_pager pager;
-	pager.system_chunk.size = 0x400000;
-	int err = posix_memalign(pager.system_chunk.host_base_p, 0x1000,
-			pager.system_chunk.size);
+	pager.system_chunk.memory_size = 0x400000;
+	int err = posix_memalign((void *)pager.system_chunk.userspace_addr, 0x1000,
+			pager.system_chunk.memory_size);
 	ck_assert_int_eq(err, 0);
-	pager.system_chunk.guest_base = 0x0;
+	pager.system_chunk.guest_phys_addr = 0x0;
 
 	err = kvm_vm_map_chunk(&the_vm, &pager.system_chunk);
 	ck_assert_int_eq(err, 0);
@@ -137,14 +138,14 @@ START_TEST(test_kvm_vm_map_system_chunk_multiple) {
 	pager.other_chunks = malloc(sizeof(struct chunk_list));
 	ck_assert_ptr_ne(pager.other_chunks, NULL);
 	pager.other_chunks->next = NULL;
-	pager.other_chunks->chunk = malloc(sizeof(struct mem_chunk));
+	pager.other_chunks->chunk = malloc(sizeof(struct kvm_userspace_memory_region));
 	ck_assert_ptr_ne(pager.other_chunks->next, NULL);
 
-	struct mem_chunk *chunk = pager.other_chunks->chunk;
-	chunk->size = 0x1600000;
-	err = posix_memalign(chunk->host_base_p, 0x1000, chunk->size);
+	struct kvm_userspace_memory_region *chunk = pager.other_chunks->chunk;
+	chunk->memory_size = 0x1600000;
+	err = posix_memalign((void *)chunk->userspace_addr, 0x1000, chunk->memory_size);
 	ck_assert_int_eq(err, 0);
-	chunk->guest_base = 0x400000;
+	chunk->guest_phys_addr = 0x400000;
 
 	err = kvm_vm_map_chunk(&the_vm, chunk);
 	ck_assert_int_eq(err, 0);

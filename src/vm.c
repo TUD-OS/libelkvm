@@ -99,3 +99,6 @@ int kvm_cleanup(struct kvm_opts *opts) {
 	return 0;
 }
 
+int kvm_vm_map_chunk(struct kvm_vm *vm, struct kvm_userspace_memory_region *chunk) {
+	return -1;
+}
