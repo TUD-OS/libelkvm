@@ -2,6 +2,7 @@
 #include <fcntl.h>
 #include <gelf.h>
 #include <libelf.h>
+#include <stdbool.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -87,25 +88,24 @@ int elfloader_load_program_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
 		GElf_Phdr phdr;
 		gelf_getphdr(bin->e, i, &phdr);
 
-		switch(pdhr.p_type) {
+		switch(phdr.p_type) {
 			/* ignore these headers for now */
 			case PT_NULL:
 			case PT_DYNAMIC:
-			case PT_INTERP:
 			case PT_NOTE:
 			case PT_SHLIB:
 			case PT_LOPROC:
 			case PT_HIPROC:
 				continue;
+			case PT_INTERP:
+				pt_interp_forbidden = true;
+				continue;
 			case PT_LOAD:
 				pt_interp_forbidden = true;
 				pt_phdr_forbidden = true;
 				break;
-			case PT_INTERP:
-				pt_interp_forbidden = true;
-				break;
 			case PT_PHDR:
-				pt_pdhr_forbidden = true;
+				pt_phdr_forbidden = true;
 				break;
 		}
 
@@ -114,6 +114,11 @@ int elfloader_load_program_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
 		}
 
 		if(phdr.p_type == PT_PHDR && pt_phdr_forbidden) {
+			return -1;
+		}
+
+		/* a program header's memsize may be large than or equal to its filesize */
+		if(phdr.p_filesz > phdr.p_memsz) {
 			return -1;
 		}
 
@@ -150,6 +155,11 @@ int elfloader_load_program_header(struct kvm_vm *vm, struct Elf_binary *bin,
 			}
 			buf += bytes;
 		}
+
+		/*
+		 * if the header's memsize is larger than its filesize we are supposed to
+		 * fill the rest with 0s
+		*/
 		int bytes_diff = phdr.p_memsz - phdr.p_filesz;
 		if(bytes_diff > 0) {
 			memset(buf, 0, bytes_diff);
