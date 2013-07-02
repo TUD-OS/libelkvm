@@ -162,3 +162,25 @@ int kvm_pager_is_invalid_guest_base(struct kvm_pager *pager, uint64_t guest_base
 
 	return 0;
 }
+
+struct kvm_userspace_memory_region *
+	kvm_pager_find_region_for_host_p(struct kvm_pager *pager, void *host_mem_p) {
+		if(((void *)pager->system_chunk.userspace_addr <= host_mem_p) &&
+				(host_mem_p < ((void *)pager->system_chunk.userspace_addr + 
+					pager->system_chunk.memory_size))) {
+			return &pager->system_chunk;
+		}
+
+		struct chunk_list *cl = pager->other_chunks;
+		while(cl != NULL) {
+			struct kvm_userspace_memory_region *region = cl->chunk;
+			if((void *)region->userspace_addr <= host_mem_p &&
+					host_mem_p < ((void *)region->userspace_addr + region->memory_size)) {
+				return region;
+			}
+			cl = cl->next;
+		}
+
+		return NULL;
+	}
+

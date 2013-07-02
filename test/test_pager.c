@@ -193,8 +193,103 @@ START_TEST(test_kvm_pager_append_mem_chunk) {
 }
 END_TEST
 
+START_TEST(test_kvm_pager_find_region_for_host_p_nomem) {
+	struct kvm_pager pager;
+	pager.other_chunks = NULL;
+	pager.system_chunk.userspace_addr = 0;
+	pager.system_chunk.memory_size = 0;
+
+	void *p = (void *)0x1000;
+	struct kvm_userspace_memory_region *region = 
+		kvm_pager_find_region_for_host_p(&pager, p);
+	ck_assert_ptr_eq(region, NULL);
+}
+END_TEST
+
+START_TEST(test_kvm_pager_find_region_for_host_p_system) {
+	struct kvm_pager pager;
+	pager.other_chunks = NULL;
+	pager.system_chunk.userspace_addr = 0;
+	pager.system_chunk.memory_size = 0x400000;
+
+	void *p = (void *)0x1000;
+	struct kvm_userspace_memory_region *region = 
+		kvm_pager_find_region_for_host_p(&pager, p);
+	ck_assert_ptr_eq(region, &pager.system_chunk);
+}
+END_TEST
+
+START_TEST(test_kvm_pager_find_region_for_host_p_user) {
+	struct kvm_pager pager;
+	pager.system_chunk.userspace_addr = 0;
+	pager.system_chunk.memory_size = 0x400000;
+
+	pager.other_chunks = malloc(sizeof(struct chunk_list));
+	pager.other_chunks->chunk = malloc(sizeof(struct kvm_userspace_memory_region));
+	pager.other_chunks->next = NULL;
+
+	struct kvm_userspace_memory_region *chunk = pager.other_chunks->chunk;
+	chunk->userspace_addr = 0x400000;
+	chunk->memory_size = 0x100000;
+
+	void *p = (void *)0x427500;
+	struct kvm_userspace_memory_region *region = 
+		kvm_pager_find_region_for_host_p(&pager, p);
+	ck_assert_ptr_eq(region, pager.other_chunks->chunk);
+}
+END_TEST
+
+START_TEST(test_kvm_pager_find_region_for_host_p_system_edge) {
+	struct kvm_pager pager;
+	pager.other_chunks = NULL;
+	pager.system_chunk.userspace_addr = 0;
+	pager.system_chunk.memory_size = 0x400000;
+
+	void *p = (void *)0x0;
+	struct kvm_userspace_memory_region *region = 
+		kvm_pager_find_region_for_host_p(&pager, p);
+	ck_assert_ptr_eq(region, &pager.system_chunk);
+
+	p = (void *)0x400000;
+	region = kvm_pager_find_region_for_host_p(&pager, p);
+	ck_assert_ptr_eq(region, NULL);
+}
+END_TEST
+
+START_TEST(test_kvm_pager_find_region_for_host_p_user_edge) {
+	struct kvm_pager pager;
+	pager.system_chunk.userspace_addr = 0;
+	pager.system_chunk.memory_size = 0x400000;
+
+	pager.other_chunks = malloc(sizeof(struct chunk_list));
+	pager.other_chunks->chunk = malloc(sizeof(struct kvm_userspace_memory_region));
+	pager.other_chunks->next = NULL;
+
+	struct kvm_userspace_memory_region *chunk = pager.other_chunks->chunk;
+	chunk->userspace_addr = 0x400000;
+	chunk->memory_size = 0x100000;
+
+	void *p = (void *)0x400000;
+	struct kvm_userspace_memory_region *region = 
+		kvm_pager_find_region_for_host_p(&pager, p);
+	ck_assert_ptr_eq(region, pager.other_chunks->chunk);
+
+	p = (void *)0x500000;
+	region = kvm_pager_find_region_for_host_p(&pager, p);
+	ck_assert_ptr_eq(region, NULL);
+}
+END_TEST
+
 Suite *pager_suite() {
 	Suite *s = suite_create("Pager");
+
+	TCase *tc_find_region = tcase_create("Find Memory Region");
+	tcase_add_test(tc_find_region, test_kvm_pager_find_region_for_host_p_nomem);
+	tcase_add_test(tc_find_region, test_kvm_pager_find_region_for_host_p_system);
+	tcase_add_test(tc_find_region, test_kvm_pager_find_region_for_host_p_user);
+	tcase_add_test(tc_find_region, test_kvm_pager_find_region_for_host_p_system_edge);
+	tcase_add_test(tc_find_region, test_kvm_pager_find_region_for_host_p_user_edge);
+	suite_add_tcase(s, tc_find_region);
 
 	TCase *tc_append_mem_chunk = tcase_create("Append Mem Chunk");
 	tcase_add_test(tc_append_mem_chunk, test_kvm_pager_append_mem_chunk);

@@ -59,6 +59,6 @@ int kvm_pager_create_mapping(struct kvm_pager *, void *host_mem_p, uint64_t gues
 /*
  * \brief Find the memory region for a host address
 */
-struct kvm_userspace_memory_region
-	kvm_pager_find_region_for_host_p(struct kvm_pager *, void *host_mem_p);
+struct kvm_userspace_memory_region *
+	kvm_pager_find_region_for_host_p(struct kvm_pager *, void *);
 
