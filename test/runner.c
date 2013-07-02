@@ -7,11 +7,14 @@
 
 extern Suite *vcpu_suite();
 
+extern Suite *elfloader_suite();
+
 int main() {
 	int number_failed = 0;
 
 	Suite *s = vcpu_suite();
 	SRunner *sr = srunner_create(s);
+	srunner_add_suite(sr, elfloader_suite());
 	srunner_add_suite(sr, vm_suite());
 	srunner_add_suite(sr, kvm_suite());
 	srunner_add_suite(sr, pager_suite());
