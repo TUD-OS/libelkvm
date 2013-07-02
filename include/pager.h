@@ -51,3 +51,14 @@ int kvm_pager_is_invalid_guest_base(struct kvm_pager *, uint64_t);
 */
 int kvm_pager_append_mem_chunk(struct kvm_pager *, struct kvm_userspace_memory_region *);
 
+/*
+ * \brief Create a Mapping in the Page Tables for a physical address
+*/
+int kvm_pager_create_mapping(struct kvm_pager *, void *host_mem_p, uint64_t guest_virtual);
+
+/*
+ * \brief Find the memory region for a host address
+*/
+struct kvm_userspace_memory_region
+	kvm_pager_find_region_for_host_p(struct kvm_pager *, void *host_mem_p);
+
