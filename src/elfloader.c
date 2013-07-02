@@ -130,7 +130,7 @@ int elfloader_load_program_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
 		int pages = (phdr.p_memsz / 0x1000) + 1;
 		for(int page = 0; page < pages; page++) {
 			void *host_physical_p = buf + (page * 0x1000);
-			err = kvm_pager_create_mapping(vm->pager, host_physical_p, phdr.p_vaddr);
+			err = kvm_pager_create_mapping(&vm->pager, host_physical_p, phdr.p_vaddr);
 			if(err) {
 				return err;
 			}
