@@ -62,3 +62,46 @@ int kvm_pager_create_mapping(struct kvm_pager *, void *host_mem_p, uint64_t gues
 struct kvm_userspace_memory_region *
 	kvm_pager_find_region_for_host_p(struct kvm_pager *, void *);
 
+/*
+ * \brief Find the host pointer for a guest virtual address. Basically do a
+ * page table walk.
+*/
+void *kvm_pager_get_host_p(struct kvm_pager *, uint64_t);
+
+/*
+ * \brief find the next pdpt, pd or pt
+*/
+uint64_t *kvm_pager_find_next_table(struct kvm_pager *, uint64_t, uint64_t *);
+
+/*
+ * \brief find an entry in a pml4, pdpt, pd or pt
+ * Args: pager, host table base pointer, guest virtual address, offsets
+*/
+uint64_t *kvm_pager_find_table_entry(struct kvm_pager *, uint64_t *, uint64_t, 
+		int, int);
+
+/*
+ * \brief Creates a new entry in a pml4, pdpt, pd or pt
+ * Args: pager, entry, guest virtual address, offsets in guest virtual
+*/
+int kvm_pager_create_entry(struct kvm_pager *, uint64_t *, uint64_t, int, int);
+
+/*
+ * \brief Translate a host address into a guest physical address
+*/
+inline uint64_t host_to_guest_physical(struct kvm_pager *pager, void *host_p) {
+	struct kvm_userspace_memory_region *region = 
+		kvm_pager_find_region_for_host_p(pager, host_p);
+	if(region == NULL) {
+		return 0;
+	}
+	return (uint64_t)(host_p - region->userspace_addr + region->guest_phys_addr);
+}
+
+/*
+ * \brief Check if an entry exists in a pml4, pdpt, pd or pt
+*/
+inline int entry_exists(uint64_t *e) {
+	return *e & 0x1;
+}
+

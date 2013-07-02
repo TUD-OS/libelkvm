@@ -184,3 +184,59 @@ struct kvm_userspace_memory_region *
 		return NULL;
 	}
 
+int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
+		uint64_t guest_virtual) {
+	int err;
+
+	/* sanity checks on the offset */
+	if((uint64_t)host_mem_p & 0xFFF != guest_virtual & 0xFFF) {
+		return -1;
+	}
+
+	uint64_t guest_physical = host_to_guest_physical(pager, host_mem_p);
+
+	/* pml4 offset is in bits 39 - 47 */
+	uint64_t *pml4_entry = kvm_pager_find_table_entry(pager, pager->host_pml4_p, 
+			guest_virtual, 39, 47);
+	if(!entry_exists(pml4_entry)) {
+		err = kvm_pager_create_entry(pager, pml4_entry, guest_virtual, 39, 47);
+	}
+
+	uint64_t *host_pdpt_base_p = kvm_pager_find_next_table(pager, guest_virtual, 
+			pml4_entry);
+	/* pdpt offset is in bits 30-38 */
+	uint64_t *pdpt_entry = kvm_pager_find_table_entry(pager, host_pdpt_base_p, 
+			guest_virtual, 30, 38);
+	if(!entry_exists(pdpt_entry)) {
+		err = kvm_pager_create_entry(pager, pdpt_entry, guest_virtual, 30, 38);
+	}
+
+	uint64_t *host_pd_base_p = kvm_pager_find_next_table(pager, guest_virtual,
+			pdpt_entry);
+	/* pd offset is in bits 21 - 29 */
+	uint64_t *pd_entry = kvm_pager_find_table_entry(pager, host_pd_base_p,
+			guest_virtual, 21, 29);
+	if(!entry_exists(pd_entry)) {
+		err = kvm_pager_create_entry(pager, pd_entry, guest_virtual, 21, 29);
+	}
+
+	uint64_t *host_pt_base_p = kvm_pager_find_next_table(pager, guest_virtual,
+			pd_entry);
+	/* pt offset is in bits 12 - 20 */
+	uint64_t *pt_entry = kvm_pager_find_table_entry(pager, host_pt_base_p,
+			guest_virtual, 12, 20);
+	/* do NOT overwrite existing page table entries! */
+	if(entry_exists(pt_entry)) {
+		return -1;
+	}
+
+	*pt_entry = (guest_physical >> 12) << 12;
+	*pt_entry |= 0x1;
+	
+	return 0;
+}
+
+void *kvm_pager_get_host_p(struct kvm_pager *pager, uint64_t guest_virtual) {
+	return NULL;
+}
+
