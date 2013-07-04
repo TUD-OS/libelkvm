@@ -303,7 +303,7 @@ START_TEST(test_kvm_pager_create_valid_mappings) {
 	pager.system_chunk.guest_phys_addr = 0x0;
 	pager.other_chunks = NULL;
 
-	void *p = (void *)0x1000;
+	void *p = (void *)0x1000 + pager.system_chunk.userspace_addr;
 	uint64_t guest_virtual_addr = 0x600000;
 	err = kvm_pager_create_mapping(&pager, p, guest_virtual_addr);
 	ck_assert_int_eq(err, 0);
@@ -311,7 +311,7 @@ START_TEST(test_kvm_pager_create_valid_mappings) {
 	void *host_resolved_p = kvm_pager_get_host_p(&pager, guest_virtual_addr);
 	ck_assert_ptr_eq(p, host_resolved_p);
 
-	p = (void *)0xe10;
+	p = (void *)0xe10 + pager.system_chunk.userspace_addr;
 	guest_virtual_addr = 0x400e10;
 	err = kvm_pager_create_mapping(&pager, p, guest_virtual_addr);
 	ck_assert_int_eq(err, 0);
@@ -319,7 +319,7 @@ START_TEST(test_kvm_pager_create_valid_mappings) {
 	host_resolved_p = kvm_pager_get_host_p(&pager, guest_virtual_addr);
 	ck_assert_ptr_eq(p, host_resolved_p);
 
-	p = (void *)0x40;
+	p = (void *)0x40 + pager.system_chunk.userspace_addr;
 	guest_virtual_addr = 0x400040;
 	err = kvm_pager_create_mapping(&pager, p, guest_virtual_addr);
 	ck_assert_int_eq(err, 0);
@@ -342,12 +342,12 @@ START_TEST(test_kvm_pager_create_same_mapping) {
 	pager.system_chunk.guest_phys_addr = 0x0;
 	pager.other_chunks = NULL;
 
-	void *p = (void *)0x1000;
+	void *p = (void *)0x1000 + pager.system_chunk.userspace_addr;
 	uint64_t guest_virtual_addr = 0x600000;
 	err = kvm_pager_create_mapping(&pager, p, guest_virtual_addr);
 	ck_assert_int_eq(err, 0);
 
-	p = (void *)0x2000;
+	p = (void *)0x2000 + pager.system_chunk.userspace_addr;
 	err = kvm_pager_create_mapping(&pager, p, guest_virtual_addr);
 	ck_assert_int_eq(err, -1);
 
