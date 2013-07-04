@@ -245,7 +245,25 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 }
 
 void *kvm_pager_get_host_p(struct kvm_pager *pager, uint64_t guest_virtual) {
-	return NULL;
+	uint64_t *table_base = (uint64_t *)pager->host_pml4_p;
+	uint64_t *entry = NULL;
+	int addr_low = 39;
+	int addr_high = 47;
+
+	for(int i = 0; i < 4; i++) {
+		entry = kvm_pager_find_table_entry(pager, table_base,
+				guest_virtual, addr_low, addr_high);
+		addr_low -= 9;
+		addr_high -= 9;
+		if(!entry_exists(entry)) {
+			return NULL;
+		}
+		if(i < 3) {
+			table_base = kvm_pager_find_next_table(pager, entry);
+		}
+	}
+	uint64_t guest_physical = (*entry & ~0xFFF) | (guest_virtual & 0xFFF);
+	return (void *)(guest_physical + pager->system_chunk.userspace_addr);
 }
 
 uint64_t *kvm_pager_find_next_table(struct kvm_pager *pager,
