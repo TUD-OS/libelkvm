@@ -379,9 +379,9 @@ START_TEST(test_kvm_pager_find_table_entry) {
 	pager.host_next_free_tbl_p = pager.host_pml4_p + 0x1000;
 	memset(pager.host_pml4_p, 0, 0x2000);
 
-	/* this should result into an offset of 5 into the pml4 */
+	/* this should result in an offset of 2 into the pml4 */
 	uint64_t guest_virtual = 0x14000400400;
-	uint64_t *expected_entry = pager.host_pml4_p + (5 * sizeof(uint64_t));
+	uint64_t *expected_entry = pager.host_pml4_p + (2 * sizeof(uint64_t));
 	*expected_entry = 0x1001;
 
 	uint64_t *entry = kvm_pager_find_table_entry(&pager, pager.host_pml4_p, guest_virtual, 39, 47);
