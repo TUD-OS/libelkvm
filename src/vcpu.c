@@ -1,5 +1,7 @@
 #include <errno.h>
+#include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stropts.h>
@@ -213,8 +215,97 @@ int kvm_vcpu_singlestep(struct kvm_vcpu *vcpu) {
 }
 
 int kvm_vcpu_run(struct kvm_vcpu *vcpu) {
-	int err = ioctl(vcpu->vcpu_fd, KVM_RUN, 0); 
+	int err = ioctl(vcpu->fd, KVM_RUN, 0); 
 	if (err < 0 && (errno != EINTR && errno != EAGAIN)) {
-		return -1
+		return -1;
 	}	
+
+	return 0;
+}
+
+int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
+	int is_running = 1;
+	while(is_running) {
+		int err = kvm_vcpu_run(vcpu);
+		if(err) {
+			break;
+		}
+
+		switch(vcpu->run_struct->exit_reason) {
+			case KVM_EXIT_FAIL_ENTRY:
+				;
+				uint64_t code = vcpu->run_struct->fail_entry.hardware_entry_failure_reason;
+				fprintf(stderr, "KVM: entry failed, hardware error 0x%lx\n",
+					code);
+				if (host_supports_vmx() && code == VMX_INVALID_GUEST_STATE) {
+					fprintf(stderr,
+						"\nIf you're running a guest on an Intel machine without "
+						    "unrestricted mode\n"
+						"support, the failure can be most likely due to the guest "
+						    "entering an invalid\n"
+						"state for Intel VT. For example, the guest maybe running "
+						    "in big real mode\n"
+						"which is not supported on less recent Intel processors."
+						    "\n\n");
+				}
+				is_running = 0;
+				break;
+			case KVM_EXIT_DEBUG:
+				kvm_vcpu_dump_regs(vcpu);
+				kvm_vcpu_dump_code(vcpu);
+				break;
+			case KVM_EXIT_SHUTDOWN:
+				fprintf(stderr, "KVM VCPU did shutdown\n");
+				is_running = 0;
+				break;
+		}
+	}
+	return 0;
+}
+
+bool host_supports_vmx(void) {
+    uint32_t ecx, unused;
+
+    host_cpuid(1, 0, &unused, &unused, &ecx, &unused);
+    return ecx & CPUID_EXT_VMX;
+}
+
+void host_cpuid(uint32_t function, uint32_t count,
+                uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx)
+{
+    uint32_t vec[4];
+
+#ifdef __x86_64__
+    asm volatile("cpuid"
+                 : "=a"(vec[0]), "=b"(vec[1]),
+                   "=c"(vec[2]), "=d"(vec[3])
+                 : "0"(function), "c"(count) : "cc");
+#else
+    asm volatile("pusha \n\t"
+                 "cpuid \n\t"
+                 "mov %%eax, 0(%2) \n\t"
+                 "mov %%ebx, 4(%2) \n\t"
+                 "mov %%ecx, 8(%2) \n\t"
+                 "mov %%edx, 12(%2) \n\t"
+                 "popa"
+                 : : "a"(function), "c"(count), "S"(vec)
+                 : "memory", "cc");
+#endif
+
+    if (eax)
+        *eax = vec[0];
+    if (ebx)
+        *ebx = vec[1];
+    if (ecx)
+        *ecx = vec[2];
+    if (edx)
+        *edx = vec[3];
+}
+
+void kvm_vcpu_dump_regs(struct kvm_vcpu *vcpu) {
+	return;
+}
+
+void kvm_vcpu_dump_code(struct kvm_vcpu *vcpu) {
+	return;
 }

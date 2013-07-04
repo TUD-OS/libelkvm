@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <stropts.h>
 
-#include "test_vcpu.h"
-
 #include <elkvm.h>
 #include <vcpu.h>
 
@@ -196,6 +194,11 @@ START_TEST(test_kvm_vcpu_add_tail) {
 }
 END_TEST
 
+START_TEST(test_kvm_vcpu_run) {
+	ck_abort_msg("Test not implemented");
+}
+END_TEST
+
 Suite *vcpu_suite() {
 	Suite *s = suite_create("VCPU");
 
@@ -222,6 +225,11 @@ Suite *vcpu_suite() {
 	tcase_add_checked_fixture(tc_kvm_vcpu_set_regs, setup, teardown);
 	tcase_add_test(tc_kvm_vcpu_set_regs, test_kvm_vcpu_set_regs);
 	suite_add_tcase(s, tc_kvm_vcpu_set_regs);
+
+	TCase *tc_kvm_vcpu_run = tcase_create("kvm_vcpu_run");
+	tcase_add_checked_fixture(tc_kvm_vcpu_run, setup, teardown);
+	tcase_add_test(tc_kvm_vcpu_run, test_kvm_vcpu_run);
+	suite_add_tcase(s, tc_kvm_vcpu_run);
 
 	return s;
 }

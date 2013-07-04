@@ -1,6 +1,7 @@
 #pragma once
 
 #include <linux/kvm.h>
+#include <stdbool.h>
 
 #include <elkvm.h>
 
@@ -12,11 +13,14 @@
 #define VCPU_CR4_FLAG_PAE 0x20
 
 #define VCPU_EFER_FLAG_LME 0x100
+#define VMX_INVALID_GUEST_STATE 0x80000021
+#define CPUID_EXT_VMX      (1 << 5)
 
 struct kvm_vcpu {
 	int fd;
 	struct kvm_regs regs;
 	struct kvm_sregs sregs;
+	struct kvm_run *run_struct;
 };
 
 struct vcpu_list {
@@ -73,3 +77,17 @@ int kvm_vcpu_run(struct kvm_vcpu *);
  * \brief Set singlestepping for the VCPU
 */
 int kvm_vcpu_singlestep(struct kvm_vcpu *);
+
+/*
+ * \brief Returns true if the host supports vmx
+*/
+bool host_supports_vmx(void);
+
+/*
+ * \brief Get the host CPUID
+*/
+void host_cpuid(uint32_t, uint32_t, uint32_t *, uint32_t *, uint32_t *, uint32_t *);
+
+void kvm_vcpu_dump_regs(struct kvm_vcpu *);
+
+void kvm_vcpu_dump_code(struct kvm_vcpu *);

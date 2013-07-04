@@ -3,8 +3,9 @@
 
 #include "test_kvm.h"
 #include "test_pager.h"
-#include "test_vcpu.h"
 #include "test_vm.h"
+
+extern Suite *vcpu_suite();
 
 int main() {
 	int number_failed = 0;
