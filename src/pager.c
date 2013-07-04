@@ -259,8 +259,15 @@ uint64_t *kvm_pager_find_table_entry(struct kvm_pager *pager,
 	return entry;
 }
 
-int kvm_pager_create_entry(struct kvm_pager *pager, uint64_t *host_entry_p, 
-		uint64_t guest_virtual, int off_low, int off_high) {
-	return -1;
+int kvm_pager_create_entry(struct kvm_pager *pager, uint64_t *host_entry_p) {
+
+	uint64_t guest_next_tbl = host_to_guest_physical(pager, pager->host_next_free_tbl_p);
+	memset(pager->host_next_free_tbl_p, 0, 0x1000);
+	pager->host_next_free_tbl_p += 0x1000;
+	*host_entry_p = guest_next_tbl & ~0xFFF;
+
+	/* mark the entry as present */
+	*host_entry_p |= 0x1;
+	return 0;
 }
 
