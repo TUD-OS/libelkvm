@@ -238,7 +238,7 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 		return 0;
 	}
 
-	*pt_entry = (guest_physical >> 12) << 12;
+	*pt_entry = guest_physical & ~0xFFF;
 	*pt_entry |= 0x1;
 	
 	return 0;
