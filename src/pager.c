@@ -240,6 +240,17 @@ void *kvm_pager_get_host_p(struct kvm_pager *pager, uint64_t guest_virtual) {
 	return NULL;
 }
 
+uint64_t *kvm_pager_find_next_table(struct kvm_pager *pager,
+		uint64_t *host_tbl_entry_p) {
+	if(!entry_exists(host_tbl_entry_p)) {
+		return NULL;
+	}
+
+	/* location of the next table is in bits 12 - 51 of the entry */
+	uint64_t guest_next_tbl = *host_tbl_entry_p & 0x000FFFFFFFFFF000;
+	return (uint64_t *)(pager->system_chunk.userspace_addr + guest_next_tbl);
+}
+
 uint64_t *kvm_pager_find_table_entry(struct kvm_pager *pager, 
 		uint64_t *host_tbl_base_p, uint64_t guest_virtual, int off_low, int off_high) {
 	uint64_t off = (guest_virtual << (63 - off_high)) >> ((63 - off_high) + off_low);
