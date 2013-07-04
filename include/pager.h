@@ -89,7 +89,7 @@ int kvm_pager_create_entry(struct kvm_pager *, uint64_t *, uint64_t, int, int);
 /*
  * \brief Translate a host address into a guest physical address
 */
-inline uint64_t host_to_guest_physical(struct kvm_pager *pager, void *host_p) {
+static inline uint64_t host_to_guest_physical(struct kvm_pager *pager, void *host_p) {
 	struct kvm_userspace_memory_region *region = 
 		kvm_pager_find_region_for_host_p(pager, host_p);
 	if(region == NULL) {
@@ -101,7 +101,7 @@ inline uint64_t host_to_guest_physical(struct kvm_pager *pager, void *host_p) {
 /*
  * \brief Check if an entry exists in a pml4, pdpt, pd or pt
 */
-inline int entry_exists(uint64_t *e) {
+static inline int entry_exists(uint64_t *e) {
 	return *e & 0x1;
 }
 
