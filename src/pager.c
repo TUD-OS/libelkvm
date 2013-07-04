@@ -232,7 +232,10 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 			guest_virtual, 12, 20);
 	/* do NOT overwrite existing page table entries! */
 	if(entry_exists(pt_entry)) {
-		return -1;
+		if((*pt_entry & ~0xFFF) != (guest_physical & ~0xFFF)) {
+			return -1;
+		}
+		return 0;
 	}
 
 	*pt_entry = (guest_physical >> 12) << 12;
