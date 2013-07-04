@@ -1,5 +1,6 @@
 #pragma once
 
+#include <assert.h>
 #include <inttypes.h>
 #include <stdint.h>
 
@@ -69,9 +70,9 @@ struct kvm_userspace_memory_region *
 void *kvm_pager_get_host_p(struct kvm_pager *, uint64_t);
 
 /*
- * \brief find the next pdpt, pd or pt
+ * \brief find the HOST ADDRESS of the next pdpt, pd or pt
 */
-uint64_t *kvm_pager_find_next_table(struct kvm_pager *, uint64_t, uint64_t *);
+uint64_t *kvm_pager_find_next_table(struct kvm_pager *, uint64_t *);
 
 /*
  * \brief find an entry in a pml4, pdpt, pd or pt
@@ -82,9 +83,9 @@ uint64_t *kvm_pager_find_table_entry(struct kvm_pager *, uint64_t *, uint64_t,
 
 /*
  * \brief Creates a new entry in a pml4, pdpt, pd or pt
- * Args: pager, entry, guest virtual address, offsets in guest virtual
+ * Args: pager, entry
 */
-int kvm_pager_create_entry(struct kvm_pager *, uint64_t *, uint64_t, int, int);
+int kvm_pager_create_entry(struct kvm_pager *, uint64_t *);
 
 /*
  * \brief Translate a host address into a guest physical address
@@ -95,6 +96,7 @@ static inline uint64_t host_to_guest_physical(struct kvm_pager *pager, void *hos
 	if(region == NULL) {
 		return 0;
 	}
+	assert(region->userspace_addr <= (uint64_t)host_p);
 	return (uint64_t)(host_p - region->userspace_addr + region->guest_phys_addr);
 }
 
