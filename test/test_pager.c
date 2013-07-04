@@ -294,12 +294,18 @@ END_TEST
 
 START_TEST(test_kvm_pager_create_valid_mappings) {
 	struct kvm_pager pager;
-	pager.system_chunk.userspace_addr = 0;
+	int err = posix_memalign(&pager.host_pml4_p, 0x1000, 0x400000);
+	ck_assert_int_eq(err, 0);
+	memset(pager.host_pml4_p, 0, 0x400000);
+	pager.system_chunk.userspace_addr = (uint64_t)pager.host_pml4_p;
+	pager.host_next_free_tbl_p = pager.host_pml4_p + 0x1000;
 	pager.system_chunk.memory_size = 0x400000;
+	pager.system_chunk.guest_phys_addr = 0x0;
+	pager.other_chunks = NULL;
 
 	void *p = (void *)0x1000;
 	uint64_t guest_virtual_addr = 0x600000;
-	int err = kvm_pager_create_mapping(&pager, p, guest_virtual_addr);
+	err = kvm_pager_create_mapping(&pager, p, guest_virtual_addr);
 	ck_assert_int_eq(err, 0);
 
 	void *host_resolved_p = kvm_pager_get_host_p(&pager, guest_virtual_addr);
@@ -320,53 +326,71 @@ START_TEST(test_kvm_pager_create_valid_mappings) {
 
 	host_resolved_p = kvm_pager_get_host_p(&pager, guest_virtual_addr);
 	ck_assert_ptr_eq(p, host_resolved_p);
+
+	free(pager.host_pml4_p);
 }
 END_TEST
 
 START_TEST(test_kvm_pager_create_same_mapping) {
 	struct kvm_pager pager;
-	pager.system_chunk.userspace_addr = 0;
+	int err = posix_memalign(&pager.host_pml4_p, 0x1000, 0x400000);
+	ck_assert_int_eq(err, 0);
+	memset(pager.host_pml4_p, 0, 0x400000);
+	pager.system_chunk.userspace_addr = (uint64_t)pager.host_pml4_p;
+	pager.host_next_free_tbl_p = pager.host_pml4_p + 0x1000;
 	pager.system_chunk.memory_size = 0x400000;
+	pager.system_chunk.guest_phys_addr = 0x0;
+	pager.other_chunks = NULL;
 
 	void *p = (void *)0x1000;
 	uint64_t guest_virtual_addr = 0x600000;
-	int err = kvm_pager_create_mapping(&pager, p, guest_virtual_addr);
+	err = kvm_pager_create_mapping(&pager, p, guest_virtual_addr);
 	ck_assert_int_eq(err, 0);
 
 	p = (void *)0x2000;
 	err = kvm_pager_create_mapping(&pager, p, guest_virtual_addr);
 	ck_assert_int_eq(err, -1);
+
+	free(pager.host_pml4_p);
 }
 END_TEST
 
 START_TEST(test_kvm_pager_create_mapping_invalid_offset) {
 	struct kvm_pager pager;
-	pager.system_chunk.userspace_addr = 0;
+	int err = posix_memalign(&pager.host_pml4_p, 0x1000, 0x400000);
+	ck_assert_int_eq(err, 0);
+	memset(pager.host_pml4_p, 0, 0x400000);
+	pager.system_chunk.userspace_addr = (uint64_t)pager.host_pml4_p;
+	pager.host_next_free_tbl_p = pager.host_pml4_p + 0x1000;
 	pager.system_chunk.memory_size = 0x400000;
+	pager.system_chunk.guest_phys_addr = 0x0;
+	pager.other_chunks = NULL;
 
 	void *p = (void *)0x1e10;
 	uint64_t guest_virtual_addr = 0x600000;
-	int err = kvm_pager_create_mapping(&pager, p, guest_virtual_addr);
+	err = kvm_pager_create_mapping(&pager, p, guest_virtual_addr);
 	ck_assert_int_eq(err, -1);
 
+	free(pager.host_pml4_p);
 }
 END_TEST
 
 START_TEST(test_kvm_pager_create_entry) {
 	struct kvm_pager pager;
-	pager.system_chunk.userspace_addr = 0;
-	pager.system_chunk.memory_size = 0x400000;
 	int err = posix_memalign(&pager.host_pml4_p, 0x1000, 0x2000);
 	ck_assert_int_eq(err, 0);
 	pager.host_next_free_tbl_p = pager.host_pml4_p + 0x1000;
 	memset(pager.host_pml4_p, 0, 0x2000);
 
-	uint64_t guest_virtual = 0x400400;
+	pager.system_chunk.guest_phys_addr = 0x0;
+	pager.system_chunk.userspace_addr = (uint64_t)pager.host_pml4_p;
+	pager.system_chunk.memory_size = 0x2000;
+
 	uint64_t *entry = pager.host_pml4_p + (5 * sizeof(uint64_t));
-	err = kvm_pager_create_entry(&pager, entry, guest_virtual, 39, 47);
+	err = kvm_pager_create_entry(&pager, entry);
 	ck_assert_int_eq(err, 0);
 	ck_assert_int_eq(*entry & 0x1, 1);
-	ck_assert_int_eq(*entry >> 12, (uint64_t)(pager.host_pml4_p + 0x1000) >> 12);
+	ck_assert_int_eq(*entry & ~0xFFF, 0x1000);
 
 	free(pager.host_pml4_p);
 }
@@ -392,8 +416,6 @@ END_TEST
 Suite *pager_suite() {
 	Suite *s = suite_create("Pager");
 
-	//TODO include newest tests!
-	
 	TCase *tc_create_entry = tcase_create("Create PT entry");
 	tcase_add_test(tc_create_entry, test_kvm_pager_create_entry);
 	suite_add_tcase(s, tc_create_entry);
