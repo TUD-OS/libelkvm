@@ -64,3 +64,12 @@ int kvm_vcpu_initialize_regs(struct kvm_vcpu *, int);
 */
 int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *);
 
+/*
+ * \brief Run the VCPU
+*/
+int kvm_vcpu_run(struct kvm_vcpu *);
+
+/*
+ * \brief Set singlestepping for the VCPU
+*/
+int kvm_vcpu_singlestep(struct kvm_vcpu *);

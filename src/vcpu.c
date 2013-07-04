@@ -204,3 +204,17 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 	return err;
 }
 
+int kvm_vcpu_singlestep(struct kvm_vcpu *vcpu) {
+	struct kvm_guest_debug debug = {
+		.control        = KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_SINGLESTEP,
+	};
+	
+	return ioctl(vcpu->fd, KVM_SET_GUEST_DEBUG, &debug);
+}
+
+int kvm_vcpu_run(struct kvm_vcpu *vcpu) {
+	int err = ioctl(vcpu->vcpu_fd, KVM_RUN, 0); 
+	if (err < 0 && (errno != EINTR && errno != EAGAIN)) {
+		return -1
+	}	
+}
