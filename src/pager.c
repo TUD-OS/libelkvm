@@ -240,3 +240,11 @@ void *kvm_pager_get_host_p(struct kvm_pager *pager, uint64_t guest_virtual) {
 	return NULL;
 }
 
+uint64_t *kvm_pager_find_table_entry(struct kvm_pager *pager, 
+		uint64_t *host_tbl_base_p, uint64_t guest_virtual, int off_low, int off_high) {
+	uint64_t off = (guest_virtual << (63 - off_high)) >> ((63 - off_high) + off_low);
+
+	uint64_t *entry = host_tbl_base_p + off;
+	return entry;
+}
+
