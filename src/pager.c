@@ -248,3 +248,8 @@ uint64_t *kvm_pager_find_table_entry(struct kvm_pager *pager,
 	return entry;
 }
 
+int kvm_pager_create_entry(struct kvm_pager *pager, uint64_t *host_entry_p, 
+		uint64_t guest_virtual, int off_low, int off_high) {
+	return -1;
+}
+
