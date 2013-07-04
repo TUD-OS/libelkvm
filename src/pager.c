@@ -187,41 +187,46 @@ struct kvm_userspace_memory_region *
 int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 		uint64_t guest_virtual) {
 	int err;
+	/* sanity checks on the host, we need 4MB to fit all possible page maps */
+	if(pager->system_chunk.memory_size < 0x400000) {
+		return -1;
+	}
 
 	/* sanity checks on the offset */
-	if((uint64_t)host_mem_p & 0xFFF != guest_virtual & 0xFFF) {
+	if(((uint64_t)host_mem_p & 0xFFF) != (guest_virtual & 0xFFF)) {
 		return -1;
 	}
 
 	uint64_t guest_physical = host_to_guest_physical(pager, host_mem_p);
-
+	
 	/* pml4 offset is in bits 39 - 47 */
 	uint64_t *pml4_entry = kvm_pager_find_table_entry(pager, pager->host_pml4_p, 
 			guest_virtual, 39, 47);
+
 	if(!entry_exists(pml4_entry)) {
-		err = kvm_pager_create_entry(pager, pml4_entry, guest_virtual, 39, 47);
+		err = kvm_pager_create_entry(pager, pml4_entry);
 	}
 
-	uint64_t *host_pdpt_base_p = kvm_pager_find_next_table(pager, guest_virtual, 
-			pml4_entry);
+	uint64_t *host_pdpt_base_p = kvm_pager_find_next_table(pager, pml4_entry);
+	assert(host_pdpt_base_p != NULL);
 	/* pdpt offset is in bits 30-38 */
 	uint64_t *pdpt_entry = kvm_pager_find_table_entry(pager, host_pdpt_base_p, 
 			guest_virtual, 30, 38);
 	if(!entry_exists(pdpt_entry)) {
-		err = kvm_pager_create_entry(pager, pdpt_entry, guest_virtual, 30, 38);
+		err = kvm_pager_create_entry(pager, pdpt_entry);
 	}
 
-	uint64_t *host_pd_base_p = kvm_pager_find_next_table(pager, guest_virtual,
-			pdpt_entry);
+	uint64_t *host_pd_base_p = kvm_pager_find_next_table(pager, pdpt_entry);
+	assert(host_pd_base_p != NULL);
 	/* pd offset is in bits 21 - 29 */
 	uint64_t *pd_entry = kvm_pager_find_table_entry(pager, host_pd_base_p,
 			guest_virtual, 21, 29);
 	if(!entry_exists(pd_entry)) {
-		err = kvm_pager_create_entry(pager, pd_entry, guest_virtual, 21, 29);
+		err = kvm_pager_create_entry(pager, pd_entry);
 	}
 
-	uint64_t *host_pt_base_p = kvm_pager_find_next_table(pager, guest_virtual,
-			pd_entry);
+	uint64_t *host_pt_base_p = kvm_pager_find_next_table(pager, pd_entry);
+	assert(host_pt_base_p != NULL);
 	/* pt offset is in bits 12 - 20 */
 	uint64_t *pt_entry = kvm_pager_find_table_entry(pager, host_pt_base_p,
 			guest_virtual, 12, 20);
