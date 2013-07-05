@@ -9,10 +9,12 @@ AC_PROG_LIBTOOL
 AM_PROG_CC_C_O
 
 #Check for libraries
-AC_CHECK_LIB([cunit], [CU_add_suite])
+AC_CHECK_LIB([elf], [elf_begin])
 
 #Check for header files
 AC_CHECK_HEADERS([stdint.h])
+AC_CHECK_HEADERS([libelf.h])
+AC_CHECK_HEADERS([gelf.h])
 
 #Check for typedefs, structs and compiler characteristics
 AC_TYPE_UINT64_T
