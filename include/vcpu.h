@@ -2,6 +2,7 @@
 
 #include <linux/kvm.h>
 #include <stdbool.h>
+#include <udis86.h>
 
 #include <elkvm.h>
 
@@ -18,6 +19,7 @@
 
 struct kvm_vcpu {
 	int fd;
+	ud_t ud_obj;
 	struct kvm_regs regs;
 	struct kvm_sregs sregs;
 	struct kvm_run *run_struct;
