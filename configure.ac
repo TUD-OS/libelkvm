@@ -10,6 +10,7 @@ AM_PROG_CC_C_O
 
 #Check for libraries
 AC_CHECK_LIB([elf], [elf_begin])
+AC_CHECK_LIB([udis86], [ud_init])
 
 #Check for header files
 AC_CHECK_HEADERS([stdint.h])
