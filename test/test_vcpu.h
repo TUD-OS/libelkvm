@@ -1,2 +1,0 @@
-
-Suite *vcpu_suite();
