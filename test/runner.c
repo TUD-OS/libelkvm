@@ -2,12 +2,11 @@
 #include <stdlib.h>
 
 #include "test_kvm.h"
-#include "test_pager.h"
 #include "test_vm.h"
 
-extern Suite *vcpu_suite();
-
 extern Suite *elfloader_suite();
+extern Suite *pager_suite();
+extern Suite *vcpu_suite();
 
 int main() {
 	int number_failed = 0;
