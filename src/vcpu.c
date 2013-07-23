@@ -26,15 +26,15 @@ int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
 		return -1;
 	}
 
-
-
 	int err = kvm_vcpu_initialize_regs(vcpu, mode);
 	if(err) {
+		free(vcpu);
 		return err;
 	}
 
 	err = kvm_vcpu_add_tail(vm, vcpu);
 	if(err) {
+		free(vcpu);
 		return err;
 	}
 
@@ -45,6 +45,7 @@ int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
 	}
 	ud_set_syntax(&vcpu->ud_obj, UD_SYN_INTEL);
 
+	vcpu->vm = vm;
 	return 0;
 }
 
