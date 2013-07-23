@@ -187,8 +187,11 @@ struct kvm_userspace_memory_region *
 int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 		uint64_t guest_virtual) {
 	int err;
+
+	assert(pager->system_chunk.userspace_addr != 0);
+
 	/* sanity checks on the host, we need 4MB to fit all possible page maps */
-	if(pager->system_chunk.memory_size < 0x400000) {
+	if(pager->system_chunk.memory_size < ELKVM_SYSTEM_MEMSIZE) {
 		return -1;
 	}
 
