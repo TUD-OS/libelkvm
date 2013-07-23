@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <gelf.h>
+#include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -31,26 +32,35 @@ START_TEST(test_elfloader_load_binary_uninitialized) {
 }
 END_TEST
 
-START_TEST(test_elfloader_load_binary) {
+START_TEST(test_elfloader_load_invalid_binary) {
 
 	const char *empty_binary_path = "";
 	int err = elfloader_load_binary(&elfloader_test_vm, empty_binary_path);
-	ck_assert_int_ne(err, 0);
+	ck_assert_int_ne(err, -EIO);
 
 	const char *invalid_binary_path = "/tmp/23129uhuuukh.bin";
 	err = elfloader_load_binary(&elfloader_test_vm, invalid_binary_path);
-	printf("err no: %i msg: %s\n", err, strerror(-err));
 	ck_assert_int_eq(err, -ENOENT);
+}
+END_TEST
 
-	err = elfloader_load_binary(&elfloader_test_vm, valid_binary_path);
+START_TEST(test_elfloader_load_valid_binary) {
+	int err = elfloader_load_binary(&elfloader_test_vm, valid_binary_path);
 	ck_assert_int_eq(err, 0);
+
+	/*
+	 * check for mappings in the page tables
+	 */
+	ck_abort_msg("Test for PT mappings not implemented");
 
 }
 END_TEST
 
 START_TEST(test_elfloader_load_program_header) {
-	char *buf = malloc(32768);
-	memset(buf, 'x', 32768);
+	char *buf;
+	int err = posix_memalign((void **)&buf, 0x1000, 32768);
+	ck_assert_int_eq(err, 0);
+	memset(buf, 'y', 32768);
 
 	struct Elf_binary bin;
 	bin.fd = open(valid_binary_path, O_RDONLY);
@@ -58,30 +68,44 @@ START_TEST(test_elfloader_load_program_header) {
 		ck_abort_msg("Could not open test binary");
 	}
 
+	if(elf_version(EV_CURRENT) == EV_NONE) {
+		ck_abort_msg("Wrong ELF version");
+	}
+
 	bin.e = elf_begin(bin.fd, ELF_C_READ, NULL);
+	ck_assert_ptr_ne(bin.e, NULL);
+
 	/* get the first program header */
 	GElf_Phdr phdr;
 	gelf_getphdr(bin.e, 0, &phdr);
 
 	/* load the first program header */
-	int err =	elfloader_load_program_header(&elfloader_test_vm, &bin, phdr, buf);
+	err =	elfloader_load_program_header(&elfloader_test_vm, &bin, phdr, buf);
+	ck_assert_int_eq(err, 0);
 	
 	/* check if it has really been loaded into the buffer */
-	for(int i = 0; i < phdr.p_memsz; i++) {
-		ck_assert_int_ne(buf[i], 'x');
+	int off = phdr.p_vaddr & 0xFFF;
+	for(int i = off; i < off + phdr.p_memsz; i++) {
+		ck_assert_int_ne(buf[i], 'y');
 	}
-
-	/* check if mappings have been created in the page tables */
-	ck_abort_msg("Test not implemented!");
-
 }
 END_TEST
 
 Suite *elfloader_suite() {
 	Suite *s = suite_create("Elfloader");
 
-	TCase *tc_loader = tcase_create("Loader");
-	tcase_add_test(tc_loader, test_elfloader_load_binary);
+	TCase *tc_load_program_header = tcase_create("Load Program Header");
+	tcase_add_test(tc_load_program_header, test_elfloader_load_program_header);
+	suite_add_tcase(s, tc_load_program_header);
+
+	TCase *tc_uninitialized_loader = tcase_create("Uninitialized Loader");
+	tcase_add_test(tc_uninitialized_loader, test_elfloader_load_binary_uninitialized);
+	suite_add_tcase(s, tc_uninitialized_loader);
+
+	TCase *tc_loader = tcase_create("Initialized Loader");
+	tcase_add_checked_fixture(tc_loader, setup_elfloader, teardown_elfloader);
+	tcase_add_test(tc_loader, test_elfloader_load_invalid_binary);
+	tcase_add_test(tc_loader, test_elfloader_load_valid_binary);
 	suite_add_tcase(s, tc_loader);
 
 	return s;
