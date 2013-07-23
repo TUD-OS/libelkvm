@@ -192,12 +192,12 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 
 	/* sanity checks on the host, we need 4MB to fit all possible page maps */
 	if(pager->system_chunk.memory_size < ELKVM_SYSTEM_MEMSIZE) {
-		return -1;
+		return -EIO;
 	}
 
 	/* sanity checks on the offset */
 	if(((uint64_t)host_mem_p & 0xFFF) != (guest_virtual & 0xFFF)) {
-		return -1;
+		return -EIO;
 	}
 
 	uint64_t guest_physical = host_to_guest_physical(pager, host_mem_p);
