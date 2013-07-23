@@ -37,12 +37,6 @@ int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
 	if(err) {
 		return err;
 	}
-
-	ud_init(vcpu->ud_obj);
-	switch(mode) {
-		case VM_MODE_X86_64:
-			ud_set_mode(vcpu->ud_obj, 64);
-	}
 }
 
 int kvm_vcpu_add_tail(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
