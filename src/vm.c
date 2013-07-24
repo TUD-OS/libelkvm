@@ -12,7 +12,7 @@
 #include <vcpu.h>
 #include <elkvm.h>
 
-int kvm_vm_create(struct kvm_opts *opts, struct kvm_vm *vm, int mode, int cpus, int memory_size) {
+int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus, int memory_size) {
 	if(opts->fd <= 0) {
 		return -EIO;
 	}
@@ -52,7 +52,7 @@ int kvm_vm_create(struct kvm_opts *opts, struct kvm_vm *vm, int mode, int cpus, 
 	return 0;
 }
 
-int kvm_check_cap(struct kvm_opts *kvm, int cap) {
+int kvm_check_cap(struct elkvm_opts *kvm, int cap) {
 	if(kvm->fd < 1) {
 		return -EIO;
 	}
@@ -84,7 +84,11 @@ int kvm_vm_destroy(struct kvm_vm *vm) {
 	return -1;
 }
 
-int kvm_init(struct kvm_opts *opts) {
+int elkvm_init(struct elkvm_opts *opts, int argc, char **argv, char **environ) {
+	opts->argc = argc;
+	opts->argv = argv;
+	opts->environ;
+
 	opts->fd = open(KVM_DEV_PATH, O_RDWR);
 	if(opts->fd < 0) {
 		return opts->fd;
@@ -103,7 +107,7 @@ int kvm_init(struct kvm_opts *opts) {
 	return 0;
 }
 
-int kvm_cleanup(struct kvm_opts *opts) {
+int elkvm_cleanup(struct elkvm_opts *opts) {
 	close(opts->fd);
 	opts->fd = 0;
 	opts->run_struct_size = 0;
