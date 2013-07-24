@@ -10,17 +10,17 @@
 
 #include "test_vm.h"
 
-struct kvm_opts vm_test_opts;
+struct elkvm_opts vm_test_opts;
 int vm_fd;
 
 void vm_setup() {
-	kvm_init(&vm_test_opts);
+	elkvm_init(&vm_test_opts, 0, NULL, NULL);
 	vm_fd = ioctl(vm_test_opts.fd, KVM_CREATE_VM, 0);
 }
 
 void vm_teardown() {
 	close(vm_fd);
-	kvm_cleanup(&vm_test_opts);
+	elkvm_cleanup(&vm_test_opts);
 }
 
 START_TEST(test_kvm_vm_create) {
@@ -31,7 +31,7 @@ START_TEST(test_kvm_vm_create) {
 	int cpus = 1;
 	int memory = 256*1024*1024;
 
-	struct kvm_opts uninitialized_opts;
+	struct elkvm_opts uninitialized_opts;
 	uninitialized_opts.fd = 0;
 	int err = kvm_vm_create(&uninitialized_opts, &the_vm, VM_MODE_X86_64, cpus, 
 			memory);

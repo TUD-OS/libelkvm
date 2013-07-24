@@ -9,16 +9,16 @@
 
 #include "test_pager.h"
 
-struct kvm_opts pager_test_opts;
+struct elkvm_opts pager_test_opts;
 int vm_fd;
 
 void pager_setup() {
-	kvm_init(&pager_test_opts);
+	elkvm_init(&pager_test_opts, 0, NULL, NULL);
 	vm_fd = ioctl(pager_test_opts.fd, KVM_CREATE_VM, 0);
 }
 
 void pager_teardown() {
-	kvm_cleanup(&pager_test_opts);
+	elkvm_cleanup(&pager_test_opts);
 }
 
 struct kvm_pager pager;

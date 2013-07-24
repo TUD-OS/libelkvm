@@ -6,11 +6,11 @@
 #include <stack.h>
 #include <vcpu.h>
 
-struct kvm_opts stack_opts;
+struct elkvm_opts stack_opts;
 struct kvm_vm stack_vm;
 
 void setup_stack() {
-	int err = kvm_init(&stack_opts);
+	int err = elkvm_init(&stack_opts, 0, NULL, NULL);
 	assert(err == 0);
 	err = kvm_vm_create(&stack_opts, &stack_vm, VM_MODE_X86_64, 1, 0);
 	assert(err == 0);

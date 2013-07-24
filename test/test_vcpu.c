@@ -7,20 +7,20 @@
 #include <elkvm.h>
 #include <vcpu.h>
 
-struct kvm_opts vcpu_test_opts;
+struct elkvm_opts vcpu_test_opts;
 struct kvm_vm vcpu_test_vm;
 int num_vcpus = 0;
 
 
 void setup() {
-	int err = kvm_init(&vcpu_test_opts);
+	int err = elkvm_init(&vcpu_test_opts, 0, NULL, NULL);
 	vcpu_test_vm.fd = ioctl(vcpu_test_opts.fd, KVM_CREATE_VM, 0);
 	vcpu_test_vm.vcpus = NULL;
 }
 
 void teardown() {
 	kvm_vm_destroy(&vcpu_test_vm);
-	kvm_cleanup(&vcpu_test_opts);
+	elkvm_cleanup(&vcpu_test_opts);
 }
 
 START_TEST(test_kvm_vcpu_create_invalid) {

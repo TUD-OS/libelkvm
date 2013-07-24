@@ -4,11 +4,11 @@
 
 #include "test_kvm.h"
 
-struct kvm_opts kvm_test_opts;
+struct elkvm_opts kvm_test_opts;
 
 START_TEST(test_kvm_init) {
 
-	int err = kvm_init(&kvm_test_opts);
+	int err = elkvm_init(&kvm_test_opts, 0, NULL, NULL);
 	ck_assert_int_eq(err, 0);
 	ck_assert_int_gt(kvm_test_opts.fd, 0);
 	ck_assert_int_gt(kvm_test_opts.run_struct_size, 0);
@@ -17,7 +17,7 @@ START_TEST(test_kvm_init) {
 END_TEST
 
 START_TEST(test_kvm_cleanup) {
-	int err = kvm_cleanup(&kvm_test_opts);
+	int err = elkvm_cleanup(&kvm_test_opts);
 	ck_assert_int_eq(err, 0);
 	ck_assert_int_eq(kvm_test_opts.fd, 0);
 	ck_assert_int_eq(kvm_test_opts.run_struct_size, 0);

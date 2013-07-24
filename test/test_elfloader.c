@@ -9,18 +9,18 @@
 #include <elkvm.h>
 #include <elfloader.h>
 
-struct kvm_opts elfloader_test_kvm;
+struct elkvm_opts elfloader_test_kvm;
 struct kvm_vm elfloader_test_vm;
 const char *valid_binary_path = "./a.out";
 
 void setup_elfloader() {
-	kvm_init(&elfloader_test_kvm);
+	elkvm_init(&elfloader_test_kvm, 0, NULL, NULL);
 	kvm_vm_create(&elfloader_test_kvm, &elfloader_test_vm, VM_MODE_X86_64, 1, 0);
 }
 
 void teardown_elfloader() {
 	kvm_vm_destroy(&elfloader_test_vm);
-	kvm_cleanup(&elfloader_test_kvm);
+	elkvm_cleanup(&elfloader_test_kvm);
 }
 
 START_TEST(test_elfloader_load_binary_uninitialized) {
