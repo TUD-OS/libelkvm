@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <inttypes.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #define PAGER_MODE_X86     1
 #define PAGER_MODE_X86_E   2
