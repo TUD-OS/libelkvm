@@ -8,6 +8,7 @@
 extern Suite *vcpu_suite();
 
 extern Suite *elfloader_suite();
+extern Suite *stack_suite();
 
 int main() {
 	int number_failed = 0;
@@ -18,6 +19,7 @@ int main() {
 	srunner_add_suite(sr, vm_suite());
 	srunner_add_suite(sr, kvm_suite());
 	srunner_add_suite(sr, pager_suite());
+	srunner_add_suite(sr, stack_suite());
 	srunner_run_all(sr, CK_NORMAL);
 	number_failed = srunner_ntests_failed(sr);
 	srunner_free(sr);
