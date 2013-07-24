@@ -9,7 +9,9 @@
 
 #include <elfloader.h>
 #include <elkvm.h>
+#include <kvm.h>
 #include <pager.h>
+#include <stack.h>
 
 
 int elfloader_load_binary(struct kvm_vm *vm, const char *binary) {
@@ -207,3 +209,25 @@ int elfloader_load_section_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
 	return -1;
 }
 
+extern char **environ;
+int elfloder_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
+
+	//first push argc on the stack
+	push_stack(vm, vm->vcpus->vcpu, opts->argc);
+	
+	//followed by argv pointers
+	for(int i = 0; i < opts->argc; i++) {
+		//TODO actually copy the data into the vm memory
+		//and push the pointer for the vm
+		push_stack(vm, vm->vcpus->vcpu, opts->argv[i]);
+	}
+	//first push the environment onto the stack
+	int i = 0;
+	while(environ[i]) {
+		//TODO actually copy the data into the vm memory
+		//and push the pointer for the vm
+		push_stack(vm, vm->vcpus->vcpu, opts->environ[i]);
+		i++;
+	}
+
+}
