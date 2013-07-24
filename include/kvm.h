@@ -5,10 +5,13 @@
 #define KVM_EXPECT_VERSION 12
 #define KVM_DEV_PATH "/dev/kvm"
 
-struct kvm_opts {
+struct elkvm_opts {
+	int argc;
+	char **argv;
+	char **environ;
 	int fd;
 	int run_struct_size;
 };
 
-int kvm_init(struct kvm_opts *);
-int kvm_cleanup(struct kvm_opts *);
+int elkvm_init(struct elkvm_opts *, int, char **, char **);
+int elkvm_cleanup(struct elkvm_opts *);

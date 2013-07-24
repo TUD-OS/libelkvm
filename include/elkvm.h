@@ -21,7 +21,7 @@ struct kvm_vm {
 	Create a new VM, with the given mode, cpu count and memory
 	Return 0 on success, -1 on error
 */
-int kvm_vm_create(struct kvm_opts *, struct kvm_vm *, int, int, int);
+int kvm_vm_create(struct elkvm_opts *, struct kvm_vm *, int, int, int);
 
 /*
 	Load an ELF binary, given by the filename into the VM
@@ -36,7 +36,7 @@ void kvm_dump_vm(struct kvm_vm *, int);
 /*
 	Check if a given KVM capability exists, will return the result of the ioctl
 */
-int kvm_check_cap(struct kvm_opts *, int);
+int kvm_check_cap(struct elkvm_opts *, int);
 
 /*
 	Returns the number of VCPUs in a VM
