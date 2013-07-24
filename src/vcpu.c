@@ -8,6 +8,7 @@
 #include <unistd.h>
 
 #include <elkvm.h>
+#include <stack.h>
 #include <vcpu.h>
 
 int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
@@ -147,6 +148,7 @@ int kvm_vcpu_destroy(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 
 	memset(&vcpu->regs, 0, sizeof(struct kvm_regs));
+	vcpu->regs.rsp = LINUX_64_STACK_BASE;
 	//regs.rflags = 0x00000002;
 
 	vcpu->sregs.cr0 = VCPU_CR0_FLAG_PAGING | VCPU_CR0_FLAG_CACHE_DISABLE |
