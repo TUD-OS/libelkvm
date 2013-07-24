@@ -36,3 +36,7 @@ int elfloader_load_section_headers(struct kvm_vm *, struct Elf_binary *);
 */
 int elfloader_check_elf(Elf *);
 
+/*
+ * Initialize the Stack as the Linux kernel would do
+ */
+int elfloader_initialize_stack(struct kvm_vm *);
