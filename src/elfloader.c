@@ -19,7 +19,7 @@ int elfloader_load_binary(struct kvm_vm *vm, const char *binary) {
 		return -EIO;
 	}
 
-	if(vm->pager.system_chunk.userspace_addr == NULL) {
+	if(vm->pager.system_chunk.userspace_addr == 0) {
 		return -EIO;
 	}
 
@@ -164,7 +164,7 @@ int elfloader_load_program_header(struct kvm_vm *vm, struct Elf_binary *bin,
 		/*
 		 * buffers need to be page aligned
 		*/
-		if(((uint64_t)buf & ~0xFFF) != buf) {
+		if(((uint64_t)buf & ~0xFFF) != (uint64_t)buf) {
 			return -EIO;
 		}
 		
