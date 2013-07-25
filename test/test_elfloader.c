@@ -13,8 +13,10 @@ struct elkvm_opts elfloader_test_kvm;
 struct kvm_vm elfloader_test_vm;
 const char *valid_binary_path = "./a.out";
 
+extern char **environ;
 void setup_elfloader() {
-	elkvm_init(&elfloader_test_kvm, 0, NULL, NULL);
+	char *av = { "1234", "5678" };
+	elkvm_init(&elfloader_test_kvm, 2, &av, environ);
 	kvm_vm_create(&elfloader_test_kvm, &elfloader_test_vm, VM_MODE_X86_64, 1, 0);
 }
 
@@ -91,6 +93,25 @@ START_TEST(test_elfloader_load_program_header) {
 }
 END_TEST
 
+START_TEST(test_elfloader_initialize_stack) {
+	int err = elfloader_initialize_stack(&elfloader_test_kvm, &elfloader_test_vm);
+	ck_assert_int_eq(err, 0);
+
+	ck_abort_msg("Test for Stack initialization not implemented");
+}
+END_TEST
+
+START_TEST(test_elfloader_copy_push_str_arr_p) {
+	ck_abort_msg("Test for copy push not implemented");
+//	void *host = NULL;
+//	char **str = NULL;
+//	int bytes = elfloader_copy_and_push_str_arr_p(&elfloader_test_vm, host, str);
+//	ck_assert_int_eq(bytes, 9);
+	//test for a single string followed by a null pointer
+	//test for multiple strings followed by a null pointer
+}
+END_TEST
+
 Suite *elfloader_suite() {
 	Suite *s = suite_create("Elfloader");
 
@@ -106,6 +127,8 @@ Suite *elfloader_suite() {
 	tcase_add_checked_fixture(tc_loader, setup_elfloader, teardown_elfloader);
 	tcase_add_test(tc_loader, test_elfloader_load_invalid_binary);
 	tcase_add_test(tc_loader, test_elfloader_load_valid_binary);
+	tcase_add_test(tc_loader, test_elfloader_copy_push_str_arr_p);
+	tcase_add_test(tc_loader, test_elfloader_initialize_stack);
 	suite_add_tcase(s, tc_loader);
 
 	return s;
