@@ -87,7 +87,7 @@ int kvm_vm_destroy(struct kvm_vm *vm) {
 int elkvm_init(struct elkvm_opts *opts, int argc, char **argv, char **environ) {
 	opts->argc = argc;
 	opts->argv = argv;
-	opts->environ;
+	opts->environ = environ;
 
 	opts->fd = open(KVM_DEV_PATH, O_RDWR);
 	if(opts->fd < 0) {
