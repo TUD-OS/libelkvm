@@ -209,25 +209,59 @@ int elfloader_load_section_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
 	return -1;
 }
 
-extern char **environ;
 int elfloder_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
+
+	int err = kvm_vcpu_get_regs(vm->vcpus->vcpu);
+	if(err) {
+		return err;
+	}
+
+	void *host_rsp = vm->pager.system_chunk.userspace_addr + 
+		vm->pager.system_chunk.memory_size - 0x400000 - 0x12000;
+	vm->vcpus->vcpu->regs.rsp = vm->pager.system_chunk.guest_phys_addr + 
+		vm->pager.system_chunk.memory_size - 0x400000 - 0x12000;
+
+	err = kvm_vcpu_set_regs(vm->vcpus->vcpu);
+	if(err) {
+		return err;
+	}
+
+	err = kvm_pager_create_mapping(vm->pager, host_rsp, vm->vcpus->vcpu->regs.rsp);
+	if(err) {
+		return err;
+	}
+
+	void *target = (void *)vm->pager.system_chunk.userspace_addr +
+		vm->pager.system_chunk.memory_size - 0x400000;
+	uint16_t guest_target = target - vm->pager.system_chunk.userspace_addr + 
+		vm->pager.system_chunk.guest_phys_addr;
+
+	//first push the environment onto the stack
+	int i = 0;
+	while(opts->environ[i]) {
+		target -= strlen(opts->environ[i]) + 1;
+		//copy the data into the vm memory
+		strcpy(target, opts->environ[i]);
+
+		//and push the pointer for the vm
+		push_stack(vm, vm->vcpus->vcpu, guest_target);
+		i++;
+	}
+
+	push_stack(vm, vm->vcpus->vcpu, NULL);
+
+	//followed by argv pointers
+	for(int i = 0; i < opts->argc; i++) {
+		target -= strlen(opts->argv[i]) + 1;
+		//copy the data into the vm memory
+		strcpy(target, opts->argv[i]);
+
+		//and push the pointer for the vm
+		push_stack(vm, vm->vcpus->vcpu, guest_target);
+	}
+	push_stack(vm, vm->vcpus->vcpu, NULL);
 
 	//first push argc on the stack
 	push_stack(vm, vm->vcpus->vcpu, opts->argc);
 	
-	//followed by argv pointers
-	for(int i = 0; i < opts->argc; i++) {
-		//TODO actually copy the data into the vm memory
-		//and push the pointer for the vm
-		push_stack(vm, vm->vcpus->vcpu, opts->argv[i]);
-	}
-	//first push the environment onto the stack
-	int i = 0;
-	while(environ[i]) {
-		//TODO actually copy the data into the vm memory
-		//and push the pointer for the vm
-		push_stack(vm, vm->vcpus->vcpu, opts->environ[i]);
-		i++;
-	}
-
 }
