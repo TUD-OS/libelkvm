@@ -39,4 +39,4 @@ int elfloader_check_elf(Elf *);
 /*
  * Initialize the Stack as the Linux kernel would do
  */
-int elfloader_initialize_stack(struct kvm_vm *);
+int elfloader_initialize_stack(struct elkvm_opts *, struct kvm_vm *);
