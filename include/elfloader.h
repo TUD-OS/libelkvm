@@ -1,9 +1,13 @@
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <gelf.h>
 #include <libelf.h>
 
-#include <elkvm.h>
+#include "elkvm.h"
 
 struct Elf_binary {
 	int fd;
@@ -40,3 +44,7 @@ int elfloader_check_elf(Elf *);
  * Initialize the Stack as the Linux kernel would do
  */
 int elfloader_initialize_stack(struct elkvm_opts *, struct kvm_vm *);
+
+#ifdef __cplusplus
+}
+#endif

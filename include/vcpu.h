@@ -1,10 +1,14 @@
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <linux/kvm.h>
 #include <stdbool.h>
 #include <udis86.h>
 
-#include <elkvm.h>
+#include "elkvm.h"
 
 #define VCPU_CR0_FLAG_PAGING            0x80000000
 #define VCPU_CR0_FLAG_CACHE_DISABLE     0x40000000
@@ -93,3 +97,7 @@ void host_cpuid(uint32_t, uint32_t, uint32_t *, uint32_t *, uint32_t *, uint32_t
 void kvm_vcpu_dump_regs(struct kvm_vcpu *);
 
 void kvm_vcpu_dump_code(struct kvm_vcpu *);
+
+#ifdef __cplusplus
+}
+#endif

@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <linux/kvm.h>
 
 #define KVM_EXPECT_VERSION 12
@@ -15,3 +19,7 @@ struct elkvm_opts {
 
 int elkvm_init(struct elkvm_opts *, int, char **, char **);
 int elkvm_cleanup(struct elkvm_opts *);
+
+#ifdef __cplusplus
+}
+#endif

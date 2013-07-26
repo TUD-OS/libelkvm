@@ -1,9 +1,13 @@
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <libelf.h>
 
-#include <kvm.h>
-#include <pager.h>
+#include "kvm.h"
+#include "pager.h"
 
 #define VM_MODE_X86    1
 #define VM_MODE_PAGING 2
@@ -53,3 +57,6 @@ int kvm_vm_destroy(struct kvm_vm *);
 */
 int kvm_vm_map_chunk(struct kvm_vm *, struct kvm_userspace_memory_region *);
 
+#ifdef __cplusplus
+}
+#endif
