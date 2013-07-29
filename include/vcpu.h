@@ -110,6 +110,20 @@ void kvm_vcpu_dump_code(struct kvm_vcpu *);
  */
 int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *);
 
+inline void print_dtable(const char *name, struct kvm_dtable dtable)
+{
+	printf(" %s                 %016lx  %08hx\n",
+		name, (uint64_t) dtable.base, (uint16_t) dtable.limit);
+}
+
+inline void print_segment(const char *name, struct kvm_segment seg)
+{
+	printf(" %s       %04hx      %016lx  %08x  %02hhx    %x %x   %x  %x %x %x %x\n",
+		name, (uint16_t) seg.selector, (uint64_t) seg.base, (uint32_t) seg.limit,
+		(uint8_t) seg.type, seg.present, seg.dpl, seg.db, seg.s, seg.l,
+	 	seg.g, seg.avl);
+}
+
 #ifdef __cplusplus
 }
 #endif
