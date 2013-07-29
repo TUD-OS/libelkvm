@@ -47,6 +47,22 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 		return err;
 	}
 
+	/* set up the region info for page tables */
+	vm->region[6].host_base_p = (void *)vm->pager.system_chunk.userspace_addr + 
+		vm->pager.system_chunk.memory_size; 
+	vm->region[6].guest_virtual = vm->pager.system_chunk.guest_phys_addr + 
+		vm->pager.system_chunk.memory_size;
+	vm->region[6].region_size =	0x400000;
+	vm->region[6].grows_downward = 0;
+
+	/* set up the region info for the idt */
+	vm->region[5].host_base_p = (void *)vm->pager.system_chunk.userspace_addr - 
+		vm->pager.system_chunk.memory_size - vm->region[6].region_size;
+	vm->region[5].guest_virtual = vm->pager.system_chunk.guest_phys_addr + 
+		vm->pager.system_chunk.memory_size - vm->region[6].region_size;
+	vm->region[5].region_size = 0x0000;
+	vm->region[5].grows_downward = 0;
+
 	err = kvm_pager_create_mem_chunk(&vm->pager, memory_size, ELKVM_USER_CHUNK_OFFSET);
 	if(err) {
 		return err;
@@ -128,38 +144,47 @@ int elkvm_cleanup(struct elkvm_opts *opts) {
 }
 
 int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
+	/* for now the region to hold env etc. will be 12 pages large */
+	vm->region[4].region_size = 0x12000;
+
+	uint64_t rsp_offset = vm->pager.system_chunk.memory_size - 
+		vm->region[6].region_size - vm->region[5].region_size - vm->region[4].region_size;
+	vm->region[4].host_base_p = (void *)vm->pager.system_chunk.userspace_addr + 
+		rsp_offset;
+	vm->region[4].guest_virtual = vm->pager.system_chunk.guest_phys_addr + rsp_offset;
+	vm->region[4].grows_downward = 0;
 
 	int err = kvm_vcpu_get_regs(vm->vcpus->vcpu);
 	if(err) {
 		return err;
 	}
 
-	uint64_t rsp_offset = vm->pager.system_chunk.memory_size - 0x400000 - 0x12000;
-	void *host_rsp = (void *)vm->pager.system_chunk.userspace_addr + rsp_offset;
-	vm->vcpus->vcpu->regs.rsp = vm->pager.system_chunk.guest_phys_addr + rsp_offset;
+	vm->vcpus->vcpu->regs.rsp = vm->region[4].guest_virtual;
 
 	err = kvm_vcpu_set_regs(vm->vcpus->vcpu);
 	if(err) {
 		return err;
 	}
 
-	err = kvm_pager_create_mapping(&vm->pager, host_rsp, vm->vcpus->vcpu->regs.rsp);
+	err = kvm_pager_create_mapping(&vm->pager, vm->region[4].host_base_p, 
+			vm->vcpus->vcpu->regs.rsp);
 	if(err) {
 		return err;
 	}
 
-	printf("\n\ngot regs, created mapping\n\n");
-	void *target = (void *)vm->pager.system_chunk.userspace_addr +
-		vm->pager.system_chunk.memory_size - 0x400000;
+	void *host_target_p = vm->region[4].host_base_p + vm->region[4].region_size;
 
 	printf("now push env: %p\n", opts->environ);
-	int bytes = elkvm_copy_and_push_str_arr_p(vm, target, opts->environ);
-	target -= bytes;
+	int bytes = elkvm_copy_and_push_str_arr_p(vm, host_target_p, opts->environ);
+	host_target_p -= bytes;
+	assert(host_target_p > vm->region[4].host_base_p);
 
 
 	//followed by argv pointers
 	printf("now push argv\n");
-	bytes = elkvm_copy_and_push_str_arr_p(vm, target, opts->argv);
+	bytes = elkvm_copy_and_push_str_arr_p(vm, host_target_p, opts->argv);
+	host_target_p -= bytes;
+	assert(host_target_p >= vm->region[4].host_base_p);
 
 	//first push argc on the stack
 	printf("now push argc\n");

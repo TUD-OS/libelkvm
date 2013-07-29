@@ -5,6 +5,7 @@ libelkvminclude_HEADERS = elfloader.h\
 													kvm.h\
 													mem_chunk.h\
 													pager.h\
+													region.h\
 													stack.h\
 													vcpu.h
 
