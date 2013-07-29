@@ -56,6 +56,11 @@ int kvm_vcpu_destroy(struct kvm_vm *, struct kvm_vcpu *);
 int kvm_vcpu_set_rip(struct kvm_vcpu *, uint64_t);
 
 /*
+ * \brief Set the VCPU's CR3 to a specific value
+ */
+int kvm_vcpu_set_cr3(struct kvm_vcpu *, uint64_t);
+
+/*
 	Get the VCPU's registers
 */
 int kvm_vcpu_get_regs(struct kvm_vcpu *);

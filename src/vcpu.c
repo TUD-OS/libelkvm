@@ -91,7 +91,24 @@ int kvm_vcpu_initialize_regs(struct kvm_vcpu *vcpu, int mode) {
 }
 
 int kvm_vcpu_set_rip(struct kvm_vcpu * vcpu, uint64_t rip) {
-	return -1;
+}
+
+int kvm_vcpu_set_cr3(struct kvm_vcpu *vcpu, uint64_t cr3) {
+	assert(vcpu != NULL);
+
+	int err = kvm_vcpu_get_regs(vcpu);
+	if(err) {
+		return err;
+	}
+
+	vcpu->sregs.cr3 = cr3;
+
+	err = kvm_vcpu_set_regs(vcpu);
+	if(err) {
+		return err;
+	}
+
+	return 0;
 }
 
 int kvm_vcpu_get_regs(struct kvm_vcpu *vcpu) {
