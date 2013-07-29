@@ -31,18 +31,18 @@ int elfloader_load_binary(struct kvm_vm *vm, const char *binary) {
 	}
 
 	if(elf_version(EV_CURRENT) == EV_NONE) {
-		return -1;
+		return -EIO;
 	}
 	
 	bin.e = elf_begin(bin.fd, ELF_C_READ, NULL);
 	if(bin.e == NULL) {
-		return -1;
+		return -ENOMEM;
 	}
 
 	GElf_Ehdr ehdr;
 
 	if(gelf_getehdr(bin.e, &ehdr) == NULL) {
-		return -1;
+		return -EIO;
 	}
 
 	int err = elfloader_check_elf(bin.e);
@@ -112,7 +112,7 @@ int elfloader_load_program_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
 
 		/* a program header's memsize may be large than or equal to its filesize */
 		if(phdr.p_filesz > phdr.p_memsz) {
-			return -1;
+			return -EIO;
 		}
 
 		switch(phdr.p_type) {
