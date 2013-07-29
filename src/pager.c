@@ -4,6 +4,7 @@
 
 #include <elkvm.h>
 #include <pager.h>
+#include <vcpu.h>
 
 int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
 	if(vm->fd < 1) {
@@ -29,6 +30,12 @@ int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
 	vm->pager.other_chunks = NULL;
 
 	err = kvm_pager_create_page_tables(&vm->pager, mode);
+	if(err) {
+		return err;
+	}
+
+	uint64_t guest_pml4 = host_to_guest_physical(&vm->pager, vm->pager.host_pml4_p);
+	err = kvm_vcpu_set_cr3(vm->vcpus->vcpu, guest_pml4);
 	if(err) {
 		return err;
 	}
