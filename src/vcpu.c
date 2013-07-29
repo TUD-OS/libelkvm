@@ -197,7 +197,8 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 
 	memset(&vcpu->regs, 0, sizeof(struct kvm_regs));
 	vcpu->regs.rsp = LINUX_64_STACK_BASE;
-	//regs.rflags = 0x00000002;
+	/* for some reason this needs to be set */
+	vcpu->regs.rflags = 0x00000002;
 
 	vcpu->sregs.cr0 = VCPU_CR0_FLAG_PAGING | VCPU_CR0_FLAG_CACHE_DISABLE |
 			VCPU_CR0_FLAG_NOT_WRITE_THROUGH |
@@ -233,6 +234,66 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 	vcpu->sregs.ds.g        = 0x1;
 	vcpu->sregs.ds.avl      = 0x0;
 
+	vcpu->sregs.es.selector = 0x0;
+	vcpu->sregs.es.base     = 0x0;
+	vcpu->sregs.es.limit    = 0xFFFFF;
+	vcpu->sregs.es.type     = 0x3;
+	vcpu->sregs.es.present  = 0x1;
+	vcpu->sregs.es.dpl      = 0x0;
+	vcpu->sregs.es.db       = 0x0;
+	vcpu->sregs.es.s        = 0x1;
+	vcpu->sregs.es.l        = 0x0;
+	vcpu->sregs.es.g        = 0x0;
+	vcpu->sregs.es.avl      = 0x0;
+
+	vcpu->sregs.fs.selector = 0x0;
+	vcpu->sregs.fs.base     = 0x0;
+	vcpu->sregs.fs.limit    = 0xFFFFF;
+	vcpu->sregs.fs.type     = 0x3;
+	vcpu->sregs.fs.present  = 0x1;
+	vcpu->sregs.fs.dpl      = 0x0;
+	vcpu->sregs.fs.db       = 0x0;
+	vcpu->sregs.fs.s        = 0x1;
+	vcpu->sregs.fs.l        = 0x0;
+	vcpu->sregs.fs.g        = 0x0;
+	vcpu->sregs.fs.avl      = 0x0;
+
+	vcpu->sregs.gs.selector = 0x0;
+	vcpu->sregs.gs.base     = 0x10000;
+	vcpu->sregs.gs.limit    = 0xFFFFF;
+	vcpu->sregs.gs.type     = 0x3;
+	vcpu->sregs.gs.present  = 0x1;
+	vcpu->sregs.gs.dpl      = 0x0;
+	vcpu->sregs.gs.db       = 0x0;
+	vcpu->sregs.gs.s        = 0x1;
+	vcpu->sregs.gs.l        = 0x0;
+	vcpu->sregs.gs.g        = 0x0;
+	vcpu->sregs.gs.avl      = 0x0;
+
+	vcpu->sregs.tr.selector = 0x0;
+	vcpu->sregs.tr.base     = 0x0;
+	vcpu->sregs.tr.limit    = 0xFFFF;
+	vcpu->sregs.tr.type     = 0xb;
+	vcpu->sregs.tr.present  = 0x1;
+	vcpu->sregs.tr.dpl      = 0x0;
+	vcpu->sregs.tr.db       = 0x0;
+	vcpu->sregs.tr.s        = 0x0;
+	vcpu->sregs.tr.l        = 0x0;
+	vcpu->sregs.tr.g        = 0x0;
+	vcpu->sregs.tr.avl      = 0x0;
+
+	vcpu->sregs.ldt.selector = 0x0;
+	vcpu->sregs.ldt.base     = 0x0;
+	vcpu->sregs.ldt.limit    = 0xFFFF;
+	vcpu->sregs.ldt.type     = 0x2;
+	vcpu->sregs.ldt.present  = 0x1;
+	vcpu->sregs.ldt.dpl      = 0x0;
+	vcpu->sregs.ldt.db       = 0x0;
+	vcpu->sregs.ldt.s        = 0x0;
+	vcpu->sregs.ldt.l        = 0x0;
+	vcpu->sregs.ldt.g        = 0x0;
+	vcpu->sregs.ldt.avl      = 0x0;
+
 	vcpu->sregs.ss.selector = 0x1000;
 	vcpu->sregs.ss.base     = 0x0;
 	vcpu->sregs.ss.limit    = 0xFFFFFFFF;
@@ -245,14 +306,20 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 	vcpu->sregs.ss.g        = 0x1;
 	vcpu->sregs.ss.avl      = 0x0;
 
-	memset(&vcpu->sregs.es, 0, sizeof(struct kvm_segment));
-	memset(&vcpu->sregs.fs, 0, sizeof(struct kvm_segment));
-	memset(&vcpu->sregs.gs, 0, sizeof(struct kvm_segment));
-	memset(&vcpu->sregs.tr, 0, sizeof(struct kvm_segment));
-	memset(&vcpu->sregs.ldt, 0, sizeof(struct kvm_segment));
+	vcpu->sregs.gdt.base  = 0x0;
+	vcpu->sregs.gdt.limit = 0xFFFF;
 
-	memset(&vcpu->sregs.gdt, 0, sizeof(struct kvm_dtable));
-	memset(&vcpu->sregs.idt, 0, sizeof(struct kvm_dtable));
+	vcpu->sregs.idt.base  = 0xFBFF000;
+	vcpu->sregs.idt.limit = 0x0;
+
+	//memset(&vcpu->sregs.es, 0, sizeof(struct kvm_segment));
+	//memset(&vcpu->sregs.fs, 0, sizeof(struct kvm_segment));
+	//memset(&vcpu->sregs.gs, 0, sizeof(struct kvm_segment));
+	//memset(&vcpu->sregs.tr, 0, sizeof(struct kvm_segment));
+	//memset(&vcpu->sregs.ldt, 0, sizeof(struct kvm_segment));
+
+	//memset(&vcpu->sregs.gdt, 0, sizeof(struct kvm_dtable));
+	//memset(&vcpu->sregs.idt, 0, sizeof(struct kvm_dtable));
 
 	int err = kvm_vcpu_set_regs(vcpu);
 	return err;
