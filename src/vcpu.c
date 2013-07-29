@@ -279,13 +279,10 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 	int is_running = 1;
 	while(is_running) {
 		int err = kvm_vcpu_run(vcpu);
-		printf("VCPU run returned with %i\n", err);
 		if(err) {
 			break;
 		}
 
-		printf("Checking exit_reason for run_struct: %p\n", vcpu->run_struct);
-		printf("exit_reason: %i\n", vcpu->run_struct->exit_reason);
 		switch(vcpu->run_struct->exit_reason) {
 			case KVM_EXIT_FAIL_ENTRY:
 				;
@@ -306,7 +303,6 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 				is_running = 0;
 				/* fall-through */
 			case KVM_EXIT_DEBUG:
-				printf("Here are some registers\n\n");
 				kvm_vcpu_dump_regs(vcpu);
 				kvm_vcpu_dump_code(vcpu);
 				break;
