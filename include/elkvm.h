@@ -19,6 +19,7 @@ struct kvm_vm {
 	int fd;
 	struct vcpu_list *vcpus;
 	struct kvm_pager pager;
+	int run_struct_size;
 };
 
 /*

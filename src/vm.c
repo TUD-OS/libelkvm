@@ -42,6 +42,12 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 		return err;
 	}
 
+	vm->run_struct_size = ioctl(opts->fd, KVM_GET_VCPU_MMAP_SIZE, 0);
+	if(vm->run_struct_size < 0) {
+		printf("vm->run_size: %i\n", vm->run_struct_size);
+		return -EIO;
+	}
+
 	for(int i = 0; i < cpus; i++) {
 		err = kvm_vcpu_create(vm, mode);
 		if(err) {

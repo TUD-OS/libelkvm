@@ -80,6 +80,11 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *);
 int kvm_vcpu_run(struct kvm_vcpu *);
 
 /*
+ * \brief Enter the VCPU loop
+ */
+int kvm_vcpu_loop(struct kvm_vcpu *vcpu);
+
+/*
  * \brief Set singlestepping for the VCPU
 */
 int kvm_vcpu_singlestep(struct kvm_vcpu *);
