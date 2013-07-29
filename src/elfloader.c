@@ -39,11 +39,16 @@ int elfloader_load_binary(struct kvm_vm *vm, const char *binary) {
 		return -1;
 	}
 
+	GElf_Ehdr ehdr;
+
+	if(gelf_getehdr(bin.e, &ehdr) == NULL) {
+		return -1;
+	}
+
 	int err = elfloader_check_elf(bin.e);
 	if(err) {
 		return err;
 	}	
-
 
 	err = elfloader_load_program_headers(vm, &bin);
 	if(err) {
@@ -55,6 +60,11 @@ int elfloader_load_binary(struct kvm_vm *vm, const char *binary) {
 //		return err;
 //	}
 
+	err = kvm_vcpu_set_rip(vm->vcpus->vcpu, ehdr.e_entry);
+	if(err) {
+		return err;
+	}
+
 	elf_end(bin.e);
 	close(bin.fd);
 
@@ -63,6 +73,9 @@ int elfloader_load_binary(struct kvm_vm *vm, const char *binary) {
 
 int elfloader_check_elf(Elf *e) {
 	GElf_Ehdr ehdr;
+	if(gelf_getehdr(e, &ehdr) == NULL) {
+		return -1;
+	}
 
 	int ek = elf_kind(e);
 	
