@@ -28,6 +28,7 @@ struct kvm_vcpu {
 	struct kvm_sregs sregs;
 	struct kvm_run *run_struct;
 	struct kvm_vm *vm;
+	int is_debug;
 };
 
 struct vcpu_list {

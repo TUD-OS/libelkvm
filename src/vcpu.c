@@ -20,6 +20,7 @@ int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
 	struct kvm_vcpu *vcpu = malloc(sizeof(struct kvm_vcpu));
 	memset(&vcpu->regs, 0, sizeof(struct kvm_regs));
 	memset(&vcpu->sregs, 0, sizeof(struct kvm_sregs));
+	vcpu->is_debug = 0;
 
 	int vcpu_count = kvm_vm_vcpu_count(vm);
 	vcpu->fd = ioctl(vm->fd, KVM_CREATE_VCPU, vcpu_count);
@@ -329,6 +330,8 @@ int kvm_vcpu_singlestep(struct kvm_vcpu *vcpu) {
 	struct kvm_guest_debug debug = {
 		.control        = KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_SINGLESTEP,
 	};
+
+	vcpu->is_debug = 1;
 	
 	return ioctl(vcpu->fd, KVM_SET_GUEST_DEBUG, &debug);
 }
@@ -368,16 +371,18 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 						    "\n\n");
 				}
 				is_running = 0;
-				/* fall-through */
-			case KVM_EXIT_DEBUG:
-				kvm_vcpu_dump_regs(vcpu);
-				kvm_vcpu_dump_code(vcpu);
 				break;
 			case KVM_EXIT_SHUTDOWN:
 				fprintf(stderr, "KVM VCPU did shutdown\n");
 				is_running = 0;
 				break;
 		}
+
+		if(vcpu->is_debug) {
+			kvm_vcpu_dump_regs(vcpu);
+			kvm_vcpu_dump_code(vcpu);
+		}
+
 	}
 	return 0;
 }
