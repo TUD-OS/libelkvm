@@ -475,6 +475,10 @@ void kvm_vcpu_dump_regs(struct kvm_vcpu *vcpu) {
 }
 
 void kvm_vcpu_dump_code(struct kvm_vcpu *vcpu) {
+	int err = kvm_vcpu_get_next_code_byte(vcpu);
+	if(err) {
+		return;
+	}
 	printf("\n Code:\n");
 	printf(  " -----------------\n");
 	while(ud_disassemble(&vcpu->ud_obj)) {
