@@ -7,10 +7,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <elkvm.h>
 #include <kvm.h>
 #include <pager.h>
+#include <stack.h>
 #include <vcpu.h>
-#include <elkvm.h>
 
 int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus, int memory_size) {
 	int err = 0;
@@ -56,6 +57,10 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 		return err;
 	}
 
+	err = elkvm_initialize_stack(opts, vm);
+	if(err) {
+		return err;
+	}
 
 	return 0;
 }
@@ -120,6 +125,77 @@ int elkvm_cleanup(struct elkvm_opts *opts) {
 	opts->fd = 0;
 	opts->run_struct_size = 0;
 	return 0;
+}
+
+int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
+
+	int err = kvm_vcpu_get_regs(vm->vcpus->vcpu);
+	if(err) {
+		return err;
+	}
+
+	uint64_t rsp_offset = vm->pager.system_chunk.memory_size - 0x400000 - 0x12000;
+	void *host_rsp = (void *)vm->pager.system_chunk.userspace_addr + rsp_offset;
+	vm->vcpus->vcpu->regs.rsp = vm->pager.system_chunk.guest_phys_addr + rsp_offset;
+
+	err = kvm_vcpu_set_regs(vm->vcpus->vcpu);
+	if(err) {
+		return err;
+	}
+
+	err = kvm_pager_create_mapping(&vm->pager, host_rsp, vm->vcpus->vcpu->regs.rsp);
+	if(err) {
+		return err;
+	}
+
+	printf("\n\ngot regs, created mapping\n\n");
+	void *target = (void *)vm->pager.system_chunk.userspace_addr +
+		vm->pager.system_chunk.memory_size - 0x400000;
+
+	printf("now push env: %p\n", opts->environ);
+	int bytes = elkvm_copy_and_push_str_arr_p(vm, target, opts->environ);
+	target -= bytes;
+
+
+	//followed by argv pointers
+	printf("now push argv\n");
+	bytes = elkvm_copy_and_push_str_arr_p(vm, target, opts->argv);
+
+	//first push argc on the stack
+	printf("now push argc\n");
+	push_stack(vm, vm->vcpus->vcpu, opts->argc);
+
+	return 0;
+}
+
+int elkvm_copy_and_push_str_arr_p(struct kvm_vm *vm, void *host_base_p,
+	 	char **str) {
+	void *target = host_base_p;
+	uint64_t guest_target = host_to_guest_physical(&vm->pager, target);
+	int bytes = 0;
+
+	//first push the environment onto the stack
+	int i = 0;
+	while(str[i]) {
+		int len = strlen(str[i]) + 1;
+		target -= len;
+		bytes += len;
+
+		//copy the data into the vm memory
+		strcpy(target, str[i]);
+		//TODO copy the trailing NULL byte
+
+		//and push the pointer for the vm
+		int err = push_stack(vm, vm->vcpus->vcpu, guest_target);
+		if(err) {
+			return err;
+		}
+		i++;
+	}
+
+	push_stack(vm, vm->vcpus->vcpu, 0);
+
+	return bytes;
 }
 
 int kvm_vm_map_chunk(struct kvm_vm *vm, struct kvm_userspace_memory_region *chunk) {
