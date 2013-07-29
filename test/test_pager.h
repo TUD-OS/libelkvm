@@ -1,2 +1,0 @@
-Suite *pager_suite();
-

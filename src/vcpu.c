@@ -43,8 +43,19 @@ int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
 
 	err = kvm_vcpu_add_tail(vm, vcpu);
 	if(err) {
+		free(vcpu);
 		return err;
 	}
+
+	ud_init(&vcpu->ud_obj);
+	switch(mode) {
+		case VM_MODE_X86_64:
+			ud_set_mode(&vcpu->ud_obj, 64);
+	}
+	ud_set_syntax(&vcpu->ud_obj, UD_SYN_INTEL);
+
+	vcpu->vm = vm;
+	return 0;
 }
 
 int kvm_vcpu_add_tail(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
@@ -318,9 +329,76 @@ void host_cpuid(uint32_t function, uint32_t count,
 }
 
 void kvm_vcpu_dump_regs(struct kvm_vcpu *vcpu) {
+	int err = kvm_vcpu_get_regs(vcpu);
+	if(err != 0) {
+		printf("WARNING: Could not get VCPU registers\n");
+		return;
+	}
+
+	printf("\n Registers:\n");
+	printf(  " ----------\n");
+	printf(" rip: %016llx   rsp: %016llx flags: %016llx\n", 
+			vcpu->regs.rip, vcpu->regs.rsp, vcpu->regs.rflags);
+	printf(" rax: %016llx   rbx: %016llx   rcx: %016llx\n", 
+			vcpu->regs.rax, vcpu->regs.rbx, vcpu->regs.rcx);
+	printf(" rdx: %016llx   rsi: %016llx   rdi: %016llx\n", 
+			vcpu->regs.rdx, vcpu->regs.rsi, vcpu->regs.rdi);
+	printf(" rbp: %016llx    r8: %016llx    r9: %016llx\n", 
+			vcpu->regs.rbp, vcpu->regs.r8,  vcpu->regs.r9);
+	printf(" r10: %016llx   r11: %016llx   r12: %016llx\n", 
+			vcpu->regs.r10, vcpu->regs.r11, vcpu->regs.r12);
+	printf(" r13: %016llx   r14: %016llx   r15: %016llx\n", 
+			vcpu->regs.r13, vcpu->regs.r14, vcpu->regs.r15);
+
+	printf(" cr0: %016llx   cr2: %016llx   cr3: %016llx\n", vcpu->sregs.cr0, vcpu->sregs.cr2, vcpu->sregs.cr3);
+	printf(" cr4: %016llx   cr8: %016llx\n", vcpu->sregs.cr4, vcpu->sregs.cr8);
+	printf("\n Segment registers:\n");
+	printf(  " ------------------\n");
+	printf(" register  selector  base              limit     type  p dpl db s l g avl\n");
+	print_segment("cs ", vcpu->sregs.cs);
+	print_segment("ss ", vcpu->sregs.ss);
+	print_segment("ds ", vcpu->sregs.ds);
+	print_segment("es ", vcpu->sregs.es);
+	print_segment("fs ", vcpu->sregs.fs);
+	print_segment("gs ", vcpu->sregs.gs);
+	print_segment("tr ", vcpu->sregs.tr);
+	print_segment("ldt", vcpu->sregs.ldt);
+	print_dtable("gdt",  vcpu->sregs.gdt);
+	print_dtable("idt",  vcpu->sregs.idt);
+
+	printf("\n APIC:\n");
+	printf(  " -----\n");
+	printf(" efer: %016lx  apic base: %016lx  nmi: TODO\n",
+	       (uint64_t) vcpu->sregs.efer, (uint64_t) vcpu->sregs.apic_base
+	       );
+
+	printf("\n Interrupt bitmap:\n");
+	printf(  " -----------------\n");
+	for (int i = 0; i < (KVM_NR_INTERRUPTS + 63) / 64; i++)
+		printf(" %016lx", (uint64_t) vcpu->sregs.interrupt_bitmap[i]);
+	printf("\n");
+
 	return;
 }
 
 void kvm_vcpu_dump_code(struct kvm_vcpu *vcpu) {
+	while(ud_disassemble(&vcpu->ud_obj)) {
+		printf("%s\n", ud_insn_asm(&vcpu->ud_obj));
+	}
+
 	return;
 }
+
+int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *vcpu) {
+	int err = kvm_vcpu_get_regs(vcpu);
+	if(err != 0) {
+		return err;
+	}
+
+	void *host_p = kvm_pager_get_host_p(&vcpu->vm->pager, vcpu->regs.rip);
+	size_t disassembly_size = 40;
+	ud_set_input_buffer(&vcpu->ud_obj, (char *)host_p, disassembly_size);
+
+	return 0;
+}
+

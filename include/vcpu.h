@@ -27,6 +27,7 @@ struct kvm_vcpu {
 	struct kvm_regs regs;
 	struct kvm_sregs sregs;
 	struct kvm_run *run_struct;
+	struct kvm_vm *vm;
 };
 
 struct vcpu_list {
@@ -102,6 +103,12 @@ void host_cpuid(uint32_t, uint32_t, uint32_t *, uint32_t *, uint32_t *, uint32_t
 void kvm_vcpu_dump_regs(struct kvm_vcpu *);
 
 void kvm_vcpu_dump_code(struct kvm_vcpu *);
+
+/*
+ * \brief Get the next byte of code to be executed.
+ * This is mainly here for libudis86 disassembly
+ */
+int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *);
 
 #ifdef __cplusplus
 }
