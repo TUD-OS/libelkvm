@@ -13,6 +13,8 @@
 #include <elkvm.h>
 
 int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus, int memory_size) {
+	int err = 0;
+
 	if(opts->fd <= 0) {
 		return -EIO;
 	}
@@ -22,7 +24,19 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 		return -errno;
 	}
 
-	int err = kvm_pager_initialize(vm, mode);
+	vm->run_struct_size = ioctl(opts->fd, KVM_GET_VCPU_MMAP_SIZE, 0);
+	if(vm->run_struct_size < 0) {
+		return -EIO;
+	}
+
+	for(int i = 0; i < cpus; i++) {
+		err = kvm_vcpu_create(vm, mode);
+		if(err) {
+			return err;
+		}
+	}
+
+	err = kvm_pager_initialize(vm, mode);
 	if(err) {
 		return err;
 	}
@@ -42,18 +56,6 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 		return err;
 	}
 
-	vm->run_struct_size = ioctl(opts->fd, KVM_GET_VCPU_MMAP_SIZE, 0);
-	if(vm->run_struct_size < 0) {
-		printf("vm->run_size: %i\n", vm->run_struct_size);
-		return -EIO;
-	}
-
-	for(int i = 0; i < cpus; i++) {
-		err = kvm_vcpu_create(vm, mode);
-		if(err) {
-			return err;
-		}
-	}
 
 	return 0;
 }
