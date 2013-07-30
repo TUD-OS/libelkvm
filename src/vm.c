@@ -8,6 +8,7 @@
 #include <unistd.h>
 
 #include <elkvm.h>
+#include <idt.h>
 #include <kvm.h>
 #include <pager.h>
 #include <stack.h>
@@ -56,6 +57,11 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 	vm->region[5].guest_virtual = ADDRESS_SPACE_TOP -
 		vm->region[5].region_size + 0x1;
 	vm->region[5].grows_downward = 0;
+
+	err = elkvm_idt_setup(vm);
+	if(err) {
+		return err;
+	}
 
 	err = kvm_pager_create_mem_chunk(&vm->pager, memory_size, ELKVM_USER_CHUNK_OFFSET);
 	if(err) {
