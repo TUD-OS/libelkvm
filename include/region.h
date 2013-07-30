@@ -13,7 +13,7 @@ struct elkvm_memory_region {
  * 2. data
  * 3. bss (growing upward)
  * 4. stack (growing downward)
- * 5. env, which will hold the environtment strings
+ * 5. env, which will hold the environment strings
  * 6. idt, which will hold the interrupt descriptor table
  * 7. pt, which will hold the page tables
  */
