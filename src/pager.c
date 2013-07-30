@@ -30,15 +30,15 @@ int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
 	vm->pager.other_chunks = NULL;
 
 	/* set up the region info for page tables */
-	vm->region[6].region_size =	0x400000;
+	vm->region[MEMORY_REGION_PTS].region_size =	0x400000;
 	uint64_t region_offset = vm->pager.system_chunk.memory_size - 
-		vm->region[6].region_size;
-	vm->region[6].host_base_p = (void *)vm->pager.system_chunk.userspace_addr + 
-		region_offset;
-	vm->region[6].guest_virtual = 0x0;
-	vm->region[6].grows_downward = 0;
+		vm->region[MEMORY_REGION_PTS].region_size;
+	vm->region[MEMORY_REGION_PTS].host_base_p = 
+		(void *)vm->pager.system_chunk.userspace_addr + region_offset;
+	vm->region[MEMORY_REGION_PTS].guest_virtual = 0x0;
+	vm->region[MEMORY_REGION_PTS].grows_downward = 0;
 
-	vm->pager.host_pml4_p = vm->region[6].host_base_p;
+	vm->pager.host_pml4_p = vm->region[MEMORY_REGION_PTS].host_base_p;
 	uint64_t pml4_guest_physical = vm->pager.system_chunk.guest_phys_addr + 
 		region_offset;
 	err = kvm_pager_create_page_tables(&vm->pager, mode);

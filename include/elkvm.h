@@ -21,18 +21,7 @@ struct kvm_vm {
 	struct vcpu_list *vcpus;
 	struct kvm_pager pager;
 	int run_struct_size;
-
-	/*
-	 * There will be 7 memory regions in the system_chunk:
-	 * 1. text
-	 * 2. data
-	 * 3. bss (growing upward)
-	 * 4. stack (growing downward)
-	 * 5. env, which will hold the environtment strings
-	 * 6. idt, which will hold the interrupt descriptor table
-	 * 7. pt, which will hold the page tables
-	 */
-	struct elkvm_memory_region region[7];
+	struct elkvm_memory_region region[MEMORY_REGION_COUNT];
 };
 
 /*

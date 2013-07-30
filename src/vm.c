@@ -49,14 +49,15 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 	}
 
 	/* set up the region info for the idt */
-	vm->region[5].region_size = 0x1000;
+	vm->region[MEMORY_REGION_IDT].region_size = 0x1000;
 	uint64_t region_offset = vm->pager.system_chunk.memory_size - 
-		vm->region[6].region_size - vm->region[5].region_size;
-	vm->region[5].host_base_p = (void *)vm->pager.system_chunk.userspace_addr + 
-		region_offset;
-	vm->region[5].guest_virtual = ADDRESS_SPACE_TOP -
-		vm->region[5].region_size + 0x1;
-	vm->region[5].grows_downward = 0;
+		vm->region[MEMORY_REGION_PTS].region_size - 
+		vm->region[MEMORY_REGION_IDT].region_size;
+	vm->region[MEMORY_REGION_IDT].host_base_p = 
+		(void *)vm->pager.system_chunk.userspace_addr + region_offset;
+	vm->region[MEMORY_REGION_IDT].guest_virtual = ADDRESS_SPACE_TOP -
+		vm->region[MEMORY_REGION_IDT].region_size + 0x1;
+	vm->region[MEMORY_REGION_IDT].grows_downward = 0;
 
 	err = elkvm_idt_setup(vm);
 	if(err) {
@@ -145,50 +146,56 @@ int elkvm_cleanup(struct elkvm_opts *opts) {
 
 int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 	/* for now the region to hold env etc. will be 12 pages large */
-	vm->region[4].region_size = 0x12000;
+	vm->region[MEMORY_REGION_ENV].region_size = 0x12000;
 
 	uint64_t rsp_offset = vm->pager.system_chunk.memory_size - 
-		vm->region[6].region_size - vm->region[5].region_size - vm->region[4].region_size;
-	vm->region[4].host_base_p = (void *)vm->pager.system_chunk.userspace_addr + 
-		rsp_offset;
-	vm->region[4].guest_virtual = LINUX_64_STACK_BASE - vm->region[4].region_size;
-	vm->region[4].grows_downward = 0;
+		vm->region[MEMORY_REGION_PTS].region_size - 
+		vm->region[MEMORY_REGION_IDT].region_size - 
+		vm->region[MEMORY_REGION_ENV].region_size;
+	vm->region[MEMORY_REGION_ENV].host_base_p = 
+		(void *)vm->pager.system_chunk.userspace_addr + rsp_offset;
+	vm->region[MEMORY_REGION_ENV].guest_virtual = LINUX_64_STACK_BASE - 
+		vm->region[MEMORY_REGION_ENV].region_size;
+	vm->region[MEMORY_REGION_ENV].grows_downward = 0;
 
-	vm->region[3].host_base_p = (void *)vm->pager.system_chunk.userspace_addr + 
-		rsp_offset;
-	vm->region[3].guest_virtual = LINUX_64_STACK_BASE - vm->region[4].region_size;
-	vm->region[3].region_size = 0x0;
-	vm->region[3].grows_downward = 1;
+	vm->region[MEMORY_REGION_STACK].host_base_p = 
+		(void *)vm->pager.system_chunk.userspace_addr + rsp_offset;
+	vm->region[MEMORY_REGION_STACK].guest_virtual = LINUX_64_STACK_BASE - 
+		vm->region[MEMORY_REGION_ENV].region_size;
+	vm->region[MEMORY_REGION_STACK].region_size = 0x0;
+	vm->region[MEMORY_REGION_STACK].grows_downward = 1;
 
 	int err = kvm_vcpu_get_regs(vm->vcpus->vcpu);
 	if(err) {
 		return err;
 	}
 
-	vm->vcpus->vcpu->regs.rsp = vm->region[4].guest_virtual;
+	vm->vcpus->vcpu->regs.rsp = vm->region[MEMORY_REGION_ENV].guest_virtual;
 
 	err = kvm_vcpu_set_regs(vm->vcpus->vcpu);
 	if(err) {
 		return err;
 	}
 
-	err = kvm_pager_create_mapping(&vm->pager, vm->region[4].host_base_p, 
+	err = kvm_pager_create_mapping(&vm->pager, 
+			vm->region[MEMORY_REGION_ENV].host_base_p, 
 			vm->vcpus->vcpu->regs.rsp);
 	if(err) {
 		return err;
 	}
 
-	void *host_target_p = vm->region[4].host_base_p + vm->region[4].region_size;
+	void *host_target_p = vm->region[MEMORY_REGION_ENV].host_base_p + 
+		vm->region[MEMORY_REGION_ENV].region_size;
 
 	int bytes = elkvm_copy_and_push_str_arr_p(vm, host_target_p, opts->environ);
 	host_target_p -= bytes;
-	assert(host_target_p > vm->region[4].host_base_p);
+	assert(host_target_p > vm->region[MEMORY_REGION_ENV].host_base_p);
 
 
 	//followed by argv pointers
 	bytes = elkvm_copy_and_push_str_arr_p(vm, host_target_p, opts->argv);
 	host_target_p -= bytes;
-	assert(host_target_p >= vm->region[4].host_base_p);
+	assert(host_target_p >= vm->region[MEMORY_REGION_ENV].host_base_p);
 
 	//first push argc on the stack
 	push_stack(vm, vm->vcpus->vcpu, opts->argc);
