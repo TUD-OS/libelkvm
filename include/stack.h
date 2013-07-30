@@ -1,5 +1,6 @@
 #include "vcpu.h"
 
+/* 64bit Linux puts the Stack at 47bits */
 #define LINUX_64_STACK_BASE 0x800000000000
 
 /*
