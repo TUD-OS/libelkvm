@@ -140,22 +140,11 @@ int elfloader_load_program_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
 					return err;
 				}
 
-				if(loadable == 0) {
-					vm->region[loadable].host_base_p = 
-						(void *)vm->pager.system_chunk.userspace_addr;
-					vm->region[loadable].guest_virtual = 
-						vm->pager.system_chunk.guest_phys_addr;
-					vm->region[loadable].region_size = phdr.p_memsz,
-					vm->region[loadable].grows_downward = 0;
-				} else {
-					vm->region[loadable].host_base_p = 
-						(void *)vm->pager.system_chunk.userspace_addr + 
-						vm->region[0].region_size;
-					vm->region[loadable].guest_virtual = 
-						vm->pager.system_chunk.guest_phys_addr + vm->region[0].region_size;
-					vm->region[loadable].region_size = phdr.p_memsz,
-					vm->region[loadable].grows_downward = 0;
-				}
+				vm->region[loadable].host_base_p = buf;
+				vm->region[loadable].guest_virtual = phdr.p_vaddr & ~0xFFF;
+				vm->region[loadable].region_size = phdr.p_memsz,
+				vm->region[loadable].grows_downward = 0;
+				loadable++;
 
 				int pages = (phdr.p_memsz / 0x1000) + 1;
 				for(int page = 0; page < pages; page++) {
