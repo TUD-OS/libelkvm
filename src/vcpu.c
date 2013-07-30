@@ -485,11 +485,11 @@ void kvm_vcpu_dump_code(struct kvm_vcpu *vcpu) {
 		return;
 	}
 	printf("\n Code:\n");
-	printf(  " -----------------\n");
+	printf(  " -----\n");
 	while(ud_disassemble(&vcpu->ud_obj)) {
-		printf("%s\n", ud_insn_asm(&vcpu->ud_obj));
+		printf(" %s\n", ud_insn_asm(&vcpu->ud_obj));
 	}
-	printf(  " -----------------\n");
+	printf("\n");
 
 	return;
 }

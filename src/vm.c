@@ -174,20 +174,17 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 
 	void *host_target_p = vm->region[4].host_base_p + vm->region[4].region_size;
 
-	printf("now push env: %p\n", opts->environ);
 	int bytes = elkvm_copy_and_push_str_arr_p(vm, host_target_p, opts->environ);
 	host_target_p -= bytes;
 	assert(host_target_p > vm->region[4].host_base_p);
 
 
 	//followed by argv pointers
-	printf("now push argv\n");
 	bytes = elkvm_copy_and_push_str_arr_p(vm, host_target_p, opts->argv);
 	host_target_p -= bytes;
 	assert(host_target_p >= vm->region[4].host_base_p);
 
 	//first push argc on the stack
-	printf("now push argc\n");
 	push_stack(vm, vm->vcpus->vcpu, opts->argc);
 
 	return 0;
