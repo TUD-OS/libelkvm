@@ -47,14 +47,6 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 		return err;
 	}
 
-	/* set up the region info for page tables */
-	vm->region[6].host_base_p = (void *)vm->pager.system_chunk.userspace_addr + 
-		vm->pager.system_chunk.memory_size; 
-	vm->region[6].guest_virtual = vm->pager.system_chunk.guest_phys_addr + 
-		vm->pager.system_chunk.memory_size;
-	vm->region[6].region_size =	0x400000;
-	vm->region[6].grows_downward = 0;
-
 	/* set up the region info for the idt */
 	vm->region[5].host_base_p = (void *)vm->pager.system_chunk.userspace_addr - 
 		vm->pager.system_chunk.memory_size - vm->region[6].region_size;

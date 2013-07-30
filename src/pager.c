@@ -29,13 +29,24 @@ int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
 
 	vm->pager.other_chunks = NULL;
 
+	/* set up the region info for page tables */
+	vm->region[6].region_size =	0x400000;
+	uint64_t region_offset = vm->pager.system_chunk.memory_size - 
+		vm->region[6].region_size;
+	vm->region[6].host_base_p = (void *)vm->pager.system_chunk.userspace_addr + 
+		region_offset;
+	vm->region[6].guest_virtual = 0x0;
+	vm->region[6].grows_downward = 0;
+
+	vm->pager.host_pml4_p = vm->region[6].host_base_p;
+	uint64_t pml4_guest_physical = vm->pager.system_chunk.guest_phys_addr + 
+		region_offset;
 	err = kvm_pager_create_page_tables(&vm->pager, mode);
 	if(err) {
 		return err;
 	}
 
-	uint64_t guest_pml4 = host_to_guest_physical(&vm->pager, vm->pager.host_pml4_p);
-	err = kvm_vcpu_set_cr3(vm->vcpus->vcpu, guest_pml4);
+	err = kvm_vcpu_set_cr3(vm->vcpus->vcpu, pml4_guest_physical);
 	if(err) {
 		return err;
 	}
@@ -136,9 +147,6 @@ int kvm_pager_create_page_tables(struct kvm_pager *pager, int mode) {
 		return -1;
 	}
 
-	/* PML4 is put into the top 4MB of the system chunk */
-	pager->host_pml4_p = (void *)pager->system_chunk.userspace_addr + 
-		pager->system_chunk.memory_size - 0x400000; 
 	memset(pager->host_pml4_p, 0, 0x400000);
 	pager->host_next_free_tbl_p = pager->host_pml4_p + 0x1000;
 
