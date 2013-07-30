@@ -48,11 +48,13 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 	}
 
 	/* set up the region info for the idt */
-	vm->region[5].host_base_p = (void *)vm->pager.system_chunk.userspace_addr - 
-		vm->pager.system_chunk.memory_size - vm->region[6].region_size;
-	vm->region[5].guest_virtual = vm->pager.system_chunk.guest_phys_addr + 
-		vm->pager.system_chunk.memory_size - vm->region[6].region_size;
-	vm->region[5].region_size = 0x0000;
+	vm->region[5].region_size = 0x1000;
+	uint64_t region_offset = vm->pager.system_chunk.memory_size - 
+		vm->region[6].region_size - vm->region[5].region_size;
+	vm->region[5].host_base_p = (void *)vm->pager.system_chunk.userspace_addr + 
+		region_offset;
+	vm->region[5].guest_virtual = ADDRESS_SPACE_TOP -
+		vm->region[5].region_size + 0x1;
 	vm->region[5].grows_downward = 0;
 
 	err = kvm_pager_create_mem_chunk(&vm->pager, memory_size, ELKVM_USER_CHUNK_OFFSET);
