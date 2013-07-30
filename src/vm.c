@@ -241,3 +241,14 @@ int kvm_vm_map_chunk(struct kvm_vm *vm, struct kvm_userspace_memory_region *chun
 //	}
 	return err;
 }
+
+void elkvm_print_regions(struct elkvm_memory_region *regions) {
+	printf("\n System Memory Regions:\n");
+	printf(" ----------------------\n");
+	printf(" Host virtual\t\tGuest virtual\t\tSize\t\t\tD\n");
+	for(int i = 0; i < 7; i++) {
+		printf("%16p\t0x%016lx\t0x%016lx\t%i\n", regions[i].host_base_p, 
+				regions[i].guest_virtual, regions[i].region_size, regions[i].grows_downward);
+	}
+	printf("\n");
+}
