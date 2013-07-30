@@ -1,12 +1,13 @@
 #include <elkvm.h>
 #include <idt.h>
 #include <pager.h>
+#include <vcpu.h>
 
 int elkvm_idt_setup(struct kvm_vm *vm) {
-	//fill idt with all 256 entries
+	/* for now fill the idt with all 256 entries empty */
 	for(int i = 0; i < 256; i++) {
 		uint64_t offset;
-		struct kvm_idt_entry *entry = vm->region[4].host_base_p + 
+		struct kvm_idt_entry *entry = vm->region[5].host_base_p + 
 			i * sizeof(struct kvm_idt_entry);
 		switch(i) {
 //			case IDT_ENTRY_PF:
@@ -29,9 +30,25 @@ int elkvm_idt_setup(struct kvm_vm *vm) {
 		entry->reserved = 0x0;
 	}
 
-	//create a page for the idt
-	int err = kvm_pager_create_mapping(&vm->pager, vm->region[4].host_base_p, 
-			vm->region[4].guest_virtual);
+
+	/* create a page for the idt */
+	int err = kvm_pager_create_mapping(&vm->pager, vm->region[5].host_base_p, 
+			vm->region[5].guest_virtual);
+	if(err) {
+		return err;
+	}
+
+	/* set the idtr accordingly */
+	struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
+	err = kvm_vcpu_get_regs(vcpu);
+	if(err) {
+		return err;
+	}
+
+	vcpu->sregs.idt.base = vm->region[5].guest_virtual;
+	vcpu->sregs.idt.limit = 0x1000;
+
+	err = kvm_vcpu_set_regs(vcpu);
 
 	return err;
 }
