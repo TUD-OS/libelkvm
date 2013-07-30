@@ -372,6 +372,10 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 				}
 				is_running = 0;
 				break;
+			case KVM_EXIT_EXCEPTION:
+				fprintf(stderr, "KVM VCPU had exception\n");
+				is_running = 0;
+				break;
 			case KVM_EXIT_SHUTDOWN:
 				fprintf(stderr, "KVM VCPU did shutdown\n");
 				is_running = 0;
