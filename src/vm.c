@@ -256,7 +256,7 @@ void elkvm_print_regions(struct elkvm_memory_region *regions) {
 	printf("\n System Memory Regions:\n");
 	printf(" ----------------------\n");
 	printf(" Host virtual\t\tGuest virtual\t\tSize\t\t\tD\n");
-	for(int i = 0; i < 7; i++) {
+	for(int i = 0; i < MEMORY_REGION_COUNT; i++) {
 		printf("%16p\t0x%016lx\t0x%016lx\t%i\n", regions[i].host_base_p, 
 				regions[i].guest_virtual, regions[i].region_size, regions[i].grows_downward);
 	}
