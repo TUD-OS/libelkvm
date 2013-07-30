@@ -12,7 +12,7 @@ struct kvm_idt_entry {
 	uint16_t offset2;
 	uint32_t offset3;
 	uint32_t reserved;
-};
+}__attribute__((packed));
 
 #define IT_INTERRUPT_GATE 6
 #define IT_TRAP_GATE 7
@@ -21,6 +21,9 @@ struct kvm_idt_entry {
 #define INTERRUPT_ENTRY_PRESENT 128
 
 int elkvm_idt_setup(struct kvm_vm *);
+int elkvm_idt_load_default_handler(struct kvm_vm *, uint64_t *);
+
+void elkvm_idt_dump(struct kvm_vm *);
 
 #define IDT_ENTRY_DE  0x00
 #define IDT_ENTRY_DB  0x01
