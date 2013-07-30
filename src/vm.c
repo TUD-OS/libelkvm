@@ -145,8 +145,14 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 		vm->region[6].region_size - vm->region[5].region_size - vm->region[4].region_size;
 	vm->region[4].host_base_p = (void *)vm->pager.system_chunk.userspace_addr + 
 		rsp_offset;
-	vm->region[4].guest_virtual = vm->pager.system_chunk.guest_phys_addr + rsp_offset;
+	vm->region[4].guest_virtual = LINUX_64_STACK_BASE - vm->region[4].region_size;
 	vm->region[4].grows_downward = 0;
+
+	vm->region[3].host_base_p = (void *)vm->pager.system_chunk.userspace_addr + 
+		rsp_offset;
+	vm->region[3].guest_virtual = LINUX_64_STACK_BASE - vm->region[4].region_size;
+	vm->region[3].region_size = 0x0;
+	vm->region[3].grows_downward = 1;
 
 	int err = kvm_vcpu_get_regs(vm->vcpus->vcpu);
 	if(err) {

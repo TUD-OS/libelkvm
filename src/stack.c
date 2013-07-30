@@ -10,6 +10,7 @@ uint16_t pop_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 
 	uint16_t *host_p = (uint16_t *)kvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
 
+	vm->region[3].region_size -= 0x8;
 	vcpu->regs.rsp += 0x8;
 	err = kvm_vcpu_set_regs(vcpu);
 	assert(err == 0);
@@ -23,6 +24,7 @@ int push_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint16_t val) {
 		return err;
 	}
 
+	vm->region[3].region_size += 0x8;
 	vcpu->regs.rsp -= 0x8;
 
 	uint16_t *host_p = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
