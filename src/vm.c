@@ -52,6 +52,7 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 	vm->region[MEMORY_REGION_IDT].region_size = 0x1000;
 	uint64_t region_offset = vm->pager.system_chunk.memory_size - 
 		vm->region[MEMORY_REGION_PTS].region_size - 
+		vm->region[MEMORY_REGION_GDT].region_size - 
 		vm->region[MEMORY_REGION_IDT].region_size;
 	vm->region[MEMORY_REGION_IDT].host_base_p = 
 		(void *)vm->pager.system_chunk.userspace_addr + region_offset;
@@ -146,10 +147,11 @@ int elkvm_cleanup(struct elkvm_opts *opts) {
 
 int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 	/* for now the region to hold env etc. will be 12 pages large */
-	vm->region[MEMORY_REGION_ENV].region_size = 0x12000;
+	vm->region[MEMORY_REGION_ENV].region_size = 0x12000; 
 
 	uint64_t rsp_offset = vm->pager.system_chunk.memory_size - 
 		vm->region[MEMORY_REGION_PTS].region_size - 
+		vm->region[MEMORY_REGION_GDT].region_size - 
 		vm->region[MEMORY_REGION_IDT].region_size - 
 		vm->region[MEMORY_REGION_ENV].region_size;
 	vm->region[MEMORY_REGION_ENV].host_base_p = 

@@ -25,6 +25,7 @@ struct elkvm_memory_region {
 #define MEMORY_REGION_ENV   4
 #define MEMORY_REGION_IDTH  5
 #define MEMORY_REGION_IDT   6
-#define MEMORY_REGION_PTS   7
+#define MEMORY_REGION_GDT   7
+#define MEMORY_REGION_PTS   8
 
-#define MEMORY_REGION_COUNT 8
+#define MEMORY_REGION_COUNT 9
