@@ -48,9 +48,23 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 		return err;
 	}
 
+	vm->region[MEMORY_REGION_GDT].region_size = 0x1000;
+	uint64_t region_offset = vm->pager.system_chunk.memory_size -
+		vm->region[MEMORY_REGION_PTS].region_size -
+		vm->region[MEMORY_REGION_GDT].region_size;
+	vm->region[MEMORY_REGION_GDT].host_base_p =
+		(void *)vm->pager.system_chunk.userspace_addr + region_offset;
+	vm->region[MEMORY_REGION_GDT].guest_virtual = 0x1000;
+	vm->region[MEMORY_REGION_GDT].grows_downward = 0;
+
+	err = elkvm_gdt_setup(vm);
+	if(err) {
+		return err;
+	}
+
 	/* set up the region info for the idt */
 	vm->region[MEMORY_REGION_IDT].region_size = 0x1000;
-	uint64_t region_offset = vm->pager.system_chunk.memory_size - 
+	region_offset = vm->pager.system_chunk.memory_size - 
 		vm->region[MEMORY_REGION_PTS].region_size - 
 		vm->region[MEMORY_REGION_GDT].region_size - 
 		vm->region[MEMORY_REGION_IDT].region_size;
