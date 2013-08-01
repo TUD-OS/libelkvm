@@ -32,3 +32,5 @@ config.sub
 configure.scan
 libtool
 ltmain.sh
+
+res/vmxoff
