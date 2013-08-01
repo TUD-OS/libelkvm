@@ -18,6 +18,8 @@ struct kvm_idt_entry {
 #define IT_TRAP_GATE 7
 #define IT TASK_GATE 5
 
+#define IT_LONG_IDT 8
+
 #define INTERRUPT_ENTRY_PRESENT 128
 
 int elkvm_idt_setup(struct kvm_vm *);
