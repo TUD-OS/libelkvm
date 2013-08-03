@@ -211,7 +211,7 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 	//TODO find out why this is!
 	vcpu->sregs.apic_base = 0xfee00900;
 
-	vcpu->sregs.cs.selector = 0x1000;
+	vcpu->sregs.cs.selector = 0x0008;
 	vcpu->sregs.cs.base     = 0x0;
 	vcpu->sregs.cs.limit    = 0xFFFFFFFF;
 	vcpu->sregs.cs.type     = 0xb;
@@ -223,7 +223,7 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 	vcpu->sregs.cs.g        = 0x1;
 	vcpu->sregs.cs.avl      = 0x0;
 
-	vcpu->sregs.ds.selector = 0x1008;
+	vcpu->sregs.ds.selector = 0x0010;
 	vcpu->sregs.ds.base     = 0x0;
 	vcpu->sregs.ds.limit    = 0xFFFFFFFF;
 	vcpu->sregs.ds.type     = 0x3;
@@ -295,7 +295,7 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 	vcpu->sregs.ldt.g        = 0x0;
 	vcpu->sregs.ldt.avl      = 0x0;
 
-	vcpu->sregs.ss.selector = 0x1010;
+	vcpu->sregs.ss.selector = 0x0018;
 	vcpu->sregs.ss.base     = 0x0;
 	vcpu->sregs.ss.limit    = 0xFFFFFFFF;
 	vcpu->sregs.ss.type     = 0x3;
@@ -307,9 +307,11 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 	vcpu->sregs.ss.g        = 0x1;
 	vcpu->sregs.ss.avl      = 0x0;
 
+	/* gets set in elkvm_gdt_setup */
 	vcpu->sregs.gdt.base  = 0x0;
 	vcpu->sregs.gdt.limit = 0xFFFF;
 
+	/* gets set in elkvm_idt_setup */
 	vcpu->sregs.idt.base  = 0xFBFF000;
 	vcpu->sregs.idt.limit = 0x0;
 
@@ -318,9 +320,6 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 	//memset(&vcpu->sregs.gs, 0, sizeof(struct kvm_segment));
 	//memset(&vcpu->sregs.tr, 0, sizeof(struct kvm_segment));
 	//memset(&vcpu->sregs.ldt, 0, sizeof(struct kvm_segment));
-
-	//memset(&vcpu->sregs.gdt, 0, sizeof(struct kvm_dtable));
-	//memset(&vcpu->sregs.idt, 0, sizeof(struct kvm_dtable));
 
 	int err = kvm_vcpu_set_regs(vcpu);
 	return err;
