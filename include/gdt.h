@@ -1,6 +1,6 @@
 #include "elkvm.h"
 
-struct elkvm_gdt_entry {
+struct elkvm_gdt_segment_descriptor {
 	uint16_t limit1;
 	uint16_t base1;
 	uint8_t base2;
