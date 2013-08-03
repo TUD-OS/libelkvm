@@ -38,4 +38,4 @@ struct elkvm_tss {
 	uint16_t reserved11;
 	uint16_t reserved12;
 	uint16_t iopb;
-}
+};
