@@ -1,5 +1,6 @@
 #include <elkvm.h>
 #include <gdt.h>
+#include <tss.h>
 #include <vcpu.h>
 
 #include <errno.h>
@@ -38,9 +39,14 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 	entry++;
 
 	/* task state segment */
-	elkvm_gdt_create_segment_descriptor(entry, 0x0, 0xFFFFFFFF,
+	elkvm_gdt_create_segment_descriptor(entry,
+			vm->region[MEMORY_REGION_GDT].guest_virtual + GDT_NUM_ENTRIES * 8,
+			sizeof(struct elkvm_tss),
 			0x9 | GDT_SEGMENT_PRESENT,
 			GDT_SEGMENT_PROTECTED_32);
+
+	uint64_t tr_selector = (uint64_t)entry -
+		(uint64_t)vm->region[MEMORY_REGION_GDT].host_base_p;
 
 	struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
 
@@ -51,7 +57,12 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 
 	vcpu->sregs.gdt.base = vm->region[MEMORY_REGION_GDT].guest_virtual;
 	vcpu->sregs.gdt.limit = vm->region[MEMORY_REGION_GDT].guest_virtual +
-		4 * 8;
+		GDT_NUM_ENTRIES * 8;
+
+	vcpu->sregs.tr.base = vm->region[MEMORY_REGION_GDT].guest_virtual +
+		GDT_NUM_ENTRIES * 8;
+	vcpu->sregs.tr.limit = sizeof(struct elkvm_tss);
+	vcpu->sregs.tr.selector = tr_selector;
 
 	err = kvm_vcpu_set_regs(vcpu);
 	if(err) {
@@ -104,7 +115,7 @@ void elkvm_gdt_dump(struct kvm_vm *vm) {
 	printf(  " ------------------------\n");
 	printf(  " selector\tbase\tlimit\taccess\tflags\n");
 
-	for(int i = 0; i < 5; i++) {
+	for(int i = 0; i < GDT_NUM_ENTRIES; i++) {
 		struct elkvm_gdt_segment_descriptor *entry = vm->region[MEMORY_REGION_GDT].host_base_p +
 			i * sizeof(struct elkvm_gdt_segment_descriptor);
 		uint16_t selector = i * sizeof(struct elkvm_gdt_segment_descriptor);
