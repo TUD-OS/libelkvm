@@ -16,9 +16,9 @@ struct elkvm_gdt_segment_descriptor {
 #define GDT_SEGMENT_BIT	              16
 #define GDT_SEGMENT_PRIVILEDGE_USER   96
 #define GDT_SEGMENT_PRESENT          128
-#define GDT_SEGMENT_LONG              32
-#define GDT_SEGMENT_PROTECTED_32      64
-#define GDT_SEGMENT_PAGE_GRANULARITY 128
+#define GDT_SEGMENT_LONG               2
+#define GDT_SEGMENT_PROTECTED_32       4
+#define GDT_SEGMENT_PAGE_GRANULARITY   8
 
 int elkvm_gdt_setup(struct kvm_vm *);
 int elkvm_gdt_create_segment_descriptor(struct elkvm_gdt_segment_descriptor *,
