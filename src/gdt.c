@@ -81,7 +81,7 @@ int elkvm_gdt_create_segment_descriptor(struct elkvm_gdt_segment_descriptor *ent
 	entry->base2        = (base >> 16) & 0xFF;
 	entry->base3        = (base >> 24);
 	entry->limit1       = limit & 0xFFFF;
-	entry->limit2_flags = ((limit >> 16) & 0xF) | ((uint16_t)flags << 8);
+	entry->limit2_flags = ((limit >> 16) & 0xF) | ((uint16_t)flags << 4);
 	entry->access       = access;
 
 	printf("created segment descriptor at: %p base: 0x%x limit: 0x%x access: 0x%x flags: 0x%x\n",
