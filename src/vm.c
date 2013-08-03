@@ -8,6 +8,7 @@
 #include <unistd.h>
 
 #include <elkvm.h>
+#include <gdt.h>
 #include <idt.h>
 #include <kvm.h>
 #include <pager.h>
