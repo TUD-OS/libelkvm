@@ -30,11 +30,11 @@ int elkvm_idt_setup(struct kvm_vm *vm) {
 		//		offset = 0x0;
 		//		break;
 		//}
-		entry->offset1 = (uint16_t)((offset << 48) >> 48);
-		entry->offset2 = (uint16_t)((offset << 32) >> 48);
+		entry->offset1 = offset & 0xFFFF;
+		entry->offset2 = (offset >> 16) & 0xFFFF;
 		entry->offset3 = (uint32_t)(offset >> 32);
 
-		entry->selector = 0x1000;
+		entry->selector = 0x0008;
 		entry->idx = 0x0;
 		entry->flags = INTERRUPT_ENTRY_PRESENT | IT_TRAP_GATE | IT_LONG_IDT;
 		entry->reserved = 0x0;
