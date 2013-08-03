@@ -5,6 +5,7 @@
 #include "test_vm.h"
 
 extern Suite *elfloader_suite();
+extern Suite *gdt_suite();
 extern Suite *stack_suite();
 extern Suite *pager_suite();
 extern Suite *vcpu_suite();
@@ -19,6 +20,7 @@ int main() {
 	srunner_add_suite(sr, kvm_suite());
 	srunner_add_suite(sr, pager_suite());
 	srunner_add_suite(sr, stack_suite());
+	srunner_add_suite(sr, gdt_suite());
 	srunner_run_all(sr, CK_NORMAL);
 	number_failed = srunner_ntests_failed(sr);
 	srunner_free(sr);

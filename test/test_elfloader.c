@@ -94,7 +94,7 @@ START_TEST(test_elfloader_load_program_header) {
 END_TEST
 
 START_TEST(test_elfloader_initialize_stack) {
-	int err = elfloader_initialize_stack(&elfloader_test_kvm, &elfloader_test_vm);
+	int err = elkvm_initialize_stack(&elfloader_test_kvm, &elfloader_test_vm);
 	ck_assert_int_eq(err, 0);
 
 	ck_abort_msg("Test for Stack initialization not implemented");
