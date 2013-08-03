@@ -2,10 +2,11 @@
 
 struct elkvm_gdt_entry {
 	uint16_t limit1;
-	uint32_t base1;
+	uint16_t base1;
+	uint8_t base2;
 	uint8_t access;
 	uint8_t limit2_flags;
-	uint8_t base2;
+	uint8_t base3;
 };
 
 #define GDT_SEGMENT_WRITEABLE 2
