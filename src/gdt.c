@@ -26,21 +26,21 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 	/* data segment */
 	elkvm_gdt_create_segment_descriptor(entry, 0x0, 0xFFFFFFFF,
 			GDT_SEGMENT_WRITEABLE | GDT_SEGMENT_BIT | GDT_SEGMENT_PRESENT,
-			GDT_SEGMENT_PAGE_GRANULARITY | GDT_SEGMENT_PROTECTED_32 | GDT_SEGMENT_LONG);
+			GDT_SEGMENT_PAGE_GRANULARITY | GDT_SEGMENT_PROTECTED_32 );
 
 	entry++;
 
 	/* stack segment */
 	elkvm_gdt_create_segment_descriptor(entry, 0x0, 0xFFFFFFFF,
 			GDT_SEGMENT_WRITEABLE | GDT_SEGMENT_BIT | GDT_SEGMENT_PRESENT,
-			GDT_SEGMENT_PAGE_GRANULARITY | GDT_SEGMENT_PROTECTED_32 | GDT_SEGMENT_LONG);
+			GDT_SEGMENT_PAGE_GRANULARITY | GDT_SEGMENT_PROTECTED_32 );
 
 	entry++;
 
 	/* task state segment */
 	elkvm_gdt_create_segment_descriptor(entry, 0x0, 0xFFFFFFFF,
 			0x9 | GDT_SEGMENT_PRESENT,
-			GDT_SEGMENT_PAGE_GRANULARITY | GDT_SEGMENT_PROTECTED_32 | GDT_SEGMENT_LONG);
+			GDT_SEGMENT_PROTECTED_32);
 
 	struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
 
