@@ -26,6 +26,13 @@ int elkvm_idt_setup(struct kvm_vm *);
 int elkvm_idt_load_default_handler(struct kvm_vm *, uint64_t *);
 
 void elkvm_idt_dump(struct kvm_vm *);
+void elkvm_idt_dump_isr(struct kvm_vm *, int);
+
+inline uint64_t idt_entry_offset(struct kvm_idt_entry *entry) {
+		return entry->offset1 | ((uint64_t)entry->offset2 << 16) | 
+			((uint64_t)entry->offset3 << 32);
+}
+
 
 #define IDT_ENTRY_DE  0x00
 #define IDT_ENTRY_DB  0x01
