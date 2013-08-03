@@ -21,4 +21,20 @@ struct elkvm_gdt_segment_descriptor {
 #define GDT_SEGMENT_PAGE_GRANULARITY 128
 
 int elkvm_gdt_setup(struct kvm_vm *);
+int elkvm_gdt_create_segment_descriptor(struct elkvm_gdt_segment_descriptor *,
+		uint32_t, uint32_t, uint8_t, uint8_t);
 
+void elkvm_gdt_dump(struct kvm_vm *);
+
+inline uint32_t gdt_base(struct elkvm_gdt_segment_descriptor *entry) {
+	return entry->base1 | ((uint32_t)entry->base2 << 16) |
+	 ((uint32_t)entry->base3 << 24);
+}
+
+inline uint32_t gdt_limit(struct elkvm_gdt_segment_descriptor *entry) {
+	return entry->limit1 | ((uint32_t)(entry->limit2_flags & 0xF) << 16);
+}
+
+inline uint8_t gdt_flags(struct elkvm_gdt_segment_descriptor *entry) {
+	return entry->limit2_flags >> 4;
+}
