@@ -1,3 +1,4 @@
+#include <inttypes.h>
 
 struct elkvm_tss {
 	uint16_t link;
@@ -38,4 +39,6 @@ struct elkvm_tss {
 	uint16_t reserved11;
 	uint16_t reserved12;
 	uint16_t iopb;
-};
+}__attribute__((packed));
+
+int elkvm_tss_setup(struct elkvm_tss *, int);
