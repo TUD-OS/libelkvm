@@ -56,8 +56,7 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 	}
 
 	vcpu->sregs.gdt.base = vm->region[MEMORY_REGION_GDT].guest_virtual;
-	vcpu->sregs.gdt.limit = vm->region[MEMORY_REGION_GDT].guest_virtual +
-		GDT_NUM_ENTRIES * 8;
+	vcpu->sregs.gdt.limit = GDT_NUM_ENTRIES * 8 - 1;
 
 	vcpu->sregs.tr.base = vm->region[MEMORY_REGION_GDT].guest_virtual +
 		GDT_NUM_ENTRIES * 8;
