@@ -40,13 +40,26 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 
 	/* task state segment */
 	elkvm_gdt_create_segment_descriptor(entry,
-			vm->region[MEMORY_REGION_GDT].guest_virtual + GDT_NUM_ENTRIES * 8,
+			(vm->region[MEMORY_REGION_GDT].guest_virtual + GDT_NUM_ENTRIES * 8) & 0xFFFFFFFF,
+			sizeof(struct elkvm_tss),
+			0x9 | GDT_SEGMENT_PRESENT,
+			GDT_SEGMENT_PROTECTED_32);
+	/*
+	 * tss entry has 64 bits, make a second entry to account for that
+	 */
+	entry++;
+	elkvm_gdt_create_segment_descriptor(entry,
+			(vm->region[MEMORY_REGION_GDT].guest_virtual + GDT_NUM_ENTRIES * 8) & ~0xFFFFFFFF,
 			sizeof(struct elkvm_tss),
 			0x9 | GDT_SEGMENT_PRESENT,
 			GDT_SEGMENT_PROTECTED_32);
 
 	uint64_t tr_selector = (uint64_t)entry -
 		(uint64_t)vm->region[MEMORY_REGION_GDT].host_base_p;
+	
+	elkvm_tss_setup(
+			vm->region[MEMORY_REGION_GDT].host_base_p + GDT_NUM_ENTRIES * 8,
+			0x10);
 
 	struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
 

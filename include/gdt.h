@@ -20,7 +20,11 @@ struct elkvm_gdt_segment_descriptor {
 #define GDT_SEGMENT_PROTECTED_32       4
 #define GDT_SEGMENT_PAGE_GRANULARITY   8
 
-#define GDT_NUM_ENTRIES 5
+/*
+ * make room for an additional entry, because the entry for
+ * tss has twice the size
+ */
+#define GDT_NUM_ENTRIES 6
 
 int elkvm_gdt_setup(struct kvm_vm *);
 int elkvm_gdt_create_segment_descriptor(struct elkvm_gdt_segment_descriptor *,
