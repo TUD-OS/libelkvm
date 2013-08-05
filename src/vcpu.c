@@ -343,6 +343,7 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 	vcpu->sregs.idt.base  = 0xFBFF000;
 	vcpu->sregs.idt.limit = 0x0;
 
+
 	//memset(&vcpu->sregs.es, 0, sizeof(struct kvm_segment));
 	//memset(&vcpu->sregs.fs, 0, sizeof(struct kvm_segment));
 	//memset(&vcpu->sregs.gs, 0, sizeof(struct kvm_segment));
@@ -405,6 +406,13 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 				break;
 			case KVM_EXIT_SHUTDOWN:
 				fprintf(stderr, "KVM VCPU did shutdown\n");
+				is_running = 0;
+				break;
+			case KVM_EXIT_DEBUG:
+				break;
+			default:
+				fprintf(stderr, "KVM VCPU exit for unknown reason: %i\n",
+						vcpu->run_struct->exit_reason);
 				is_running = 0;
 				break;
 		}
