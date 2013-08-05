@@ -22,6 +22,9 @@ extern "C" {
 #define VMX_INVALID_GUEST_STATE 0x80000021
 #define CPUID_EXT_VMX      (1 << 5)
 
+#define VCPU_MSR_STAR  0xC0000081
+#define VCPU_MSR_LSTAR 0xC0000082
+
 struct kvm_vcpu {
 	int fd;
 	ud_t ud_obj;
@@ -71,6 +74,9 @@ int kvm_vcpu_get_regs(struct kvm_vcpu *);
 	Set the VCPU's registers
 */
 int kvm_vcpu_set_regs(struct kvm_vcpu *);
+
+int kvm_vcpu_get_msr(struct kvm_vcpu *, uint32_t, uint64_t *);
+int kvm_vcpu_set_msr(struct kvm_vcpu *, uint32_t, uint64_t);
 
 /*
 	Initialize a VCPU's registers according to mode

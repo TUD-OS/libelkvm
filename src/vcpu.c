@@ -194,6 +194,34 @@ int kvm_vcpu_destroy(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 	return 0;
 }
 
+int kvm_vcpu_get_msr(struct kvm_vcpu *vcpu, uint32_t index, uint64_t *res_p) {
+	struct kvm_msrs msr;
+	msr.nmsrs = 1;
+	msr.entries[0].index = index;
+	
+	int err = ioctl(vcpu->fd, KVM_SET_MSRS, &msr);
+	if(err) {
+		return -errno;
+	}
+
+	*res_p = msr.entries[0].data;
+	return 0;
+}
+
+int kvm_vcpu_set_msr(struct kvm_vcpu *vcpu, uint32_t index, uint64_t data) {
+	struct kvm_msrs msr;
+	msr.nmsrs = 1;
+	msr.entries[0].index = index;
+	msr.entries[0].data  = data;
+
+	int err = ioctl(vcpu->fd, KVM_SET_MSRS, &msr);
+	if(err) {
+		return -errno;
+	}
+
+	return 0;
+}
+
 int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 
 	memset(&vcpu->regs, 0, sizeof(struct kvm_regs));
