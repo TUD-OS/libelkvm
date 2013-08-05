@@ -14,9 +14,9 @@ struct kvm_idt_entry {
 	uint32_t reserved;
 }__attribute__((packed));
 
-#define IT_INTERRUPT_GATE 6
-#define IT_TRAP_GATE 7
-#define IT TASK_GATE 5
+#define IT_CALL_GATE      0xC
+#define IT_INTERRUPT_GATE 0xE
+#define IT_TRAP_GATE      0xF
 
 #define IT_LONG_IDT 8
 
