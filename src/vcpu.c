@@ -415,7 +415,7 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 				break;
 			case KVM_EXIT_SHUTDOWN:
 				fprintf(stderr, "KVM VCPU did shutdown\n");
-				is_running = elkvm_handle_vm_shutdown(vcpu);
+				is_running = elkvm_handle_vm_shutdown(vcpu->vm, vcpu);
 				break;
 			case KVM_EXIT_DEBUG:
 				fprintf(stderr, "KVM_EXIT_DEBUG\n");
