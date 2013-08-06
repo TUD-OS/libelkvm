@@ -4,6 +4,11 @@
 extern "C" {
 #endif
 
+#include <poll.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/utsname.h>
+#include <unistd.h>
 #include <libelf.h>
 
 #include "kvm.h"
@@ -22,6 +27,21 @@ struct kvm_vm {
 	struct kvm_pager pager;
 	int run_struct_size;
 	struct elkvm_memory_region region[MEMORY_REGION_COUNT];
+};
+
+struct elkmv_handlers {
+	long (*read) (int fd, void *buf, size_t count);
+	long (*write) (int fd, void *buf, size_t count);
+	long (*open) (const char *pathname, int flags, mode_t mode);
+	long (*close) (int fd);
+	long (*stat) (const char *path, struct stat *buf);
+	long (*fstat) (int fd, struct stat *buf);
+	long (*lstat) (const char *path, struct stat *buf);
+	long (*poll) (struct pollfd *fds, nfds_t nfds, int timeout);
+	long (*lseek) (int fd, off_t offset, int whence);
+	long (*mmap) (void *addr, size_t length, int prot, int flags, int fd, off_t offset);
+	/* ... */
+	long (*uname) (struct utsname *buf);
 };
 
 /*
