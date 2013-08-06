@@ -80,6 +80,16 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 		return err;
 	}
 
+	/* 
+	 * setup the lstar register with the syscall handler 
+	 */
+	err = kvm_vcpu_set_msr(vm->vcpus->vcpu,
+			VCPU_MSR_LSTAR,
+			vm->region[MEMORY_REGION_IDTH].guest_virtual);
+	if(err) {
+		return err;
+	}
+
 	err = kvm_pager_create_mem_chunk(&vm->pager, memory_size, ELKVM_USER_CHUNK_OFFSET);
 	if(err) {
 		return err;
