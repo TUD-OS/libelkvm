@@ -9,6 +9,8 @@
 #include <unistd.h>
 
 #include <elkvm.h>
+#include <gdt.h>
+#include <idt.h>
 #include <stack.h>
 #include <vcpu.h>
 
@@ -375,6 +377,12 @@ int kvm_vcpu_run(struct kvm_vcpu *vcpu) {
 
 int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 	int is_running = 1;
+	if(vcpu->is_debug) {
+		elkvm_gdt_dump(vcpu->vm);
+		elkvm_idt_dump(vcpu->vm);
+		elkvm_idt_dump_isr(vcpu->vm, 10);
+	}
+
 	while(is_running) {
 		int err = kvm_vcpu_run(vcpu);
 		if(err) {
@@ -417,7 +425,9 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 				break;
 		}
 
-		if(vcpu->is_debug) {
+		if(vcpu->is_debug ||
+				vcpu->run_struct->exit_reason == KVM_EXIT_DEBUG ||
+				vcpu->run_struct->exit_reason == KVM_EXIT_SHUTDOWN) {
 			kvm_vcpu_dump_regs(vcpu);
 			kvm_vcpu_dump_code(vcpu);
 		}

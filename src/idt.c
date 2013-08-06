@@ -49,9 +49,6 @@ int elkvm_idt_setup(struct kvm_vm *vm) {
 		return err;
 	}
 
-	elkvm_idt_dump(vm);
-	elkvm_idt_dump_isr(vm, 10);
-
 	/* set the idtr accordingly */
 	struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
 	err = kvm_vcpu_get_regs(vcpu);
@@ -94,11 +91,8 @@ int elkvm_idt_load_default_handler(struct kvm_vm *vm, uint64_t *off) {
 	int bufsize = 0x1000;
 	int bytes = 0;
 	while((bytes = read(fd, buf, bufsize)) > 0) {
-		printf("read %i bytes to %p\n", bytes, buf);
 		buf += bytes;
 	}
-
-	printf("%.*lx\n", bytes, *(uint64_t *)vm->region[MEMORY_REGION_IDTH].host_base_p);
 
 	return 0;
 }

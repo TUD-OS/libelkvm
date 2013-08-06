@@ -88,8 +88,6 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 		return err;
 	}
 
-	elkvm_gdt_dump(vm);
-
 	return 0;
 }
 
@@ -106,12 +104,6 @@ int elkvm_gdt_create_segment_descriptor(struct elkvm_gdt_segment_descriptor *ent
 	entry->limit1       = limit & 0xFFFF;
 	entry->limit2_flags = ((limit >> 16) & 0xF) | ((uint16_t)flags << 4);
 	entry->access       = access;
-
-	printf("created segment descriptor at: %p base: 0x%x limit: 0x%x access: 0x%x flags: 0x%x\n",
-			entry,
-			entry->base1 | (entry->base2 << 16) | entry->base3 << 24,
-			entry->limit1 | ((entry->limit2_flags & 0xF) << 16),
-			entry->access, (entry->limit2_flags >> 4));
 
 	return 0;
 }
