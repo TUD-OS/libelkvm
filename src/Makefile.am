@@ -5,6 +5,7 @@ libelkvm_la_SOURCES = elfloader.c \
 											idt.c\
 										 	pager.c \
 											stack.c \
+											syscall.c\
 											tss.c\
 											vcpu.c \
 										 	vm.c
