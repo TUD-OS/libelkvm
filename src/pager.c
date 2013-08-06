@@ -264,6 +264,9 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 
 void *kvm_pager_get_host_p(struct kvm_pager *pager, uint64_t guest_virtual) {
 	uint64_t *table_base = (uint64_t *)pager->host_pml4_p;
+	/* we should always have paging in place, when this gets called! */
+	assert(table_base != NULL);
+
 	uint64_t *entry = NULL;
 	int addr_low = 39;
 	int addr_high = 47;
