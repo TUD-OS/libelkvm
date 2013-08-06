@@ -37,7 +37,7 @@ START_TEST(test_push_stack) {
 
 	err = kvm_vcpu_set_regs(vcpu);
 	ck_assert_int_eq(err, 0);
-	void *host_p = stack_vm.pager.system_chunk.userspace_addr + 0x1000;
+	void *host_p = (void *)stack_vm.pager.system_chunk.userspace_addr + 0x1000;
 	
 	err = kvm_pager_create_mapping(&stack_vm.pager, host_p, vcpu->regs.rsp - 0x1000);
 	ck_assert_int_eq(err, 0);
