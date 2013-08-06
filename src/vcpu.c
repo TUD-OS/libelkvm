@@ -12,6 +12,7 @@
 #include <gdt.h>
 #include <idt.h>
 #include <stack.h>
+#include <syscall.h>
 #include <vcpu.h>
 
 int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
@@ -414,9 +415,10 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 				break;
 			case KVM_EXIT_SHUTDOWN:
 				fprintf(stderr, "KVM VCPU did shutdown\n");
-				is_running = 0;
+				is_running = elkvm_handle_vm_shutdown(vcpu);
 				break;
 			case KVM_EXIT_DEBUG:
+				fprintf(stderr, "KVM_EXIT_DEBUG\n");
 				break;
 			default:
 				fprintf(stderr, "KVM VCPU exit for unknown reason: %i\n",
