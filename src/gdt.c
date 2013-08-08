@@ -60,7 +60,7 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 	elkvm_tss_setup64(
 			vm,
 			vm->region[MEMORY_REGION_GDT].host_base_p + GDT_NUM_ENTRIES * 8,
-			0x10);
+			vm->region[MEMORY_REGION_KSTACK].guest_virtual);
 
 	struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
 
