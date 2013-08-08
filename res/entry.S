@@ -1,0 +1,3 @@
+_enter:
+	vmxoff
+	sysret
