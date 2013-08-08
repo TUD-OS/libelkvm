@@ -15,7 +15,7 @@ int elkvm_handle_vm_shutdown(struct kvm_vm *, struct kvm_vcpu *);
  * \brief check what kind of syscall has been made by the guest
  * and call the appropriate handler func in the userspace binary
  */
-int elkvm_handle_syscall(struct kvm_vm *);
+int elkvm_handle_syscall(struct kvm_vm *, struct kvm_vcpu *);
 
 long elkvm_do_read(struct kvm_vm *);
 long elkvm_do_write(struct kvm_vm *);

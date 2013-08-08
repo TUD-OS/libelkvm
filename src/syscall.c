@@ -30,14 +30,65 @@ int elkvm_handle_vm_shutdown(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 	return 0;
 }
 
-int elkvm_handle_syscall(struct kvm_vm *vcpu) {
-	uint64_t syscall_num = vcpu->regs.rax;
-	if(syscall_num > NUM_SYSCALLS) {
-		/* TODO probably set rax here */
-		return -ENOSYS;
-	}
+/* Taken from uClibc/libc/sysdeps/linux/x86_64/bits/syscalls.h
+   The Linux/x86-64 kernel expects the system call parameters in                     
+   registers according to the following table:                                       
+                                                                                    
+   syscall number  rax                                                              
+   arg 1   rdi                                                                      
+   arg 2   rsi                                                                      
+   arg 3   rdx                                                                      
+   arg 4   r10                                                                      
+   arg 5   r8                                                                       
+   arg 6   r9                                                                       
+                                                                                    
+   The Linux kernel uses and destroys internally these registers:                   
+   return address from                                                              
+   syscall   rcx                                                                    
+   additionally clobered: r12-r15,rbx,rbp                                           
+   eflags from syscall r11                                                          
+                                                                                    
+   Normal function call, including calls to the system call stub                    
+   functions in the libc, get the first six parameters passed in                    
+   registers and the seventh parameter and later on the stack.  The                 
+   register use is as follows:                                                      
+                                                                                    
+    system call number in the DO_CALL macro                                         
+    arg 1    rdi                                                                    
+    arg 2    rsi                                                                    
+    arg 3    rdx                                                                    
+    arg 4    rcx                                                                    
+    arg 5    r8                                                                     
+    arg 6    r9                                                                     
+                                                                                    
+   We have to take care that the stack is aligned to 16 bytes.  When                
+   called the stack is not aligned since the return address has just                
+   been pushed.                                                                     
+                                                                                    
+                                                                                    
+   Syscalls of more than 6 arguments are not supported.  */                         
 
-	int err = elkvm_syscalls[syscall_num].func(vcpu);
+int elkvm_handle_syscall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+	uint64_t syscall_num = vcpu->regs.rax;
+
+	long result;
+	if(syscall_num > NUM_SYSCALLS) {
+		result = ENOSYS;
+	} else {
+		result = elkvm_syscalls[syscall_num].func(vm);
+	}
+	/* binary expects syscall result in rax */
+	vcpu->regs.rax = result;
+
+	/* disable the trap flag */
+	vcpu->regs.rflags = vcpu->regs.rflags & ~0x10100;
+
+	/* restore the rip */
+	//vcpu->regs.rip = vcpu->regs.rcx;
+	/* vmxoff instruction is 3 bytes long */
+	vcpu->regs.rip = vcpu->regs.rip + 0x3;
+
+	int err = kvm_vcpu_set_regs(vcpu);
 	return err;
 }
 
