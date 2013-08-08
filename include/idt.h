@@ -6,7 +6,10 @@
 struct kvm_idt_entry {
 	uint16_t offset1;
 	uint16_t selector;
-	//only use lower three bits of idx!
+	/*
+	 * in long mode lower three bits of idx are
+	 * used for ist index
+	 */
 	uint8_t idx;
 	uint8_t flags;
 	uint16_t offset2;
