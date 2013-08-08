@@ -39,6 +39,11 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 		}
 	}
 
+	err = elkvm_region_setup(vm);
+	if(err) {
+		return err;
+	}
+
 	err = kvm_pager_initialize(vm, mode);
 	if(err) {
 		return err;
@@ -49,31 +54,18 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 		return err;
 	}
 
-	vm->region[MEMORY_REGION_GDT].region_size = 0x1000;
-	uint64_t region_offset = vm->pager.system_chunk.memory_size -
-		vm->region[MEMORY_REGION_PTS].region_size -
-		vm->region[MEMORY_REGION_GDT].region_size;
-	vm->region[MEMORY_REGION_GDT].host_base_p =
-		(void *)vm->pager.system_chunk.userspace_addr + region_offset;
-	vm->region[MEMORY_REGION_GDT].guest_virtual = 0x1000;
-	vm->region[MEMORY_REGION_GDT].grows_downward = 0;
+	/* create a mapping for the kernel (interrupt) stack */
+	err = kvm_pager_create_mapping(&vm->pager, 
+			vm->region[MEMORY_REGION_KSTACK].host_base_p,
+			vm->region[MEMORY_REGION_KSTACK].guest_virtual);
+	if(err) {
+		return err;
+	}
 
 	err = elkvm_gdt_setup(vm);
 	if(err) {
 		return err;
 	}
-
-	/* set up the region info for the idt */
-	vm->region[MEMORY_REGION_IDT].region_size = 0x1000;
-	region_offset = vm->pager.system_chunk.memory_size - 
-		vm->region[MEMORY_REGION_PTS].region_size - 
-		vm->region[MEMORY_REGION_GDT].region_size - 
-		vm->region[MEMORY_REGION_IDT].region_size;
-	vm->region[MEMORY_REGION_IDT].host_base_p = 
-		(void *)vm->pager.system_chunk.userspace_addr + region_offset;
-	vm->region[MEMORY_REGION_IDT].guest_virtual = ADDRESS_SPACE_TOP -
-		vm->region[MEMORY_REGION_IDT].region_size + 0x1;
-	vm->region[MEMORY_REGION_IDT].grows_downward = 0;
 
 	err = elkvm_idt_setup(vm);
 	if(err) {
@@ -106,6 +98,94 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 	}
 
 	vm->syscall_handlers = handlers;
+
+	return 0;
+}
+
+int elkvm_region_setup(struct kvm_vm *vm) {
+	/* create a chunk for system data
+	   TODO for now use a fixed size, what if bin is too large for that */	
+	void *system_chunk_p;
+	int err = posix_memalign(&system_chunk_p, 0x1000, ELKVM_SYSTEM_MEMSIZE);
+	if(err) {
+		return err;
+	}
+
+	vm->pager.system_chunk.userspace_addr = (__u64)system_chunk_p;
+	vm->pager.system_chunk.guest_phys_addr = 0x0;
+	vm->pager.system_chunk.memory_size = ELKVM_SYSTEM_MEMSIZE;
+	vm->pager.system_chunk.flags = 0;
+	vm->pager.system_chunk.slot = 0;
+
+	/* set up the region info for page tables */
+	vm->region[MEMORY_REGION_PTS].region_size =	0x400000;
+	uint64_t region_offset = vm->pager.system_chunk.memory_size - 
+		vm->region[MEMORY_REGION_PTS].region_size;
+	vm->region[MEMORY_REGION_PTS].host_base_p = 
+		(void *)vm->pager.system_chunk.userspace_addr + region_offset;
+	vm->region[MEMORY_REGION_PTS].guest_virtual = 0x0;
+	vm->region[MEMORY_REGION_PTS].grows_downward = 0;
+
+	/* global descriptor table */
+	vm->region[MEMORY_REGION_GDT].region_size = 0x1000;
+	region_offset = vm->pager.system_chunk.memory_size -
+		vm->region[MEMORY_REGION_PTS].region_size -
+		vm->region[MEMORY_REGION_GDT].region_size;
+	vm->region[MEMORY_REGION_GDT].host_base_p =
+		(void *)vm->pager.system_chunk.userspace_addr + region_offset;
+	vm->region[MEMORY_REGION_GDT].guest_virtual = 0x1000;
+	vm->region[MEMORY_REGION_GDT].grows_downward = 0;
+
+	/* set up the region info for the idt */
+	vm->region[MEMORY_REGION_IDT].region_size = 0x1000;
+	region_offset = vm->pager.system_chunk.memory_size - 
+		vm->region[MEMORY_REGION_PTS].region_size - 
+		vm->region[MEMORY_REGION_GDT].region_size - 
+		vm->region[MEMORY_REGION_IDT].region_size;
+	vm->region[MEMORY_REGION_IDT].host_base_p = 
+		(void *)vm->pager.system_chunk.userspace_addr + region_offset;
+	vm->region[MEMORY_REGION_IDT].guest_virtual = ADDRESS_SPACE_TOP -
+		vm->region[MEMORY_REGION_IDT].region_size + 0x1;
+	vm->region[MEMORY_REGION_IDT].grows_downward = 0;
+	
+	vm->region[MEMORY_REGION_IDTH].region_size = 0x1000;
+	vm->region[MEMORY_REGION_IDTH].host_base_p = 
+		vm->region[MEMORY_REGION_IDT].host_base_p - 
+		vm->region[MEMORY_REGION_IDTH].region_size;
+	vm->region[MEMORY_REGION_IDTH].guest_virtual = 
+		vm->region[MEMORY_REGION_IDT].guest_virtual - 
+		vm->region[MEMORY_REGION_IDTH].region_size;
+	vm->region[MEMORY_REGION_IDTH].grows_downward = 0;
+
+	/* for now the region to hold env etc. will be 12 pages large */
+	vm->region[MEMORY_REGION_ENV].region_size = 0x12000; 
+
+	uint64_t rsp_offset = vm->pager.system_chunk.memory_size - 
+		vm->region[MEMORY_REGION_PTS].region_size - 
+		vm->region[MEMORY_REGION_GDT].region_size - 
+		vm->region[MEMORY_REGION_IDT].region_size - 
+		vm->region[MEMORY_REGION_ENV].region_size;
+	vm->region[MEMORY_REGION_ENV].host_base_p = 
+		(void *)vm->pager.system_chunk.userspace_addr + rsp_offset;
+	vm->region[MEMORY_REGION_ENV].guest_virtual = LINUX_64_STACK_BASE - 
+		vm->region[MEMORY_REGION_ENV].region_size;
+	vm->region[MEMORY_REGION_ENV].grows_downward = 0;
+
+	/* stack */
+	vm->region[MEMORY_REGION_STACK].host_base_p = 
+		(void *)vm->pager.system_chunk.userspace_addr + rsp_offset;
+	vm->region[MEMORY_REGION_STACK].guest_virtual = LINUX_64_STACK_BASE - 
+		vm->region[MEMORY_REGION_ENV].region_size;
+	vm->region[MEMORY_REGION_STACK].region_size = 0x0;
+	vm->region[MEMORY_REGION_STACK].grows_downward = 1;
+
+	/* kernel (interrupt) stack */
+	vm->region[MEMORY_REGION_KSTACK].host_base_p =
+		vm->region[MEMORY_REGION_STACK].host_base_p - 0x100000;
+	vm->region[MEMORY_REGION_KSTACK].guest_virtual = 
+		vm->region[MEMORY_REGION_STACK].guest_virtual - 0x100000;
+	vm->region[MEMORY_REGION_KSTACK].region_size = 0x1000;
+	vm->region[MEMORY_REGION_KSTACK].grows_downward = 1;
 
 	return 0;
 }
@@ -173,27 +253,6 @@ int elkvm_cleanup(struct elkvm_opts *opts) {
 }
 
 int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
-	/* for now the region to hold env etc. will be 12 pages large */
-	vm->region[MEMORY_REGION_ENV].region_size = 0x12000; 
-
-	uint64_t rsp_offset = vm->pager.system_chunk.memory_size - 
-		vm->region[MEMORY_REGION_PTS].region_size - 
-		vm->region[MEMORY_REGION_GDT].region_size - 
-		vm->region[MEMORY_REGION_IDT].region_size - 
-		vm->region[MEMORY_REGION_ENV].region_size;
-	vm->region[MEMORY_REGION_ENV].host_base_p = 
-		(void *)vm->pager.system_chunk.userspace_addr + rsp_offset;
-	vm->region[MEMORY_REGION_ENV].guest_virtual = LINUX_64_STACK_BASE - 
-		vm->region[MEMORY_REGION_ENV].region_size;
-	vm->region[MEMORY_REGION_ENV].grows_downward = 0;
-
-	vm->region[MEMORY_REGION_STACK].host_base_p = 
-		(void *)vm->pager.system_chunk.userspace_addr + rsp_offset;
-	vm->region[MEMORY_REGION_STACK].guest_virtual = LINUX_64_STACK_BASE - 
-		vm->region[MEMORY_REGION_ENV].region_size;
-	vm->region[MEMORY_REGION_STACK].region_size = 0x0;
-	vm->region[MEMORY_REGION_STACK].grows_downward = 1;
-
 	int err = kvm_vcpu_get_regs(vm->vcpus->vcpu);
 	if(err) {
 		return err;

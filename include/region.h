@@ -8,24 +8,26 @@ struct elkvm_memory_region {
 };
 
 /*
- * There will be 8 memory regions in the system_chunk:
+ * There will be 9 memory regions in the system_chunk:
  * 1. text
  * 2. data
  * 3. bss (growing upward)
- * 4. stack (growing downward)
- * 5. env, which will hold the environment strings
- * 6. idth, which will hold the binaries the idt will point to
- * 7. idt, which will hold the interrupt descriptor table
- * 8. pt, which will hold the page tables
+ * 4. kernel (interrupt) stack (growing downward)
+ * 5. user stack (growing downward)
+ * 6. env, which will hold the environment strings
+ * 7. idth, which will hold the binaries the idt will point to
+ * 8. idt, which will hold the interrupt descriptor table
+ * 9. pt, which will hold the page tables
  */
-#define MEMORY_REGION_TEXT  0
-#define MEMORY_REGION_DATA  1
-#define MEMORY_REGION_BSS   2
-#define MEMORY_REGION_STACK 3
-#define MEMORY_REGION_ENV   4
-#define MEMORY_REGION_IDTH  5
-#define MEMORY_REGION_IDT   6
-#define MEMORY_REGION_GDT   7
-#define MEMORY_REGION_PTS   8
+#define MEMORY_REGION_TEXT   0
+#define MEMORY_REGION_DATA   1
+#define MEMORY_REGION_BSS    2
+#define MEMORY_REGION_KSTACK 3
+#define MEMORY_REGION_STACK  4
+#define MEMORY_REGION_ENV    5
+#define MEMORY_REGION_IDTH   6
+#define MEMORY_REGION_IDT    7
+#define MEMORY_REGION_GDT    8
+#define MEMORY_REGION_PTS    9
 
-#define MEMORY_REGION_COUNT 9
+#define MEMORY_REGION_COUNT 10

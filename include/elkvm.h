@@ -53,6 +53,11 @@ int kvm_vm_create(struct elkvm_opts *, struct kvm_vm *, int, int, int,
 		struct elkvm_handlers *);
 
 /*
+ * Setup the addresses of the system regions
+ */
+int elkvm_region_setup(struct kvm_vm *vm);
+
+/*
 	Load an ELF binary, given by the filename into the VM
 */
 int kvm_vm_load_binary(struct kvm_vm *, const char *);

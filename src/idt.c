@@ -65,15 +65,6 @@ int elkvm_idt_setup(struct kvm_vm *vm) {
 }
 
 int elkvm_idt_load_default_handler(struct kvm_vm *vm, uint64_t *off) {
-	vm->region[MEMORY_REGION_IDTH].region_size = 0x1000;
-	vm->region[MEMORY_REGION_IDTH].host_base_p = 
-		vm->region[MEMORY_REGION_IDT].host_base_p - 
-		vm->region[MEMORY_REGION_IDTH].region_size;
-	vm->region[MEMORY_REGION_IDTH].guest_virtual = 
-		vm->region[MEMORY_REGION_IDT].guest_virtual - 
-		vm->region[MEMORY_REGION_IDTH].region_size;
-	vm->region[MEMORY_REGION_IDTH].grows_downward = 0;
-
 	int err = kvm_pager_create_mapping(&vm->pager, 
 			vm->region[MEMORY_REGION_IDTH].host_base_p, 
 			vm->region[MEMORY_REGION_IDTH].guest_virtual);

@@ -13,35 +13,14 @@ int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
 
 	vm->pager.mode = mode;
 
-	/* create a chunk for system data
-	   TODO for now use a fixed size, what if bin is too large for that */	
-	void *system_chunk_p;
-	int err = posix_memalign(&system_chunk_p, 0x1000, ELKVM_SYSTEM_MEMSIZE);
-	if(err) {
-		return err;
-	}
-
-	vm->pager.system_chunk.userspace_addr = (__u64)system_chunk_p;
-	vm->pager.system_chunk.guest_phys_addr = 0x0;
-	vm->pager.system_chunk.memory_size = ELKVM_SYSTEM_MEMSIZE;
-	vm->pager.system_chunk.flags = 0;
-	vm->pager.system_chunk.slot = 0;
-
 	vm->pager.other_chunks = NULL;
 
-	/* set up the region info for page tables */
-	vm->region[MEMORY_REGION_PTS].region_size =	0x400000;
-	uint64_t region_offset = vm->pager.system_chunk.memory_size - 
-		vm->region[MEMORY_REGION_PTS].region_size;
-	vm->region[MEMORY_REGION_PTS].host_base_p = 
-		(void *)vm->pager.system_chunk.userspace_addr + region_offset;
-	vm->region[MEMORY_REGION_PTS].guest_virtual = 0x0;
-	vm->region[MEMORY_REGION_PTS].grows_downward = 0;
-
 	vm->pager.host_pml4_p = vm->region[MEMORY_REGION_PTS].host_base_p;
-	uint64_t pml4_guest_physical = vm->pager.system_chunk.guest_phys_addr + 
-		region_offset;
-	err = kvm_pager_create_page_tables(&vm->pager, mode);
+	uint64_t pml4_guest_physical = 
+		vm->pager.system_chunk.guest_phys_addr +
+		vm->pager.system_chunk.memory_size - 
+		vm->region[MEMORY_REGION_PTS].region_size;
+	int err = kvm_pager_create_page_tables(&vm->pager, mode);
 	if(err) {
 		return err;
 	}
