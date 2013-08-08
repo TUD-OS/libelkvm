@@ -1,8 +1,14 @@
+#include <errno.h>
 #include <string.h>
 
+#include <elkvm.h>
 #include <syscall.h>
 
 int elkvm_handle_vm_shutdown(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+	int err = kvm_vcpu_get_regs(vcpu);
+	if(err) {
+		return 0;
+	}
 
 	char *host_rip_p = (char *)kvm_pager_get_host_p(&vm->pager, vcpu->regs.rip);
 
@@ -17,7 +23,8 @@ int elkvm_handle_vm_shutdown(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 		 */
 		host_rip_p = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rcx - 0x2);
 		if(memcmp(host_rip_p, syscall, 2) == 0) {
-			int err = elkvm_handle_syscall(vm);
+			fprintf(stderr, "Shutdown was syscall, handling...\n");
+			int err = elkvm_handle_syscall(vm, vcpu);
 			if(err) {
 				return 0;
 			}
@@ -92,10 +99,60 @@ int elkvm_handle_syscall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 	return err;
 }
 
-long elkvm_do_read(struct kvm_vm *vcpu) {
-	return -1;
+int elkvm_syscall1(struct kvm_vm *vm, struct kvm_vcpu *vcpu, void **arg) {
+	*arg = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rdi);
+	if(arg == NULL) {
+		return -1;
+	}
+	return 0;
 }
 
-long elkvm_do_uname(struct kvm_vm *vcpu) {
-	return -1;
+long elkvm_do_read(struct kvm_vm *vm) {
+	return ENOSYS;
+}
+
+long elkvm_do_write(struct kvm_vm *vm) {
+	return ENOSYS;
+}
+
+long elkvm_do_open(struct kvm_vm *vm) {
+	return ENOSYS;
+}
+
+long elkvm_do_close(struct kvm_vm *vm) {
+	return ENOSYS;
+}
+
+long elkvm_do_stat(struct kvm_vm *vm) {
+	return ENOSYS;
+}
+
+long elkvm_do_fstat(struct kvm_vm *vm) {
+	return ENOSYS;
+}
+
+long elkvm_do_lstat(struct kvm_vm *vm) {
+	return ENOSYS;
+}
+
+long elkvm_do_poll(struct kvm_vm *vm) {
+	return ENOSYS;
+}
+
+long elkvm_do_lseek(struct kvm_vm *vm) {
+	return ENOSYS;
+}
+
+long elkvm_do_mmap(struct kvm_vm *vm) {
+	return ENOSYS;
+}
+
+long elkvm_do_uname(struct kvm_vm *vm) {
+	struct utsname *buf = NULL;
+	int err = elkvm_syscall1(vm, vm->vcpus->vcpu, (void **)&buf);
+	if(err) {
+		return EIO;
+	}
+
+	return vm->syscall_handlers->uname(buf);
 }
