@@ -8,6 +8,7 @@
 #include <unistd.h>
 
 #include <elkvm.h>
+#include <flats.h>
 #include <gdt.h>
 #include <idt.h>
 #include <kvm.h>
@@ -67,7 +68,14 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 		return err;
 	}
 
-	err = elkvm_idt_setup(vm);
+	struct elkvm_flat idth;
+	char *isr_path = "/home/flo/Dokumente/projekte/libelkvm/res/isr";
+	err = elkvm_load_flat(vm, &idth, isr_path);
+	if(err) {
+		return err;
+	}
+
+	err = elkvm_idt_setup(vm, &idth);
 	if(err) {
 		return err;
 	}
@@ -98,6 +106,33 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 	}
 
 	vm->syscall_handlers = handlers;
+
+	return 0;
+}
+
+int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * path) {
+	int err = kvm_pager_create_mapping(&vm->pager, 
+			vm->region[MEMORY_REGION_IDTH].host_base_p, 
+			vm->region[MEMORY_REGION_IDTH].guest_virtual);
+	if(err) {
+		return err;
+	}
+
+	int fd = open(path, O_RDONLY);
+	if(fd < 0) {
+		return -errno;
+	}
+
+	char *buf = vm->region[MEMORY_REGION_IDTH].host_base_p;
+	int bufsize = 0x1000;
+	int bytes = 0;
+	while((bytes = read(fd, buf, bufsize)) > 0) {
+		buf += bytes;
+	}
+	flat->offset = (uint64_t)vm->region[MEMORY_REGION_IDTH].guest_virtual;
+	flat->size = bytes;
+
+	close(fd);
 
 	return 0;
 }

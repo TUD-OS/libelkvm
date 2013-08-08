@@ -1,6 +1,7 @@
 #pragma once
 
 #include "elkvm.h"
+#include "flats.h"
 #include "pager.h"
 
 struct kvm_idt_entry {
@@ -25,8 +26,7 @@ struct kvm_idt_entry {
 
 #define INTERRUPT_ENTRY_PRESENT 128
 
-int elkvm_idt_setup(struct kvm_vm *);
-int elkvm_idt_load_default_handler(struct kvm_vm *, uint64_t *);
+int elkvm_idt_setup(struct kvm_vm *, struct elkvm_flat *);
 
 void elkvm_idt_dump(struct kvm_vm *);
 void elkvm_idt_dump_isr(struct kvm_vm *, int);
