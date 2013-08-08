@@ -27,9 +27,10 @@ struct kvm_vm {
 	struct kvm_pager pager;
 	int run_struct_size;
 	struct elkvm_memory_region region[MEMORY_REGION_COUNT];
+	struct elkvm_handlers *syscall_handlers;
 };
 
-struct elkmv_handlers {
+struct elkvm_handlers {
 	long (*read) (int fd, void *buf, size_t count);
 	long (*write) (int fd, void *buf, size_t count);
 	long (*open) (const char *pathname, int flags, mode_t mode);
@@ -45,7 +46,7 @@ struct elkmv_handlers {
 };
 
 /*
-	Create a new VM, with the given mode, cpu count and memory
+	Create a new VM, with the given mode, cpu count, memory and syscall handlers
 	Return 0 on success, -1 on error
 */
 int kvm_vm_create(struct elkvm_opts *, struct kvm_vm *, int, int, int);
