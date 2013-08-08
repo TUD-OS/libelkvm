@@ -15,7 +15,7 @@
 #include <stack.h>
 #include <vcpu.h>
 
-int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus, int memory_size) {
+int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus, int memory_size, struct elkvm_handlers *handlers) {
 	int err = 0;
 
 	if(opts->fd <= 0) {
@@ -104,6 +104,8 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 	if(err) {
 		return err;
 	}
+
+	vm->syscall_handlers = handlers;
 
 	return 0;
 }

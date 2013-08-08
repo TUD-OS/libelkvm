@@ -49,7 +49,8 @@ struct elkvm_handlers {
 	Create a new VM, with the given mode, cpu count, memory and syscall handlers
 	Return 0 on success, -1 on error
 */
-int kvm_vm_create(struct elkvm_opts *, struct kvm_vm *, int, int, int);
+int kvm_vm_create(struct elkvm_opts *, struct kvm_vm *, int, int, int,
+		struct elkvm_handlers *);
 
 /*
 	Load an ELF binary, given by the filename into the VM
