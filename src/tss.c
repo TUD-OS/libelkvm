@@ -1,9 +1,18 @@
+#include <elkvm.h>
 #include <tss.h>
 
 #include <string.h>
 
-int elkvm_tss_setup(struct elkvm_tss *tss, int kernel_data_selector) {
-	memset(tss, 0, sizeof(struct elkvm_tss));
+int elkvm_tss_setup64(struct kvm_vm *vm, struct elkvm_tss64 *tss,
+		uint64_t interrupt_ist) {
+	memset(tss, 0, sizeof(struct elkvm_tss64));
+
+	tss->ist1 = interrupt_ist;
+}
+
+int elkvm_tss_setup32(struct elkvm_tss32 *tss,
+		int kernel_data_selector) {
+	memset(tss, 0, sizeof(struct elkvm_tss32));
 
 	tss->ss0 = kernel_data_selector;
 	tss->esp0 = 0x1042;
