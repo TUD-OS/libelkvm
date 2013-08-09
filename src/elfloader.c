@@ -140,11 +140,11 @@ int elfloader_load_program_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
 					return err;
 				}
 
-				vm->region[loadable].host_base_p = buf;
-				vm->region[loadable].guest_virtual = phdr.p_vaddr & ~0xFFF;
-				vm->region[loadable].region_size = phdr.p_memsz,
-				vm->region[loadable].grows_downward = 0;
-				loadable++;
+				//vm->region[loadable].host_base_p = buf;
+				//vm->region[loadable].guest_virtual = phdr.p_vaddr & ~0xFFF;
+				//vm->region[loadable].region_size = phdr.p_memsz,
+				//vm->region[loadable].grows_downward = 0;
+				//loadable++;
 
 				uint64_t total_size = phdr.p_memsz + (phdr.p_vaddr & 0xFFF);
 				int pages = (total_size / 0x1000) + 1;

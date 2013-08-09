@@ -12,10 +12,16 @@
 
 int elkvm_idt_setup(struct kvm_vm *vm, struct elkvm_flat *default_handler) {
 
+	struct elkvm_memory_region *idt_region = elkvm_region_create(
+			vm,
+			256 * sizeof(struct kvm_idt_entry));
+	idt_region->guest_virtual = ADDRESS_SPACE_TOP -
+		idt_region->region_size + 0x1;
+
 	/* for now fill the idt with all 256 entries empty */
 	for(int i = 0; i < 256; i++) {
-		uint64_t offset = default_handler->offset;
-		struct kvm_idt_entry *entry = vm->region[MEMORY_REGION_IDT].host_base_p + 
+		uint64_t offset = default_handler->region->guest_virtual;
+		struct kvm_idt_entry *entry = idt_region->host_base_p + 
 			i * sizeof(struct kvm_idt_entry);
 		//switch(i) {
 		//		case IDT_ENTRY_PF:
@@ -41,8 +47,8 @@ int elkvm_idt_setup(struct kvm_vm *vm, struct elkvm_flat *default_handler) {
 
 	/* create a page for the idt */
 	int err = kvm_pager_create_mapping(&vm->pager, 
-			vm->region[MEMORY_REGION_IDT].host_base_p, 
-			vm->region[MEMORY_REGION_IDT].guest_virtual);
+			idt_region->host_base_p, 
+			idt_region->guest_virtual);
 	if(err) {
 		return err;
 	}
@@ -54,7 +60,7 @@ int elkvm_idt_setup(struct kvm_vm *vm, struct elkvm_flat *default_handler) {
 		return err;
 	}
 
-	vcpu->sregs.idt.base = vm->region[MEMORY_REGION_IDT].guest_virtual;
+	vcpu->sregs.idt.base = idt_region->guest_virtual;
 	vcpu->sregs.idt.limit = 0xFFF;
 
 	err = kvm_vcpu_set_regs(vcpu);
@@ -63,35 +69,35 @@ int elkvm_idt_setup(struct kvm_vm *vm, struct elkvm_flat *default_handler) {
 }
 
 void elkvm_idt_dump(struct kvm_vm *vm) {
-	struct kvm_idt_entry *entry = 
-		(struct kvm_idt_entry *)vm->region[MEMORY_REGION_IDT].host_base_p;
-	printf("\n Interrupt Descriptor Table:\n");
-	printf(" ---------------------------\n\n");
-	printf("Vector\tSelector\tOffset\tidx\tflags\n");
-	for(int i = 0; i < 256; i++) {
-		printf("%i\t0x%4x\t0x%016lx\t%u\t%u\n", i, entry->selector,
-				idt_entry_offset(entry), entry->idx, 
-				entry->flags);
-	}
+	//struct kvm_idt_entry *entry = 
+	//	(struct kvm_idt_entry *)vm->region[MEMORY_REGION_IDT].host_base_p;
+	//printf("\n Interrupt Descriptor Table:\n");
+	//printf(" ---------------------------\n\n");
+	//printf("Vector\tSelector\tOffset\tidx\tflags\n");
+	//for(int i = 0; i < 256; i++) {
+	//	printf("%i\t0x%4x\t0x%016lx\t%u\t%u\n", i, entry->selector,
+	//			idt_entry_offset(entry), entry->idx, 
+	//			entry->flags);
+	//}
 }	
 
 void elkvm_idt_dump_isr(struct kvm_vm *vm, int iv) {
-	struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
-	struct kvm_idt_entry *entry = vm->region[MEMORY_REGION_IDT].host_base_p +
-		iv * sizeof(struct kvm_idt_entry);
-	uint64_t guest_isr = idt_entry_offset(entry);
-	printf("guest_isr: 0x%lx\n", guest_isr);
-	char *isr = kvm_pager_get_host_p(&vm->pager, guest_isr);
-	printf("isr: %p\n", isr);
+	//struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
+	//struct kvm_idt_entry *entry = vm->region[MEMORY_REGION_IDT].host_base_p +
+	//	iv * sizeof(struct kvm_idt_entry);
+	//uint64_t guest_isr = idt_entry_offset(entry);
+	//printf("guest_isr: 0x%lx\n", guest_isr);
+	//char *isr = kvm_pager_get_host_p(&vm->pager, guest_isr);
+	//printf("isr: %p\n", isr);
 
-	ud_set_input_buffer(&vcpu->ud_obj, isr, 9);
+	//ud_set_input_buffer(&vcpu->ud_obj, isr, 9);
 
-	printf("\n ISR Code for Interrupt Vector %3i:\n", iv);
-	printf(  " ----------------------------------\n");
-	while(ud_disassemble(&vcpu->ud_obj)) {
-		printf(" %s\n", ud_insn_asm(&vcpu->ud_obj));
-	}
-	printf("\n");
+	//printf("\n ISR Code for Interrupt Vector %3i:\n", iv);
+	//printf(  " ----------------------------------\n");
+	//while(ud_disassemble(&vcpu->ud_obj)) {
+	//	printf(" %s\n", ud_insn_asm(&vcpu->ud_obj));
+	//}
+	//printf("\n");
 
-	return;
+	//return;
 }

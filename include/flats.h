@@ -1,7 +1,7 @@
 #pragma once
 
 struct elkvm_flat {
-	uint64_t offset;
+	struct elkvm_memory_region *region;
 	uint64_t size;
 };
 

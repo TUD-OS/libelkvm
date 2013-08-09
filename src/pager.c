@@ -11,15 +11,16 @@ int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
 		return -1;
 	}
 
-	vm->pager.mode = mode;
+	struct elkvm_memory_region *pts_region = elkvm_region_create(vm, 0x400000);
 
+	vm->pager.mode = mode;
 	vm->pager.other_chunks = NULL;
 
-	vm->pager.host_pml4_p = vm->region[MEMORY_REGION_PTS].host_base_p;
+	vm->pager.host_pml4_p = pts_region->host_base_p;
 	uint64_t pml4_guest_physical = 
 		vm->pager.system_chunk.guest_phys_addr +
 		vm->pager.system_chunk.memory_size - 
-		vm->region[MEMORY_REGION_PTS].region_size;
+		pts_region->region_size;
 	int err = kvm_pager_create_page_tables(&vm->pager, mode);
 	if(err) {
 		return err;
