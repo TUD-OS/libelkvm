@@ -17,7 +17,7 @@ extern char **environ;
 void setup_elfloader() {
 	char *av = { "1234", "5678" };
 	elkvm_init(&elfloader_test_kvm, 2, &av, environ);
-	kvm_vm_create(&elfloader_test_kvm, &elfloader_test_vm, VM_MODE_X86_64, 1, 0);
+	kvm_vm_create(&elfloader_test_kvm, &elfloader_test_vm, VM_MODE_X86_64, 1, 0, NULL);
 }
 
 void teardown_elfloader() {

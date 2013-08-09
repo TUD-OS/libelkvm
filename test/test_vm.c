@@ -34,12 +34,12 @@ START_TEST(test_kvm_vm_create) {
 	struct elkvm_opts uninitialized_opts;
 	uninitialized_opts.fd = 0;
 	int err = kvm_vm_create(&uninitialized_opts, &the_vm, VM_MODE_X86_64, cpus, 
-			memory);
+			memory, NULL);
 	ck_assert_int_eq(err, -EIO);
 	ck_assert_int_eq(the_vm.fd, 0);
 	ck_assert_ptr_eq(the_vm.vcpus, NULL);
 
-	err = kvm_vm_create(&vm_test_opts, &the_vm, VM_MODE_X86_64, cpus, memory);
+	err = kvm_vm_create(&vm_test_opts, &the_vm, VM_MODE_X86_64, cpus, memory, NULL);
 	ck_assert_int_eq(err, 0);
 	ck_assert_int_gt(the_vm.fd, 0);
 	ck_assert_ptr_ne(the_vm.vcpus, NULL);
