@@ -10,8 +10,9 @@ struct elkvm_memory_region {
 	struct elkvm_memory_region *rc;
 };
 
+struct elkvm_memory_region *elkvm_region_find(struct elkvm_memory_region *, uint64_t);
 struct elkvm_memory_region *elkvm_region_create(struct kvm_vm *, uint64_t);
-int elkvm_region_split(struct kvm_vm *, struct elkvm_memory_region *);
+int elkvm_region_split(struct elkvm_memory_region *);
 
 /*
  * There will be 9 memory regions in the system_chunk:
