@@ -90,6 +90,14 @@ START_TEST(test_kvm_vm_vcpu_count) {
 }
 END_TEST
 
+START_TEST(test_elkvm_initialize_stack) {
+	//int err = elkvm_initialize_stack(&vm_test_opts, &elfloader_test_vm);
+	//ck_assert_int_eq(err, 0);
+
+	ck_abort_msg("Test for Stack initialization not implemented");
+}
+END_TEST
+
 START_TEST(test_kvm_vm_map_system_chunk_valid) {
 	struct kvm_vm the_vm;
 	the_vm.fd = vm_fd;
@@ -182,6 +190,11 @@ Suite *vm_suite() {
 	tcase_add_test(tc_map, test_kvm_vm_map_system_chunk_invalid);
 	tcase_add_test(tc_map, test_kvm_vm_map_system_chunk_multiple);
 	suite_add_tcase(s, tc_map);
+
+	TCase *tc_stack = tcase_create("Stack");
+	tcase_add_checked_fixture(tc_stack, vm_setup, vm_teardown);
+	tcase_add_test(tc_stack, test_elkvm_initialize_stack);
+	suite_add_tcase(s, tc_stack);
 
 	return s;
 }

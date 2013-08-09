@@ -93,14 +93,6 @@ START_TEST(test_elfloader_load_program_header) {
 }
 END_TEST
 
-START_TEST(test_elfloader_initialize_stack) {
-	int err = elkvm_initialize_stack(&elfloader_test_kvm, &elfloader_test_vm);
-	ck_assert_int_eq(err, 0);
-
-	ck_abort_msg("Test for Stack initialization not implemented");
-}
-END_TEST
-
 START_TEST(test_elfloader_copy_push_str_arr_p) {
 	ck_abort_msg("Test for copy push not implemented");
 //	void *host = NULL;
@@ -128,7 +120,6 @@ Suite *elfloader_suite() {
 	tcase_add_test(tc_loader, test_elfloader_load_invalid_binary);
 	tcase_add_test(tc_loader, test_elfloader_load_valid_binary);
 	tcase_add_test(tc_loader, test_elfloader_copy_push_str_arr_p);
-	tcase_add_test(tc_loader, test_elfloader_initialize_stack);
 	suite_add_tcase(s, tc_loader);
 
 	return s;
