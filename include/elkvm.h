@@ -26,7 +26,7 @@ struct kvm_vm {
 	struct vcpu_list *vcpus;
 	struct kvm_pager pager;
 	int run_struct_size;
-	struct elkvm_memory_region region[MEMORY_REGION_COUNT];
+	struct elkvm_memory_region root_region;
 	struct elkvm_handlers *syscall_handlers;
 };
 
