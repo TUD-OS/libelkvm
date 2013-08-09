@@ -5,7 +5,13 @@ struct elkvm_memory_region {
 	uint64_t guest_virtual;
 	uint64_t region_size;
 	int grows_downward;
+	int used;
+	struct elkvm_memory_region *lc;
+	struct elkvm_memory_region *rc;
 };
+
+struct elkvm_memory_region *elkvm_region_create(struct kvm_vm *, uint64_t);
+int elkvm_region_split(struct kvm_vm *, struct elkvm_memory_region *);
 
 /*
  * There will be 9 memory regions in the system_chunk:
