@@ -28,7 +28,8 @@ int elfloader_load_program_headers(struct kvm_vm *, struct Elf_binary *);
 /*
  * Load a single program header from the ELF binary into the specified buffer
 */
-int elfloader_load_program_header(struct kvm_vm *, struct Elf_binary *, GElf_Phdr, char *);
+int elfloader_load_program_header(struct kvm_vm *, struct Elf_binary *, GElf_Phdr,
+		struct elkvm_memory_region *);
 
 /*
  * Load the Section headers of an ELF binary

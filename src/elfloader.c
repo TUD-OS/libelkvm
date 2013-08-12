@@ -135,21 +135,17 @@ int elfloader_load_program_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
 			case PT_LOAD:
 				pt_interp_forbidden = true;
 				pt_phdr_forbidden = true;
-				err = elfloader_load_program_header(vm, bin, phdr, buf);
+				struct elkvm_memory_region *loadable_region =
+					elkvm_region_create(vm, phdr.p_memsz);
+				err = elfloader_load_program_header(vm, bin, phdr, loadable_region);
 				if(err) {
 					return err;
 				}
 
-				//vm->region[loadable].host_base_p = buf;
-				//vm->region[loadable].guest_virtual = phdr.p_vaddr & ~0xFFF;
-				//vm->region[loadable].region_size = phdr.p_memsz,
-				//vm->region[loadable].grows_downward = 0;
-				//loadable++;
-
 				uint64_t total_size = phdr.p_memsz + (phdr.p_vaddr & 0xFFF);
 				int pages = (total_size / 0x1000) + 1;
 				for(int page = 0; page < pages; page++) {
-					void *host_physical_p = buf + (page * 0x1000);
+					void *host_physical_p = loadable_region->host_base_p + (page * 0x1000);
 					uint64_t guest_virtual = (phdr.p_vaddr & ~0xFFF) + (page * 0x1000);
 					err = kvm_pager_create_mapping(&vm->pager, host_physical_p, guest_virtual);
 					if(err) {
@@ -157,11 +153,6 @@ int elfloader_load_program_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
 					}
 				}
 		
-				/*
-				 * advance the buffer page-wise for now
-				 */
-				buf = buf + (pages * 0x1000);
-
 				break;
 			case PT_PHDR:
 				if(pt_phdr_forbidden) {
@@ -177,7 +168,7 @@ int elfloader_load_program_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
 }
 
 int elfloader_load_program_header(struct kvm_vm *vm, struct Elf_binary *bin,
-		GElf_Phdr phdr, char *buf) {
+		GElf_Phdr phdr, struct elkvm_memory_region *region) {
 
 		/*
 		 * ELF specification says to read the whole page into memory
@@ -188,10 +179,11 @@ int elfloader_load_program_header(struct kvm_vm *vm, struct Elf_binary *bin,
 		/*
 		 * buffers need to be page aligned
 		*/
-		if(((uint64_t)buf & ~0xFFF) != (uint64_t)buf) {
+		if(((uint64_t)region->host_base_p & ~0xFFF) != (uint64_t)region->host_base_p) {
 			return -EIO;
 		}
-		
+		char *buf = region->host_base_p;
+
 		/*
 		 * make sure we are going to read full pages
 		 */
