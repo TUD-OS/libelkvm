@@ -128,10 +128,11 @@ int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * pat
 	flat->region = elkvm_region_create(vm, stbuf.st_size);
 	flat->region->guest_virtual = 0x0;
 	
-	err = kvm_pager_map_kernel_page(&vm->pager, flat->region->host_base_p);
-	if(err) {
+	flat->region->guest_virtual = kvm_pager_map_kernel_page(&vm->pager, 
+			flat->region->host_base_p);
+	if(flat->region->guest_virtual == 0) {
 		close(fd);
-		return err;
+		return -ENOMEM;
 	}
 
 	char *buf = flat->region->host_base_p;
