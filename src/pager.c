@@ -20,10 +20,8 @@ int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
 	vm->pager.other_chunks = NULL;
 
 	vm->pager.host_pml4_p = pts_region->host_base_p;
-	uint64_t pml4_guest_physical = 
-		vm->pager.system_chunk.guest_phys_addr +
-		vm->pager.system_chunk.memory_size - 
-		pts_region->region_size;
+	uint64_t pml4_guest_physical = host_to_guest_physical(&vm->pager,
+			pts_region->host_base_p);
 	vm->pager.guest_next_free = KERNEL_SPACE_BOTTOM;
 
 	int err = kvm_pager_create_page_tables(&vm->pager, mode);
