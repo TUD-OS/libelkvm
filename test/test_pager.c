@@ -21,8 +21,11 @@ void pager_setup() {
 	assert(the_vm.fd > 0);
 
 	uint64_t size = 0x400000;
-	the_vm.root_region.host_base_p = malloc(size);
+	err = posix_memalign(&the_vm.root_region.host_base_p, 0x1000, size);
+	assert(err == 0);
+
 	the_vm.root_region.region_size = size;
+	the_vm.pager.system_chunk.userspace_addr = (uint64_t)the_vm.root_region.host_base_p;
 	the_vm.pager.system_chunk.memory_size = size;
 
 	err = kvm_vcpu_create(&the_vm, VM_MODE_X86_64);
@@ -399,7 +402,10 @@ START_TEST(test_kvm_pager_find_table_entry) {
 END_TEST
 
 START_TEST(test_kvm_pager_map_kernel_page_valid) {
-	int err = kvm_pager_map_kernel_page(&the_vm.pager, (void *)0x42);
+	int err = kvm_pager_initialize(&the_vm, PAGER_MODE_X86_64);
+	ck_assert_int_eq(err, 0);
+
+	err = kvm_pager_map_kernel_page(&the_vm.pager, (void *)0x42);
 	ck_assert_int_eq(err, 0);
 }
 END_TEST
