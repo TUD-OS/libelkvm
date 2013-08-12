@@ -398,6 +398,12 @@ START_TEST(test_kvm_pager_find_table_entry) {
 }
 END_TEST
 
+START_TEST(test_kvm_pager_map_kernel_page_valid) {
+	int err = kvm_pager_map_kernel_page(&the_vm.pager, (void *)0x42);
+	ck_assert_int_eq(err, 0);
+}
+END_TEST
+
 Suite *pager_suite() {
 	Suite *s = suite_create("Pager");
 
@@ -447,6 +453,11 @@ Suite *pager_suite() {
 	TCase *tc_mem_chunk = tcase_create("Create Mem Chunk");
 	tcase_add_test(tc_mem_chunk, test_kvm_pager_create_mem_chunk);
 	suite_add_tcase(s, tc_mem_chunk);
+
+	TCase *tc_map_kernel = tcase_create("Map Kernel Page");
+	tcase_add_checked_fixture(tc_map_kernel, pager_setup, pager_teardown);
+	tcase_add_test(tc_map_kernel, test_kvm_pager_map_kernel_page_valid);
+	suite_add_tcase(s, tc_map_kernel);
 
 	return s;
 }

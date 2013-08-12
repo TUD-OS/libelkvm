@@ -183,6 +183,10 @@ struct kvm_userspace_memory_region *
 		return NULL;
 	}
 
+int kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p) {
+	return -1;
+}
+
 int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 		uint64_t guest_virtual) {
 	int err;
@@ -202,12 +206,12 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 	uint64_t guest_physical = host_to_guest_physical(pager, host_mem_p);
 	
 	uint64_t *table_base = pager->host_pml4_p;
+	/* pml4 offset is in bits 39 - 47 */
 	int off_low = 39;
 	int off_high = 47;
 
 	uint64_t *pt_entry;
 	for(int i = 0; i < 4; i++) {
-		/* pml4 offset is in bits 39 - 47 */
 		uint64_t *entry = kvm_pager_find_table_entry(pager, table_base, 
 				guest_virtual, off_low, off_high);
 
