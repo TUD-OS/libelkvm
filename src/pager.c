@@ -182,7 +182,7 @@ struct kvm_userspace_memory_region *
 		return NULL;
 	}
 
-int kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p) {
+uint64_t kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p) {
 
 	uint64_t guest_physical = host_to_guest_physical(pager, host_mem_p);
 	uint64_t guest_virtual = (pager->guest_next_free & ~0xFFF) | (guest_physical & 0xFFF);
@@ -194,6 +194,7 @@ int kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p) {
 
 	while(entry_exists(pt_entry)) {
 		pt_entry++;
+		guest_virtual = guest_virtual + 0x1000;
 		if(((uint64_t)pt_entry & ~0xFFF) == (uint64_t)pt_entry) {
 			/*this page table seems to be completely full, try the next one */
 			guest_virtual = guest_virtual + 0x100000;
@@ -205,7 +206,7 @@ int kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p) {
 	*pt_entry  = guest_physical & ~0xFFF;
 	*pt_entry |= 0x1;
 
-	return 0;
+	return guest_virtual;
 }
 
 int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,

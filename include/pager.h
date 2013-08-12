@@ -59,7 +59,7 @@ int kvm_pager_append_mem_chunk(struct kvm_pager *, struct kvm_userspace_memory_r
 /*
  * \brief Create a Mapping in Kernel Space
  */
-int kvm_pager_map_kernel_page(struct kvm_pager *, void *);
+uint64_t kvm_pager_map_kernel_page(struct kvm_pager *, void *);
 
 /*
  * \brief Create a Mapping in the Page Tables for a physical address
