@@ -10,6 +10,7 @@
 #define PAGER_MODE_X86_64  3
 
 #define ELKVM_SYSTEM_MEMSIZE 16*1024*1024
+#define KERNEL_SPACE_BOTTOM 0xFFFF800000000000
 #define ADDRESS_SPACE_TOP 0xFFFFFFFFFFFFFFFF
 
 struct kvm_vm;
@@ -27,6 +28,7 @@ struct kvm_pager {
 	struct chunk_list *other_chunks;
 	void *host_pml4_p;
 	void *host_next_free_tbl_p;
+	uint64_t guest_next_free;
 };
 
 /*
