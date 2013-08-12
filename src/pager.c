@@ -201,7 +201,7 @@ int kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p) {
 		}
 	}
 
-	pager->guest_next_free = pt_entry + 0x1000;
+	pager->guest_next_free = (uint64_t)pt_entry + 0x1000;
 	*pt_entry  = guest_physical & ~0xFFF;
 	*pt_entry |= 0x1;
 
