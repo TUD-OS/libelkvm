@@ -52,6 +52,11 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 		return err;
 	}
 
+	err = elkvm_initialize_stack(opts, vm);
+	if(err) {
+		return err;
+	}
+
 	err = kvm_vm_map_chunk(vm, &vm->pager.system_chunk);
 	if(err) {
 		return err;
@@ -97,11 +102,6 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 	}
 
 	err = kvm_vm_map_chunk(vm, vm->pager.other_chunks->chunk);
-	if(err) {
-		return err;
-	}
-
-	err = elkvm_initialize_stack(opts, vm);
 	if(err) {
 		return err;
 	}
@@ -246,15 +246,15 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 	stack_region->grows_downward = 1;
 
 	/* get a frame for the kernel (interrupt) stack */
-	struct elkvm_memory_region *kstack_region = elkvm_region_create(vm, 0x1000);
-	kstack_region->guest_virtual = stack_region->guest_virtual - 0x100000;
-	kstack_region->grows_downward = 1;
+	vm->kernel_stack = elkvm_region_create(vm, 0x1000);
+	vm->kernel_stack->guest_virtual = stack_region->guest_virtual - 0x100000;
+	vm->kernel_stack->grows_downward = 1;
 
 	/* create a mapping for the kernel (interrupt) stack */
 	/* TODO create this in kernel space */
 	int err = kvm_pager_create_mapping(&vm->pager, 
-			kstack_region->host_base_p,
-			kstack_region->guest_virtual);
+			vm->kernel_stack->host_base_p,
+			vm->kernel_stack->guest_virtual);
 	if(err) {
 		return err;
 	}

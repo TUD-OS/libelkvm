@@ -28,6 +28,8 @@ struct kvm_vm {
 	int run_struct_size;
 	struct elkvm_memory_region root_region;
 	struct elkvm_handlers *syscall_handlers;
+
+	struct elkvm_memory_region *kernel_stack;
 };
 
 struct elkvm_handlers {
@@ -90,7 +92,8 @@ int kvm_vm_map_chunk(struct kvm_vm *, struct kvm_userspace_memory_region *);
 /*
  * Print the locations of the system memory regions
  */
-void elkvm_print_regions(struct elkvm_memory_region *);
+void elkvm_print_regions(struct kvm_vm *);
+void elkvm_dump_region(struct elkvm_memory_region *);
 
 #ifdef __cplusplus
 }
