@@ -157,6 +157,13 @@ int elkvm_region_setup(struct kvm_vm *vm) {
 		return err;
 	}
 
+	vm->root_region.host_base_p = system_chunk_p;
+	vm->root_region.guest_virtual = 0x0;
+	vm->root_region.region_size = ELKVM_SYSTEM_MEMSIZE;
+	vm->root_region.grows_downward = 0;
+	vm->root_region.used = 0;
+	vm->root_region.lc = vm->root_region.rc = NULL;
+
 	vm->pager.system_chunk.userspace_addr = (__u64)system_chunk_p;
 	vm->pager.system_chunk.guest_phys_addr = 0x0;
 	vm->pager.system_chunk.memory_size = ELKVM_SYSTEM_MEMSIZE;
