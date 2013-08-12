@@ -119,18 +119,18 @@ int elkvm_calc_segment_regs(struct kvm_vcpu *vcpu, struct elkvm_gdt_segment_desc
 
 void elkvm_gdt_dump(struct kvm_vm *vm) {
 
-	//printf("\n Global Descriptor Table:\n");
-	//printf(  " ------------------------\n");
-	//printf(  " selector\tbase\tlimit\taccess\tflags\n");
+	printf("\n Global Descriptor Table:\n");
+	printf(  " ------------------------\n");
+	printf(  " selector\tbase\tlimit\taccess\tflags\n");
 
-	//for(int i = 0; i < GDT_NUM_ENTRIES; i++) {
-	//	struct elkvm_gdt_segment_descriptor *entry = vm->region[MEMORY_REGION_GDT].host_base_p +
-	//		i * sizeof(struct elkvm_gdt_segment_descriptor);
-	//	uint16_t selector = i * sizeof(struct elkvm_gdt_segment_descriptor);
+	for(int i = 0; i < GDT_NUM_ENTRIES; i++) {
+		struct elkvm_gdt_segment_descriptor *entry = vm->gdt_region->host_base_p +
+			i * sizeof(struct elkvm_gdt_segment_descriptor);
+		uint16_t selector = i * sizeof(struct elkvm_gdt_segment_descriptor);
 
-	//	printf(" 0x%4x\t\t0x%08x\t0x%05x\t0x%02x\t0x%1x\n", selector, gdt_base(entry),
-	//		gdt_limit(entry), entry->access, gdt_flags(entry));
-	//}
+		printf(" %p\t0x%4x\t\t0x%08x\t0x%05x\t0x%02x\t0x%1x\n", entry, selector, gdt_base(entry),
+			gdt_limit(entry), entry->access, gdt_flags(entry));
+	}
 
-	//printf("\n");
+	printf("\n");
 }
