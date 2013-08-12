@@ -60,4 +60,4 @@ struct elkvm_tss32 {
 }__attribute__((packed));
 
 int elkvm_tss_setup32(struct elkvm_tss32 *, int);
-int elkvm_tss_setup64(struct kvm_vm *, struct elkvm_tss64 *, uint64_t);
+int elkvm_tss_setup64(struct kvm_vm *, struct elkvm_memory_region *);

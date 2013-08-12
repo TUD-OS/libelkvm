@@ -13,7 +13,12 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 		elkvm_region_create(
 				vm,
 				GDT_NUM_ENTRIES * sizeof(struct elkvm_gdt_segment_descriptor));
-	gdt_region->guest_virtual = 0x1000;
+
+	gdt_region->guest_virtual = kvm_pager_map_kernel_page(&vm->pager,
+			gdt_region->host_base_p);
+	if(gdt_region->guest_virtual == 0) {
+		return -ENOMEM;
+	}
 
 	/* create a null entry, as required by x86 */
 	memset(gdt_region->host_base_p, 0,
@@ -44,10 +49,17 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 
 	entry++;
 
+	struct elkvm_memory_region *tss_region = elkvm_region_create(vm,
+			sizeof(struct elkvm_tss64));
+	/* setup the tss, before loading the segment descriptor */
+	int err = elkvm_tss_setup64(vm, tss_region);
+	if(err) {
+		return -err;
+	}
+
 	/* task state segment */
-	uint64_t tss_base = gdt_region->guest_virtual + GDT_NUM_ENTRIES * 8;
 	elkvm_gdt_create_segment_descriptor(entry,
-			tss_base & 0xFFFFFFFF,
+			tss_region->guest_virtual & 0xFFFFFFFF,
 			sizeof(struct elkvm_tss64),
 			0x9 | GDT_SEGMENT_PRESENT,
 			GDT_SEGMENT_PROTECTED_32);
@@ -58,19 +70,14 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 	 */
 	entry++;
 	uint64_t *upper_tss = (uint64_t *)entry;
-	*upper_tss = tss_base >> 32;
+	*upper_tss = tss_region->guest_virtual >> 32;
 
 	uint64_t tr_selector = (uint64_t)entry -
 		(uint64_t)gdt_region->host_base_p;
 	
-	//elkvm_tss_setup64(
-	//		vm,
-	//		gdt_region->host_base_p + GDT_NUM_ENTRIES * 8,
-	//		kstack_region->guest_virtual);
-
 	struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
 
-	int err = kvm_vcpu_get_regs(vcpu);
+	err = kvm_vcpu_get_regs(vcpu);
 	if(err) {
 		return err;
 	}
@@ -78,19 +85,11 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 	vcpu->sregs.gdt.base = gdt_region->guest_virtual;
 	vcpu->sregs.gdt.limit = GDT_NUM_ENTRIES * 8 - 1;
 
-	vcpu->sregs.tr.base = gdt_region->guest_virtual +
-		GDT_NUM_ENTRIES * 8;
+	vcpu->sregs.tr.base = tss_region->guest_virtual;
 	vcpu->sregs.tr.limit = sizeof(struct elkvm_tss64);
 	vcpu->sregs.tr.selector = tr_selector;
 
 	err = kvm_vcpu_set_regs(vcpu);
-	if(err) {
-		return err;
-	}
-
-	err = kvm_pager_create_mapping(&vm->pager, 
-			gdt_region->host_base_p,
-			gdt_region->guest_virtual);
 	if(err) {
 		return err;
 	}
