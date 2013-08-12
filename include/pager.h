@@ -70,6 +70,8 @@ int kvm_pager_create_mapping(struct kvm_pager *, void *, uint64_t);
 struct kvm_userspace_memory_region *
 	kvm_pager_find_region_for_host_p(struct kvm_pager *, void *);
 
+uint64_t *kvm_pager_page_table_walk(struct kvm_pager *, uint64_t, int);
+
 /*
  * \brief Find the host pointer for a guest virtual address. Basically do a
  * page table walk.

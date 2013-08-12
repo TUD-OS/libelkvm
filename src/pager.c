@@ -204,32 +204,8 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 	}
 
 	uint64_t guest_physical = host_to_guest_physical(pager, host_mem_p);
+	uint64_t *pt_entry = kvm_pager_page_table_walk(pager, guest_virtual, 1);
 	
-	uint64_t *table_base = pager->host_pml4_p;
-	/* pml4 offset is in bits 39 - 47 */
-	int off_low = 39;
-	int off_high = 47;
-
-	uint64_t *pt_entry;
-	for(int i = 0; i < 4; i++) {
-		uint64_t *entry = kvm_pager_find_table_entry(pager, table_base, 
-				guest_virtual, off_low, off_high);
-
-		off_low  = off_low  - 9;
-		off_high = off_high - 9;
-
-		if(!entry_exists(entry) && i < 3) {
-			err = kvm_pager_create_entry(pager, entry);
-		}
-
-		if(i < 3) {
-			table_base = kvm_pager_find_next_table(pager, entry);
-			assert(table_base != NULL);
-		} else {
-			pt_entry = entry;
-		}
-	}
-
 	/* do NOT overwrite existing page table entries! */
 	if(entry_exists(pt_entry)) {
 		if((*pt_entry & ~0xFFF) != (guest_physical & ~0xFFF)) {
@@ -245,6 +221,14 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 }
 
 void *kvm_pager_get_host_p(struct kvm_pager *pager, uint64_t guest_virtual) {
+	uint64_t *entry = kvm_pager_page_table_walk(pager, guest_virtual, 0);
+
+	uint64_t guest_physical = (*entry & ~0xFFF) | (guest_virtual & 0xFFF);
+	return (void *)(guest_physical + pager->system_chunk.userspace_addr);
+}
+
+uint64_t *kvm_pager_page_table_walk(struct kvm_pager *pager, uint64_t guest_virtual,
+		int create) {
 	uint64_t *table_base = (uint64_t *)pager->host_pml4_p;
 	uint64_t *entry = NULL;
 	int addr_low = 39;
@@ -256,14 +240,22 @@ void *kvm_pager_get_host_p(struct kvm_pager *pager, uint64_t guest_virtual) {
 		addr_low -= 9;
 		addr_high -= 9;
 		if(!entry_exists(entry)) {
-			return NULL;
+			if(!create) {
+				return NULL;
+			}
+			if(create && i < 3) {
+				int err = kvm_pager_create_entry(pager, entry);
+				if(err) {
+					return NULL;
+				}
+			}
 		}
 		if(i < 3) {
 			table_base = kvm_pager_find_next_table(pager, entry);
 		}
 	}
-	uint64_t guest_physical = (*entry & ~0xFFF) | (guest_virtual & 0xFFF);
-	return (void *)(guest_physical + pager->system_chunk.userspace_addr);
+
+	return entry;
 }
 
 uint64_t *kvm_pager_find_next_table(struct kvm_pager *pager,
