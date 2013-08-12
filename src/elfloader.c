@@ -106,7 +106,6 @@ int elfloader_load_program_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
 
 	bool pt_interp_forbidden = false;
 	bool pt_phdr_forbidden = false;
-	int loadable = MEMORY_REGION_TEXT;
 
 	for(int i = 0; i < bin->phdr_num; i++) {
 		GElf_Phdr phdr;
