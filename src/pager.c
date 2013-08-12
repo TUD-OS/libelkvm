@@ -201,37 +201,31 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 
 	uint64_t guest_physical = host_to_guest_physical(pager, host_mem_p);
 	
-	/* pml4 offset is in bits 39 - 47 */
-	uint64_t *pml4_entry = kvm_pager_find_table_entry(pager, pager->host_pml4_p, 
-			guest_virtual, 39, 47);
+	uint64_t *table_base = pager->host_pml4_p;
+	int off_low = 39;
+	int off_high = 47;
 
-	if(!entry_exists(pml4_entry)) {
-		err = kvm_pager_create_entry(pager, pml4_entry);
+	uint64_t *pt_entry;
+	for(int i = 0; i < 4; i++) {
+		/* pml4 offset is in bits 39 - 47 */
+		uint64_t *entry = kvm_pager_find_table_entry(pager, table_base, 
+				guest_virtual, off_low, off_high);
+
+		off_low  = off_low  - 9;
+		off_high = off_high - 9;
+
+		if(!entry_exists(entry) && i < 3) {
+			err = kvm_pager_create_entry(pager, entry);
+		}
+
+		if(i < 3) {
+			table_base = kvm_pager_find_next_table(pager, entry);
+			assert(table_base != NULL);
+		} else {
+			pt_entry = entry;
+		}
 	}
 
-	uint64_t *host_pdpt_base_p = kvm_pager_find_next_table(pager, pml4_entry);
-	assert(host_pdpt_base_p != NULL);
-	/* pdpt offset is in bits 30-38 */
-	uint64_t *pdpt_entry = kvm_pager_find_table_entry(pager, host_pdpt_base_p, 
-			guest_virtual, 30, 38);
-	if(!entry_exists(pdpt_entry)) {
-		err = kvm_pager_create_entry(pager, pdpt_entry);
-	}
-
-	uint64_t *host_pd_base_p = kvm_pager_find_next_table(pager, pdpt_entry);
-	assert(host_pd_base_p != NULL);
-	/* pd offset is in bits 21 - 29 */
-	uint64_t *pd_entry = kvm_pager_find_table_entry(pager, host_pd_base_p,
-			guest_virtual, 21, 29);
-	if(!entry_exists(pd_entry)) {
-		err = kvm_pager_create_entry(pager, pd_entry);
-	}
-
-	uint64_t *host_pt_base_p = kvm_pager_find_next_table(pager, pd_entry);
-	assert(host_pt_base_p != NULL);
-	/* pt offset is in bits 12 - 20 */
-	uint64_t *pt_entry = kvm_pager_find_table_entry(pager, host_pt_base_p,
-			guest_virtual, 12, 20);
 	/* do NOT overwrite existing page table entries! */
 	if(entry_exists(pt_entry)) {
 		if((*pt_entry & ~0xFFF) != (guest_physical & ~0xFFF)) {
