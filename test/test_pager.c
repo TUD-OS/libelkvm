@@ -10,13 +10,23 @@
 struct elkvm_opts pager_test_opts;
 int vm_fd;
 struct kvm_pager pager;
+struct kvm_vm the_vm;
 
 void pager_setup() {
-	elkvm_init(&pager_test_opts, 0, NULL, NULL);
-	vm_fd = ioctl(pager_test_opts.fd, KVM_CREATE_VM, 0);
+	int err = elkvm_init(&pager_test_opts, 0, NULL, NULL);
+	assert(err == 0);
+
+	uint64_t size = 0x400000;
+	the_vm.fd = ioctl(pager_test_opts.fd, KVM_CREATE_VM, 0);
+	the_vm.root_region.host_base_p = malloc(size);
+	the_vm.root_region.region_size = size;
+	the_vm.pager.system_chunk.memory_size = size;
+	err = kvm_vcpu_create(the_vm, VM_MODE_X86_64);
+	assert(err == 0);
 }
 
 void pager_teardown() {
+	free(the_vm.root_region.host_base_p);
 	elkvm_cleanup(&pager_test_opts);
 }
 
@@ -53,20 +63,29 @@ void memory_teardown() {
 	free(pager.host_pml4_p);
 }
 
-START_TEST(test_kvm_pager_initialize) {
+START_TEST(test_kvm_pager_initialize_invalid_vm) {
 	struct kvm_vm the_vm;
 	the_vm.fd = 0;
+	the_vm.root_region.region_size = 0;
 
 	int err = kvm_pager_initialize(&the_vm, PAGER_MODE_X86_64);
 	ck_assert_int_lt(err, 0);
+}
+END_TEST
 
+START_TEST(test_kvm_pager_initialize_invalid_mode) {
+	struct kvm_vm the_vm;
 	the_vm.fd = vm_fd;
+	the_vm.root_region.region_size = 0;
 
-	err = kvm_pager_initialize(&the_vm, 9999);
+	int err = kvm_pager_initialize(&the_vm, 9999);
 	ck_assert_int_lt(err, 0);
+}
+END_TEST
 
-
-	err = kvm_pager_initialize(&the_vm, PAGER_MODE_X86_64);
+START_TEST(test_kvm_pager_initialize_valid) {
+	printf("INITIALIZE\n");
+	int err = kvm_pager_initialize(&the_vm, PAGER_MODE_X86_64);
 	ck_assert_int_eq(err, 0);
 }
 END_TEST
@@ -142,6 +161,8 @@ START_TEST(test_kvm_pager_create_page_tables) {
 	int size = 0x400000;
 
 	pager.system_chunk.userspace_addr = (__u64)malloc(size);
+	ck_assert_int_ne(pager.system_chunk.userspace_addr, 0);
+	pager.host_pml4_p = pager.system_chunk.userspace_addr;
 	pager.system_chunk.memory_size = 0;
 
 	int err = kvm_pager_create_page_tables(&pager, PAGER_MODE_X86_64);
@@ -415,7 +436,9 @@ Suite *pager_suite() {
 
 	TCase *tc_init = tcase_create("Initialize");
 	tcase_add_checked_fixture(tc_init, pager_setup, pager_teardown);
-	tcase_add_test(tc_init, test_kvm_pager_initialize);
+	tcase_add_test(tc_init, test_kvm_pager_initialize_invalid_vm);
+	tcase_add_test(tc_init, test_kvm_pager_initialize_invalid_mode);
+	tcase_add_test(tc_init, test_kvm_pager_initialize_valid);
 	suite_add_tcase(s, tc_init);
 
 	TCase *tc_mem_chunk = tcase_create("Create Mem Chunk");

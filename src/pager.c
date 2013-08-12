@@ -12,6 +12,9 @@ int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
 	}
 
 	struct elkvm_memory_region *pts_region = elkvm_region_create(vm, 0x400000);
+	if(pts_region == NULL) {
+		return -ENOMEM;
+	}
 
 	vm->pager.mode = mode;
 	vm->pager.other_chunks = NULL;
@@ -21,6 +24,7 @@ int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
 		vm->pager.system_chunk.guest_phys_addr +
 		vm->pager.system_chunk.memory_size - 
 		pts_region->region_size;
+
 	int err = kvm_pager_create_page_tables(&vm->pager, mode);
 	if(err) {
 		return err;
@@ -116,11 +120,11 @@ int kvm_pager_append_mem_chunk(struct kvm_pager *pager,
 }
 
 int kvm_pager_create_page_tables(struct kvm_pager *pager, int mode) {
-	if(pager == NULL) {
-		return -1;
+	if(pager == NULL ||  pager->host_pml4_p == NULL) {
+		return -EINVAL;
 	}
 	if(mode != PAGER_MODE_X86_64) {
-		return -1;
+		return -ENOSYS;
 	}
 
 	if(pager->system_chunk.memory_size < 0x400000) {
