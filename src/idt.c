@@ -12,16 +12,16 @@
 
 int elkvm_idt_setup(struct kvm_vm *vm, struct elkvm_flat *default_handler) {
 
-	struct elkvm_memory_region *idt_region = elkvm_region_create(
+	vm->idt_region = elkvm_region_create(
 			vm,
 			256 * sizeof(struct kvm_idt_entry));
-	idt_region->guest_virtual = ADDRESS_SPACE_TOP -
-		idt_region->region_size + 0x1;
+	vm->idt_region->guest_virtual = ADDRESS_SPACE_TOP -
+		vm->idt_region->region_size + 0x1;
 
 	/* for now fill the idt with all 256 entries empty */
 	for(int i = 0; i < 256; i++) {
 		uint64_t offset = default_handler->region->guest_virtual;
-		struct kvm_idt_entry *entry = idt_region->host_base_p + 
+		struct kvm_idt_entry *entry = vm->idt_region->host_base_p + 
 			i * sizeof(struct kvm_idt_entry);
 		//switch(i) {
 		//		case IDT_ENTRY_PF:
@@ -47,8 +47,8 @@ int elkvm_idt_setup(struct kvm_vm *vm, struct elkvm_flat *default_handler) {
 
 	/* create a page for the idt */
 	int err = kvm_pager_create_mapping(&vm->pager, 
-			idt_region->host_base_p, 
-			idt_region->guest_virtual);
+			vm->idt_region->host_base_p, 
+			vm->idt_region->guest_virtual);
 	if(err) {
 		return err;
 	}
@@ -60,7 +60,7 @@ int elkvm_idt_setup(struct kvm_vm *vm, struct elkvm_flat *default_handler) {
 		return err;
 	}
 
-	vcpu->sregs.idt.base = idt_region->guest_virtual;
+	vcpu->sregs.idt.base = vm->idt_region->guest_virtual;
 	vcpu->sregs.idt.limit = 0xFFF;
 
 	err = kvm_vcpu_set_regs(vcpu);
