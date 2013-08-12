@@ -243,6 +243,9 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 
 void *kvm_pager_get_host_p(struct kvm_pager *pager, uint64_t guest_virtual) {
 	uint64_t *entry = kvm_pager_page_table_walk(pager, guest_virtual, 0);
+	if(entry == NULL) {
+		return NULL;
+	}
 
 	uint64_t guest_physical = (*entry & ~0xFFF) | (guest_virtual & 0xFFF);
 	return (void *)(guest_physical + pager->system_chunk.userspace_addr);
