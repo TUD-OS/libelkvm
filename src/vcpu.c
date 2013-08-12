@@ -21,6 +21,9 @@ int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
 	}
 
 	struct kvm_vcpu *vcpu = malloc(sizeof(struct kvm_vcpu));
+	if(vcpu == NULL) {
+		return -ENOMEM;
+	}
 	memset(&vcpu->regs, 0, sizeof(struct kvm_regs));
 	memset(&vcpu->sregs, 0, sizeof(struct kvm_sregs));
 	vcpu->is_debug = 0;
@@ -42,7 +45,7 @@ int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
 			MAP_SHARED, vcpu->fd, 0);
 	if(vcpu->run_struct == NULL) {
 		free(vcpu);
-		return -1;
+		return -ENOMEM;
 	}
 
 	err = kvm_vcpu_add_tail(vm, vcpu);
