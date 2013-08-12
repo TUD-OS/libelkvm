@@ -75,7 +75,7 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 	}
 
 	struct elkvm_flat sysenter;
-	char *sysenter_path = "/home/flo/Dokumente/projekte/libelkvm/res/sysenter";
+	char *sysenter_path = "/home/flo/Dokumente/projekte/libelkvm/res/entry";
 	err = elkvm_load_flat(vm, &sysenter, sysenter_path);
 	if(err) {
 		return err;
@@ -128,9 +128,7 @@ int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * pat
 	flat->region = elkvm_region_create(vm, stbuf.st_size);
 	flat->region->guest_virtual = 0x0;
 	
-	err = kvm_pager_create_mapping(&vm->pager, 
-			flat->region->host_base_p, 
-			flat->region->guest_virtual);
+	err = kvm_pager_map_kernel_page(&vm->pager, flat->region->host_base_p);
 	if(err) {
 		close(fd);
 		return err;
@@ -252,6 +250,7 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 	kstack_region->grows_downward = 1;
 
 	/* create a mapping for the kernel (interrupt) stack */
+	/* TODO create this in kernel space */
 	int err = kvm_pager_create_mapping(&vm->pager, 
 			kstack_region->host_base_p,
 			kstack_region->guest_virtual);
