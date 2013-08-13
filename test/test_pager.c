@@ -405,8 +405,8 @@ START_TEST(test_kvm_pager_map_kernel_page_valid) {
 	int err = kvm_pager_initialize(&the_vm, PAGER_MODE_X86_64);
 	ck_assert_int_eq(err, 0);
 
-	err = kvm_pager_map_kernel_page(&the_vm.pager, (void *)0x42);
-	ck_assert_int_eq(err, 0);
+	uint64_t virt = kvm_pager_map_kernel_page(&the_vm.pager, (void *)0x42);
+	ck_assert_int_ne(virt, 0);
 }
 END_TEST
 
@@ -415,8 +415,8 @@ START_TEST(test_kvm_pager_map_kernel_page_masses) {
 	ck_assert_int_eq(err, 0);
 
 	for(int i = 0; i < 0x5142; i++) {
-		err = kvm_pager_map_kernel_page(&the_vm.pager, (void *)i);
-		ck_assert_int_eq(err, 0);
+		uint64_t virt = kvm_pager_map_kernel_page(&the_vm.pager, (void *)i);
+		ck_assert_int_ne(virt, 0);
 	}
 }
 END_TEST
