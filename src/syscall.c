@@ -10,11 +10,17 @@ int elkvm_handle_vm_shutdown(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 		return 0;
 	}
 
-	if(kvm_vcpu_did_hypercall(vm, vcpu)) {
-		if(kvm_vcpu_had_page_fault(vcpu)) {
+	if(kvm_vcpu_had_page_fault(vcpu)) {
+		printf("PFLA: 0x%llx\n", vcpu->sregs.cr2);
+		void *host_p = kvm_pager_get_host_p(&vm->pager, vcpu->sregs.cr2);
+		printf("Should result in %p\n", host_p);
+		if(host_p != NULL) {
 			kvm_pager_dump_page_tables(&vm->pager);
 		}
+		return 0;
+	}
 
+	if(kvm_vcpu_did_hypercall(vm, vcpu)) {
 		if(kvm_vcpu_did_syscall(vm, vcpu)) {
 			fprintf(stderr, "Shutdown was syscall, handling...\n");
 			int err = elkvm_handle_syscall(vm, vcpu);
