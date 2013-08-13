@@ -98,6 +98,8 @@ uint64_t *kvm_pager_find_table_entry(struct kvm_pager *, uint64_t *, uint64_t,
 */
 int kvm_pager_create_entry(struct kvm_pager *, uint64_t *);
 
+void kvm_pager_dump_page_tables(struct kvm_pager *);
+
 /*
  * \brief Translate a host address into a guest physical address
 */

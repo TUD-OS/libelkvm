@@ -317,3 +317,6 @@ int kvm_pager_create_entry(struct kvm_pager *pager, uint64_t *host_entry_p) {
 	return 0;
 }
 
+void kvm_pager_dump_page_tables(struct kvm_pager *pager) {
+	return;
+}

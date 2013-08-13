@@ -11,6 +11,9 @@ int elkvm_handle_vm_shutdown(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 	}
 
 	if(kvm_vcpu_did_hypercall(vm, vcpu)) {
+		if(kvm_vcpu_had_page_fault(vcpu)) {
+			kvm_pager_dump_page_tables(&vm->pager);
+		}
 
 		if(kvm_vcpu_did_syscall(vm, vcpu)) {
 			fprintf(stderr, "Shutdown was syscall, handling...\n");
