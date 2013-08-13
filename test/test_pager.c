@@ -377,6 +377,25 @@ START_TEST(test_kvm_pager_create_mapping_invalid_offset) {
 }
 END_TEST
 
+START_TEST(test_kvm_pager_create_mapping_mass) {
+	void *p = (void *)pager.system_chunk.userspace_addr + 0x1500;
+	uint64_t guest = 0x600500;
+
+	int err;
+	void *resolved;
+	for(int i = 0; i < 1024; i++) {
+		err = kvm_pager_create_mapping(&pager, p, guest);
+		ck_assert_int_eq(err, 0);
+
+		resolved = kvm_pager_get_host_p(&pager, guest);
+		ck_assert_ptr_eq(resolved, p);
+
+		p = p + 0x1000;
+		guest = guest + 0x1000;
+	}
+}
+END_TEST
+
 START_TEST(test_kvm_pager_create_entry) {
 	pager.system_chunk.guest_phys_addr = 0x0;
 	pager.system_chunk.userspace_addr = (uint64_t)pager.host_pml4_p;
@@ -414,7 +433,7 @@ START_TEST(test_kvm_pager_map_kernel_page_masses) {
 	int err = kvm_pager_initialize(&the_vm, PAGER_MODE_X86_64);
 	ck_assert_int_eq(err, 0);
 
-	for(int i = 0; i < 0x5142; i++) {
+	for(uint64_t i = 0; i < 0x5142; i++) {
 		uint64_t virt = kvm_pager_map_kernel_page(&the_vm.pager, (void *)i);
 		ck_assert_int_ne(virt, 0);
 	}
@@ -446,6 +465,7 @@ Suite *pager_suite() {
 	tcase_add_test(tc_create_mappings, test_kvm_pager_create_valid_mappings);
 	tcase_add_test(tc_create_mappings, test_kvm_pager_create_same_mapping);
 	tcase_add_test(tc_create_mappings, test_kvm_pager_create_mapping_invalid_offset);
+	tcase_add_test(tc_create_mappings, test_kvm_pager_create_mapping_mass);
 	suite_add_tcase(s, tc_create_mappings);
 
 	TCase *tc_append_mem_chunk = tcase_create("Append Mem Chunk");
