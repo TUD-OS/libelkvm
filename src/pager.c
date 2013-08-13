@@ -321,5 +321,62 @@ int kvm_pager_create_entry(struct kvm_pager *pager, uint64_t *host_entry_p) {
 }
 
 void kvm_pager_dump_page_tables(struct kvm_pager *pager) {
+	printf(" Page Tables:\n");
+	printf( "------------\n");
+
+	kvm_pager_dump_table(pager, pager->host_pml4_p, 4);
 	return;
+}
+
+void kvm_pager_dump_table(struct kvm_pager *pager, void *host_p, int level) {
+	if(level < 1) {
+		return;
+	}
+
+	char *tname;
+	switch(level) {
+		case 1: tname = "Page Table\0";
+						break;
+		case 2: tname = "Page Directory\0";
+						break;
+		case 3: tname = "Page Directory Pointer Table\0";
+						break;
+		case 4: tname = "PML4\0";
+						break;
+		default: tname = "Invalid Level\0";
+						 break;
+	}
+
+	uint64_t *entry = host_p;
+	void *present[64];
+	int entries = 0;
+
+	uint64_t guest_physical = host_to_guest_physical(pager, host_p);
+	printf(" %s with host base %p (0x%lx)\n", tname, host_p, guest_physical);
+	printf(" P W PL WTC C U 6-8 9-11\tNext\t\tNXE\n");
+
+	for(int i = 0; i < 512; i++) {
+		if(*entry & 0x1) {
+			uint64_t entry_guest_physical = *entry & 0xFFFFFFFFFF000;
+			printf(" %1lx %1lx  %1lx   %1lx %1lx %1lx   %1lx    %1lx\t%011lx\t%1lx\n",
+					*entry & 0x1,
+					*entry & 0x2 >> 1,
+					*entry & 0x4 >> 2,
+					*entry & 0x8 >> 3,
+					*entry & 0x10 >> 4,
+					*entry & 0x20 >> 5,
+					(*entry >> 6) & 0x7,
+					(*entry >> 9) & 0x7,
+					entry_guest_physical,
+					(*entry >> 63));
+			present[entries++] = (void *)entry_guest_physical +
+				pager->system_chunk.userspace_addr;
+		}
+		entry++;
+	}
+	printf("\n");
+
+	for(int i = 0; i<entries; i++) {
+		kvm_pager_dump_table(pager, present[i], level-1);
+	}
 }

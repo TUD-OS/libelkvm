@@ -385,6 +385,7 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 		elkvm_gdt_dump(vcpu->vm);
 		elkvm_idt_dump(vcpu->vm);
 		elkvm_idt_dump_isr(vcpu->vm, 10);
+		kvm_pager_dump_page_tables(&vcpu->vm->pager);
 	}
 
 	while(is_running) {
