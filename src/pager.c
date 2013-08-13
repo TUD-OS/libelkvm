@@ -238,6 +238,7 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 	}
 
 	*pt_entry = guest_physical & ~0xFFF;
+	*pt_entry |= 0x4;
 	*pt_entry |= 0x1;
 	
 	return 0;
@@ -317,6 +318,9 @@ int kvm_pager_create_entry(struct kvm_pager *pager, uint64_t *host_entry_p) {
 
 	/* save base address of next tbl in entry */
 	*host_entry_p = guest_next_tbl & ~0xFFF;
+
+	/* TODO give this method a flag for marking pages as user mode */
+	*host_entry_p |= 0x4;
 
 	/* mark the entry as present */
 	*host_entry_p |= 0x1;
