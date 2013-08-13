@@ -10,7 +10,7 @@ int elkvm_tss_setup64(struct kvm_vm *vm, struct elkvm_memory_region *tss_region)
 	struct elkvm_tss64 *tss = (struct elkvm_tss64 *)tss_region->host_base_p;
 	memset(tss, 0, sizeof(struct elkvm_tss64));
 
-	tss->ist1 = vm->kernel_stack->guest_virtual;
+	tss->ist1 = vm->kernel_stack->guest_virtual + 0x1000;
 	return 0;
 }
 
