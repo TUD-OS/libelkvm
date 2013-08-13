@@ -314,6 +314,8 @@ int kvm_pager_create_entry(struct kvm_pager *pager, uint64_t *host_entry_p) {
 	}
 	memset(pager->host_next_free_tbl_p, 0, 0x1000);
 	pager->host_next_free_tbl_p += 0x1000;
+
+	/* save base address of next tbl in entry */
 	*host_entry_p = guest_next_tbl & ~0xFFF;
 
 	/* mark the entry as present */
@@ -323,9 +325,10 @@ int kvm_pager_create_entry(struct kvm_pager *pager, uint64_t *host_entry_p) {
 
 void kvm_pager_dump_page_tables(struct kvm_pager *pager) {
 	printf(" Page Tables:\n");
-	printf( "------------\n");
+	printf(" ------------\n");
 
 	kvm_pager_dump_table(pager, pager->host_pml4_p, 4);
+	printf(" ------------\n");
 	return;
 }
 
@@ -349,23 +352,24 @@ void kvm_pager_dump_table(struct kvm_pager *pager, void *host_p, int level) {
 	}
 
 	uint64_t *entry = host_p;
-	void *present[64];
+	void *present[512];
 	int entries = 0;
 
 	uint64_t guest_physical = host_to_guest_physical(pager, host_p);
 	printf(" %s with host base %p (0x%lx)\n", tname, host_p, guest_physical);
-	printf(" P W PL WTC C U 6-8 9-11\tNext\t\tNXE\n");
+	printf(" Off    P W PL WTC C U 6-8 9-11\tNext\t\tNXE\n");
 
 	for(int i = 0; i < 512; i++) {
 		if(*entry & 0x1) {
 			uint64_t entry_guest_physical = *entry & 0xFFFFFFFFFF000;
-			printf(" %1lx %1lx  %1lx   %1lx %1lx %1lx   %1lx    %1lx\t%011lx\t%1lx\n",
+			printf(" %3i    %1lx %1lx  %1lx   %1lx %1lx %1lx   %1lx    %1lx\t%011lx\t%1lx\n",
+					i,
 					*entry & 0x1,
-					*entry & 0x2 >> 1,
-					*entry & 0x4 >> 2,
-					*entry & 0x8 >> 3,
-					*entry & 0x10 >> 4,
-					*entry & 0x20 >> 5,
+					(*entry & 0x2) >> 1,
+					(*entry & 0x4) >> 2,
+					(*entry & 0x8) >> 3,
+					(*entry & 0x10) >> 4,
+					(*entry & 0x20) >> 5,
 					(*entry >> 6) & 0x7,
 					(*entry >> 9) & 0x7,
 					entry_guest_physical,
@@ -375,9 +379,13 @@ void kvm_pager_dump_table(struct kvm_pager *pager, void *host_p, int level) {
 		}
 		entry++;
 	}
+	printf(" --------\n");
 	printf("\n");
 
-	for(int i = 0; i<entries; i++) {
-		kvm_pager_dump_table(pager, present[i], level-1);
+	if(level > 1) {
+		for(int i = 0; i<entries; i++) {
+			kvm_pager_dump_table(pager, present[i], level-1);
+		}
 	}
+	return;
 }
