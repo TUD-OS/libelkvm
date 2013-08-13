@@ -15,8 +15,6 @@ int elkvm_idt_setup(struct kvm_vm *vm, struct elkvm_flat *default_handler) {
 	vm->idt_region = elkvm_region_create(
 			vm,
 			256 * sizeof(struct kvm_idt_entry));
-	vm->idt_region->guest_virtual = ADDRESS_SPACE_TOP -
-		vm->idt_region->region_size + 0x1;
 
 	/* for now fill the idt with all 256 entries empty */
 	for(int i = 0; i < 256; i++) {
@@ -46,16 +44,15 @@ int elkvm_idt_setup(struct kvm_vm *vm, struct elkvm_flat *default_handler) {
 
 
 	/* create a page for the idt */
-	int err = kvm_pager_create_mapping(&vm->pager, 
-			vm->idt_region->host_base_p, 
-			vm->idt_region->guest_virtual);
-	if(err) {
-		return err;
+	vm->idt_region->guest_virtual = kvm_pager_map_kernel_page(&vm->pager,
+			vm->idt_region->host_base_p);
+	if(vm->idt_region->guest_virtual == 0) {
+		return -ENOMEM;
 	}
 
 	/* set the idtr accordingly */
 	struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
-	err = kvm_vcpu_get_regs(vcpu);
+	int err = kvm_vcpu_get_regs(vcpu);
 	if(err) {
 		return err;
 	}
