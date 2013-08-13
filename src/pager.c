@@ -213,6 +213,8 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 	int err;
 
 	assert(pager->system_chunk.userspace_addr != 0);
+	assert((host_mem_p < pager->host_pml4_p) ||
+			host_mem_p >= (pager->host_pml4_p + 0x400000)); 
 
 	/* sanity checks on the host, we need 4MB to fit all possible page maps */
 	if(pager->system_chunk.memory_size < ELKVM_SYSTEM_MEMSIZE) {
