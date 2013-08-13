@@ -1,4 +1,6 @@
 #include <assert.h>
+#include <errno.h>
+
 #include <elkvm.h>
 #include <pager.h>
 #include <stack.h>
@@ -29,19 +31,26 @@ int push_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint16_t val) {
 
 	uint16_t *host_p = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
 	if(host_p == NULL) {
-		host_p = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp + 0x8);
-		if(host_p == NULL) {
-			return -1;
-		}
-		err = kvm_pager_create_mapping(&vm->pager, host_p - 0x1000, 
-				vcpu->regs.rsp + 0x8 - 0x1000);
-		if(err < 0) {
+		/* current stack is full, we need to expand the stack */
+		err = expand_stack(vm, vcpu);
+		if(err) {
 			return err;
 		}
-		host_p -= 0x8;
+		host_p = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
+		assert(host_p != NULL);
 	}
 	*host_p = val;
 
 	err = kvm_vcpu_set_regs(vcpu);
+	return err;
+}
+
+int expand_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+	struct elkvm_memory_region *region = elkvm_region_create(vm, 0x1000);
+	if(region == NULL) {
+		return -ENOMEM;
+	}
+	int err = kvm_pager_create_mapping(&vm->pager, region->host_base_p,
+			vcpu->regs.rsp & ~0xFFF);
 	return err;
 }
