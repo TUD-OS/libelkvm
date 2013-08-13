@@ -241,6 +241,7 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 		env_region->region_size;
 
 	/* get a 4 page large region for the stack */
+	/* TODO check if this still makes sense! */
 	struct elkvm_memory_region *stack_region = elkvm_region_create(vm, 0x4000);
 	stack_region->guest_virtual = env_region->guest_virtual;
 	stack_region->grows_downward = 1;
@@ -251,15 +252,13 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 	vm->kernel_stack->grows_downward = 1;
 
 	/* create a mapping for the kernel (interrupt) stack */
-	/* TODO create this in kernel space */
-	int err = kvm_pager_create_mapping(&vm->pager, 
-			vm->kernel_stack->host_base_p,
-			vm->kernel_stack->guest_virtual);
-	if(err) {
-		return err;
+	vm->kernel_stack->guest_virtual = kvm_pager_map_kernel_page(&vm->pager,
+			vm->kernel_stack->host_base_p);
+	if(vm->kernel_stack->guest_virtual == 0) {
+		return -ENOMEM;
 	}
 
-	err = kvm_vcpu_get_regs(vm->vcpus->vcpu);
+	int err = kvm_vcpu_get_regs(vm->vcpus->vcpu);
 	if(err) {
 		return err;
 	}
