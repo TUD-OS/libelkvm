@@ -34,12 +34,12 @@ START_TEST(test_kvm_vm_create) {
 	struct elkvm_opts uninitialized_opts;
 	uninitialized_opts.fd = 0;
 	int err = kvm_vm_create(&uninitialized_opts, &the_vm, VM_MODE_X86_64, cpus, 
-			memory);
+			memory, NULL);
 	ck_assert_int_eq(err, -EIO);
 	ck_assert_int_eq(the_vm.fd, 0);
 	ck_assert_ptr_eq(the_vm.vcpus, NULL);
 
-	err = kvm_vm_create(&vm_test_opts, &the_vm, VM_MODE_X86_64, cpus, memory);
+	err = kvm_vm_create(&vm_test_opts, &the_vm, VM_MODE_X86_64, cpus, memory, NULL);
 	ck_assert_int_eq(err, 0);
 	ck_assert_int_gt(the_vm.fd, 0);
 	ck_assert_ptr_ne(the_vm.vcpus, NULL);
@@ -87,6 +87,14 @@ START_TEST(test_kvm_vm_vcpu_count) {
 
 	cpus = kvm_vm_vcpu_count(&the_vm);
 	ck_assert_int_eq(cpus, 3);
+}
+END_TEST
+
+START_TEST(test_elkvm_initialize_stack) {
+	//int err = elkvm_initialize_stack(&vm_test_opts, &elfloader_test_vm);
+	//ck_assert_int_eq(err, 0);
+
+	ck_abort_msg("Test for Stack initialization not implemented");
 }
 END_TEST
 
@@ -182,6 +190,11 @@ Suite *vm_suite() {
 	tcase_add_test(tc_map, test_kvm_vm_map_system_chunk_invalid);
 	tcase_add_test(tc_map, test_kvm_vm_map_system_chunk_multiple);
 	suite_add_tcase(s, tc_map);
+
+	TCase *tc_stack = tcase_create("Stack");
+	tcase_add_checked_fixture(tc_stack, vm_setup, vm_teardown);
+	tcase_add_test(tc_stack, test_elkvm_initialize_stack);
+	suite_add_tcase(s, tc_stack);
 
 	return s;
 }

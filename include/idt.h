@@ -1,12 +1,16 @@
 #pragma once
 
 #include "elkvm.h"
+#include "flats.h"
 #include "pager.h"
 
 struct kvm_idt_entry {
 	uint16_t offset1;
 	uint16_t selector;
-	//only use lower three bits of idx!
+	/*
+	 * in long mode lower three bits of idx are
+	 * used for ist index
+	 */
 	uint8_t idx;
 	uint8_t flags;
 	uint16_t offset2;
@@ -22,8 +26,7 @@ struct kvm_idt_entry {
 
 #define INTERRUPT_ENTRY_PRESENT 128
 
-int elkvm_idt_setup(struct kvm_vm *);
-int elkvm_idt_load_default_handler(struct kvm_vm *, uint64_t *);
+int elkvm_idt_setup(struct kvm_vm *, struct elkvm_flat *);
 
 void elkvm_idt_dump(struct kvm_vm *);
 void elkvm_idt_dump_isr(struct kvm_vm *, int);

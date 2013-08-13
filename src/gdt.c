@@ -9,12 +9,21 @@
 
 int elkvm_gdt_setup(struct kvm_vm *vm) {
 	
-	memset(vm->region[MEMORY_REGION_GDT].host_base_p, 0,
+	vm->gdt_region = elkvm_region_create(vm,
+				GDT_NUM_ENTRIES * sizeof(struct elkvm_gdt_segment_descriptor));
+
+	vm->gdt_region->guest_virtual = kvm_pager_map_kernel_page(&vm->pager,
+			vm->gdt_region->host_base_p);
+	if(vm->gdt_region->guest_virtual == 0) {
+		return -ENOMEM;
+	}
+
+	/* create a null entry, as required by x86 */
+	memset(vm->gdt_region->host_base_p, 0,
 		 sizeof(struct elkvm_gdt_segment_descriptor));
 
 	struct elkvm_gdt_segment_descriptor *entry = 
-		vm->region[MEMORY_REGION_GDT].host_base_p +
-		sizeof(struct elkvm_gdt_segment_descriptor);
+		vm->gdt_region->host_base_p + sizeof(struct elkvm_gdt_segment_descriptor);
 
 	/* code segment */
 	elkvm_gdt_create_segment_descriptor(entry, 0x0, 0xFFFFFFFF,
@@ -38,52 +47,47 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 
 	entry++;
 
+	struct elkvm_memory_region *tss_region = elkvm_region_create(vm,
+			sizeof(struct elkvm_tss64));
+	/* setup the tss, before loading the segment descriptor */
+	int err = elkvm_tss_setup64(vm, tss_region);
+	if(err) {
+		return -err;
+	}
+
 	/* task state segment */
 	elkvm_gdt_create_segment_descriptor(entry,
-			(vm->region[MEMORY_REGION_GDT].guest_virtual + GDT_NUM_ENTRIES * 8) & 0xFFFFFFFF,
-			sizeof(struct elkvm_tss),
+			tss_region->guest_virtual & 0xFFFFFFFF,
+			sizeof(struct elkvm_tss64),
 			0x9 | GDT_SEGMENT_PRESENT,
 			GDT_SEGMENT_PROTECTED_32);
 	/*
-	 * tss entry has 64 bits, make a second entry to account for that
+	 * tss entry has 128 bits, make a second entry to account for that
+	 * the upper part of base is in the beginning of that second entry
+	 * rest is ignored or must be 0, just set everything to 0
 	 */
 	entry++;
-	elkvm_gdt_create_segment_descriptor(entry,
-			(vm->region[MEMORY_REGION_GDT].guest_virtual + GDT_NUM_ENTRIES * 8) & ~0xFFFFFFFF,
-			sizeof(struct elkvm_tss),
-			0x9 | GDT_SEGMENT_PRESENT,
-			GDT_SEGMENT_PROTECTED_32);
+	uint64_t *upper_tss = (uint64_t *)entry;
+	*upper_tss = tss_region->guest_virtual >> 32;
 
 	uint64_t tr_selector = (uint64_t)entry -
-		(uint64_t)vm->region[MEMORY_REGION_GDT].host_base_p;
+		(uint64_t)vm->gdt_region->host_base_p;
 	
-	elkvm_tss_setup(
-			vm->region[MEMORY_REGION_GDT].host_base_p + GDT_NUM_ENTRIES * 8,
-			0x10);
-
 	struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
 
-	int err = kvm_vcpu_get_regs(vcpu);
+	err = kvm_vcpu_get_regs(vcpu);
 	if(err) {
 		return err;
 	}
 
-	vcpu->sregs.gdt.base = vm->region[MEMORY_REGION_GDT].guest_virtual;
+	vcpu->sregs.gdt.base = vm->gdt_region->guest_virtual;
 	vcpu->sregs.gdt.limit = GDT_NUM_ENTRIES * 8 - 1;
 
-	vcpu->sregs.tr.base = vm->region[MEMORY_REGION_GDT].guest_virtual +
-		GDT_NUM_ENTRIES * 8;
-	vcpu->sregs.tr.limit = sizeof(struct elkvm_tss);
+	vcpu->sregs.tr.base = tss_region->guest_virtual;
+	vcpu->sregs.tr.limit = sizeof(struct elkvm_tss64);
 	vcpu->sregs.tr.selector = tr_selector;
 
 	err = kvm_vcpu_set_regs(vcpu);
-	if(err) {
-		return err;
-	}
-
-	err = kvm_pager_create_mapping(&vm->pager, 
-			vm->region[MEMORY_REGION_GDT].host_base_p,
-			vm->region[MEMORY_REGION_GDT].guest_virtual);
 	if(err) {
 		return err;
 	}
@@ -120,11 +124,11 @@ void elkvm_gdt_dump(struct kvm_vm *vm) {
 	printf(  " selector\tbase\tlimit\taccess\tflags\n");
 
 	for(int i = 0; i < GDT_NUM_ENTRIES; i++) {
-		struct elkvm_gdt_segment_descriptor *entry = vm->region[MEMORY_REGION_GDT].host_base_p +
+		struct elkvm_gdt_segment_descriptor *entry = vm->gdt_region->host_base_p +
 			i * sizeof(struct elkvm_gdt_segment_descriptor);
 		uint16_t selector = i * sizeof(struct elkvm_gdt_segment_descriptor);
 
-		printf(" 0x%4x\t\t0x%08x\t0x%05x\t0x%02x\t0x%1x\n", selector, gdt_base(entry),
+		printf(" %p\t0x%4x\t\t0x%08x\t0x%05x\t0x%02x\t0x%1x\n", entry, selector, gdt_base(entry),
 			gdt_limit(entry), entry->access, gdt_flags(entry));
 	}
 

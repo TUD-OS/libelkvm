@@ -5,19 +5,23 @@
 #include <unistd.h>
 
 #include <elkvm.h>
+#include <flats.h>
 #include <idt.h>
 #include <pager.h>
 #include <vcpu.h>
 
-int elkvm_idt_setup(struct kvm_vm *vm) {
+int elkvm_idt_setup(struct kvm_vm *vm, struct elkvm_flat *default_handler) {
 
-	uint64_t default_offset;
-	int err = elkvm_idt_load_default_handler(vm, &default_offset);
+	vm->idt_region = elkvm_region_create(
+			vm,
+			256 * sizeof(struct kvm_idt_entry));
+	vm->idt_region->guest_virtual = ADDRESS_SPACE_TOP -
+		vm->idt_region->region_size + 0x1;
 
 	/* for now fill the idt with all 256 entries empty */
 	for(int i = 0; i < 256; i++) {
-		uint64_t offset = default_offset;
-		struct kvm_idt_entry *entry = vm->region[MEMORY_REGION_IDT].host_base_p + 
+		uint64_t offset = default_handler->region->guest_virtual;
+		struct kvm_idt_entry *entry = vm->idt_region->host_base_p + 
 			i * sizeof(struct kvm_idt_entry);
 		//switch(i) {
 		//		case IDT_ENTRY_PF:
@@ -35,16 +39,16 @@ int elkvm_idt_setup(struct kvm_vm *vm) {
 		entry->offset3 = (uint32_t)(offset >> 32);
 
 		entry->selector = 0x0008;
-		entry->idx = 0x0;
+		entry->idx = 0x1;
 		entry->flags = INTERRUPT_ENTRY_PRESENT | IT_TRAP_GATE | IT_LONG_IDT;
 		entry->reserved = 0x0;
 	}
 
 
 	/* create a page for the idt */
-	err = kvm_pager_create_mapping(&vm->pager, 
-			vm->region[MEMORY_REGION_IDT].host_base_p, 
-			vm->region[MEMORY_REGION_IDT].guest_virtual);
+	int err = kvm_pager_create_mapping(&vm->pager, 
+			vm->idt_region->host_base_p, 
+			vm->idt_region->guest_virtual);
 	if(err) {
 		return err;
 	}
@@ -56,7 +60,7 @@ int elkvm_idt_setup(struct kvm_vm *vm) {
 		return err;
 	}
 
-	vcpu->sregs.idt.base = vm->region[MEMORY_REGION_IDT].guest_virtual;
+	vcpu->sregs.idt.base = vm->idt_region->guest_virtual;
 	vcpu->sregs.idt.limit = 0xFFF;
 
 	err = kvm_vcpu_set_regs(vcpu);
@@ -64,42 +68,9 @@ int elkvm_idt_setup(struct kvm_vm *vm) {
 	return err;
 }
 
-int elkvm_idt_load_default_handler(struct kvm_vm *vm, uint64_t *off) {
-	vm->region[MEMORY_REGION_IDTH].region_size = 0x1000;
-	vm->region[MEMORY_REGION_IDTH].host_base_p = 
-		vm->region[MEMORY_REGION_IDT].host_base_p - 
-		vm->region[MEMORY_REGION_IDTH].region_size;
-	vm->region[MEMORY_REGION_IDTH].guest_virtual = 
-		vm->region[MEMORY_REGION_IDT].guest_virtual - 
-		vm->region[MEMORY_REGION_IDTH].region_size;
-	vm->region[MEMORY_REGION_IDTH].grows_downward = 0;
-
-	int err = kvm_pager_create_mapping(&vm->pager, 
-			vm->region[MEMORY_REGION_IDTH].host_base_p, 
-			vm->region[MEMORY_REGION_IDTH].guest_virtual);
-	if(err) {
-		return err;
-	}
-
-	int fd = open("/home/flo/Dokumente/projekte/libelkvm/res/vmxoff", O_RDONLY);
-	if(fd < 0) {
-		return -errno;
-	}
-
-	char *buf = vm->region[MEMORY_REGION_IDTH].host_base_p;
-	*off = (uint64_t)vm->region[MEMORY_REGION_IDTH].guest_virtual;
-	int bufsize = 0x1000;
-	int bytes = 0;
-	while((bytes = read(fd, buf, bufsize)) > 0) {
-		buf += bytes;
-	}
-
-	return 0;
-}
-
 void elkvm_idt_dump(struct kvm_vm *vm) {
 	struct kvm_idt_entry *entry = 
-		(struct kvm_idt_entry *)vm->region[MEMORY_REGION_IDT].host_base_p;
+		(struct kvm_idt_entry *)vm->idt_region->host_base_p;
 	printf("\n Interrupt Descriptor Table:\n");
 	printf(" ---------------------------\n\n");
 	printf("Vector\tSelector\tOffset\tidx\tflags\n");
@@ -112,7 +83,7 @@ void elkvm_idt_dump(struct kvm_vm *vm) {
 
 void elkvm_idt_dump_isr(struct kvm_vm *vm, int iv) {
 	struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
-	struct kvm_idt_entry *entry = vm->region[MEMORY_REGION_IDT].host_base_p +
+	struct kvm_idt_entry *entry = vm->idt_region->host_base_p +
 		iv * sizeof(struct kvm_idt_entry);
 	uint64_t guest_isr = idt_entry_offset(entry);
 	printf("guest_isr: 0x%lx\n", guest_isr);

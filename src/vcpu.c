@@ -21,6 +21,9 @@ int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
 	}
 
 	struct kvm_vcpu *vcpu = malloc(sizeof(struct kvm_vcpu));
+	if(vcpu == NULL) {
+		return -ENOMEM;
+	}
 	memset(&vcpu->regs, 0, sizeof(struct kvm_regs));
 	memset(&vcpu->sregs, 0, sizeof(struct kvm_sregs));
 	vcpu->is_debug = 0;
@@ -42,7 +45,7 @@ int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
 			MAP_SHARED, vcpu->fd, 0);
 	if(vcpu->run_struct == NULL) {
 		free(vcpu);
-		return -1;
+		return -ENOMEM;
 	}
 
 	err = kvm_vcpu_add_tail(vm, vcpu);
@@ -415,7 +418,7 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 				break;
 			case KVM_EXIT_SHUTDOWN:
 				fprintf(stderr, "KVM VCPU did shutdown\n");
-				is_running = elkvm_handle_vm_shutdown(vcpu);
+				is_running = elkvm_handle_vm_shutdown(vcpu->vm, vcpu);
 				break;
 			case KVM_EXIT_DEBUG:
 				fprintf(stderr, "KVM_EXIT_DEBUG\n");
@@ -558,3 +561,22 @@ int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *vcpu) {
 	return 0;
 }
 
+int kvm_vcpu_did_hypercall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+	const char vmxoff[3] = { 0x0F, 0x01, 0xC4 };
+	char *host_rip_p = (char *)kvm_pager_get_host_p(&vm->pager, vcpu->regs.rip);
+	return (memcmp(host_rip_p, vmxoff, 3) == 0);
+}
+
+int kvm_vcpu_did_syscall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+	/* 
+	 * on syscall the instruction after the syscall is stored in rcx
+	 * also, syscall is 2 bytes long
+	 */
+	const char syscall[2] = { 0x0F, 0x05 };
+	char *host_rip_p = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rcx - 0x2);
+	return (memcmp(host_rip_p, syscall, 2) == 0);
+}
+
+int kvm_vcpu_had_page_fault(struct kvm_vcpu *vcpu) {
+	return vcpu->sregs.cr2 != 0x0;
+}

@@ -1,6 +1,24 @@
 #include <inttypes.h>
 
-struct elkvm_tss {
+struct elkvm_tss64 {
+	uint32_t reserved1;
+	uint64_t rsp0;
+	uint64_t rsp1;
+	uint64_t rsp2;
+	uint64_t reserved2;
+	uint64_t ist1;
+	uint64_t ist2;
+	uint64_t ist3;
+	uint64_t ist4;
+	uint64_t ist5;
+	uint64_t ist6;
+	uint64_t ist7;
+	uint64_t reserved3;
+	uint16_t reserved4;
+	uint16_t iopb;
+}__attribute__((packed));
+
+struct elkvm_tss32 {
 	uint16_t link;
 	uint16_t reserved1;
 	uint32_t esp0;
@@ -41,4 +59,5 @@ struct elkvm_tss {
 	uint16_t iopb;
 }__attribute__((packed));
 
-int elkvm_tss_setup(struct elkvm_tss *, int);
+int elkvm_tss_setup32(struct elkvm_tss32 *, int);
+int elkvm_tss_setup64(struct kvm_vm *, struct elkvm_memory_region *);

@@ -10,6 +10,7 @@
 #define PAGER_MODE_X86_64  3
 
 #define ELKVM_SYSTEM_MEMSIZE 16*1024*1024
+#define KERNEL_SPACE_BOTTOM 0xFFFF800000000000
 #define ADDRESS_SPACE_TOP 0xFFFFFFFFFFFFFFFF
 
 struct kvm_vm;
@@ -27,6 +28,7 @@ struct kvm_pager {
 	struct chunk_list *other_chunks;
 	void *host_pml4_p;
 	void *host_next_free_tbl_p;
+	uint64_t guest_next_free;
 };
 
 /*
@@ -55,15 +57,22 @@ int kvm_pager_is_invalid_guest_base(struct kvm_pager *, uint64_t);
 int kvm_pager_append_mem_chunk(struct kvm_pager *, struct kvm_userspace_memory_region *);
 
 /*
+ * \brief Create a Mapping in Kernel Space
+ */
+uint64_t kvm_pager_map_kernel_page(struct kvm_pager *, void *);
+
+/*
  * \brief Create a Mapping in the Page Tables for a physical address
 */
-int kvm_pager_create_mapping(struct kvm_pager *, void *host_mem_p, uint64_t guest_virtual);
+int kvm_pager_create_mapping(struct kvm_pager *, void *, uint64_t);
 
 /*
  * \brief Find the memory region for a host address
 */
 struct kvm_userspace_memory_region *
 	kvm_pager_find_region_for_host_p(struct kvm_pager *, void *);
+
+uint64_t *kvm_pager_page_table_walk(struct kvm_pager *, uint64_t, int);
 
 /*
  * \brief Find the host pointer for a guest virtual address. Basically do a
@@ -88,6 +97,8 @@ uint64_t *kvm_pager_find_table_entry(struct kvm_pager *, uint64_t *, uint64_t,
  * Args: pager, entry
 */
 int kvm_pager_create_entry(struct kvm_pager *, uint64_t *);
+
+void kvm_pager_dump_page_tables(struct kvm_pager *);
 
 /*
  * \brief Translate a host address into a guest physical address

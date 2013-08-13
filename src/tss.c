@@ -1,9 +1,22 @@
+#include <elkvm.h>
 #include <tss.h>
 
 #include <string.h>
 
-int elkvm_tss_setup(struct elkvm_tss *tss, int kernel_data_selector) {
-	memset(tss, 0, sizeof(struct elkvm_tss));
+int elkvm_tss_setup64(struct kvm_vm *vm, struct elkvm_memory_region *tss_region) {
+
+	tss_region->guest_virtual = kvm_pager_map_kernel_page(&vm->pager,
+			tss_region->host_base_p);
+	struct elkvm_tss64 *tss = (struct elkvm_tss64 *)tss_region->host_base_p;
+	memset(tss, 0, sizeof(struct elkvm_tss64));
+
+	tss->ist1 = vm->kernel_stack->guest_virtual;
+	return 0;
+}
+
+int elkvm_tss_setup32(struct elkvm_tss32 *tss,
+		int kernel_data_selector) {
+	memset(tss, 0, sizeof(struct elkvm_tss32));
 
 	tss->ss0 = kernel_data_selector;
 	tss->esp0 = 0x1042;

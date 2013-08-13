@@ -7,6 +7,7 @@ test_libelkvm_SOURCES = test_elfloader.c \
 	                      test_pager.c \
 												test_syscall.c\
 												test_stack.c \
+												test_region.c\
 	                      test_vcpu.c \
 	                      test_vm.c \
 	                      runner.c

@@ -22,7 +22,7 @@ struct elkvm_gdt_segment_descriptor {
 
 /*
  * make room for an additional entry, because the entry for
- * tss has twice the size
+ * tss has twice the size in long mode
  */
 #define GDT_NUM_ENTRIES 6
 
