@@ -103,6 +103,12 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu);
 */
 int kvm_vcpu_singlestep(struct kvm_vcpu *);
 
+int kvm_vcpu_did_hypercall(struct kvm_vm *vm, struct kvm_vcpu *);
+
+int kvm_vcpu_did_syscall(struct kvm_vm *vm, struct kvm_vcpu *);
+
+int kvm_vcpu_had_page_fault(struct kvm_vcpu *);
+
 /*
  * \brief Returns true if the host supports vmx
 */

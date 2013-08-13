@@ -10,19 +10,9 @@ int elkvm_handle_vm_shutdown(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 		return 0;
 	}
 
-	char *host_rip_p = (char *)kvm_pager_get_host_p(&vm->pager, vcpu->regs.rip);
+	if(kvm_vcpu_did_hypercall(vm, vcpu)) {
 
-	const char vmxoff[3] = { 0x0F, 0x01, 0xC4 };
-	const char syscall[2] = { 0x0F, 0x05 };
-
-	/* check if the guest explicitly called for the vmm */
-	if(memcmp(host_rip_p, vmxoff, 3) == 0) {
-		/* 
-		 * on syscall the instruction after the syscall is stored in rcx
-		 * also, syscall is 2 bytes long
-		 */
-		host_rip_p = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rcx - 0x2);
-		if(memcmp(host_rip_p, syscall, 2) == 0) {
+		if(kvm_vcpu_did_syscall(vm, vcpu)) {
 			fprintf(stderr, "Shutdown was syscall, handling...\n");
 			int err = elkvm_handle_syscall(vm, vcpu);
 			if(err) {
