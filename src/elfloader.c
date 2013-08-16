@@ -146,7 +146,8 @@ int elfloader_load_program_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
 				for(int page = 0; page < pages; page++) {
 					void *host_physical_p = loadable_region->host_base_p + (page * 0x1000);
 					uint64_t guest_virtual = (phdr.p_vaddr & ~0xFFF) + (page * 0x1000);
-					err = kvm_pager_create_mapping(&vm->pager, host_physical_p, guest_virtual);
+					err = kvm_pager_create_mapping(&vm->pager, host_physical_p, guest_virtual,
+							phdr.p_flags & PF_W, phdr.p_flags & PF_X);
 					if(err) {
 						return err;
 					}

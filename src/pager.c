@@ -182,12 +182,14 @@ struct kvm_userspace_memory_region *
 		return NULL;
 	}
 
-uint64_t kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p) {
+uint64_t kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p,
+		int writeable, int executable) {
 
 	uint64_t guest_physical = host_to_guest_physical(pager, host_mem_p);
 	uint64_t guest_virtual = (pager->guest_next_free & ~0xFFF) | (guest_physical & 0xFFF);
 
-	uint64_t *pt_entry = kvm_pager_page_table_walk(pager, guest_virtual, 1);
+	uint64_t *pt_entry = kvm_pager_page_table_walk(pager, guest_virtual,
+			writeable, executable, 1);
 	if(pt_entry == NULL) {
 		return -EIO;
 	}
@@ -198,7 +200,8 @@ uint64_t kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p) {
 		if(((uint64_t)pt_entry & ~0xFFF) == (uint64_t)pt_entry) {
 			/*this page table seems to be completely full, try the next one */
 			guest_virtual = guest_virtual + 0x100000;
-			pt_entry = kvm_pager_page_table_walk(pager, guest_virtual, 1);
+			pt_entry = kvm_pager_page_table_walk(pager, guest_virtual,
+					writeable, executable, 1);
 		}
 	}
 
@@ -210,7 +213,7 @@ uint64_t kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p) {
 }
 
 int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
-		uint64_t guest_virtual) {
+		uint64_t guest_virtual, int writeable, int executable) {
 	int err;
 
 	assert(pager->system_chunk.userspace_addr != 0);
@@ -228,27 +231,32 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 	}
 
 	uint64_t guest_physical = host_to_guest_physical(pager, host_mem_p);
-	uint64_t *pt_entry = kvm_pager_page_table_walk(pager, guest_virtual, 1);
+	uint64_t *pt_entry = kvm_pager_page_table_walk(pager, guest_virtual,
+			writeable, executable, 1);
 	
 	/* do NOT overwrite existing page table entries! */
 	if(entry_exists(pt_entry)) {
 		if((*pt_entry & ~0xFFF) != (guest_physical & ~0xFFF)) {
 			return -1;
 		}
+		/* TODO check if flags are the same */
 		return 0;
 	}
 
-	*pt_entry = guest_physical & ~0xFFF;
-	/* set user bit */
-	*pt_entry |= 0x4;
-	/* set present bit */
-	*pt_entry |= 0x1;
+	err = kvm_pager_create_entry(pager, pt_entry, guest_physical,
+			writeable, executable);
+
+	//*pt_entry = guest_physical & ~0xFFF;
+	///* set user bit */
+	//*pt_entry |= 0x4;
+	///* set present bit */
+	//*pt_entry |= 0x1;
 	
-	return 0;
+	return err;
 }
 
 void *kvm_pager_get_host_p(struct kvm_pager *pager, uint64_t guest_virtual) {
-	uint64_t *entry = kvm_pager_page_table_walk(pager, guest_virtual, 0);
+	uint64_t *entry = kvm_pager_page_table_walk(pager, guest_virtual, 0, 0, 0);
 	if(entry == NULL) {
 		return NULL;
 	}
@@ -258,7 +266,7 @@ void *kvm_pager_get_host_p(struct kvm_pager *pager, uint64_t guest_virtual) {
 }
 
 uint64_t *kvm_pager_page_table_walk(struct kvm_pager *pager, uint64_t guest_virtual,
-		int create) {
+		int write, int execute, int create) {
 	uint64_t *table_base = (uint64_t *)pager->host_pml4_p;
 	/* we should always have paging in place, when this gets called! */
 	assert(table_base != NULL);
@@ -277,13 +285,19 @@ uint64_t *kvm_pager_page_table_walk(struct kvm_pager *pager, uint64_t guest_virt
 				return NULL;
 			}
 			if(create && i < 3) {
-				int err = kvm_pager_create_entry(pager, entry);
+				int err = kvm_pager_create_table(pager, entry, write, execute);
 				if(err) {
 					return NULL;
 				}
 			}
 		}
 		if(i < 3) {
+			/* TODO NXE */
+			if(write && !(*entry & 0x2)) {
+				if(create) {
+					*entry |= 0x2;
+				}
+			}
 			table_base = kvm_pager_find_next_table(pager, entry);
 		}
 	}
@@ -310,7 +324,8 @@ uint64_t *kvm_pager_find_table_entry(struct kvm_pager *pager,
 	return entry;
 }
 
-int kvm_pager_create_entry(struct kvm_pager *pager, uint64_t *host_entry_p) {
+int kvm_pager_create_table(struct kvm_pager *pager, uint64_t *host_entry_p,
+		int writeable, int executable) {
 
 	uint64_t guest_next_tbl = host_to_guest_physical(pager, pager->host_next_free_tbl_p);
 	if(guest_next_tbl == 0) {
@@ -318,12 +333,26 @@ int kvm_pager_create_entry(struct kvm_pager *pager, uint64_t *host_entry_p) {
 	}
 	memset(pager->host_next_free_tbl_p, 0, 0x1000);
 	pager->host_next_free_tbl_p += 0x1000;
+	int err = kvm_pager_create_entry(pager, host_entry_p, guest_next_tbl,
+			writeable, executable);
+	return err;
+}
 
+int kvm_pager_create_entry(struct kvm_pager *pager, uint64_t *host_entry_p,
+		uint64_t guest_next, int writeable, int executable) {
 	/* save base address of next tbl in entry */
-	*host_entry_p = guest_next_tbl & ~0xFFF;
+	*host_entry_p = guest_next & ~0xFFF;
 
 	/* TODO give this method a flag for marking pages as user mode */
 	*host_entry_p |= 0x4;
+
+	if(writeable) {
+		*host_entry_p |= 0x2;
+	}
+
+	//if(executable) {
+	//	*host_entry_p |= ((uint64_t)1 << 63);
+	//}
 
 	/* mark the entry as present */
 	*host_entry_p |= 0x1;

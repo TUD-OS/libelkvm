@@ -58,13 +58,16 @@ int kvm_pager_append_mem_chunk(struct kvm_pager *, struct kvm_userspace_memory_r
 
 /*
  * \brief Create a Mapping in Kernel Space
+ * params are pager, host virtual address, writeable and executable bit
  */
-uint64_t kvm_pager_map_kernel_page(struct kvm_pager *, void *);
+uint64_t kvm_pager_map_kernel_page(struct kvm_pager *, void *,int, int);
 
 /*
  * \brief Create a Mapping in the Page Tables for a physical address
+ * params are pager, host virtual address, guest_virtual address, writeable
+ * and executable bit
 */
-int kvm_pager_create_mapping(struct kvm_pager *, void *, uint64_t);
+int kvm_pager_create_mapping(struct kvm_pager *, void *, uint64_t, int, int);
 
 /*
  * \brief Find the memory region for a host address
@@ -72,7 +75,12 @@ int kvm_pager_create_mapping(struct kvm_pager *, void *, uint64_t);
 struct kvm_userspace_memory_region *
 	kvm_pager_find_region_for_host_p(struct kvm_pager *, void *);
 
-uint64_t *kvm_pager_page_table_walk(struct kvm_pager *, uint64_t, int);
+/*
+ * \brief walk the page table to find a pt_entry
+ * params are pager, guest virtual address, writeable, executable bits
+ * and a create flag
+ */
+uint64_t *kvm_pager_page_table_walk(struct kvm_pager *, uint64_t, int, int, int);
 
 /*
  * \brief Find the host pointer for a guest virtual address. Basically do a
@@ -93,10 +101,17 @@ uint64_t *kvm_pager_find_table_entry(struct kvm_pager *, uint64_t *, uint64_t,
 		int, int);
 
 /*
- * \brief Creates a new entry in a pml4, pdpt, pd or pt
- * Args: pager, entry
+ * \brief Creates a new table and puts the entry in a pml4, pdpt, pd or pt
+ * Args: pager, entry, writeable, executable
 */
-int kvm_pager_create_entry(struct kvm_pager *, uint64_t *);
+int kvm_pager_create_table(struct kvm_pager *, uint64_t *, int, int);
+
+/*
+ * \brief Creates a new entry in a pml4, pdpt, pd or pt
+ * params are pager, host virtual address, guest physical address,
+ * writeable and executable bits
+ */
+int kvm_pager_create_entry(struct kvm_pager *, uint64_t *, uint64_t, int, int);
 
 void kvm_pager_dump_page_tables(struct kvm_pager *);
 void kvm_pager_dump_table(struct kvm_pager *, void *, int);

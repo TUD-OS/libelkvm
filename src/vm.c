@@ -129,7 +129,7 @@ int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * pat
 	flat->region->guest_virtual = 0x0;
 	
 	flat->region->guest_virtual = kvm_pager_map_kernel_page(&vm->pager, 
-			flat->region->host_base_p);
+			flat->region->host_base_p, 0, 1);
 	if(flat->region->guest_virtual == 0) {
 		close(fd);
 		return -ENOMEM;
@@ -253,7 +253,7 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 
 	/* create a mapping for the kernel (interrupt) stack */
 	vm->kernel_stack->guest_virtual = kvm_pager_map_kernel_page(&vm->pager,
-			vm->kernel_stack->host_base_p);
+			vm->kernel_stack->host_base_p, 1, 0);
 	if(vm->kernel_stack->guest_virtual == 0) {
 		return -ENOMEM;
 	}
@@ -272,7 +272,7 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 
 	err = kvm_pager_create_mapping(&vm->pager, 
 			env_region->host_base_p, 
-			vm->vcpus->vcpu->regs.rsp);
+			vm->vcpus->vcpu->regs.rsp, 1, 0);
 	if(err) {
 		return err;
 	}
