@@ -75,6 +75,7 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 	entry++;
 	uint64_t *upper_tss = (uint64_t *)entry;
 	*upper_tss = tss_region->guest_virtual >> 32;
+	entry++;
 
 	/* kernel code segment */
 	elkvm_gdt_create_segment_descriptor(entry, 0x0, 0xFFFFFFFF,
