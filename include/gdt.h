@@ -23,10 +23,12 @@ struct elkvm_gdt_segment_descriptor {
 #define GDT_SEGMENT_PAGE_GRANULARITY   8
 
 /*
+ * we have 2 code segments, 2 stack segments, a data segment and a
+ * tss segment
  * make room for an additional entry, because the entry for
  * tss has twice the size in long mode
  */
-#define GDT_NUM_ENTRIES 6
+#define GDT_NUM_ENTRIES 8
 
 int elkvm_gdt_setup(struct kvm_vm *);
 int elkvm_gdt_create_segment_descriptor(struct elkvm_gdt_segment_descriptor *,
