@@ -91,6 +91,8 @@ int kvm_vm_destroy(struct kvm_vm *);
 */
 int kvm_vm_map_chunk(struct kvm_vm *, struct kvm_userspace_memory_region *);
 
+int elkvm_dump_valid_msrs(struct elkvm_opts *);
+
 /*
  * Print the locations of the system memory regions
  */

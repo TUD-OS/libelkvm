@@ -345,6 +345,25 @@ int kvm_vm_map_chunk(struct kvm_vm *vm, struct kvm_userspace_memory_region *chun
 	return err;
 }
 
+int elkvm_dump_valid_msrs(struct elkvm_opts *opts) {
+	struct kvm_msr_list *list = malloc(
+			sizeof(struct kvm_msr_list) + 255 * sizeof(uint32_t));
+	list->nmsrs = 255;
+	
+	int err = ioctl(opts->fd, KVM_GET_MSR_INDEX_LIST, list);
+	if(err < 0) {
+		free(list);
+		return -errno;
+	}
+
+	for(int i = 0; i < list->nmsrs; i++) {
+		printf("MSR: 0x%x\n", list->indices[i]);
+	}
+	free(list);
+
+	return 0;
+}
+
 void elkvm_print_regions(struct kvm_vm *vm) {
 	printf("\n System Memory Regions:\n");
 	printf(" ----------------------\n");
