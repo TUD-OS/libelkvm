@@ -22,8 +22,10 @@ extern "C" {
 #define VMX_INVALID_GUEST_STATE 0x80000021
 #define CPUID_EXT_VMX      (1 << 5)
 
-#define VCPU_MSR_STAR  0xC0000081
-#define VCPU_MSR_LSTAR 0xC0000082
+#define VCPU_MSR_STAR   0xC0000081
+#define VCPU_MSR_LSTAR  0xC0000082
+#define VCPU_MSR_CSTAR  0xC0000083
+#define VCPU_MSR_SFMASK 0XC0000084
 
 struct kvm_vcpu {
 	int fd;
