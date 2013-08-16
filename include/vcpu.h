@@ -19,6 +19,8 @@ extern "C" {
 
 #define VCPU_EFER_FLAG_SCE 0x1
 #define VCPU_EFER_FLAG_LME 0x100
+#define VCPU_EFER_FLAG_LMA 0x400
+#define VCPU_EFER_FLAG_NXE 0x800
 #define VMX_INVALID_GUEST_STATE 0x80000021
 #define CPUID_EXT_VMX      (1 << 5)
 
