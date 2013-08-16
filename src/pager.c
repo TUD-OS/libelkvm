@@ -292,10 +292,14 @@ uint64_t *kvm_pager_page_table_walk(struct kvm_pager *pager, uint64_t guest_virt
 			}
 		}
 		if(i < 3) {
-			/* TODO NXE */
 			if(write && !(*entry & 0x2)) {
 				if(create) {
 					*entry |= 0x2;
+				}
+			}
+			if(execute && (*entry & PT_BIT_NXE)) {
+				if(create) {
+					*entry &= ~PT_BIT_NXE;
 				}
 			}
 			table_base = kvm_pager_find_next_table(pager, entry);
@@ -350,12 +354,13 @@ int kvm_pager_create_entry(struct kvm_pager *pager, uint64_t *host_entry_p,
 		*host_entry_p |= 0x2;
 	}
 
-	//if(executable) {
-	//	*host_entry_p |= ((uint64_t)1 << 63);
-	//}
+	if(!executable) {
+		*host_entry_p |= PT_BIT_NXE;
+	}
 
 	/* mark the entry as present */
 	*host_entry_p |= 0x1;
+
 	return 0;
 }
 
