@@ -81,6 +81,7 @@ int kvm_vcpu_set_regs(struct kvm_vcpu *);
 
 int kvm_vcpu_get_msr(struct kvm_vcpu *, uint32_t, uint64_t *);
 int kvm_vcpu_set_msr(struct kvm_vcpu *, uint32_t, uint64_t);
+void kvm_vcpu_dump_msr(struct kvm_vcpu *, uint32_t);
 
 /*
 	Initialize a VCPU's registers according to mode

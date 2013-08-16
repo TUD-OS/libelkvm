@@ -389,6 +389,9 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 	int is_running = 1;
 	if(vcpu->is_debug) {
 		elkvm_gdt_dump(vcpu->vm);
+		kvm_vcpu_dump_msr(vcpu, VCPU_MSR_STAR);
+		kvm_vcpu_dump_msr(vcpu, VCPU_MSR_LSTAR);
+		kvm_vcpu_dump_msr(vcpu, VCPU_MSR_CSTAR);
 		elkvm_idt_dump(vcpu->vm);
 		elkvm_idt_dump_isr(vcpu->vm, 10);
 		kvm_pager_dump_page_tables(&vcpu->vm->pager);
@@ -485,6 +488,17 @@ void host_cpuid(uint32_t function, uint32_t count,
         *ecx = vec[2];
     if (edx)
         *edx = vec[3];
+}
+
+void kvm_vcpu_dump_msr(struct kvm_vcpu *vcpu, uint32_t msr) {
+	uint64_t r;
+	int err = kvm_vcpu_get_msr(vcpu, msr, &r);
+	if(err) {
+		printf("WARNING: Could not get MSR: 0x%x\n", msr);
+		return;
+	}
+
+	printf(" MSR: 0x%x: 0x%lx\n", msr, r);
 }
 
 void kvm_vcpu_dump_regs(struct kvm_vcpu *vcpu) {
