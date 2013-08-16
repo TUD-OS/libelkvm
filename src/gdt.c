@@ -152,15 +152,25 @@ void elkvm_gdt_dump(struct kvm_vm *vm) {
 
 	printf("\n Global Descriptor Table:\n");
 	printf(  " ------------------------\n");
-	printf(  " selector\tbase\tlimit\taccess\tflags\n");
+	printf(  " host addr\tselector\tbase\t\tlimit\tC DPL P\t\tL D\n");
 
 	for(int i = 0; i < GDT_NUM_ENTRIES; i++) {
 		struct elkvm_gdt_segment_descriptor *entry = vm->gdt_region->host_base_p +
 			i * sizeof(struct elkvm_gdt_segment_descriptor);
 		uint16_t selector = i * sizeof(struct elkvm_gdt_segment_descriptor);
 
-		printf(" %p\t0x%4x\t\t0x%08x\t0x%05x\t0x%02x\t0x%1x\n", entry, selector, gdt_base(entry),
-			gdt_limit(entry), entry->access, gdt_flags(entry));
+		printf(" %p\t0x%4x\t\t0x%08x\t0x%05x\t%1i   %1i %1i (0x%02x)\t %1i %1i (0x%1x)\n",
+			entry,
+			selector,
+			gdt_base(entry),
+			gdt_limit(entry),
+			(entry->access >> 2) & 0x1,
+			(entry->access >> 5) & 0x3,
+			(entry->access >> 7),
+			entry->access,
+			(entry->limit2_flags >> 5) & 0x1,
+			(entry->limit2_flags >> 6) & 0x1,
+			gdt_flags(entry));
 	}
 
 	printf("\n");
