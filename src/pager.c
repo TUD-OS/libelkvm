@@ -261,7 +261,7 @@ void *kvm_pager_get_host_p(struct kvm_pager *pager, uint64_t guest_virtual) {
 		return NULL;
 	}
 
-	uint64_t guest_physical = (*entry & ~0xFFF) | (guest_virtual & 0xFFF);
+	uint64_t guest_physical = (*entry & 0x000FFFFFFFFFF000) | (guest_virtual & 0xFFF);
 	return (void *)(guest_physical + pager->system_chunk.userspace_addr);
 }
 
