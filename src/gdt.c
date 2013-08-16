@@ -1,5 +1,6 @@
 #include <elkvm.h>
 #include <gdt.h>
+#include <syscall.h>
 #include <tss.h>
 #include <vcpu.h>
 
@@ -30,20 +31,20 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 			GDT_SEGMENT_READABLE | GDT_SEGMENT_EXECUTABLE | GDT_SEGMENT_BIT |
 			GDT_SEGMENT_PRESENT | GDT_SEGMENT_DIRECTION_BIT,
 			GDT_SEGMENT_PAGE_GRANULARITY | GDT_SEGMENT_LONG);
-
-	entry++;
-
-	/* data segment */
-	elkvm_gdt_create_segment_descriptor(entry, 0x0, 0xFFFFFFFF,
-			GDT_SEGMENT_WRITEABLE | GDT_SEGMENT_BIT | GDT_SEGMENT_PRESENT,
-			GDT_SEGMENT_PAGE_GRANULARITY | GDT_SEGMENT_PROTECTED_32 );
+	uint64_t cs_selector = (uint64_t)entry - (uint64_t)vm->gdt_region->host_base_p;
 
 	entry++;
 
 	/* stack segment */
 	elkvm_gdt_create_segment_descriptor(entry, 0x0, 0xFFFFFFFF,
 			GDT_SEGMENT_WRITEABLE | GDT_SEGMENT_BIT | GDT_SEGMENT_PRESENT,
-			GDT_SEGMENT_PAGE_GRANULARITY | GDT_SEGMENT_PROTECTED_32 );
+			GDT_SEGMENT_PAGE_GRANULARITY | GDT_SEGMENT_LONG );
+	entry++;
+
+	/* data segment */
+	elkvm_gdt_create_segment_descriptor(entry, 0x0, 0xFFFFFFFF,
+			GDT_SEGMENT_WRITEABLE | GDT_SEGMENT_BIT | GDT_SEGMENT_PRESENT,
+			GDT_SEGMENT_PAGE_GRANULARITY | GDT_SEGMENT_LONG );
 
 	entry++;
 
@@ -60,7 +61,11 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 			tss_region->guest_virtual & 0xFFFFFFFF,
 			sizeof(struct elkvm_tss64),
 			0x9 | GDT_SEGMENT_PRESENT,
-			GDT_SEGMENT_PROTECTED_32);
+			GDT_SEGMENT_LONG);
+
+	uint64_t tr_selector = (uint64_t)entry -
+		(uint64_t)vm->gdt_region->host_base_p;
+
 	/*
 	 * tss entry has 128 bits, make a second entry to account for that
 	 * the upper part of base is in the beginning of that second entry
@@ -70,10 +75,17 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 	uint64_t *upper_tss = (uint64_t *)entry;
 	*upper_tss = tss_region->guest_virtual >> 32;
 
-	uint64_t tr_selector = (uint64_t)entry -
-		(uint64_t)vm->gdt_region->host_base_p;
-	
 	struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
+	uint64_t syscall_star = cs_selector;
+	uint64_t sysret_star = syscall_star | 0x3;
+	uint64_t star = (sysret_star << 48) | (syscall_star << 32);
+
+	err = kvm_vcpu_set_msr(vcpu,
+			VCPU_MSR_STAR,
+			star);
+	if(err) {
+		return err;
+	}
 
 	err = kvm_vcpu_get_regs(vcpu);
 	if(err) {
@@ -106,7 +118,7 @@ int elkvm_gdt_create_segment_descriptor(struct elkvm_gdt_segment_descriptor *ent
 	entry->base2        = (base >> 16) & 0xFF;
 	entry->base3        = (base >> 24);
 	entry->limit1       = limit & 0xFFFF;
-	entry->limit2_flags = ((limit >> 16) & 0xF) | ((uint16_t)flags << 4);
+	entry->limit2_flags = ((limit >> 16) & 0xF) | ((uint8_t)flags << 4);
 	entry->access       = access;
 
 	return 0;
