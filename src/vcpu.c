@@ -257,7 +257,7 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 	vcpu->sregs.cs.g        = 0x1;
 	vcpu->sregs.cs.avl      = 0x0;
 
-	vcpu->sregs.ds.selector = 0x0010;
+	vcpu->sregs.ds.selector = 0x0018;
 	vcpu->sregs.ds.base     = 0x0;
 	vcpu->sregs.ds.limit    = 0xFFFFFFFF;
 	vcpu->sregs.ds.type     = 0x3;
@@ -265,7 +265,7 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 	vcpu->sregs.ds.dpl      = 0x0;
 	vcpu->sregs.ds.db       = 0x0;
 	vcpu->sregs.ds.s        = 0x1;
-	vcpu->sregs.ds.l        = 0x0;
+	vcpu->sregs.ds.l        = 0x1;
 	vcpu->sregs.ds.g        = 0x1;
 	vcpu->sregs.ds.avl      = 0x0;
 
@@ -313,7 +313,7 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 	vcpu->sregs.tr.dpl      = 0x0;
 	vcpu->sregs.tr.db       = 0x0;
 	vcpu->sregs.tr.s        = 0x0;
-	vcpu->sregs.tr.l        = 0x0;
+	vcpu->sregs.tr.l        = 0x1;
 	vcpu->sregs.tr.g        = 0x0;
 	vcpu->sregs.tr.avl      = 0x0;
 
@@ -329,7 +329,7 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 	vcpu->sregs.ldt.g        = 0x0;
 	vcpu->sregs.ldt.avl      = 0x0;
 
-	vcpu->sregs.ss.selector = 0x0018;
+	vcpu->sregs.ss.selector = 0x0010;
 	vcpu->sregs.ss.base     = 0x0;
 	vcpu->sregs.ss.limit    = 0xFFFFFFFF;
 	vcpu->sregs.ss.type     = 0x3;
@@ -337,7 +337,7 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 	vcpu->sregs.ss.dpl      = 0x0;
 	vcpu->sregs.ss.db       = 0x0;
 	vcpu->sregs.ss.s        = 0x1;
-	vcpu->sregs.ss.l        = 0x0;
+	vcpu->sregs.ss.l        = 0x1;
 	vcpu->sregs.ss.g        = 0x1;
 	vcpu->sregs.ss.avl      = 0x0;
 
