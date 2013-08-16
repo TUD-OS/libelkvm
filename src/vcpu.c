@@ -201,26 +201,32 @@ int kvm_vcpu_destroy(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 }
 
 int kvm_vcpu_get_msr(struct kvm_vcpu *vcpu, uint32_t index, uint64_t *res_p) {
-	struct kvm_msrs msr;
-	msr.nmsrs = 1;
-	msr.entries[0].index = index;
+	struct kvm_msrs *msr = malloc(
+			sizeof(struct kvm_msrs) + sizeof(struct kvm_msr_entry));
+	msr->nmsrs = 1;
+	msr->entries[0].index = index;
 	
-	int err = ioctl(vcpu->fd, KVM_SET_MSRS, &msr);
-	if(err) {
+	int err = ioctl(vcpu->fd, KVM_GET_MSRS, msr);
+	if(err < 0) {
+		*res_p = -1;
+		free(msr);
 		return -errno;
 	}
 
-	*res_p = msr.entries[0].data;
+	*res_p = msr->entries[0].data;
+	free(msr);
 	return 0;
 }
 
 int kvm_vcpu_set_msr(struct kvm_vcpu *vcpu, uint32_t index, uint64_t data) {
-	struct kvm_msrs msr;
-	msr.nmsrs = 1;
-	msr.entries[0].index = index;
-	msr.entries[0].data  = data;
+	struct kvm_msrs *msr = malloc(
+			sizeof(struct kvm_msrs) + sizeof(struct kvm_msr_entry));
+	msr->nmsrs = 1;
+	msr->entries[0].index = index;
+	msr->entries[0].data  = data;
 
-	int err = ioctl(vcpu->fd, KVM_SET_MSRS, &msr);
+	int err = ioctl(vcpu->fd, KVM_SET_MSRS, msr);
+	free(msr);
 	if(err) {
 		return -errno;
 	}
