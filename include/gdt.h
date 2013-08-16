@@ -1,3 +1,5 @@
+#pragma once
+
 #include "elkvm.h"
 
 struct elkvm_gdt_segment_descriptor {
