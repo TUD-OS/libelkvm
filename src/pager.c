@@ -203,6 +203,7 @@ uint64_t kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p) {
 	}
 
 	*pt_entry  = guest_physical & ~0xFFF;
+	/* set present bit */
 	*pt_entry |= 0x1;
 
 	return guest_virtual;
@@ -238,7 +239,9 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 	}
 
 	*pt_entry = guest_physical & ~0xFFF;
+	/* set user bit */
 	*pt_entry |= 0x4;
+	/* set present bit */
 	*pt_entry |= 0x1;
 	
 	return 0;
@@ -361,7 +364,7 @@ void kvm_pager_dump_table(struct kvm_pager *pager, void *host_p, int level) {
 
 	uint64_t guest_physical = host_to_guest_physical(pager, host_p);
 	printf(" %s with host base %p (0x%lx)\n", tname, host_p, guest_physical);
-	printf(" Off    P W PL WTC C U 6-8 9-11\tNext\t\tNXE\n");
+	printf(" Offset P W Us WTC C A 6-8 9-11\tNext\t\tNXE\n");
 
 	for(int i = 0; i < 512; i++) {
 		if(*entry & 0x1) {
