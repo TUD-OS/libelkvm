@@ -13,6 +13,14 @@
 #define KERNEL_SPACE_BOTTOM 0xFFFF800000000000
 #define ADDRESS_SPACE_TOP 0xFFFFFFFFFFFFFFFF
 
+#define PT_BIT_PRESENT     0x1
+#define PT_BIT_WRITEABLE   0x2
+#define PT_BIT_USER        0x4
+#define PT_BIT_WRITE_CACHE 0x8
+#define PT_BIT_NO_CACHE    0x16
+#define PT_BIT_USED        0x32
+#define PT_BIT_NXE         (1L << 63)
+
 struct kvm_vm;
 
 struct chunk_list {
