@@ -11,12 +11,24 @@ int elkvm_handle_vm_shutdown(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 	}
 
 	if(kvm_vcpu_had_page_fault(vcpu)) {
-		printf("PFLA: 0x%llx\n", vcpu->sregs.cr2);
 		void *host_p = kvm_pager_get_host_p(&vm->pager, vcpu->sregs.cr2);
-		printf("Should result in %p\n", host_p);
 		if(host_p != NULL) {
 			kvm_pager_dump_page_tables(&vm->pager);
+			printf("\n Invalid");
 		}
+		printf(" Page Fault:\n");
+		printf(" -------------------\n");
+		printf("PFLA: 0x%llx\n", vcpu->sregs.cr2);
+		printf("Should result in host virtual: %p\n", host_p);
+		uint64_t page_off = vcpu->sregs.cr2 & 0xFFF;
+		uint64_t pt_off   = (vcpu->sregs.cr2 >> 12) & 0x1FF;
+		uint64_t pd_off   = (vcpu->sregs.cr2 >> 21) & 0x1FF;
+		uint64_t pdpt_off = (vcpu->sregs.cr2 >> 30) & 0x1FF;
+		uint64_t pml4_off = (vcpu->sregs.cr2 >> 39) & 0x1FF;
+		printf("Offsets: pml4: %lu pdpt: %lu pd: %lu pt: %lu page: %lu\n",
+				pml4_off, pdpt_off, pd_off, pt_off, page_off);
+		printf("Check CPL and Writeable bits!\n");
+
 		return 0;
 	}
 
