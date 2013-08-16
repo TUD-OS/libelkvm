@@ -240,7 +240,7 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 			VCPU_CR0_FLAG_PROTECTED;
 	vcpu->sregs.cr4 = VCPU_CR4_FLAG_PAE;
 	vcpu->sregs.cr2 = vcpu->sregs.cr3 = vcpu->sregs.cr8 = 0x0;
-	vcpu->sregs.efer = VCPU_EFER_FLAG_LME | VCPU_EFER_FLAG_SCE;
+	vcpu->sregs.efer = VCPU_EFER_FLAG_NXE | VCPU_EFER_FLAG_LME | VCPU_EFER_FLAG_SCE;
 
 	//TODO find out why this is!
 	vcpu->sregs.apic_base = 0xfee00900;
