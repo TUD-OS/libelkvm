@@ -26,22 +26,23 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 	struct elkvm_gdt_segment_descriptor *entry = 
 		vm->gdt_region->host_base_p + sizeof(struct elkvm_gdt_segment_descriptor);
 
-	/* code segment */
+	/* user code segment */
 	elkvm_gdt_create_segment_descriptor(entry, 0x0, 0xFFFFFFFF,
 			GDT_SEGMENT_READABLE | GDT_SEGMENT_EXECUTABLE | GDT_SEGMENT_BIT |
-			GDT_SEGMENT_PRESENT | GDT_SEGMENT_DIRECTION_BIT,
+			GDT_SEGMENT_PRESENT  | GDT_SEGMENT_PRIVILEDGE_USER | GDT_SEGMENT_DIRECTION_BIT,
 			GDT_SEGMENT_PAGE_GRANULARITY | GDT_SEGMENT_LONG);
 	uint64_t cs_selector = (uint64_t)entry - (uint64_t)vm->gdt_region->host_base_p;
 
 	entry++;
 
-	/* stack segment */
+	/* user stack segment */
 	elkvm_gdt_create_segment_descriptor(entry, 0x0, 0xFFFFFFFF,
-			GDT_SEGMENT_WRITEABLE | GDT_SEGMENT_BIT | GDT_SEGMENT_PRESENT,
+			GDT_SEGMENT_PRESENT | GDT_SEGMENT_WRITEABLE | GDT_SEGMENT_BIT | 
+			GDT_SEGMENT_PRIVILEDGE_USER,
 			GDT_SEGMENT_PAGE_GRANULARITY | GDT_SEGMENT_LONG );
 	entry++;
 
-	/* data segment */
+	/* user data segment */
 	elkvm_gdt_create_segment_descriptor(entry, 0x0, 0xFFFFFFFF,
 			GDT_SEGMENT_WRITEABLE | GDT_SEGMENT_BIT | GDT_SEGMENT_PRESENT,
 			GDT_SEGMENT_PAGE_GRANULARITY | GDT_SEGMENT_LONG );
@@ -75,9 +76,26 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 	uint64_t *upper_tss = (uint64_t *)entry;
 	*upper_tss = tss_region->guest_virtual >> 32;
 
+	/* kernel code segment */
+	elkvm_gdt_create_segment_descriptor(entry, 0x0, 0xFFFFFFFF,
+			GDT_SEGMENT_READABLE | GDT_SEGMENT_EXECUTABLE | GDT_SEGMENT_BIT |
+			GDT_SEGMENT_PRESENT | GDT_SEGMENT_DIRECTION_BIT,
+			GDT_SEGMENT_PAGE_GRANULARITY | GDT_SEGMENT_LONG);
+	uint64_t kernel_cs_selector = 
+		(uint64_t)entry - (uint64_t)vm->gdt_region->host_base_p;
+
+	entry++;
+
+	/* kernel stack segment */
+	elkvm_gdt_create_segment_descriptor(entry, 0x0, 0xFFFFFFFF,
+			GDT_SEGMENT_WRITEABLE | GDT_SEGMENT_BIT | GDT_SEGMENT_PRESENT,
+			GDT_SEGMENT_PAGE_GRANULARITY | GDT_SEGMENT_LONG );
+	entry++;
+
+
 	struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
-	uint64_t syscall_star = cs_selector;
-	uint64_t sysret_star = syscall_star | 0x3;
+	uint64_t syscall_star = kernel_cs_selector;
+	uint64_t sysret_star = cs_selector | 0x3;
 	uint64_t star = (sysret_star << 48) | (syscall_star << 32);
 
 	err = kvm_vcpu_set_msr(vcpu,
