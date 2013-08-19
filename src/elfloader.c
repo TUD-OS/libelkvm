@@ -152,6 +152,12 @@ int elfloader_load_program_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
 						return err;
 					}
 				}
+				if(phdr.p_flags & PF_X) {
+					/* executable region should be text */
+					vm->text = loadable_region;
+				} else if(phdr.p_flags & PF_W) {
+					vm->data = loadable_region;
+				}
 		
 				break;
 			case PT_PHDR:
