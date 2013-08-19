@@ -34,3 +34,5 @@ libtool
 ltmain.sh
 
 res/vmxoff
+res/entry
+res/isr
