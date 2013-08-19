@@ -213,14 +213,23 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
 }
 
 long elkvm_do_uname(struct kvm_vm *vm) {
+	if(vm->syscall_handlers->uname == NULL) {
+		return ENOSYS;
+	}
+
 	struct utsname *buf = NULL;
-	int err = elkvm_syscall1(vm, vm->vcpus->vcpu, (void **)&buf);
+	uint64_t bufp = 0;
+	int err = elkvm_syscall1(vm, vm->vcpus->vcpu, &bufp);
 	if(err) {
 		return EIO;
 	}
-
+	buf = (struct utsname *)kvm_pager_get_host_p(&vm->pager, bufp);
 	printf("CALLING UNAME handler with buf pointing to: %p (0x%lx)\n", buf,
 			host_to_guest_physical(&vm->pager, buf));
+	if(buf == NULL) {
+		return EIO;
+	}
+
 	long result = vm->syscall_handlers->uname(buf);
 	result = 1;
 	printf("UNAME result: %li\n", result);
