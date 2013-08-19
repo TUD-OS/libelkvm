@@ -89,6 +89,7 @@ int elkvm_handle_vm_shutdown(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 
 int elkvm_handle_syscall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 	uint64_t syscall_num = vcpu->regs.rax;
+	printf("syscall_num: %li (%s)\n", syscall_num, elkvm_syscalls[syscall_num].name);
 
 	long result;
 	if(syscall_num > NUM_SYSCALLS) {
