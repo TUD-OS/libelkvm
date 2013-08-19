@@ -131,7 +131,28 @@ int elkvm_syscall3(struct kvm_vm *vm, struct kvm_vcpu *vcpu,
 }
 
 long elkvm_do_read(struct kvm_vm *vm) {
-	return ENOSYS;
+	if(vm->syscall_handlers->read == NULL) {
+		printf("READ handler not found\n");
+		return ENOSYS;
+	}
+
+	uint64_t fd;
+	uint64_t buf_p;
+	char *buf;
+	uint64_t count;
+
+	int err = elkvm_syscall3(vm, vm->vcpus->vcpu, &fd, &buf_p, &count);
+	if(err) {
+		return EIO;
+	}
+
+	buf = kvm_pager_get_host_p(&vm->pager, buf_p);
+	printf("READ from fd: %i to %p with %zd bytes\n", (int)fd, buf, (size_t)count);
+
+	long result = vm->syscall_handlers->read((int)fd, buf, (size_t)count);
+	printf("RESULT (%li): %.*s\n", result, (int)result, buf);
+
+	return result;
 }
 
 long elkvm_do_write(struct kvm_vm *vm) {
