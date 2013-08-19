@@ -109,11 +109,23 @@ int elkvm_handle_syscall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 	return err;
 }
 
-int elkvm_syscall1(struct kvm_vm *vm, struct kvm_vcpu *vcpu, void **arg) {
-	*arg = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rdi);
-	if(arg == NULL) {
-		return -1;
-	}
+int elkvm_syscall1(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t *arg) {
+	*arg = vcpu->regs.rdi;
+	return 0;
+}
+
+int elkvm_syscall2(struct kvm_vm *vm, struct kvm_vcpu *vcpu,
+		uint64_t *arg1, uint64_t *arg2) {
+	*arg1 = vcpu->regs.rdi;
+	*arg2 = vcpu->regs.rsi;
+	return 0;
+}
+
+int elkvm_syscall3(struct kvm_vm *vm, struct kvm_vcpu *vcpu,
+		uint64_t *arg1, uint64_t *arg2, uint64_t *arg3) {
+	*arg1 = vcpu->regs.rdi;
+	*arg2 = vcpu->regs.rsi;
+	*arg3 = vcpu->regs.rdx;
 	return 0;
 }
 
