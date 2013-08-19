@@ -1,3 +1,3 @@
-_enter:
-	vmxoff
-	sysret
+_start:
+  vmxoff
+  sysretq
