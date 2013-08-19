@@ -164,5 +164,12 @@ long elkvm_do_uname(struct kvm_vm *vm) {
 		return EIO;
 	}
 
-	return vm->syscall_handlers->uname(buf);
+	printf("CALLING UNAME handler with buf pointing to: %p (0x%lx)\n", buf,
+			host_to_guest_physical(&vm->pager, buf));
+	long result = vm->syscall_handlers->uname(buf);
+	result = 1;
+	printf("UNAME result: %li\n", result);
+	printf("\tsyname: %s nodename: %s release: %s version: %s machine: %s\n",
+			buf->sysname, buf->nodename, buf->release, buf->version, buf->machine);
+	return result;
 }
