@@ -160,7 +160,28 @@ long elkvm_do_write(struct kvm_vm *vm) {
 }
 
 long elkvm_do_open(struct kvm_vm *vm) {
-	return ENOSYS;
+	if(vm->syscall_handlers->open == NULL) {
+		printf("OPEN handler not found\n");
+		return ENOSYS;
+	}
+
+	uint64_t pathname_p = 0x0;
+	char *pathname = NULL;
+	uint64_t flags = 0x0;
+	uint64_t mode = 0x0;
+
+	int err = elkvm_syscall3(vm, vm->vcpus->vcpu, &pathname_p, &flags, &mode);
+	if(err) {
+		return EIO;
+	}
+	pathname = kvm_pager_get_host_p(&vm->pager, pathname_p);
+
+	printf("OPEN file %s with flags %i and mode %x\n", pathname, 
+			(int)flags, (mode_t)mode);
+	long result = vm->syscall_handlers->open(pathname, (int)flags, (mode_t)mode);
+	printf("RESULT: %li\n", result);
+
+	return result;
 }
 
 long elkvm_do_close(struct kvm_vm *vm) {
