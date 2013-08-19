@@ -3,6 +3,7 @@
 
 #include <elkvm.h>
 #include <syscall.h>
+#include <vcpu.h>
 
 int elkvm_handle_vm_shutdown(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 	int err = kvm_vcpu_get_regs(vcpu);
@@ -101,8 +102,6 @@ int elkvm_handle_syscall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 	/* disable the trap flag */
 	vcpu->regs.rflags = vcpu->regs.rflags & ~0x10100;
 
-	/* restore the rip */
-	//vcpu->regs.rip = vcpu->regs.rcx;
 	/* vmxoff instruction is 3 bytes long */
 	vcpu->regs.rip = vcpu->regs.rip + 0x3;
 
