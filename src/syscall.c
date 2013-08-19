@@ -185,7 +185,22 @@ long elkvm_do_open(struct kvm_vm *vm) {
 }
 
 long elkvm_do_close(struct kvm_vm *vm) {
-	return ENOSYS;
+	if(vm->syscall_handlers->close == NULL) {
+		printf("CLOSE handler not found\n");
+		return ENOSYS;
+	}
+
+	uint64_t fd = 0;
+	int err = elkvm_syscall1(vm, vm->vcpus->vcpu, &fd);
+	if(err) {
+		return EIO;
+	}
+
+	printf("CLOSE file with fd: %li\n", fd);
+	long result = vm->syscall_handlers->close((int)fd);
+	printf("RESULT: %li\n", result);
+
+	return result;
 }
 
 long elkvm_do_stat(struct kvm_vm *vm) {
