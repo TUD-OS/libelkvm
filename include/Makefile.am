@@ -3,6 +3,7 @@ libelkvmincludedir = $(includedir)/elkvm
 libelkvminclude_HEADERS = elfloader.h\
 													elkvm.h\
 													gdt.h\
+													heap.h\
 													kvm.h\
 													idt.h\
 													mem_chunk.h\
