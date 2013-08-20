@@ -244,7 +244,7 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 	vcpu->sregs.cr0 = VCPU_CR0_FLAG_PAGING | VCPU_CR0_FLAG_CACHE_DISABLE |
 			VCPU_CR0_FLAG_NOT_WRITE_THROUGH |
 			VCPU_CR0_FLAG_PROTECTED;
-	vcpu->sregs.cr4 = VCPU_CR4_FLAG_PAE;
+	vcpu->sregs.cr4 = VCPU_CR4_FLAG_OSFXSR | VCPU_CR4_FLAG_PAE;
 	vcpu->sregs.cr2 = vcpu->sregs.cr3 = vcpu->sregs.cr8 = 0x0;
 	vcpu->sregs.efer = VCPU_EFER_FLAG_NXE | VCPU_EFER_FLAG_LME | VCPU_EFER_FLAG_SCE;
 
