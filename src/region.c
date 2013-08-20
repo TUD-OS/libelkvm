@@ -5,11 +5,17 @@
 #include <region.h>
 
 struct elkvm_memory_region *elkvm_region_create(struct kvm_vm *vm, uint64_t size) {
-	struct elkvm_memory_region *current = &vm->root_region;
-	current = elkvm_region_find(current, size);
-	if(current == NULL) {
-		return NULL;
-	}
+	struct elkvm_memory_region_list *current_root = &vm->root_region;
+  struct elkvm_memory_region *current = NULL;
+
+  do {
+    current = elkvm_region_find(current, size);
+  } while((current == NULL) || (current_root = current_root->next) == NULL);
+
+  if(current == NULL) {
+    /* TODO get a new memory chunk and add that to the list of root regions */
+    int err = kvm_pager_create_mem_chunk(&vm->pager, ELKVM_SYSTEM_MEMGROW);
+  }
 
 	current->used = 1;
 
