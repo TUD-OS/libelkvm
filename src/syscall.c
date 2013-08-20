@@ -1,5 +1,7 @@
 #include <errno.h>
 #include <string.h>
+#include <asm/prctl.h>
+#include <sys/prctl.h>
 
 #include <elkvm.h>
 #include <syscall.h>
@@ -302,4 +304,42 @@ long elkvm_do_uname(struct kvm_vm *vm) {
 
 long elkvm_do_arch_prctl(struct kvm_vm *vm) {
   return ENOSYS;
+}
+
+long elkvm_do_arch_prctl(struct kvm_vm *vm) {
+  uint64_t code = 0;
+  uint64_t user_addr = 0;
+  int err = elkvm_syscall2(vm, vm->vcpus->vcpu, &code, &user_addr);
+  if(err) {
+    return err;
+  }
+  uint64_t *host_addr = kvm_pager_get_host_p(&vm->pager, user_addr);
+  if(host_addr == NULL) {
+    return EFAULT;
+  }
+
+  printf("ARCH PRCTL with code %i user_addr 0x%lx\n", (int)code, user_addr);
+  struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
+  switch(code) {
+    case ARCH_SET_FS:
+      printf("SET FS to 0x%lx\n", user_addr);
+      vcpu->sregs.fs.base = user_addr;
+      break;
+    case ARCH_GET_FS:
+      printf("GET FS to buf at %p\n", host_addr);
+      *host_addr = vcpu->sregs.fs.base;
+      break;
+    case ARCH_SET_GS:
+      printf("SET GS to 0x%lx\n", user_addr);
+      vcpu->sregs.gs.base = user_addr;
+      break;
+    case ARCH_GET_GS:
+      printf("GET GS to buf at %p\n", host_addr);
+      *host_addr = vcpu->sregs.gs.base;
+      break;
+    default:
+      return EINVAL;
+  }
+
+  return 0;
 }
