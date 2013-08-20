@@ -37,6 +37,8 @@ long elkvm_do_munmap(struct kvm_vm *);
 long elkvm_do_brk(struct kvm_vm *);
 /* ... */
 long elkvm_do_uname(struct kvm_vm *);
+/* ... */
+long elkvm_do_arch_prctl(struct kvm_vm *);
 
 static struct {
 	long (*func)(struct kvm_vm *);
@@ -57,6 +59,8 @@ static struct {
 	[__NR_brk]      = { elkvm_do_brk, "BRK" },
 	/* ... */
 	[__NR_uname] = { elkvm_do_uname, "UNAME"},
+  /* ... */
+  [__NR_arch_prctl] = { elkvm_do_arch_prctl, "ARCH PRCTL" },
 };
 
 #define NUM_SYSCALLS 313

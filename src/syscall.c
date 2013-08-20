@@ -300,3 +300,6 @@ long elkvm_do_uname(struct kvm_vm *vm) {
 	return result;
 }
 
+long elkvm_do_arch_prctl(struct kvm_vm *vm) {
+  return ENOSYS;
+}
