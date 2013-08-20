@@ -95,7 +95,7 @@ int elkvm_handle_syscall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 
 	long result;
 	if(syscall_num > NUM_SYSCALLS) {
-		result = ENOSYS;
+		result = -ENOSYS;
 	} else {
 		result = elkvm_syscalls[syscall_num].func(vm);
 	}
@@ -135,7 +135,7 @@ int elkvm_syscall3(struct kvm_vm *vm, struct kvm_vcpu *vcpu,
 long elkvm_do_read(struct kvm_vm *vm) {
 	if(vm->syscall_handlers->read == NULL) {
 		printf("READ handler not found\n");
-		return ENOSYS;
+		return -ENOSYS;
 	}
 
 	uint64_t fd;
@@ -145,7 +145,7 @@ long elkvm_do_read(struct kvm_vm *vm) {
 
 	int err = elkvm_syscall3(vm, vm->vcpus->vcpu, &fd, &buf_p, &count);
 	if(err) {
-		return EIO;
+		return -EIO;
 	}
 
 	buf = kvm_pager_get_host_p(&vm->pager, buf_p);
@@ -158,13 +158,13 @@ long elkvm_do_read(struct kvm_vm *vm) {
 }
 
 long elkvm_do_write(struct kvm_vm *vm) {
-	return ENOSYS;
+	return -ENOSYS;
 }
 
 long elkvm_do_open(struct kvm_vm *vm) {
 	if(vm->syscall_handlers->open == NULL) {
 		printf("OPEN handler not found\n");
-		return ENOSYS;
+		return -ENOSYS;
 	}
 
 	uint64_t pathname_p = 0x0;
@@ -174,7 +174,7 @@ long elkvm_do_open(struct kvm_vm *vm) {
 
 	int err = elkvm_syscall3(vm, vm->vcpus->vcpu, &pathname_p, &flags, &mode);
 	if(err) {
-		return EIO;
+		return -EIO;
 	}
 	pathname = kvm_pager_get_host_p(&vm->pager, pathname_p);
 
@@ -189,13 +189,13 @@ long elkvm_do_open(struct kvm_vm *vm) {
 long elkvm_do_close(struct kvm_vm *vm) {
 	if(vm->syscall_handlers->close == NULL) {
 		printf("CLOSE handler not found\n");
-		return ENOSYS;
+		return -ENOSYS;
 	}
 
 	uint64_t fd = 0;
 	int err = elkvm_syscall1(vm, vm->vcpus->vcpu, &fd);
 	if(err) {
-		return EIO;
+		return -EIO;
 	}
 
 	printf("CLOSE file with fd: %li\n", fd);
@@ -206,35 +206,35 @@ long elkvm_do_close(struct kvm_vm *vm) {
 }
 
 long elkvm_do_stat(struct kvm_vm *vm) {
-	return ENOSYS;
+	return -ENOSYS;
 }
 
 long elkvm_do_fstat(struct kvm_vm *vm) {
-	return ENOSYS;
+	return -ENOSYS;
 }
 
 long elkvm_do_lstat(struct kvm_vm *vm) {
-	return ENOSYS;
+	return -ENOSYS;
 }
 
 long elkvm_do_poll(struct kvm_vm *vm) {
-	return ENOSYS;
+	return -ENOSYS;
 }
 
 long elkvm_do_lseek(struct kvm_vm *vm) {
-	return ENOSYS;
+	return -ENOSYS;
 }
 
 long elkvm_do_mmap(struct kvm_vm *vm) {
-	return ENOSYS;
+	return -ENOSYS;
 }
 
 long elkvm_do_mprotect(struct kvm_vm *vm) {
-	return ENOSYS;
+	return -ENOSYS;
 }
 
 long elkvm_do_munmap(struct kvm_vm *vm) {
-	return ENOSYS;
+	return -ENOSYS;
 }
 
 long elkvm_do_brk(struct kvm_vm *vm) {
@@ -242,7 +242,7 @@ long elkvm_do_brk(struct kvm_vm *vm) {
   int err = elkvm_syscall1(vm, vm->vcpus->vcpu, &user_brk_req);
   printf("BRK reguested with address: 0x%lx\n", user_brk_req);
   if(err) {
-    return EIO;
+    return -EIO;
   }
 
   /* if the requested brk address is 0 just return the current brk address */
@@ -277,37 +277,37 @@ long elkvm_do_brk(struct kvm_vm *vm) {
 }
 
 long elkvm_do_sigaction(struct kvm_vm *vm) {
-  return ENOSYS;
+  return -ENOSYS;
 }
 
 long elkvm_do_sigprocmask(struct kvm_vm *vm) {
-  return ENOSYS;
+  return -ENOSYS;
 }
 
 long elkvm_do_sigreturn(struct kvm_vm *vm) {
-  return ENOSYS;
+  return -ENOSYS;
 }
 
 long elkvm_do_ioctl(struct kvm_vm *vm) {
-  return ENOSYS;
+  return -ENOSYS;
 }
 
 long elkvm_do_pread64(struct kvm_vm *vm) {
-  return ENOSYS;
+  return -ENOSYS;
 }
 
 long elkvm_do_readv(struct kvm_vm *vm) {
-  return ENOSYS;
+  return -ENOSYS;
 }
 
 long elkvm_do_writev(struct kvm_vm *vm) {
-  return ENOSYS;
+  return -ENOSYS;
 }
 
 long elkvm_do_access(struct kvm_vm *vm) {
 	if(vm->syscall_handlers->access == NULL) {
     printf("ACCESS handler not found\n");
-		return ENOSYS;
+		return -ENOSYS;
 	}
 
   uint64_t path_p;
@@ -328,25 +328,25 @@ long elkvm_do_access(struct kvm_vm *vm) {
   long result = vm->syscall_handlers->access(pathname, mode);
   printf("ACCESS result: %li\n", result);
 
-  return errno;
+  return -errno;
 }
 
 long elkvm_do_uname(struct kvm_vm *vm) {
 	if(vm->syscall_handlers->uname == NULL) {
-		return ENOSYS;
+		return -ENOSYS;
 	}
 
 	struct utsname *buf = NULL;
 	uint64_t bufp = 0;
 	int err = elkvm_syscall1(vm, vm->vcpus->vcpu, &bufp);
 	if(err) {
-		return EIO;
+		return -EIO;
 	}
 	buf = (struct utsname *)kvm_pager_get_host_p(&vm->pager, bufp);
 	printf("CALLING UNAME handler with buf pointing to: %p (0x%lx)\n", buf,
 			host_to_guest_physical(&vm->pager, buf));
 	if(buf == NULL) {
-		return EIO;
+		return -EIO;
 	}
 
 	long result = vm->syscall_handlers->uname(buf);
@@ -360,7 +360,7 @@ long elkvm_do_uname(struct kvm_vm *vm) {
 long elkvm_do_getuid(struct kvm_vm *vm) {
 	if(vm->syscall_handlers->getuid == NULL) {
 		printf("GETUID handler not found\n");
-		return ENOSYS;
+		return -ENOSYS;
 	}
 
 	long result = vm->syscall_handlers->getuid();
@@ -370,13 +370,13 @@ long elkvm_do_getuid(struct kvm_vm *vm) {
 }
 
 long elkvm_do_syslog(struct kvm_vm *vm) {
-  return ENOSYS;
+  return -ENOSYS;
 }
 
 long elkvm_do_getgid(struct kvm_vm *vm) {
 	if(vm->syscall_handlers->getgid == NULL) {
 		printf("GETGID handler not found\n");
-		return ENOSYS;
+		return -ENOSYS;
 	}
 
 	long result = vm->syscall_handlers->getgid();
@@ -386,17 +386,17 @@ long elkvm_do_getgid(struct kvm_vm *vm) {
 }
 
 long elkvm_do_setuid(struct kvm_vm *vm) {
-  return ENOSYS;
+  return -ENOSYS;
 }
 
 long elkvm_do_setgid(struct kvm_vm *vm) {
-  return ENOSYS;
+  return -ENOSYS;
 }
 
 long elkvm_do_geteuid(struct kvm_vm *vm) {
 	if(vm->syscall_handlers->geteuid == NULL) {
 		printf("GETEUID handler not found\n");
-		return ENOSYS;
+		return -ENOSYS;
 	}
 
 	long result = vm->syscall_handlers->geteuid();
@@ -408,7 +408,7 @@ long elkvm_do_geteuid(struct kvm_vm *vm) {
 long elkvm_do_getegid(struct kvm_vm *vm) {
 	if(vm->syscall_handlers->getegid == NULL) {
 		printf("GETEGID handler not found\n");
-		return ENOSYS;
+		return -ENOSYS;
 	}
 
 	long result = vm->syscall_handlers->getegid();
