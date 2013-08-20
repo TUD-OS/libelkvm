@@ -302,8 +302,64 @@ long elkvm_do_uname(struct kvm_vm *vm) {
 	return result;
 }
 
-long elkvm_do_arch_prctl(struct kvm_vm *vm) {
+long elkvm_do_getuid(struct kvm_vm *vm) {
+	if(vm->syscall_handlers->getuid == NULL) {
+		printf("GETUID handler not found\n");
+		return ENOSYS;
+	}
+
+	long result = vm->syscall_handlers->getuid();
+	printf("GETUID RESULT: %li\n", result);
+
+	return result;
+}
+
+long elkvm_do_syslog(struct kvm_vm *vm) {
   return ENOSYS;
+}
+
+long elkvm_do_getgid(struct kvm_vm *vm) {
+	if(vm->syscall_handlers->getgid == NULL) {
+		printf("GETGID handler not found\n");
+		return ENOSYS;
+	}
+
+	long result = vm->syscall_handlers->getgid();
+	printf("GETGID RESULT: %li\n", result);
+
+	return result;
+}
+
+long elkvm_do_setuid(struct kvm_vm *vm) {
+  return ENOSYS;
+}
+
+long elkvm_do_setgid(struct kvm_vm *vm) {
+  return ENOSYS;
+}
+
+long elkvm_do_geteuid(struct kvm_vm *vm) {
+	if(vm->syscall_handlers->geteuid == NULL) {
+		printf("GETEUID handler not found\n");
+		return ENOSYS;
+	}
+
+	long result = vm->syscall_handlers->geteuid();
+	printf("GETEUID RESULT: %li\n", result);
+
+	return result;
+}
+
+long elkvm_do_getegid(struct kvm_vm *vm) {
+	if(vm->syscall_handlers->getegid == NULL) {
+		printf("GETEGID handler not found\n");
+		return ENOSYS;
+	}
+
+	long result = vm->syscall_handlers->getegid();
+	printf("GETEGID RESULT: %li\n", result);
+
+	return result;
 }
 
 long elkvm_do_arch_prctl(struct kvm_vm *vm) {

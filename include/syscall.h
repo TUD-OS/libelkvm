@@ -22,6 +22,8 @@ int elkvm_syscall3(struct kvm_vm *, struct kvm_vcpu *, uint64_t *, uint64_t *,
 		uint64_t *);
 
 
+#define NUM_SYSCALLS 313
+
 long elkvm_do_read(struct kvm_vm *);
 long elkvm_do_write(struct kvm_vm *);
 long elkvm_do_open(struct kvm_vm *);
@@ -38,12 +40,20 @@ long elkvm_do_brk(struct kvm_vm *);
 /* ... */
 long elkvm_do_uname(struct kvm_vm *);
 /* ... */
+long elkvm_do_getuid(struct kvm_vm *);
+long elkvm_do_syslog(struct kvm_vm *);
+long elkvm_do_getgid(struct kvm_vm *);
+long elkvm_do_setuid(struct kvm_vm *);
+long elkvm_do_setgid(struct kvm_vm *);
+long elkvm_do_geteuid(struct kvm_vm *);
+long elkvm_do_getegid(struct kvm_vm *);
+/* ... */
 long elkvm_do_arch_prctl(struct kvm_vm *);
 
 static struct {
 	long (*func)(struct kvm_vm *);
 	const char *name;
-} elkvm_syscalls[] = {
+} elkvm_syscalls[NUM_SYSCALLS] = {
 	[__NR_read]			= { elkvm_do_read, "READ" },
 	[__NR_write] 		= { elkvm_do_write, "WRITE"},
 	[__NR_open]  		= { elkvm_do_open, "OPEN"},
@@ -60,7 +70,14 @@ static struct {
 	/* ... */
 	[__NR_uname] = { elkvm_do_uname, "UNAME"},
   /* ... */
+  [__NR_getuid]  = { elkvm_do_getuid, "GETUID" },
+  [__NR_syslog]  = { elkvm_do_syslog, "SYSLOG" },
+  [__NR_getgid]  = { elkvm_do_getgid, "GETGID" },
+  [__NR_setuid]  = { elkvm_do_setuid, "SETUID" },
+  [__NR_setgid]  = { elkvm_do_setgid, "SETGID" },
+  [__NR_geteuid] = { elkvm_do_geteuid, "GETEUID" },
+  [__NR_getegid] = { elkvm_do_getegid, "GETEGID" },
+  /* ... */
   [__NR_arch_prctl] = { elkvm_do_arch_prctl, "ARCH PRCTL" },
 };
 
-#define NUM_SYSCALLS 313
