@@ -34,7 +34,7 @@ int elfloader_load_binary(struct kvm_vm *vm, const char *binary) {
 	if(elf_version(EV_CURRENT) == EV_NONE) {
 		return -EIO;
 	}
-	
+
 	bin.e = elf_begin(bin.fd, ELF_C_READ, NULL);
 	if(bin.e == NULL) {
 		return -ENOMEM;
@@ -49,7 +49,7 @@ int elfloader_load_binary(struct kvm_vm *vm, const char *binary) {
 	int err = elfloader_check_elf(bin.e);
 	if(err) {
 		return err;
-	}	
+	}
 
 	err = elfloader_load_program_headers(vm, &bin);
 	if(err) {
@@ -79,7 +79,7 @@ int elfloader_check_elf(Elf *e) {
 	}
 
 	int ek = elf_kind(e);
-	
+
 	if(gelf_getehdr(e, &ehdr) == NULL) {
 		return -1;
 	}
@@ -158,7 +158,7 @@ int elfloader_load_program_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
 				} else if(phdr.p_flags & PF_W) {
 					vm->data = loadable_region;
 				}
-		
+
 				break;
 			case PT_PHDR:
 				if(pt_phdr_forbidden) {
