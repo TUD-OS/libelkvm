@@ -26,11 +26,11 @@ struct kvm_vm {
 	struct vcpu_list *vcpus;
 	struct kvm_pager pager;
 	int run_struct_size;
-	struct elkvm_memory_region root_region;
+	struct elkvm_memory_region_list root_region;
 	struct elkvm_handlers *syscall_handlers;
 
 	struct elkvm_memory_region *text;
-	struct elkvm_memory_region *data;
+	struct elkvm_memory_region_list *heap;
 	struct elkvm_memory_region *kernel_stack;
 	struct elkvm_memory_region *gdt_region;
 	struct elkvm_memory_region *idt_region;
