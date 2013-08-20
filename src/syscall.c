@@ -236,7 +236,42 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
 }
 
 long elkvm_do_brk(struct kvm_vm *vm) {
-	return ENOSYS;
+  uint64_t user_brk_req = 0;
+  int err = elkvm_syscall1(vm, vm->vcpus->vcpu, &user_brk_req);
+  printf("BRK reguested with address: 0x%lx\n", user_brk_req);
+  if(err) {
+    return EIO;
+  }
+
+  /* if the requested brk address is 0 just return the current brk address */
+  if(user_brk_req == 0) {
+    printf("returning current brk address: 0x%lx\n", vm->pager.brk_addr);
+    return vm->pager.brk_addr;
+  }
+
+  /* if the requested brk address is smaller than the current brk,
+   * adjust the new brk */
+  if(user_brk_req < vm->pager.brk_addr) {
+    printf("new brk (0x%lx) is smaller: 0x%lx\n", user_brk_req, vm->pager.brk_addr);
+    vm->pager.brk_addr = user_brk_req;
+    return user_brk_req;
+  }
+
+  /* if the requested brk address is still within the current data region,
+   * just push the brk */
+  if(user_brk_req < (vm->data->guest_virtual + vm->data->region_size)) {
+    printf("new brk (0x%lx) is larger, but fits in region: 0x%lx (0x%lx)\n",
+        user_brk_req, vm->data->guest_virtual, vm->data->region_size);
+    vm->pager.brk_addr = user_brk_req;
+    return user_brk_req;
+  }
+
+  /* if the requested brk does not fit in the current memory region,
+   * check if limits are held, and request more memory */
+  printf("new brk (0x%lx) does not fit in data region: 0x%lx (0x%lx)\n",
+      user_brk_req, vm->data->guest_virtual, vm->data->region_size);
+  printf("return old brk 0x%lx\n", vm->pager.brk_addr);
+  return vm->pager.brk_addr;
 }
 
 long elkvm_do_uname(struct kvm_vm *vm) {
