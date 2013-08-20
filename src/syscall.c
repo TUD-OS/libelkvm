@@ -305,7 +305,30 @@ long elkvm_do_writev(struct kvm_vm *vm) {
 }
 
 long elkvm_do_access(struct kvm_vm *vm) {
-  return ENOSYS;
+	if(vm->syscall_handlers->access == NULL) {
+    printf("ACCESS handler not found\n");
+		return ENOSYS;
+	}
+
+  uint64_t path_p;
+  uint64_t mode;
+
+  int err = elkvm_syscall2(vm, vm->vcpus->vcpu, &path_p, &mode);
+  if(err) {
+    return err;
+  }
+
+  char *pathname = kvm_pager_get_host_p(&vm->pager, path_p);
+  if(pathname == NULL) {
+    return EFAULT;
+  }
+  printf("CALLING ACCESS handler with pathname %s and mode %i\n",
+      pathname, (int)mode);
+
+  long result = vm->syscall_handlers->access(pathname, mode);
+  printf("ACCESS result: %li\n", result);
+
+  return errno;
 }
 
 long elkvm_do_uname(struct kvm_vm *vm) {
