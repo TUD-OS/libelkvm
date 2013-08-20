@@ -9,6 +9,7 @@
 
 #include <elfloader.h>
 #include <elkvm.h>
+#include <heap.h>
 #include <kvm.h>
 #include <pager.h>
 #include <region.h>
@@ -157,9 +158,7 @@ int elfloader_load_program_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
 					/* executable region should be text */
 					vm->text = loadable_region;
 				} else if(phdr.p_flags & PF_W) {
-					vm->data = loadable_region;
-          err = kvm_pager_set_brk(&vm->pager, phdr.p_vaddr +
-              phdr.p_memsz);
+          err = elkvm_heap_initialize(vm, loadable_region, phdr.p_memsz);
           if(err) {
             return err;
           }
