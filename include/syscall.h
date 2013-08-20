@@ -37,6 +37,15 @@ long elkvm_do_mmap(struct kvm_vm *);
 long elkvm_do_mprotect(struct kvm_vm *);
 long elkvm_do_munmap(struct kvm_vm *);
 long elkvm_do_brk(struct kvm_vm *);
+long elkvm_do_sigaction(struct kvm_vm *);
+long elkvm_do_sigprocmask(struct kvm_vm *);
+long elkvm_do_sigreturn(struct kvm_vm *);
+long elkvm_do_ioctl(struct kvm_vm *);
+long elkvm_do_pread64(struct kvm_vm *);
+long elkvm_do_pwrite64(struct kvm_vm *);
+long elkvm_do_readv(struct kvm_vm *);
+long elkvm_do_writev(struct kvm_vm *);
+long elkvm_do_access(struct kvm_vm *);
 /* ... */
 long elkvm_do_uname(struct kvm_vm *);
 /* ... */
@@ -67,6 +76,14 @@ static struct {
 	[__NR_mprotect] = { elkvm_do_mprotect, "MPROTECT" },
 	[__NR_munmap]   = { elkvm_do_munmap, "MUNMAP" },
 	[__NR_brk]      = { elkvm_do_brk, "BRK" },
+  [__NR_rt_sigaction] = { elkvm_do_sigaction, "SIGACTION" },
+  [__NR_rt_sigprocmask] = { elkvm_do_sigprocmask, "SIGPROCMASK" },
+  [__NR_rt_sigreturn]   = { elkvm_do_sigreturn, "SIGRETURN" },
+  [__NR_ioctl]       = { elkvm_do_ioctl, "IOCTL" },
+  [__NR_pread64]     = { elkvm_do_pread64, "PREAD64" },
+  [__NR_readv]       = { elkvm_do_readv, "READV" },
+  [__NR_writev]      = { elkvm_do_writev, "WRITEV" },
+  [__NR_access]      = { elkvm_do_access, "ACCESS" },
 	/* ... */
 	[__NR_uname] = { elkvm_do_uname, "UNAME"},
   /* ... */

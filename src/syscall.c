@@ -276,6 +276,38 @@ long elkvm_do_brk(struct kvm_vm *vm) {
   return vm->pager.brk_addr;
 }
 
+long elkvm_do_sigaction(struct kvm_vm *vm) {
+  return ENOSYS;
+}
+
+long elkvm_do_sigprocmask(struct kvm_vm *vm) {
+  return ENOSYS;
+}
+
+long elkvm_do_sigreturn(struct kvm_vm *vm) {
+  return ENOSYS;
+}
+
+long elkvm_do_ioctl(struct kvm_vm *vm) {
+  return ENOSYS;
+}
+
+long elkvm_do_pread64(struct kvm_vm *vm) {
+  return ENOSYS;
+}
+
+long elkvm_do_readv(struct kvm_vm *vm) {
+  return ENOSYS;
+}
+
+long elkvm_do_writev(struct kvm_vm *vm) {
+  return ENOSYS;
+}
+
+long elkvm_do_access(struct kvm_vm *vm) {
+  return ENOSYS;
+}
+
 long elkvm_do_uname(struct kvm_vm *vm) {
 	if(vm->syscall_handlers->uname == NULL) {
 		return ENOSYS;
