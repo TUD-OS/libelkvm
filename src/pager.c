@@ -52,7 +52,7 @@ int kvm_pager_create_mem_chunk(struct kvm_pager *pager, int chunk_size, uint64_t
 		return -EIO;
 	}
 
-	struct kvm_userspace_memory_region *chunk = 
+	struct kvm_userspace_memory_region *chunk =
 		malloc(sizeof(struct kvm_userspace_memory_region));
 	if(chunk == NULL) {
 		return -ENOMEM;
@@ -64,7 +64,7 @@ int kvm_pager_create_mem_chunk(struct kvm_pager *pager, int chunk_size, uint64_t
 		return err;
 	}
 
-	chunk->userspace_addr = (__u64)chunk_host_p; 
+	chunk->userspace_addr = (__u64)chunk_host_p;
 	chunk->guest_phys_addr = guest_base;
 	chunk->memory_size = chunk_size;
 	chunk->flags = 0;
@@ -82,7 +82,7 @@ out_free_chunk_base:
 	free((void *)chunk->userspace_addr);
 out_free_chunk:
 	free(chunk);
-	return -ENOMEM;	
+	return -ENOMEM;
 }
 
 int kvm_pager_append_mem_chunk(struct kvm_pager *pager,
@@ -143,15 +143,15 @@ int kvm_pager_is_invalid_guest_base(struct kvm_pager *pager, uint64_t guest_base
 		return 1;
 	}
 
-	if(pager->system_chunk.guest_phys_addr <= guest_base && 
-			guest_base < pager->system_chunk.guest_phys_addr + 
+	if(pager->system_chunk.guest_phys_addr <= guest_base &&
+			guest_base < pager->system_chunk.guest_phys_addr +
 				pager->system_chunk.memory_size) {
 		return 1;
 	}
 
 	struct chunk_list *cl = pager->other_chunks;
 	while(cl != NULL) {
-		if(cl->chunk->guest_phys_addr <= guest_base && 
+		if(cl->chunk->guest_phys_addr <= guest_base &&
 				guest_base < cl->chunk->guest_phys_addr + cl->chunk->memory_size) {
 			return 1;
 		}
@@ -164,7 +164,7 @@ int kvm_pager_is_invalid_guest_base(struct kvm_pager *pager, uint64_t guest_base
 struct kvm_userspace_memory_region *
 	kvm_pager_find_region_for_host_p(struct kvm_pager *pager, void *host_mem_p) {
 		if(((void *)pager->system_chunk.userspace_addr <= host_mem_p) &&
-				(host_mem_p < ((void *)pager->system_chunk.userspace_addr + 
+				(host_mem_p < ((void *)pager->system_chunk.userspace_addr +
 					pager->system_chunk.memory_size))) {
 			return &pager->system_chunk;
 		}
@@ -218,7 +218,7 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 
 	assert(pager->system_chunk.userspace_addr != 0);
 	assert((host_mem_p < pager->host_pml4_p) ||
-			host_mem_p >= (pager->host_pml4_p + 0x400000)); 
+			host_mem_p >= (pager->host_pml4_p + 0x400000));
 
 	/* sanity checks on the host, we need 4MB to fit all possible page maps */
 	if(pager->system_chunk.memory_size < ELKVM_SYSTEM_MEMSIZE) {
@@ -233,7 +233,7 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 	uint64_t guest_physical = host_to_guest_physical(pager, host_mem_p);
 	uint64_t *pt_entry = kvm_pager_page_table_walk(pager, guest_virtual,
 			writeable, executable, 1);
-	
+
 	/* do NOT overwrite existing page table entries! */
 	if(entry_exists(pt_entry)) {
 		if((*pt_entry & ~0xFFF) != (guest_physical & ~0xFFF)) {
@@ -251,7 +251,7 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 	//*pt_entry |= 0x4;
 	///* set present bit */
 	//*pt_entry |= 0x1;
-	
+
 	return err;
 }
 
@@ -320,7 +320,7 @@ uint64_t *kvm_pager_find_next_table(struct kvm_pager *pager,
 	return (uint64_t *)(pager->system_chunk.userspace_addr + guest_next_tbl);
 }
 
-uint64_t *kvm_pager_find_table_entry(struct kvm_pager *pager, 
+uint64_t *kvm_pager_find_table_entry(struct kvm_pager *pager,
 		uint64_t *host_tbl_base_p, uint64_t guest_virtual, int off_low, int off_high) {
 	uint64_t off = (guest_virtual << (63 - off_high)) >> ((63 - off_high) + off_low);
 
