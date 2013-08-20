@@ -157,6 +157,11 @@ int elfloader_load_program_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
 					vm->text = loadable_region;
 				} else if(phdr.p_flags & PF_W) {
 					vm->data = loadable_region;
+          err = kvm_pager_set_brk(&vm->pager, loadable_region->guest_virtual +
+              phdr.memsz);
+          if(err) {
+            return err;
+          }
 				}
 
 				break;
