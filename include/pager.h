@@ -105,7 +105,7 @@ uint64_t *kvm_pager_find_next_table(struct kvm_pager *, uint64_t *);
  * \brief find an entry in a pml4, pdpt, pd or pt
  * Args: pager, host table base pointer, guest virtual address, offsets
 */
-uint64_t *kvm_pager_find_table_entry(struct kvm_pager *, uint64_t *, uint64_t, 
+uint64_t *kvm_pager_find_table_entry(struct kvm_pager *, uint64_t *, uint64_t,
 		int, int);
 
 /*
@@ -128,7 +128,7 @@ void kvm_pager_dump_table(struct kvm_pager *, void *, int);
  * \brief Translate a host address into a guest physical address
 */
 static inline uint64_t host_to_guest_physical(struct kvm_pager *pager, void *host_p) {
-	struct kvm_userspace_memory_region *region = 
+	struct kvm_userspace_memory_region *region =
 		kvm_pager_find_region_for_host_p(pager, host_p);
 	if(region == NULL) {
 		return 0;
