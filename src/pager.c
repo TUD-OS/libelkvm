@@ -364,6 +364,11 @@ int kvm_pager_create_entry(struct kvm_pager *pager, uint64_t *host_entry_p,
 	return 0;
 }
 
+int kvm_pager_set_brk(struct kvm_pager *pager, uint64_t guest_addr) {
+  pager->brk_addr = guest_addr;
+  return 0;
+}
+
 void kvm_pager_dump_page_tables(struct kvm_pager *pager) {
 	printf(" Page Tables:\n");
 	printf(" ------------\n");

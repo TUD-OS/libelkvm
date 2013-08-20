@@ -37,6 +37,7 @@ struct kvm_pager {
 	void *host_pml4_p;
 	void *host_next_free_tbl_p;
 	uint64_t guest_next_free;
+  uint64_t brk_addr;
 };
 
 /*
@@ -120,6 +121,8 @@ int kvm_pager_create_table(struct kvm_pager *, uint64_t *, int, int);
  * writeable and executable bits
  */
 int kvm_pager_create_entry(struct kvm_pager *, uint64_t *, uint64_t, int, int);
+
+int kvm_pager_set_brk(struct kvm_pager *, uint64_t);
 
 void kvm_pager_dump_page_tables(struct kvm_pager *);
 void kvm_pager_dump_table(struct kvm_pager *, void *, int);
