@@ -86,8 +86,8 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 		return err;
 	}
 
-	/* 
-	 * setup the lstar register with the syscall handler 
+	/*
+	 * setup the lstar register with the syscall handler
 	 */
 	err = kvm_vcpu_set_msr(vm->vcpus->vcpu,
 			VCPU_MSR_LSTAR,
@@ -127,8 +127,8 @@ int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * pat
 	flat->size = stbuf.st_size;
 	flat->region = elkvm_region_create(vm, stbuf.st_size);
 	flat->region->guest_virtual = 0x0;
-	
-	flat->region->guest_virtual = kvm_pager_map_kernel_page(&vm->pager, 
+
+	flat->region->guest_virtual = kvm_pager_map_kernel_page(&vm->pager,
 			flat->region->host_base_p, 0, 1);
 	if(flat->region->guest_virtual == 0) {
 		close(fd);
@@ -149,7 +149,7 @@ int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * pat
 
 int elkvm_region_setup(struct kvm_vm *vm) {
 	/* create a chunk for system data
-	   TODO for now use a fixed size, what if bin is too large for that */	
+	   TODO for now use a fixed size, what if bin is too large for that */
 	void *system_chunk_p;
 	int err = posix_memalign(&system_chunk_p, 0x1000, ELKVM_SYSTEM_MEMSIZE);
 	if(err) {
@@ -237,7 +237,7 @@ int elkvm_cleanup(struct elkvm_opts *opts) {
 int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 	/* for now the region to hold env etc. will be 12 pages large */
 	struct elkvm_memory_region *env_region = elkvm_region_create(vm, 0x12000);
-	env_region->guest_virtual = LINUX_64_STACK_BASE - 
+	env_region->guest_virtual = LINUX_64_STACK_BASE -
 		env_region->region_size;
 
 	/* get a 4 page large region for the stack */
@@ -270,14 +270,14 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 		return err;
 	}
 
-	err = kvm_pager_create_mapping(&vm->pager, 
-			env_region->host_base_p, 
+	err = kvm_pager_create_mapping(&vm->pager,
+			env_region->host_base_p,
 			vm->vcpus->vcpu->regs.rsp, 1, 0);
 	if(err) {
 		return err;
 	}
 
-	void *host_target_p = env_region->host_base_p + 
+	void *host_target_p = env_region->host_base_p +
 		env_region->region_size;
 
 	int bytes = elkvm_copy_and_push_str_arr_p(vm, host_target_p, opts->environ);
@@ -349,7 +349,7 @@ int elkvm_dump_valid_msrs(struct elkvm_opts *opts) {
 	struct kvm_msr_list *list = malloc(
 			sizeof(struct kvm_msr_list) + 255 * sizeof(uint32_t));
 	list->nmsrs = 255;
-	
+
 	int err = ioctl(opts->fd, KVM_GET_MSR_INDEX_LIST, list);
 	if(err < 0) {
 		free(list);
@@ -373,7 +373,7 @@ void elkvm_print_regions(struct kvm_vm *vm) {
 }
 
 void elkvm_dump_region(struct elkvm_memory_region *region) {
-	printf("%16p\t0x%016lx\t0x%016lx\t%i\n", region->host_base_p, 
+	printf("%16p\t0x%016lx\t0x%016lx\t%i\n", region->host_base_p,
 		region->guest_virtual, region->region_size, region->grows_downward);
 	if(region->lc != NULL) {
 		elkvm_dump_region(region->lc);
