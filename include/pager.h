@@ -10,6 +10,7 @@
 #define PAGER_MODE_X86_64  3
 
 #define ELKVM_SYSTEM_MEMSIZE 16*1024*1024
+#define ELKVM_SYSTEM_MEMGROW 8*1024*1024
 #define KERNEL_SPACE_BOTTOM 0xFFFF800000000000
 #define ADDRESS_SPACE_TOP 0xFFFFFFFFFFFFFFFF
 
@@ -38,6 +39,7 @@ struct kvm_pager {
 	void *host_next_free_tbl_p;
 	uint64_t guest_next_free;
   uint64_t brk_addr;
+  uint64_t total_memsz;
 };
 
 /*
@@ -46,9 +48,10 @@ struct kvm_pager {
 int kvm_pager_initialize(struct kvm_vm *, int);
 
 /*
-	Let Pager create a mem chunk of the given size, attach it to the given guest_base. The mem_chunk will be added to the end of the other_chunks list
+	Let Pager create a mem chunk of the given size. The mem_chunk will be added
+  to the end of the other_chunks list
 */
-int kvm_pager_create_mem_chunk(struct kvm_pager *, int, uint64_t);
+int kvm_pager_create_mem_chunk(struct kvm_pager *, int);
 
 /*
 	Create Page Tables according to given mode
