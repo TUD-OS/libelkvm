@@ -37,7 +37,7 @@ int elkvm_region_split(struct elkvm_memory_region *region) {
 	region->rc->grows_downward = 0;
 	region->rc->used = 0;
 	region->rc->lc = region->rc->rc = NULL;
-	
+
 	return 0;
 }
 
