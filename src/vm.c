@@ -96,15 +96,15 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 		return err;
 	}
 
-	err = kvm_pager_create_mem_chunk(&vm->pager, memory_size, ELKVM_USER_CHUNK_OFFSET);
-	if(err) {
-		return err;
-	}
+	//err = kvm_pager_create_mem_chunk(&vm->pager, memory_size, ELKVM_USER_CHUNK_OFFSET);
+	//if(err) {
+	//	return err;
+	//}
 
-	err = kvm_vm_map_chunk(vm, vm->pager.other_chunks->chunk);
-	if(err) {
-		return err;
-	}
+	//err = kvm_vm_map_chunk(vm, vm->pager.other_chunks->chunk);
+	//if(err) {
+	//	return err;
+	//}
 
 	vm->syscall_handlers = handlers;
 
