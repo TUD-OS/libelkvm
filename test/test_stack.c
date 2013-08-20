@@ -39,7 +39,8 @@ START_TEST(test_push_stack) {
 	ck_assert_int_eq(err, 0);
 	void *host_p = (void *)stack_vm.pager.system_chunk.userspace_addr + 0x1000;
 
-	err = kvm_pager_create_mapping(&stack_vm.pager, host_p, vcpu->regs.rsp - 0x1000);
+	err = kvm_pager_create_mapping(&stack_vm.pager, host_p, vcpu->regs.rsp - 0x1000,
+      0, 0);
 	ck_assert_int_eq(err, 0);
 
 	uint16_t magic_val = 0x42;
@@ -73,7 +74,7 @@ START_TEST(test_pop_stack) {
 
 	*host_mem_p = magic_val;
 
-	kvm_pager_create_mapping(&stack_vm.pager, host_mem_p, vcpu->regs.rsp);
+	kvm_pager_create_mapping(&stack_vm.pager, host_mem_p, vcpu->regs.rsp, 0, 0);
 
 	uint64_t old_rsp = vcpu->regs.rsp;
 	uint16_t popped_val = pop_stack(&stack_vm, vcpu);
