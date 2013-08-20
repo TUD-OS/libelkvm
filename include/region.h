@@ -10,6 +10,11 @@ struct elkvm_memory_region {
 	struct elkvm_memory_region *rc;
 };
 
+struct elkvm_memory_region_list {
+  struct elkvm_memory_region_list *next;
+  struct elkvm_memory_region *data;
+};
+
 struct elkvm_memory_region *elkvm_region_find(struct elkvm_memory_region *, uint64_t);
 struct elkvm_memory_region *elkvm_region_create(struct kvm_vm *, uint64_t);
 int elkvm_region_split(struct elkvm_memory_region *);
