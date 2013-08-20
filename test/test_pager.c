@@ -209,7 +209,7 @@ START_TEST(test_kvm_pager_is_invalid_guest_base) {
 	ck_assert_int_eq(invl, 0);
 
 	pager.other_chunks = malloc(sizeof(struct chunk_list));
-	struct kvm_userspace_memory_region *chunk = 
+	struct kvm_userspace_memory_region *chunk =
 		malloc(sizeof(struct kvm_userspace_memory_region));
 	chunk->guest_phys_addr = 0x1000000;
 	chunk->memory_size = 0x10000;
@@ -259,7 +259,7 @@ START_TEST(test_kvm_pager_find_region_for_host_p_nomem) {
 	pager.system_chunk.memory_size = 0;
 
 	void *p = (void *)0x1000;
-	struct kvm_userspace_memory_region *region = 
+	struct kvm_userspace_memory_region *region =
 		kvm_pager_find_region_for_host_p(&pager, p);
 	ck_assert_ptr_eq(region, NULL);
 }
@@ -267,7 +267,7 @@ END_TEST
 
 START_TEST(test_kvm_pager_find_region_for_host_p_system) {
 	void *p = (void *)0x1000;
-	struct kvm_userspace_memory_region *region = 
+	struct kvm_userspace_memory_region *region =
 		kvm_pager_find_region_for_host_p(&pager, p);
 	ck_assert_ptr_eq(region, &pager.system_chunk);
 }
@@ -279,7 +279,7 @@ START_TEST(test_kvm_pager_find_region_for_host_p_user) {
 	chunk->memory_size = 0x100000;
 
 	void *p = (void *)0x427500;
-	struct kvm_userspace_memory_region *region = 
+	struct kvm_userspace_memory_region *region =
 		kvm_pager_find_region_for_host_p(&pager, p);
 	ck_assert_ptr_eq(region, pager.other_chunks->chunk);
 }
@@ -287,7 +287,7 @@ END_TEST
 
 START_TEST(test_kvm_pager_find_region_for_host_p_system_edge) {
 	void *p = (void *)0x0;
-	struct kvm_userspace_memory_region *region = 
+	struct kvm_userspace_memory_region *region =
 		kvm_pager_find_region_for_host_p(&pager, p);
 	ck_assert_ptr_eq(region, &pager.system_chunk);
 
@@ -303,7 +303,7 @@ START_TEST(test_kvm_pager_find_region_for_host_p_user_edge) {
 	chunk->memory_size = 0x100000;
 
 	void *p = (void *)0x400000;
-	struct kvm_userspace_memory_region *region = 
+	struct kvm_userspace_memory_region *region =
 		kvm_pager_find_region_for_host_p(&pager, p);
 	ck_assert_ptr_eq(region, pager.other_chunks->chunk);
 
@@ -460,7 +460,7 @@ Suite *pager_suite() {
 
 	TCase *tc_create_mappings = tcase_create("Create Virtual Memory Mappings");
 	tcase_add_checked_fixture(tc_create_mappings, memory_setup, memory_teardown);
-	tcase_add_test_raise_signal(tc_create_mappings, 
+	tcase_add_test_raise_signal(tc_create_mappings,
 			test_kvm_pager_create_mapping_invalid_host, 6);
 	tcase_add_test(tc_create_mappings, test_kvm_pager_create_valid_mappings);
 	tcase_add_test(tc_create_mappings, test_kvm_pager_create_same_mapping);
