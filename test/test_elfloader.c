@@ -84,7 +84,7 @@ START_TEST(test_elfloader_load_program_header) {
 	/* load the first program header */
 	err =	elfloader_load_program_header(&elfloader_test_vm, &bin, phdr, buf);
 	ck_assert_int_eq(err, 0);
-	
+
 	/* check if it has really been loaded into the buffer */
 	int off = phdr.p_vaddr & 0xFFF;
 	for(int i = off; i < off + phdr.p_memsz; i++) {
