@@ -28,21 +28,9 @@ int elkvm_region_split(struct elkvm_memory_region *region) {
 	}
 	region->used = 1;
 
-	region->lc = malloc(sizeof(struct elkvm_memory_region));
-	region->lc->host_base_p = region->host_base_p;
-	region->lc->guest_virtual = 0x0;
-	region->lc->region_size = region->region_size / 2;
-	region->lc->grows_downward = 0;
-	region->lc->used = 0;
-	region->lc->lc = region->lc->rc = NULL;
-
-	region->rc = malloc(sizeof(struct elkvm_memory_region));
-	region->rc->host_base_p = region->host_base_p + region->lc->region_size;
-	region->rc->guest_virtual = 0x0;
-	region->rc->region_size = region->region_size / 2;
-	region->rc->grows_downward = 0;
-	region->rc->used = 0;
-	region->rc->lc = region->rc->rc = NULL;
+  region->lc = elkvm_region_alloc(region->host_base_p, region->region_size / 2, 0);
+  region->rc = elkvm_region_alloc(region->host_base_p + region->lc->region_size,
+      region->region_size / 2, 0);
 
 	return 0;
 }
