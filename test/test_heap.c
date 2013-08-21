@@ -11,14 +11,14 @@ struct elkvm_memory_region heap_region;
 
 void setup_heap() {
   int rsize = 0x6000;
-  heap_vm.root_region.region_size = rsize;
-  heap_vm.root_region.host_base_p = malloc(rsize);
-  int err = elkvm_heap_initialize(&heap_vm, &heap_region, 0x1000);
+  int err = elkvm_region_setup(&heap_vm);
+  assert(err == 0);
+  err = elkvm_heap_initialize(&heap_vm, &heap_region, 0x1000);
   assert(err == 0);
 }
 
 void teardown_heap() {
-  free(heap_vm.root_region.host_base_p);
+  free(heap_vm.root_region.data->host_base_p);
 }
 
 START_TEST(test_initialize_heap) {

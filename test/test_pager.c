@@ -20,20 +20,15 @@ void pager_setup() {
 	the_vm.fd = ioctl(pager_test_opts.fd, KVM_CREATE_VM, 0);
 	assert(the_vm.fd > 0);
 
-	uint64_t size = 0x400000;
-	err = posix_memalign(&the_vm.root_region.host_base_p, 0x1000, size);
-	assert(err == 0);
-
-	the_vm.root_region.region_size = size;
-	the_vm.pager.system_chunk.userspace_addr = (uint64_t)the_vm.root_region.host_base_p;
-	the_vm.pager.system_chunk.memory_size = size;
+  err = elkvm_region_setup(&the_vm);
+  assert(err == 0);
 
 	err = kvm_vcpu_create(&the_vm, VM_MODE_X86_64);
 	assert(err == 0);
 }
 
 void pager_teardown() {
-	free(the_vm.root_region.host_base_p);
+	free(the_vm.root_region.data->host_base_p);
 	elkvm_cleanup(&pager_test_opts);
 }
 
@@ -73,7 +68,7 @@ void memory_teardown() {
 START_TEST(test_kvm_pager_initialize_invalid_vm) {
 	struct kvm_vm the_vm;
 	the_vm.fd = 0;
-	the_vm.root_region.region_size = 0;
+	the_vm.root_region.data->region_size = 0;
 
 	int err = kvm_pager_initialize(&the_vm, PAGER_MODE_X86_64);
 	ck_assert_int_lt(err, 0);
@@ -83,7 +78,7 @@ END_TEST
 START_TEST(test_kvm_pager_initialize_invalid_mode) {
 	struct kvm_vm the_vm;
 	the_vm.fd = vm_fd;
-	the_vm.root_region.region_size = 0;
+	the_vm.root_region.data->region_size = 0;
 
 	int err = kvm_pager_initialize(&the_vm, 9999);
 	ck_assert_int_lt(err, 0);
@@ -96,69 +91,43 @@ START_TEST(test_kvm_pager_initialize_valid) {
 }
 END_TEST
 
-START_TEST(test_kvm_pager_create_mem_chunk) {
-	int size = 0x400000;
-	int invalid_size = 0x400234;
-	uint64_t invalid_guest_base = 0;
-	uint64_t valid_guest_base = 0x100000000;
-	uint64_t unaligned_guest_base;
-	struct kvm_pager pager;
-	pager.system_chunk.guest_phys_addr = 0x0;
-	pager.system_chunk.memory_size = ELKVM_SYSTEM_MEMSIZE;
-	pager.other_chunks = NULL;
-
-	int err = kvm_pager_create_mem_chunk(NULL, size, valid_guest_base);
+START_TEST(test_kvm_pager_create_mem_chunk_nopager) {
+  int size = 0x400000;
+	int err = kvm_pager_create_mem_chunk(NULL, size);
 	ck_assert_int_eq(err, -EIO);
 	ck_assert_ptr_eq(pager.other_chunks, NULL);
+}
+END_TEST
 
-	err = kvm_pager_create_mem_chunk(&pager, size, invalid_guest_base);
-	ck_assert_int_eq(err, -EIO);
-	ck_assert_ptr_eq(pager.other_chunks, NULL);
-
-	err = kvm_pager_create_mem_chunk(&pager, size, valid_guest_base);
+START_TEST(test_kvm_pager_create_mem_chunk_valid) {
+  int size = 0x400000;
+	int err = kvm_pager_create_mem_chunk(&pager, size);
 	ck_assert_int_eq(err, 0);
 	ck_assert_ptr_ne(pager.other_chunks, NULL);
 	struct chunk_list *cl = pager.other_chunks;
 	ck_assert_int_eq(cl->chunk->memory_size, size);
-	ck_assert_int_eq(cl->chunk->guest_phys_addr, valid_guest_base);
+	//ck_assert_int_eq(cl->chunk->guest_phys_addr, valid_guest_base);
 	ck_assert_ptr_eq(cl->next, NULL);
+}
+END_TEST
 
-	invalid_guest_base = valid_guest_base;
-	valid_guest_base += size;
-	err = kvm_pager_create_mem_chunk(&pager, size, invalid_guest_base);
-	ck_assert_int_eq(err, -EIO);
-	ck_assert_ptr_eq(cl->next, NULL);
-
-	err = kvm_pager_create_mem_chunk(&pager, size, valid_guest_base);
-	ck_assert_int_eq(err, 0);
-	ck_assert_ptr_ne(cl->next, NULL);
-	cl = cl->next;
-	ck_assert_int_eq(cl->chunk->memory_size, size);
-	ck_assert_int_eq(cl->chunk->guest_phys_addr, valid_guest_base);
-	ck_assert_ptr_eq(cl->next, NULL);
-
-	invalid_guest_base = valid_guest_base;
-	valid_guest_base += size;
-	err = kvm_pager_create_mem_chunk(&pager, size, valid_guest_base);
-	ck_assert_int_eq(err,  0);
-	ck_assert_ptr_ne(cl->next, NULL);
-	cl = cl->next;
-	ck_assert_int_eq(cl->chunk->memory_size, size);
-	ck_assert_int_eq(cl->chunk->guest_phys_addr, valid_guest_base);
-	ck_assert_ptr_eq(cl->next, NULL);
-
-
-	invalid_guest_base = valid_guest_base;
-	valid_guest_base += size;
-	err = kvm_pager_create_mem_chunk(&pager, invalid_size, valid_guest_base);
-	ck_assert_int_eq(err, -EIO);
-	ck_assert_ptr_eq(cl->next, NULL);
-
-	unaligned_guest_base = valid_guest_base + 0x234;
-	err = kvm_pager_create_mem_chunk(&pager,size, unaligned_guest_base);
-	ck_assert_int_eq(err, -EIO);
-	ck_assert_ptr_eq(cl->next, NULL);
-
+START_TEST(test_kvm_pager_create_mem_chunk_mass) {
+  int err = 0;
+  int size = 0x400000;
+  struct chunk_list *cl;
+  for(int i = 0; i < 100; i++) {
+    err = kvm_pager_create_mem_chunk(&pager, size);
+    ck_assert_int_eq(err, 0);
+    for(int chunks = 0; chunks < i; chunks++) {
+      ck_assert_ptr_ne(cl->next, NULL);
+      cl = cl->next;
+      if(chunks == i-1) {
+        ck_assert_int_eq(cl->chunk->memory_size, size);
+        //ck_assert_int_eq(cl->chunk->guest_phys_addr, valid_guest_base);
+      }
+    }
+    ck_assert_ptr_eq(cl->next, NULL);
+  }
 }
 END_TEST
 
@@ -488,7 +457,10 @@ Suite *pager_suite() {
 	suite_add_tcase(s, tc_init);
 
 	TCase *tc_mem_chunk = tcase_create("Create Mem Chunk");
-	tcase_add_test(tc_mem_chunk, test_kvm_pager_create_mem_chunk);
+	tcase_add_test(tc_mem_chunk, test_kvm_pager_create_mem_chunk_nopager);
+  tcase_add_test(tc_mem_chunk, test_kvm_pager_create_mem_chunk_valid);
+  tcase_add_test(tc_mem_chunk, test_kvm_pager_create_mem_chunk_mass);
+  tcase_add_checked_fixture(tc_mem_chunk, pager_setup, pager_teardown);
 	suite_add_tcase(s, tc_mem_chunk);
 
 	TCase *tc_map_kernel = tcase_create("Map Kernel Page");
