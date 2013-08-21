@@ -41,7 +41,7 @@ int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
 		return err;
 	}
 
-	vcpu->run_struct = mmap(NULL, sizeof(struct kvm_run), PROT_READ | PROT_WRITE, 
+	vcpu->run_struct = mmap(NULL, sizeof(struct kvm_run), PROT_READ | PROT_WRITE,
 			MAP_SHARED, vcpu->fd, 0);
 	if(vcpu->run_struct == NULL) {
 		free(vcpu);
@@ -205,7 +205,7 @@ int kvm_vcpu_get_msr(struct kvm_vcpu *vcpu, uint32_t index, uint64_t *res_p) {
 			sizeof(struct kvm_msrs) + sizeof(struct kvm_msr_entry));
 	msr->nmsrs = 1;
 	msr->entries[0].index = index;
-	
+
 	int err = ioctl(vcpu->fd, KVM_GET_MSRS, msr);
 	if(err < 0) {
 		*res_p = -1;
@@ -372,15 +372,15 @@ int kvm_vcpu_singlestep(struct kvm_vcpu *vcpu) {
 	};
 
 	vcpu->is_debug = 1;
-	
+
 	return ioctl(vcpu->fd, KVM_SET_GUEST_DEBUG, &debug);
 }
 
 int kvm_vcpu_run(struct kvm_vcpu *vcpu) {
-	int err = ioctl(vcpu->fd, KVM_RUN, 0); 
+	int err = ioctl(vcpu->fd, KVM_RUN, 0);
 	if (err < 0 && (errno != EINTR && errno != EAGAIN)) {
 		return -1;
-	}	
+	}
 
 	return 0;
 }
@@ -510,17 +510,17 @@ void kvm_vcpu_dump_regs(struct kvm_vcpu *vcpu) {
 
 	printf("\n Registers:\n");
 	printf(  " ----------\n");
-	printf(" rip: %016llx   rsp: %016llx flags: %016llx\n", 
+	printf(" rip: %016llx   rsp: %016llx flags: %016llx\n",
 			vcpu->regs.rip, vcpu->regs.rsp, vcpu->regs.rflags);
-	printf(" rax: %016llx   rbx: %016llx   rcx: %016llx\n", 
+	printf(" rax: %016llx   rbx: %016llx   rcx: %016llx\n",
 			vcpu->regs.rax, vcpu->regs.rbx, vcpu->regs.rcx);
-	printf(" rdx: %016llx   rsi: %016llx   rdi: %016llx\n", 
+	printf(" rdx: %016llx   rsi: %016llx   rdi: %016llx\n",
 			vcpu->regs.rdx, vcpu->regs.rsi, vcpu->regs.rdi);
-	printf(" rbp: %016llx    r8: %016llx    r9: %016llx\n", 
+	printf(" rbp: %016llx    r8: %016llx    r9: %016llx\n",
 			vcpu->regs.rbp, vcpu->regs.r8,  vcpu->regs.r9);
-	printf(" r10: %016llx   r11: %016llx   r12: %016llx\n", 
+	printf(" r10: %016llx   r11: %016llx   r12: %016llx\n",
 			vcpu->regs.r10, vcpu->regs.r11, vcpu->regs.r12);
-	printf(" r13: %016llx   r14: %016llx   r15: %016llx\n", 
+	printf(" r13: %016llx   r14: %016llx   r15: %016llx\n",
 			vcpu->regs.r13, vcpu->regs.r14, vcpu->regs.r15);
 
 	printf(" cr0: %016llx   cr2: %016llx   cr3: %016llx\n", vcpu->sregs.cr0, vcpu->sregs.cr2, vcpu->sregs.cr3);
@@ -589,7 +589,7 @@ int kvm_vcpu_did_hypercall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 }
 
 int kvm_vcpu_did_syscall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
-	/* 
+	/*
 	 * on syscall the instruction after the syscall is stored in rcx
 	 * also, syscall is 2 bytes long
 	 */
