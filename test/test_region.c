@@ -103,7 +103,7 @@ START_TEST(test_region_find_full) {
 	struct elkvm_memory_region *region = elkvm_region_find(region_vm.root_region.data
       , 0x1000);
 	ck_assert_ptr_eq(region, NULL);
-	
+
 }
 END_TEST
 
