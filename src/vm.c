@@ -96,16 +96,6 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 		return err;
 	}
 
-	//err = kvm_pager_create_mem_chunk(&vm->pager, memory_size, ELKVM_USER_CHUNK_OFFSET);
-	//if(err) {
-	//	return err;
-	//}
-
-	//err = kvm_vm_map_chunk(vm, vm->pager.other_chunks->chunk);
-	//if(err) {
-	//	return err;
-	//}
-
 	vm->syscall_handlers = handlers;
 
 	return 0;
@@ -299,6 +289,9 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 
 int elkvm_copy_and_push_str_arr_p(struct kvm_vm *vm, void *host_base_p,
 	 	char **str) {
+  if(str == NULL) {
+    return 0;
+  }
 	void *target = host_base_p;
 	uint64_t guest_target = host_to_guest_physical(&vm->pager, target);
 	int bytes = 0;
