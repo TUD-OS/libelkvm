@@ -47,6 +47,22 @@ int elkvm_region_split(struct elkvm_memory_region *region) {
 	return 0;
 }
 
+struct elkvm_memory_region *elkvm_region_alloc(void *host_base_p, uint64_t size,
+    int down) {
+  struct elkvm_memory_region *region;
+	region = malloc(sizeof(struct elkvm_memory_region));
+  if(region == NULL) {
+    return NULL;
+  }
+	region->host_base_p = host_base_p;
+	region->guest_virtual = 0x0;
+	region->region_size = size;
+	region->grows_downward = down;
+	region->used = 0;
+	region->lc = region->rc = NULL;
+  return region;
+}
+
 struct elkvm_memory_region *
 	elkvm_region_find(struct elkvm_memory_region *region, uint64_t size) {
 		if(size > region->region_size) {
@@ -84,3 +100,17 @@ struct elkvm_memory_region *
 			return elkvm_region_find(region->lc, size);
 		}
 }
+
+struct elkvm_memory_region_list *elkvm_region_list_prepend(struct kvm_vm *vm,
+    struct elkvm_memory_region *region) {
+  struct elkvm_memory_region_list *l =
+    malloc(sizeof(struct elkvm_memory_region_list *));
+  if(l == NULL) {
+    return l;
+  }
+  l->next = vm->root_region;
+  l->data = region;
+  vm->root_region = l;
+  return l;
+}
+
