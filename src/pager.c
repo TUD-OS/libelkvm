@@ -37,7 +37,8 @@ int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
 	return 0;
 }
 
-int kvm_pager_create_mem_chunk(struct kvm_pager *pager, int chunk_size) {
+int kvm_pager_create_mem_chunk(struct kvm_pager *pager, void **chunk_host_p,
+    int chunk_size) {
 
 	if(pager == NULL) {
 		return -EIO;
@@ -58,13 +59,12 @@ int kvm_pager_create_mem_chunk(struct kvm_pager *pager, int chunk_size) {
 		return -ENOMEM;
 	}
 
-	void *chunk_host_p;
-	int err = posix_memalign(&chunk_host_p, 0x1000, chunk_size);
+	int err = posix_memalign(chunk_host_p, 0x1000, chunk_size);
 	if(err) {
 		return err;
 	}
 
-	chunk->userspace_addr = (__u64)chunk_host_p;
+	chunk->userspace_addr = (__u64)*chunk_host_p;
 	chunk->guest_phys_addr = pager->total_memsz;
 	chunk->memory_size = chunk_size;
 	chunk->flags = 0;
