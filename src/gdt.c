@@ -9,7 +9,7 @@
 #include <string.h>
 
 int elkvm_gdt_setup(struct kvm_vm *vm) {
-	
+
 	vm->gdt_region = elkvm_region_create(vm,
 				GDT_NUM_ENTRIES * sizeof(struct elkvm_gdt_segment_descriptor));
 
@@ -23,7 +23,7 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 	memset(vm->gdt_region->host_base_p, 0,
 		 sizeof(struct elkvm_gdt_segment_descriptor));
 
-	struct elkvm_gdt_segment_descriptor *entry = 
+	struct elkvm_gdt_segment_descriptor *entry =
 		vm->gdt_region->host_base_p + sizeof(struct elkvm_gdt_segment_descriptor);
 
 	/* user code segment */
@@ -37,7 +37,7 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 
 	/* user stack segment */
 	elkvm_gdt_create_segment_descriptor(entry, 0x0, 0xFFFFFFFF,
-			GDT_SEGMENT_PRESENT | GDT_SEGMENT_WRITEABLE | GDT_SEGMENT_BIT | 
+			GDT_SEGMENT_PRESENT | GDT_SEGMENT_WRITEABLE | GDT_SEGMENT_BIT |
 			GDT_SEGMENT_PRIVILEDGE_USER,
 			GDT_SEGMENT_PAGE_GRANULARITY | GDT_SEGMENT_LONG );
 	entry++;
@@ -82,7 +82,7 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 			GDT_SEGMENT_READABLE | GDT_SEGMENT_EXECUTABLE | GDT_SEGMENT_BIT |
 			GDT_SEGMENT_PRESENT | GDT_SEGMENT_DIRECTION_BIT,
 			GDT_SEGMENT_PAGE_GRANULARITY | GDT_SEGMENT_LONG);
-	uint64_t kernel_cs_selector = 
+	uint64_t kernel_cs_selector =
 		(uint64_t)entry - (uint64_t)vm->gdt_region->host_base_p;
 
 	entry++;
@@ -143,7 +143,7 @@ int elkvm_gdt_create_segment_descriptor(struct elkvm_gdt_segment_descriptor *ent
 	return 0;
 }
 
-int elkvm_calc_segment_regs(struct kvm_vcpu *vcpu, struct elkvm_gdt_segment_descriptor *entry, 
+int elkvm_calc_segment_regs(struct kvm_vcpu *vcpu, struct elkvm_gdt_segment_descriptor *entry,
 		int num_entries) {
 	return -1;
 }
