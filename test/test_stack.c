@@ -12,15 +12,12 @@ struct kvm_vm stack_vm;
 void setup_stack() {
 	int err = elkvm_init(&stack_opts, 0, NULL, NULL);
 	assert(err == 0);
-  printf("KVM VM CREATE\n");
 	err = kvm_vm_create(&stack_opts, &stack_vm, VM_MODE_X86_64, 1, 0, NULL);
-  printf("DONE\n");
 	assert(err == 0);
 
 	stack_vm.vcpus->vcpu->regs.rsp = 0x2000;
 	err = kvm_vcpu_set_regs(stack_vm.vcpus->vcpu);
 	assert(err == 0);
-  printf("STACK SETUP DONE\n");
 }
 
 void teardown_stack() {

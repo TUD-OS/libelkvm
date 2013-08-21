@@ -59,10 +59,11 @@ START_TEST(test_elfloader_load_valid_binary) {
 END_TEST
 
 START_TEST(test_elfloader_load_program_header) {
-	char *buf;
-	int err = posix_memalign((void **)&buf, 0x1000, 32768);
+  struct elkvm_memory_region region;
+
+	int err = posix_memalign(&region.host_base_p, 0x1000, 32768);
 	ck_assert_int_eq(err, 0);
-	memset(buf, 'y', 32768);
+	memset(region.host_base_p, 'y', 32768);
 
 	struct Elf_binary bin;
 	bin.fd = open(valid_binary_path, O_RDONLY);
@@ -82,25 +83,15 @@ START_TEST(test_elfloader_load_program_header) {
 	gelf_getphdr(bin.e, 0, &phdr);
 
 	/* load the first program header */
-	err =	elfloader_load_program_header(&elfloader_test_vm, &bin, phdr, buf);
+	err =	elfloader_load_program_header(&elfloader_test_vm, &bin, phdr, &region);
 	ck_assert_int_eq(err, 0);
 
 	/* check if it has really been loaded into the buffer */
 	int off = phdr.p_vaddr & 0xFFF;
 	for(int i = off; i < off + phdr.p_memsz; i++) {
-		ck_assert_int_ne(buf[i], 'y');
+    char *c = (char *)region.host_base_p + i;
+		ck_assert_int_ne(c, 'y');
 	}
-}
-END_TEST
-
-START_TEST(test_elfloader_copy_push_str_arr_p) {
-	ck_abort_msg("Test for copy push not implemented");
-//	void *host = NULL;
-//	char **str = NULL;
-//	int bytes = elfloader_copy_and_push_str_arr_p(&elfloader_test_vm, host, str);
-//	ck_assert_int_eq(bytes, 9);
-	//test for a single string followed by a null pointer
-	//test for multiple strings followed by a null pointer
 }
 END_TEST
 
@@ -119,7 +110,6 @@ Suite *elfloader_suite() {
 	tcase_add_checked_fixture(tc_loader, setup_elfloader, teardown_elfloader);
 	tcase_add_test(tc_loader, test_elfloader_load_invalid_binary);
 	tcase_add_test(tc_loader, test_elfloader_load_valid_binary);
-	tcase_add_test(tc_loader, test_elfloader_copy_push_str_arr_p);
 	suite_add_tcase(s, tc_loader);
 
 	return s;
