@@ -148,27 +148,19 @@ int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * pat
 }
 
 int elkvm_region_setup(struct kvm_vm *vm) {
-	/* create a chunk for system data
-	   TODO for now use a fixed size, what if bin is too large for that */
+	/* create an initial chunk for system data */
+
 	void *system_chunk_p;
+  vm->root_region = NULL;
+
 	int err = posix_memalign(&system_chunk_p, 0x1000, ELKVM_SYSTEM_MEMSIZE);
 	if(err) {
 		return err;
 	}
 
-  vm->root_region.data = malloc(sizeof(struct elkvm_memory_region));
-  if(vm->root_region.data == NULL) {
-    free(system_chunk_p);
-    return -ENOMEM;
-  }
-
-	vm->root_region.data->host_base_p = system_chunk_p;
-	vm->root_region.data->guest_virtual = 0x0;
-	vm->root_region.data->region_size = ELKVM_SYSTEM_MEMSIZE;
-	vm->root_region.data->grows_downward = 0;
-	vm->root_region.data->used = 0;
-	vm->root_region.data->lc = vm->root_region.data->rc = NULL;
-  vm->root_region.next = NULL;
+  struct elkvm_memory_region *region = elkvm_region_alloc(system_chunk_p,
+      ELKVM_SYSTEM_MEMSIZE, 0);
+  vm->root_region = elkvm_region_list_prepend(vm, region);
 
 	vm->pager.system_chunk.userspace_addr = (__u64)system_chunk_p;
 	vm->pager.system_chunk.guest_phys_addr = 0x0;
@@ -377,7 +369,7 @@ void elkvm_print_regions(struct kvm_vm *vm) {
 	printf("\n System Memory Regions:\n");
 	printf(" ----------------------\n");
 	printf(" Host virtual\t\tGuest virtual\t\tSize\t\t\tD\n");
-	elkvm_dump_region(vm->root_region.data);
+	elkvm_dump_region(vm->root_region->data);
 	printf("\n");
 }
 
