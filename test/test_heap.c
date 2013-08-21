@@ -18,7 +18,8 @@ void setup_heap() {
 }
 
 void teardown_heap() {
-  free(heap_vm.root_region.data->host_base_p);
+  free(heap_vm.root_region->data->host_base_p);
+  free(heap_vm.root_region);
 }
 
 START_TEST(test_initialize_heap) {

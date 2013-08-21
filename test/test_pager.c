@@ -28,7 +28,8 @@ void pager_setup() {
 }
 
 void pager_teardown() {
-	free(the_vm.root_region.data->host_base_p);
+	free(the_vm.root_region->data->host_base_p);
+  free(the_vm.root_region);
 	elkvm_cleanup(&pager_test_opts);
 }
 
@@ -68,7 +69,7 @@ void memory_teardown() {
 START_TEST(test_kvm_pager_initialize_invalid_vm) {
 	struct kvm_vm the_vm;
 	the_vm.fd = 0;
-	the_vm.root_region.data->region_size = 0;
+	the_vm.root_region->data->region_size = 0;
 
 	int err = kvm_pager_initialize(&the_vm, PAGER_MODE_X86_64);
 	ck_assert_int_lt(err, 0);
@@ -78,7 +79,7 @@ END_TEST
 START_TEST(test_kvm_pager_initialize_invalid_mode) {
 	struct kvm_vm the_vm;
 	the_vm.fd = vm_fd;
-	the_vm.root_region.data->region_size = 0;
+	the_vm.root_region->data->region_size = 0;
 
 	int err = kvm_pager_initialize(&the_vm, 9999);
 	ck_assert_int_lt(err, 0);
@@ -93,16 +94,20 @@ END_TEST
 
 START_TEST(test_kvm_pager_create_mem_chunk_nopager) {
   int size = 0x400000;
-	int err = kvm_pager_create_mem_chunk(NULL, size);
+  void *chunk_p;
+	int err = kvm_pager_create_mem_chunk(NULL, &chunk_p, size);
 	ck_assert_int_eq(err, -EIO);
+  ck_assert_ptr_eq(chunk_p, NULL);
 	ck_assert_ptr_eq(pager.other_chunks, NULL);
 }
 END_TEST
 
 START_TEST(test_kvm_pager_create_mem_chunk_valid) {
   int size = 0x400000;
-	int err = kvm_pager_create_mem_chunk(&pager, size);
+  void *chunk_p;
+	int err = kvm_pager_create_mem_chunk(&pager, &chunk_p, size);
 	ck_assert_int_eq(err, 0);
+  ck_assert_ptr_ne(chunk_p, NULL);
 	ck_assert_ptr_ne(pager.other_chunks, NULL);
 	struct chunk_list *cl = pager.other_chunks;
 	ck_assert_int_eq(cl->chunk->memory_size, size);
@@ -116,8 +121,10 @@ START_TEST(test_kvm_pager_create_mem_chunk_mass) {
   int size = 0x400000;
   struct chunk_list *cl;
   for(int i = 0; i < 100; i++) {
-    err = kvm_pager_create_mem_chunk(&pager, size);
+    void *chunk_p;
+    err = kvm_pager_create_mem_chunk(&pager, &chunk_p, size);
     ck_assert_int_eq(err, 0);
+    ck_assert_ptr_ne(chunk_p, NULL);
     for(int chunks = 0; chunks < i; chunks++) {
       ck_assert_ptr_ne(cl->next, NULL);
       cl = cl->next;

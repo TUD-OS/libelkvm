@@ -12,12 +12,15 @@ struct kvm_vm stack_vm;
 void setup_stack() {
 	int err = elkvm_init(&stack_opts, 0, NULL, NULL);
 	assert(err == 0);
+  printf("KVM VM CREATE\n");
 	err = kvm_vm_create(&stack_opts, &stack_vm, VM_MODE_X86_64, 1, 0, NULL);
+  printf("DONE\n");
 	assert(err == 0);
 
 	stack_vm.vcpus->vcpu->regs.rsp = 0x2000;
 	err = kvm_vcpu_set_regs(stack_vm.vcpus->vcpu);
 	assert(err == 0);
+  printf("STACK SETUP DONE\n");
 }
 
 void teardown_stack() {
@@ -27,8 +30,6 @@ void teardown_stack() {
 START_TEST(test_push_stack) {
 	struct kvm_vcpu *vcpu = stack_vm.vcpus->vcpu;
 
-	//TODO initialize teh stack
-
 	int err = kvm_vcpu_get_regs(vcpu);
 	ck_assert_int_eq(err, 0);
 
@@ -37,11 +38,6 @@ START_TEST(test_push_stack) {
 
 	err = kvm_vcpu_set_regs(vcpu);
 	ck_assert_int_eq(err, 0);
-	void *host_p = (void *)stack_vm.pager.system_chunk.userspace_addr + 0x1000;
-
-	err = kvm_pager_create_mapping(&stack_vm.pager, host_p, vcpu->regs.rsp - 0x1000,
-      0, 0);
-	ck_assert_int_eq(err, 0);
 
 	uint16_t magic_val = 0x42;
 	err = push_stack(&stack_vm, vcpu, magic_val);
@@ -49,7 +45,7 @@ START_TEST(test_push_stack) {
 
 	err = kvm_vcpu_get_regs(vcpu);
 	ck_assert_int_eq(err, 0);
-	ck_assert_uint_eq(vcpu->regs.rsp, old_rsp - 0x10);
+	ck_assert_uint_eq(vcpu->regs.rsp, old_rsp - 0x8);
 
 	uint16_t *host_sp = (uint16_t *)kvm_pager_get_host_p(&stack_vm.pager,
 			vcpu->regs.rsp);
@@ -69,12 +65,8 @@ START_TEST(test_pop_stack) {
 	int err = kvm_vcpu_get_regs(vcpu);
 	ck_assert_int_eq(err, 0);
 
-	uint16_t *host_mem_p = (uint16_t *)stack_vm.pager.system_chunk.userspace_addr;
 	uint16_t magic_val = 0x42;
-
-	*host_mem_p = magic_val;
-
-	kvm_pager_create_mapping(&stack_vm.pager, host_mem_p, vcpu->regs.rsp, 0, 0);
+  err = push_stack(&stack_vm, vcpu, magic_val);
 
 	uint64_t old_rsp = vcpu->regs.rsp;
 	uint16_t popped_val = pop_stack(&stack_vm, vcpu);
@@ -85,7 +77,7 @@ START_TEST(test_pop_stack) {
 	err = kvm_vcpu_get_regs(vcpu);
 	ck_assert_int_eq(err, 0);
 
-	ck_assert_uint_eq(vcpu->regs.rsp, old_rsp + 0x10);
+	ck_assert_uint_eq(vcpu->regs.rsp, old_rsp + 0x8);
 
 	//kvm_pager_cleanup(&vm.pager);
 }

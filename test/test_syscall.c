@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -15,9 +16,10 @@ void syscall_setup() {
 	syscall_vm.vcpus->vcpu = malloc(sizeof(struct kvm_vcpu));
 	syscall_vm.vcpus->next = NULL;
 
-	int err = kvm_pager_initialize(&syscall_vm, PAGER_MODE_X86_64);
-	assert(err == 0);
+  int err = elkvm_region_setup(&syscall_vm);
+  assert(err == 0);
 
+	err = kvm_pager_initialize(&syscall_vm, PAGER_MODE_X86_64);
 	//int err = posix_memalign((void **)&syscall_vm.pager.system_chunk.userspace_addr,
 	//		0x1000, 0x1000);
 	//assert(err == 0);
@@ -38,6 +40,7 @@ START_TEST(test_handle_syscall) {
 	vcpu->regs.rax = 0x3f;
 	vcpu->regs.rip = 0x0;
 	vcpu->regs.rcx = 0x500;
+  vcpu->sregs.cr3 = 0x0;
 
 
 	uint32_t opcode = 0x0F01C4;
