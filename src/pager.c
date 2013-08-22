@@ -209,6 +209,7 @@ uint64_t kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p,
 	}
 
 	*pt_entry  = guest_physical & ~0xFFF;
+  *pt_entry |= 0x2;
 	/* set present bit */
 	*pt_entry |= 0x1;
 
