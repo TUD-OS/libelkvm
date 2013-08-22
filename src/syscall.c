@@ -4,6 +4,7 @@
 #include <sys/prctl.h>
 
 #include <elkvm.h>
+#include <heap.h>
 #include <syscall.h>
 #include <vcpu.h>
 
@@ -253,6 +254,7 @@ long elkvm_do_brk(struct kvm_vm *vm) {
 
   /* if the requested brk address is smaller than the current brk,
    * adjust the new brk */
+  /* TODO free mapped pages, mark used regions as free, merge regions */
   if(user_brk_req < vm->pager.brk_addr) {
     printf("new brk (0x%lx) is smaller: 0x%lx\n", user_brk_req, vm->pager.brk_addr);
     vm->pager.brk_addr = user_brk_req;
@@ -261,18 +263,12 @@ long elkvm_do_brk(struct kvm_vm *vm) {
 
   /* if the requested brk address is still within the current data region,
    * just push the brk */
-  if(user_brk_req < (vm->data->guest_virtual + vm->data->region_size)) {
-    printf("new brk (0x%lx) is larger, but fits in region: 0x%lx (0x%lx)\n",
-        user_brk_req, vm->data->guest_virtual, vm->data->region_size);
-    vm->pager.brk_addr = user_brk_req;
-    return user_brk_req;
+  err = elkvm_brk(vm, user_brk_req);
+  printf("BRK done: err: %i (%s) newbrk: 0x%lx\n", err, strerror(err), vm->pager.brk_addr);
+  if(err) {
+    return err;
   }
 
-  /* if the requested brk does not fit in the current memory region,
-   * check if limits are held, and request more memory */
-  printf("new brk (0x%lx) does not fit in data region: 0x%lx (0x%lx)\n",
-      user_brk_req, vm->data->guest_virtual, vm->data->region_size);
-  printf("return old brk 0x%lx\n", vm->pager.brk_addr);
   return vm->pager.brk_addr;
 }
 
