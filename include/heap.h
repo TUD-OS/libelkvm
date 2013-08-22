@@ -10,7 +10,9 @@ int elkvm_heap_grow(struct kvm_vm *, uint64_t size);
 
 int elkvm_brk(struct kvm_vm *, uint64_t);
 int elkvm_brk_nogrow(struct kvm_vm *, uint64_t);
-int elkvm_brk_grow(struct kvm_vm *);
+int elkvm_brk_grow(struct kvm_vm *, uint64_t);
+
+int elkvm_brk_map(struct kvm_vm *, uint64_t, uint64_t);
 
 static inline bool elkvm_within_current_heap_region(struct kvm_vm *vm, uint64_t guest_addr) {
   return guest_addr < (vm->heap->data->guest_virtual + vm->heap->data->region_size);
