@@ -8,7 +8,7 @@
 
 int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
 	if(vm->fd < 1) {
-		return -1;
+		return -EIO;
 	}
 
 	struct elkvm_memory_region *pts_region = elkvm_region_create(vm, 0x400000);
@@ -41,6 +41,7 @@ int kvm_pager_create_mem_chunk(struct kvm_pager *pager, void **chunk_host_p,
     int chunk_size) {
 
 	if(pager == NULL) {
+    *chunk_host_p = NULL;
 		return -EIO;
 	}
 
