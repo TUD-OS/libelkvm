@@ -239,7 +239,6 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 
 	/* get a frame for the kernel (interrupt) stack */
 	vm->kernel_stack = elkvm_region_create(vm, 0x1000);
-	vm->kernel_stack->guest_virtual = stack_region->guest_virtual - 0x100000;
 	vm->kernel_stack->grows_downward = 1;
 
 	/* create a mapping for the kernel (interrupt) stack */
@@ -248,6 +247,8 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 	if(vm->kernel_stack->guest_virtual == 0) {
 		return -ENOMEM;
 	}
+  /* as stack grows downward we save it's virtual address at the page afterwards */
+  vm->kernel_stack->guest_virtual += 0x1000;
 
 	int err = kvm_vcpu_get_regs(vm->vcpus->vcpu);
 	if(err) {
