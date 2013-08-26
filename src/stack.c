@@ -6,11 +6,11 @@
 #include <stack.h>
 #include <vcpu.h>
 
-uint16_t pop_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+uint64_t pop_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 	int err = kvm_vcpu_get_regs(vcpu);
 	assert(err == 0);
 
-	uint16_t *host_p = (uint16_t *)kvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
+	uint64_t *host_p = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
 
 	//vm->region[MEMORY_REGION_STACK].region_size -= 0x8;
 	vcpu->regs.rsp += 0x8;
@@ -20,7 +20,7 @@ uint16_t pop_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 	return *host_p;
 }
 
-int push_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint16_t val) {
+int push_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t val) {
 	int err = kvm_vcpu_get_regs(vcpu);
 	if(err < 0) {
 		return err;
@@ -29,7 +29,7 @@ int push_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint16_t val) {
 	//vm->region[MEMORY_REGION_STACK].region_size += 0x8;
 	vcpu->regs.rsp -= 0x8;
 
-	uint16_t *host_p = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
+	uint64_t *host_p = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
 	if(host_p == NULL) {
 		/* current stack is full, we need to expand the stack */
 		err = expand_stack(vm, vcpu);
