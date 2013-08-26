@@ -373,6 +373,41 @@ int kvm_pager_set_brk(struct kvm_pager *pager, uint64_t guest_addr) {
   return 0;
 }
 
+int kvm_pager_handle_pagefault(struct kvm_pager *pager, uint64_t pfla,
+    uint32_t err_code) {
+
+		void *host_p = kvm_pager_get_host_p(pager, pfla);
+		if(host_p != NULL) {
+			kvm_pager_dump_page_tables(pager);
+			printf("\n Invalid");
+		}
+		printf(" Page Fault:\n");
+		printf(" -------------------\n");
+		printf("PFLA: 0x%lx\n", pfla);
+		printf("Should result in host virtual: %p\n", host_p);
+		uint64_t page_off = pfla & 0xFFF;
+		uint64_t pt_off   = (pfla >> 12) & 0x1FF;
+		uint64_t pd_off   = (pfla >> 21) & 0x1FF;
+		uint64_t pdpt_off = (pfla >> 30) & 0x1FF;
+		uint64_t pml4_off = (pfla >> 39) & 0x1FF;
+		printf("Offsets: pml4: %lu pdpt: %lu pd: %lu pt: %lu page: %lu\n",
+				pml4_off, pdpt_off, pd_off, pt_off, page_off);
+		printf("Check CPL and Writeable bits!\n");
+
+    if(err_code >= 0) {
+      printf(" Page Fault Error Code:\n");
+      printf(" ----------------------\n");
+      printf(" P: %1x R/W %1x U/S: %1x RSV: %1x I/D: %1x\n",
+          err_code & 0x1,
+          (err_code >> 1) & 0x1,
+          (err_code >> 2) & 0x1,
+          (err_code >> 3) & 0x1,
+          (err_code >> 4) & 0x1);
+    }
+
+    return 1;
+}
+
 void kvm_pager_dump_page_tables(struct kvm_pager *pager) {
 	printf(" Page Tables:\n");
 	printf(" ------------\n");
