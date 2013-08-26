@@ -5,43 +5,21 @@
 
 #include <elkvm.h>
 #include <heap.h>
+#include <stack.h>
 #include <syscall.h>
 #include <vcpu.h>
 
-int elkvm_handle_vm_shutdown(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+int elkvm_handle_hypercall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 	int err = kvm_vcpu_get_regs(vcpu);
 	if(err) {
-		return 0;
+		return err;
 	}
 
-	if(kvm_vcpu_had_page_fault(vcpu)) {
-		void *host_p = kvm_pager_get_host_p(&vm->pager, vcpu->sregs.cr2);
-		if(host_p != NULL) {
-			kvm_pager_dump_page_tables(&vm->pager);
-			printf("\n Invalid");
-		}
-		printf(" Page Fault:\n");
-		printf(" -------------------\n");
-		printf("PFLA: 0x%llx\n", vcpu->sregs.cr2);
-		printf("Should result in host virtual: %p\n", host_p);
-		uint64_t page_off = vcpu->sregs.cr2 & 0xFFF;
-		uint64_t pt_off   = (vcpu->sregs.cr2 >> 12) & 0x1FF;
-		uint64_t pd_off   = (vcpu->sregs.cr2 >> 21) & 0x1FF;
-		uint64_t pdpt_off = (vcpu->sregs.cr2 >> 30) & 0x1FF;
-		uint64_t pml4_off = (vcpu->sregs.cr2 >> 39) & 0x1FF;
-		printf("Offsets: pml4: %lu pdpt: %lu pd: %lu pt: %lu page: %lu\n",
-				pml4_off, pdpt_off, pd_off, pt_off, page_off);
-		printf("Check CPL and Writeable bits!\n");
+  fprintf(stderr, "Hypercall detected on vcpu %p...\n", vcpu);
+  int call = kvm_vcpu_get_hypercall_type(vm, vcpu);
 
-		return 0;
-	}
-
-	return 0;
-}
-
-int elkvm_handle_hypercall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
-  fprintf(stderr, "Hypercall detected...\n");
-		if(kvm_vcpu_did_syscall(vm, vcpu)) {
+  /* syscall */
+		if(call == 1) {
 			fprintf(stderr, "Hypercall was syscall, handling...\n");
 			int err = elkvm_handle_syscall(vm, vcpu);
 			if(err) {
@@ -50,10 +28,31 @@ int elkvm_handle_hypercall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
       return 0;
     }
 
+    /* interrupt */
+    if(call == 2) {
+      fprintf(stderr, "Hypercall was Interrupt, handling...\n");
+      int err = elkvm_handle_interrupt(vm, vcpu);
+      if(err) {
+        return err;
+      }
+
+      return 0;
+    }
+
     fprintf(stderr,
         "Hypercall was something else, don't know how to handle, ABORT!\n");
 		/* TODO interrupts should be handled here */
     return 1;
+}
+
+int elkvm_handle_interrupt(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+	if(kvm_vcpu_had_page_fault(vcpu)) {
+    uint32_t err_code = elkvm_popd(vm, vcpu);
+    int err = kvm_pager_handle_pagefault(&vm->pager, vcpu->sregs.cr2, err_code);
+		return err;
+	}
+
+	return 0;
 }
 
 /* Taken from uClibc/libc/sysdeps/linux/x86_64/bits/syscalls.h
@@ -95,23 +94,19 @@ int elkvm_handle_hypercall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
    Syscalls of more than 6 arguments are not supported.  */
 
 int elkvm_handle_syscall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
-	uint64_t syscall_num = vcpu->regs.rax;
-	printf("syscall_num: %li (%s)\n", syscall_num, elkvm_syscalls[syscall_num].name);
+	uint64_t syscall_num = elkvm_popq(vm, vcpu);
 
 	long result;
 	if(syscall_num > NUM_SYSCALLS) {
+    fprintf(stderr, "INVALID syscall_num: %lu\n", syscall_num);
 		result = -ENOSYS;
 	} else {
+    fprintf(stderr, "syscall_num: %lu ", syscall_num);
+    fprintf(stderr, "(%s)\n", elkvm_syscalls[syscall_num].name);
 		result = elkvm_syscalls[syscall_num].func(vm);
 	}
 	/* binary expects syscall result in rax */
 	vcpu->regs.rax = result;
-
-	/* disable the trap flag */
-	vcpu->regs.rflags = vcpu->regs.rflags & ~0x10100;
-
-	/* vmxoff instruction is 3 bytes long */
-	vcpu->regs.rip = vcpu->regs.rip + 0x3;
 
 	int err = kvm_vcpu_set_regs(vcpu);
 	return err;
