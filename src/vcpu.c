@@ -594,22 +594,11 @@ int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *vcpu) {
 	return 0;
 }
 
-int kvm_vcpu_did_hypercall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
-	const char vmxoff[3] = { 0x0F, 0x01, 0xC4 };
-	char *host_rip_p = (char *)kvm_pager_get_host_p(&vm->pager, vcpu->regs.rip);
-	return (memcmp(host_rip_p, vmxoff, 3) == 0);
-}
-
-int kvm_vcpu_did_syscall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
-	/*
-	 * on syscall the instruction after the syscall is stored in rcx
-	 * also, syscall is 2 bytes long
-	 */
-	const char syscall[2] = { 0x0F, 0x05 };
-	char *host_rip_p = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rcx - 0x2);
-	return (memcmp(host_rip_p, syscall, 2) == 0);
-}
-
 int kvm_vcpu_had_page_fault(struct kvm_vcpu *vcpu) {
 	return vcpu->sregs.cr2 != 0x0;
+}
+
+int kvm_vcpu_get_hypercall_type(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+  uint64_t type = elkvm_popq(vm, vcpu);
+  return type;
 }
