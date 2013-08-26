@@ -1,3 +1,3 @@
 _isr:
-	vmxoff
+	vmcall
 	iretq

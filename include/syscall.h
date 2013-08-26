@@ -16,6 +16,7 @@ int elkvm_handle_vm_shutdown(struct kvm_vm *, struct kvm_vcpu *);
  * and call the appropriate handler func in the userspace binary
  */
 int elkvm_handle_syscall(struct kvm_vm *, struct kvm_vcpu *);
+int elkvm_handle_hypercall(struct kvm_vm *, struct kvm_vcpu *);
 int elkvm_syscall1(struct kvm_vm *, struct kvm_vcpu *, uint64_t *);
 int elkvm_syscall2(struct kvm_vm *, struct kvm_vcpu *, uint64_t *, uint64_t *);
 int elkvm_syscall3(struct kvm_vm *, struct kvm_vcpu *, uint64_t *, uint64_t *,

@@ -1,3 +1,3 @@
 _start:
-  vmxoff
+  vmcall
   sysretq

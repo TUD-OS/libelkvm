@@ -36,20 +36,24 @@ int elkvm_handle_vm_shutdown(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 		return 0;
 	}
 
-	if(kvm_vcpu_did_hypercall(vm, vcpu)) {
+	return 0;
+}
+
+int elkvm_handle_hypercall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+  fprintf(stderr, "Hypercall detected...\n");
 		if(kvm_vcpu_did_syscall(vm, vcpu)) {
-			fprintf(stderr, "Shutdown was syscall, handling...\n");
+			fprintf(stderr, "Hypercall was syscall, handling...\n");
 			int err = elkvm_handle_syscall(vm, vcpu);
 			if(err) {
-				return 0;
+				return err;
 			}
-		}
+      return 0;
+    }
 
+    fprintf(stderr,
+        "Hypercall was something else, don't know how to handle, ABORT!\n");
 		/* TODO interrupts should be handled here */
-		return 1;
-	}
-
-	return 0;
+    return 1;
 }
 
 /* Taken from uClibc/libc/sysdeps/linux/x86_64/bits/syscalls.h
