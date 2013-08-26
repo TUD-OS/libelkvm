@@ -10,7 +10,14 @@ int elkvm_heap_initialize(struct kvm_vm *vm, struct elkvm_memory_region *region,
 	vm->heap->data = region;
   vm->heap->next = NULL;
   printf("SETTING brk to: 0x%lx\n", region->guest_virtual + size);
-  int err = kvm_pager_set_brk(&vm->pager, region->guest_virtual + size);
+  /* TODO what happens if this is the page boundary? */
+  uint64_t brk = (region->guest_virtual + size + 0x1000) & ~0xFFF;
+  int err = kvm_pager_set_brk(&vm->pager, brk);
+  if(err) {
+    return err;
+  }
+
+  err = elkvm_brk_map(vm, brk, 0);
   return err;
 }
 
