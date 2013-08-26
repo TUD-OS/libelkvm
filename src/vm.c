@@ -283,7 +283,7 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 	assert(host_target_p >= env_region->host_base_p);
 
 	//first push argc on the stack
-	push_stack(vm, vm->vcpus->vcpu, opts->argc);
+	elkvm_pushq(vm, vm->vcpus->vcpu, opts->argc);
 
 	return 0;
 }
@@ -309,14 +309,14 @@ int elkvm_copy_and_push_str_arr_p(struct kvm_vm *vm, void *host_base_p,
 		//TODO copy the trailing NULL byte
 
 		//and push the pointer for the vm
-		int err = push_stack(vm, vm->vcpus->vcpu, guest_target);
+		int err = elkvm_pushq(vm, vm->vcpus->vcpu, guest_target);
 		if(err) {
 			return err;
 		}
 		i++;
 	}
 
-	push_stack(vm, vm->vcpus->vcpu, 0);
+	elkvm_pushq(vm, vm->vcpus->vcpu, 0);
 
 	return bytes;
 }
