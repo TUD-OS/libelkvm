@@ -238,6 +238,7 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 	stack_region->grows_downward = 1;
 
 	/* get a frame for the kernel (interrupt) stack */
+  /* this is only ONE page large */
 	vm->kernel_stack = elkvm_region_create(vm, 0x1000);
 	vm->kernel_stack->grows_downward = 1;
 
@@ -269,54 +270,80 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 		return err;
 	}
 
-	void *host_target_p = env_region->host_base_p +
-		env_region->region_size;
+	void *host_target_p = env_region->host_base_p;
 
-	int bytes = elkvm_copy_and_push_str_arr_p(vm, host_target_p, opts->environ);
-	host_target_p -= bytes;
-	assert(host_target_p > env_region->host_base_p);
+  /* TODO put the auxv pointers onto the stack in the correct order */
+  /* XXX this breaks, if we do not get the original envp */
+  char **auxv_p = (char *)opts->environ;
+  printf("Got auxv_p at: %p\n", auxv_p);
+  while(*auxv_p != NULL) {
+    auxv_p++;
+    printf("Got auxv_p at: %p, val: %p\n", auxv_p, *auxv_p);
+  }
+  auxv_p++;
+
+  Elf64_auxv_t *auxv = (Elf64_auxv_t *)auxv_p;
+  for( ; auxv->a_type != AT_NULL; auxv++);
+
+  for( ; auxv > auxv_p; auxv--) {
+    elkvm_pushq(vm, vm->vcpus->vcpu, auxv->a_un.a_val);
+    elkvm_pushq(vm, vm->vcpus->vcpu, auxv->a_type);
+  }
+  elkvm_pushq(vm, vm->vcpus->vcpu, 0);
 
 
-	//followed by argv pointers
-	bytes = elkvm_copy_and_push_str_arr_p(vm, host_target_p, opts->argv);
-	host_target_p -= bytes;
-	assert(host_target_p >= env_region->host_base_p);
+  elkvm_pushq(vm, vm->vcpus->vcpu, 0);
+	int bytes = elkvm_copy_and_push_str_arr_p(vm,
+      env_region, 0,
+      opts->environ);
+	elkvm_pushq(vm, vm->vcpus->vcpu, 0);
+  assert(bytes > 0);
 
-	//first push argc on the stack
+	/* followed by argv pointers */
+	bytes = elkvm_copy_and_push_str_arr_p(vm,
+      env_region, bytes,
+      opts->argv);
+  assert(bytes > 0);
+
+	/* at last push argc on the stack */
 	elkvm_pushq(vm, vm->vcpus->vcpu, opts->argc);
+
+  elkvm_dump_stack(vm, vm->vcpus->vcpu);
 
 	return 0;
 }
 
-int elkvm_copy_and_push_str_arr_p(struct kvm_vm *vm, void *host_base_p,
+int elkvm_copy_and_push_str_arr_p(struct kvm_vm *vm,
+    struct elkvm_memory_region *region,
+    uint64_t offset,
 	 	char **str) {
   if(str == NULL) {
     return 0;
   }
-	void *target = host_base_p;
-	uint64_t guest_target = host_to_guest_physical(&vm->pager, target);
+
+	void *target = region->host_base_p + offset;
+  uint64_t guest_virtual = region->guest_virtual + offset;
 	int bytes = 0;
 
 	//first push the environment onto the stack
 	int i = 0;
 	while(str[i]) {
 		int len = strlen(str[i]) + 1;
-		target -= len;
-		bytes += len;
 
 		//copy the data into the vm memory
 		strcpy(target, str[i]);
-		//TODO copy the trailing NULL byte
 
 		//and push the pointer for the vm
-		int err = elkvm_pushq(vm, vm->vcpus->vcpu, guest_target);
+		int err = elkvm_pushq(vm, vm->vcpus->vcpu, guest_virtual);
 		if(err) {
 			return err;
 		}
+
+    target = target + len;
+		bytes += len;
+    guest_virtual = guest_virtual + len;
 		i++;
 	}
-
-	elkvm_pushq(vm, vm->vcpus->vcpu, 0);
 
 	return bytes;
 }
