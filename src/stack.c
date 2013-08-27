@@ -67,3 +67,19 @@ int expand_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 			vcpu->regs.rsp & ~0xFFF, 1, 0);
 	return err;
 }
+
+void elkvm_dump_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+  uint64_t *host_p = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
+  uint64_t guest = vcpu->regs.rsp;
+
+  printf("\n");
+  printf(" Stack:\n");
+  printf(" ------\n");
+
+  printf(" Host Address\tGuest Address\t\tValue\t\tValue\n");
+  for(int i = 0; i < 6; i++) {
+    printf(" %p\t0x%016lx\t0x%016lx\t0x%016lx\n", host_p, guest, *host_p, *host_p-1);
+    guest  -= 0x10;
+    host_p-=2;
+  }
+}

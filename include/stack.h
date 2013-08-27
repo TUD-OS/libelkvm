@@ -23,5 +23,5 @@ int expand_stack(struct kvm_vm *, struct kvm_vcpu *);
 /*
  * Dump the stack to stdout
  */
-void dump_stack(struct kvm_vm *);
+void elkvm_dump_stack(struct kvm_vm *, struct kvm_vcpu *vcpu);
 
