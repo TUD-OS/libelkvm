@@ -77,9 +77,9 @@ void elkvm_dump_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
   printf(" ------\n");
 
   printf(" Host Address\tGuest Address\t\tValue\t\tValue\n");
-  for(int i = 0; i < 6; i++) {
-    printf(" %p\t0x%016lx\t0x%016lx\t0x%016lx\n", host_p, guest, *host_p, *host_p-1);
-    guest  -= 0x10;
-    host_p-=2;
+  for(int i = 0; i < 48; i++) {
+    printf(" %p\t0x%016lx\t0x%016lx\t0x%016lx\n", host_p, guest, *host_p, *(host_p+1));
+    guest  += 0x10;
+    host_p+=2;
   }
 }
