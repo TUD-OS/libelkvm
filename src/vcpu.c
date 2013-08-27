@@ -523,8 +523,21 @@ void kvm_vcpu_dump_regs(struct kvm_vcpu *vcpu) {
 
 	printf("\n Registers:\n");
 	printf(  " ----------\n");
-	printf(" rip: %016llx   rsp: %016llx flags: %016llx\n",
+	printf(" rip: %016llx   rsp: %016llx flags: %016llx",
 			vcpu->regs.rip, vcpu->regs.rsp, vcpu->regs.rflags);
+  printf(" [");
+  printf("%s", ((vcpu->regs.rflags >> 16) & 0x1) ? "RF " : "");
+  printf("%s", ((vcpu->regs.rflags >> 11) & 0x1) ? "OF " : "");
+  printf("%s", ((vcpu->regs.rflags >> 10) & 0x1) ? "DF " : "");
+  printf("%s", ((vcpu->regs.rflags >>  9) & 0x1) ? "IF " : "");
+  printf("%s", ((vcpu->regs.rflags >>  8) & 0x1) ? "TF " : "");
+  printf("%s", ((vcpu->regs.rflags >>  7) & 0x1) ? "SF " : "");
+  printf("%s", ((vcpu->regs.rflags >>  6) & 0x1) ? "ZF " : "");
+  printf("%s", ((vcpu->regs.rflags >>  4) & 0x1) ? "AF " : "");
+  printf("%s", ((vcpu->regs.rflags >>  2) & 0x1) ? "PF " : "");
+  printf("%s", ((vcpu->regs.rflags) & 0x1) ? "CF" : "");
+  printf("]\n");
+
 	printf(" rax: %016llx   rbx: %016llx   rcx: %016llx\n",
 			vcpu->regs.rax, vcpu->regs.rbx, vcpu->regs.rcx);
 	printf(" rdx: %016llx   rsi: %016llx   rdi: %016llx\n",
