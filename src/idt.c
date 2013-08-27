@@ -16,22 +16,12 @@ int elkvm_idt_setup(struct kvm_vm *vm, struct elkvm_flat *default_handler) {
 			vm,
 			256 * sizeof(struct kvm_idt_entry));
 
-	/* for now fill the idt with all 256 entries empty */
-	for(int i = 0; i < 256; i++) {
-		uint64_t offset = default_handler->region->guest_virtual;
+  /* default handler defines 48 entries, that push the iv to the stack */
+	for(int i = 0; i < 48; i++) {
+		uint64_t offset = default_handler->region->guest_virtual + i * 9;
 		struct kvm_idt_entry *entry = vm->idt_region->host_base_p +
 			i * sizeof(struct kvm_idt_entry);
-		//switch(i) {
-		//		case IDT_ENTRY_PF:
-		//				;
-		//				uint64_t host_pf_handler = load_pfhandler(ram, size);
-		//				offset = host_pf_handler - (uint64_t)ram;
-		//				printf("SETTING pf_handler at: 0x%lx\n", offset);
-		//			break;
-		//	default:
-		//		offset = 0x0;
-		//		break;
-		//}
+
 		entry->offset1 = offset & 0xFFFF;
 		entry->offset2 = (offset >> 16) & 0xFFFF;
 		entry->offset3 = (uint32_t)(offset >> 32);
@@ -75,6 +65,7 @@ void elkvm_idt_dump(struct kvm_vm *vm) {
 		printf("%i\t0x%4x\t0x%016lx\t%u\t%u\n", i, entry->selector,
 				idt_entry_offset(entry), entry->idx,
 				entry->flags);
+    entry++;
 	}
 }
 
