@@ -15,12 +15,10 @@ int elkvm_handle_hypercall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 		return err;
 	}
 
-  fprintf(stderr, "Hypercall detected on vcpu %p...\n", vcpu);
   int call = kvm_vcpu_get_hypercall_type(vm, vcpu);
 
   /* syscall */
 		if(call == 1) {
-			fprintf(stderr, "Hypercall was syscall, handling...\n");
 			int err = elkvm_handle_syscall(vm, vcpu);
 			if(err) {
 				return err;
@@ -30,7 +28,6 @@ int elkvm_handle_hypercall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 
     /* interrupt */
     if(call == 2) {
-      fprintf(stderr, "Hypercall was Interrupt, handling...\n");
       int err = elkvm_handle_interrupt(vm, vcpu);
       if(err) {
         return err;
@@ -46,13 +43,23 @@ int elkvm_handle_hypercall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 }
 
 int elkvm_handle_interrupt(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
-	if(kvm_vcpu_had_page_fault(vcpu)) {
+  uint64_t interrupt_vector = elkvm_popq(vm, vcpu);
+
+  printf(" INTERRUPT with vector 0x%lx detected\n", interrupt_vector);
+
+  /* page fault */
+	if(interrupt_vector == 0x0e) {
     uint32_t err_code = elkvm_popd(vm, vcpu);
     int err = kvm_pager_handle_pagefault(&vm->pager, vcpu->sregs.cr2, err_code);
-		return err;
+    if(vcpu->sregs.cr2 == 0x0) {
+      printf("\n\nABORT: SEGMENTATION FAULT\n\n");
+      exit(1);
+      return 1;
+    }
+		return 1;
 	}
 
-	return 0;
+	return 1;
 }
 
 /* Taken from uClibc/libc/sysdeps/linux/x86_64/bits/syscalls.h
@@ -95,13 +102,13 @@ int elkvm_handle_interrupt(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 
 int elkvm_handle_syscall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 	uint64_t syscall_num = elkvm_popq(vm, vcpu);
+  fprintf(stderr, " SYSCALL %3lu detected\n", syscall_num);
 
 	long result;
 	if(syscall_num > NUM_SYSCALLS) {
-    fprintf(stderr, "INVALID syscall_num: %lu\n", syscall_num);
+    fprintf(stderr, "\tINVALID syscall_num: %lu\n", syscall_num);
 		result = -ENOSYS;
 	} else {
-    fprintf(stderr, "syscall_num: %lu ", syscall_num);
     fprintf(stderr, "(%s)\n", elkvm_syscalls[syscall_num].name);
 		result = elkvm_syscalls[syscall_num].func(vm);
 	}
