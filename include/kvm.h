@@ -10,6 +10,7 @@ extern "C" {
 #define KVM_DEV_PATH "/dev/kvm"
 
 struct kvm_vm;
+struct elkvm_memory_region;
 
 struct elkvm_opts {
 	int argc;
@@ -27,11 +28,12 @@ int elkvm_cleanup(struct elkvm_opts *);
  */
 int elkvm_initialize_stack(struct elkvm_opts *, struct kvm_vm *);
 
+int elkvm_push_auxv(struct kvm_vm *, struct elkvm_memory_region *, Elf64_auxv_t *, int);
 /*
  * Copy a string array into the VM memory and push it's location to the stack
  */
-int elkvm_copy_and_push_str_arr_p(struct kvm_vm *vm, void *host_base_p,
-	 	char **str);
+int elkvm_copy_and_push_str_arr_p(struct kvm_vm *vm, struct elkvm_memory_region *,
+    uint64_t, char **str);
 
 #ifdef __cplusplus
 }
