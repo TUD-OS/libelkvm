@@ -282,7 +282,40 @@ long elkvm_do_lseek(struct kvm_vm *vm) {
 }
 
 long elkvm_do_mmap(struct kvm_vm *vm) {
-	return -ENOSYS;
+  if(vm->syscall_handlers->mmap == NULL) {
+    printf("MMAP handler not found\n");
+    return -ENOSYS;
+  }
+
+  uint64_t addr_p = 0;
+  void *addr = NULL;
+  uint64_t length = 0;
+  uint64_t prot = 0;
+  uint64_t flags = 0;
+  uint64_t fd = 0;
+  uint64_t offset = 0;
+  int err = elkvm_syscall6(vm, vm->vcpus->vcpu, &addr_p, &length, &prot, &flags,
+      &fd, &offset);
+  if(err) {
+    return -EIO;
+  }
+  addr = kvm_pager_get_host_p(&vm->pager, addr_p);
+
+  void *ret_p = NULL;
+  long result = vm->syscall_handlers->mmap((void *)addr_p, length, prot,
+      flags, fd, offset, &ret_p);
+  struct kvm_userspace_memory_region *chunk =
+    kvm_pager_alloc_chunk(&vm->pager, ret_p, length, 0);
+  if(chunk == NULL) {
+    return -ENOMEM;
+  }
+  err = kvm_vm_map_chunk(vm, chunk);
+  if(err) {
+    printf("ERROR mapping chunk %p\n", chunk);
+    return err;
+  }
+
+  return result;
 }
 
 long elkvm_do_mprotect(struct kvm_vm *vm) {
