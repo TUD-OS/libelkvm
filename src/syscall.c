@@ -249,7 +249,24 @@ long elkvm_do_stat(struct kvm_vm *vm) {
 }
 
 long elkvm_do_fstat(struct kvm_vm *vm) {
-	return -ENOSYS;
+  if(vm->syscall_handlers->fstat == NULL) {
+    printf("FSTAT handler not found\n");
+    return -ENOSYS;
+  }
+
+  uint64_t fd = 0;
+  uint64_t buf_p = 0;
+  struct stat *buf = NULL;
+  int err = elkvm_syscall2(vm, vm->vcpus->vcpu, &fd, &buf_p);
+  if(err) {
+    return -EIO;
+  }
+	buf = kvm_pager_get_host_p(&vm->pager, buf_p);
+
+  printf("FSTAT file with fd %li buf at %p\n", fd, buf);
+  long result = vm->syscall_handlers->fstat(fd, buf);
+  printf("RESULT: %li\n", result);
+  return result;
 }
 
 long elkvm_do_lstat(struct kvm_vm *vm) {
