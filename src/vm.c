@@ -274,28 +274,23 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 
   /* TODO put the auxv pointers onto the stack in the correct order */
   /* XXX this breaks, if we do not get the original envp */
-  char **auxv_p = (char *)opts->environ;
-  printf("Got auxv_p at: %p\n", auxv_p);
+  char **auxv_p = (char **)opts->environ;
   while(*auxv_p != NULL) {
     auxv_p++;
-    printf("Got auxv_p at: %p, val: %p\n", auxv_p, *auxv_p);
   }
   auxv_p++;
 
   Elf64_auxv_t *auxv = (Elf64_auxv_t *)auxv_p;
-  for( ; auxv->a_type != AT_NULL; auxv++);
-
-  for( ; auxv > auxv_p; auxv--) {
-    elkvm_pushq(vm, vm->vcpus->vcpu, auxv->a_un.a_val);
-    elkvm_pushq(vm, vm->vcpus->vcpu, auxv->a_type);
-  }
-  elkvm_pushq(vm, vm->vcpus->vcpu, 0);
-
+  int i;
+  for(i = 0 ; auxv->a_type != AT_NULL; auxv++, i++);
+  int bytes = elkvm_push_auxv(vm, env_region, auxv, i);
+  int bytes_total = bytes;
 
   elkvm_pushq(vm, vm->vcpus->vcpu, 0);
-	int bytes = elkvm_copy_and_push_str_arr_p(vm,
-      env_region, 0,
+	bytes = elkvm_copy_and_push_str_arr_p(vm,
+      env_region, bytes,
       opts->environ);
+  bytes_total = bytes_total + bytes;
 	elkvm_pushq(vm, vm->vcpus->vcpu, 0);
   assert(bytes > 0);
 
@@ -303,6 +298,7 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 	bytes = elkvm_copy_and_push_str_arr_p(vm,
       env_region, bytes,
       opts->argv);
+  bytes_total = bytes_total + bytes;
   assert(bytes > 0);
 
 	/* at last push argc on the stack */
@@ -311,6 +307,53 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
   elkvm_dump_stack(vm, vm->vcpus->vcpu);
 
 	return 0;
+}
+
+int elkvm_push_auxv(struct kvm_vm *vm, struct elkvm_memory_region *region,
+    Elf64_auxv_t *auxv, int count) {
+  int offset = 0;
+
+  for(int i= 0 ; i < count; auxv--, i++) {
+    switch(auxv->a_type) {
+      case AT_NULL:
+      case AT_IGNORE:
+      case AT_EXECFD:
+      case AT_PHDR:
+      case AT_PHENT:
+      case AT_PHNUM:
+      case AT_PAGESZ:
+      case AT_FLAGS:
+      case AT_ENTRY:
+      case AT_NOTELF:
+      case AT_UID:
+      case AT_EUID:
+      case AT_GID:
+      case AT_EGID:
+        /* not sure about this one, might be a pointer */
+      case AT_HWCAP:
+      case AT_CLKTCK:
+      case AT_SECURE:
+        elkvm_pushq(vm, vm->vcpus->vcpu, auxv->a_un.a_val);
+        break;
+      case AT_BASE:
+      case AT_PLATFORM:
+      case 25:
+      case 31:
+      case AT_SYSINFO_EHDR:
+        ;
+        void *target = region->host_base_p + offset;
+        uint64_t guest_virtual = region->guest_virtual + offset;
+        int len = strlen((char *)auxv->a_un.a_val) + 1;
+        strcpy(target, (char *)auxv->a_un.a_val);
+        offset = offset + len;
+        elkvm_pushq(vm, vm->vcpus->vcpu, guest_virtual);
+        break;
+    }
+    elkvm_pushq(vm, vm->vcpus->vcpu, auxv->a_type);
+  }
+
+  return offset;
+
 }
 
 int elkvm_copy_and_push_str_arr_p(struct kvm_vm *vm,
@@ -328,6 +371,10 @@ int elkvm_copy_and_push_str_arr_p(struct kvm_vm *vm,
 	//first push the environment onto the stack
 	int i = 0;
 	while(str[i]) {
+    i++;
+  }
+
+  for(i = i - 1; i >= 0; i--) {
 		int len = strlen(str[i]) + 1;
 
 		//copy the data into the vm memory
@@ -342,7 +389,6 @@ int elkvm_copy_and_push_str_arr_p(struct kvm_vm *vm,
     target = target + len;
 		bytes += len;
     guest_virtual = guest_virtual + len;
-		i++;
 	}
 
 	return bytes;

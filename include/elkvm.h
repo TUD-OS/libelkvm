@@ -46,7 +46,8 @@ struct elkvm_handlers {
 	long (*lstat) (const char *path, struct stat *buf);
 	long (*poll) (struct pollfd *fds, nfds_t nfds, int timeout);
 	long (*lseek) (int fd, off_t offset, int whence);
-	long (*mmap) (void *addr, size_t length, int prot, int flags, int fd, off_t offset);
+	long (*mmap) (void *addr, size_t length, int prot, int flags, int fd,
+      off_t offset, void **);
 	long (*mprotect) (void *addr, size_t len, int prot);
 	long (*munmap) (void *addr, size_t length);
   /* ... */
@@ -59,6 +60,8 @@ struct elkvm_handlers {
   long (*getegid)(void);
 	/* ... */
 	long (*uname) (struct utsname *buf);
+  /* ... */
+  void (*exit_group) (int status);
 };
 
 /*
