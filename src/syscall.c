@@ -488,3 +488,16 @@ long elkvm_do_arch_prctl(struct kvm_vm *vm) {
 
   return 0;
 }
+
+long elkvm_do_exit_group(struct kvm_vm *vm) {
+  uint64_t status = 0;
+  int err = elkvm_syscall1(vm, vm->vcpus->vcpu, &status);
+  if(err) {
+    return err;
+  }
+
+  vm->syscall_handlers->exit_group(status);
+  /* should not be reached... */
+  return -ENOSYS;
+}
+

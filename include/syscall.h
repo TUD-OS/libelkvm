@@ -66,6 +66,8 @@ long elkvm_do_geteuid(struct kvm_vm *);
 long elkvm_do_getegid(struct kvm_vm *);
 /* ... */
 long elkvm_do_arch_prctl(struct kvm_vm *);
+/* ... */
+long elkvm_do_exit_group(struct kvm_vm *);
 
 static struct {
 	long (*func)(struct kvm_vm *);
@@ -104,5 +106,7 @@ static struct {
   [__NR_getegid] = { elkvm_do_getegid, "GETEGID" },
   /* ... */
   [__NR_arch_prctl] = { elkvm_do_arch_prctl, "ARCH PRCTL" },
+  /* ... */
+  [__NR_exit_group] = { elkvm_do_exit_group, "EXIT GROUP" },
 };
 
