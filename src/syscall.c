@@ -139,6 +139,38 @@ int elkvm_syscall3(struct kvm_vm *vm, struct kvm_vcpu *vcpu,
 	return 0;
 }
 
+int elkvm_syscall4(struct kvm_vm *vm, struct kvm_vcpu *vcpu,
+		uint64_t *arg1, uint64_t *arg2, uint64_t *arg3, uint64_t *arg4) {
+	*arg1 = vcpu->regs.rdi;
+	*arg2 = vcpu->regs.rsi;
+	*arg3 = vcpu->regs.rdx;
+  *arg4 = vcpu->regs.r10;
+	return 0;
+}
+
+int elkvm_syscall5(struct kvm_vm *vm, struct kvm_vcpu *vcpu,
+		uint64_t *arg1, uint64_t *arg2, uint64_t *arg3, uint64_t *arg4,
+    uint64_t *arg5) {
+	*arg1 = vcpu->regs.rdi;
+	*arg2 = vcpu->regs.rsi;
+	*arg3 = vcpu->regs.rdx;
+  *arg4 = vcpu->regs.r10;
+  *arg5 = vcpu->regs.r8;
+	return 0;
+}
+
+int elkvm_syscall6(struct kvm_vm *vm, struct kvm_vcpu *vcpu,
+		uint64_t *arg1, uint64_t *arg2, uint64_t *arg3, uint64_t *arg4,
+    uint64_t *arg5, uint64_t *arg6) {
+	*arg1 = vcpu->regs.rdi;
+	*arg2 = vcpu->regs.rsi;
+	*arg3 = vcpu->regs.rdx;
+  *arg4 = vcpu->regs.r10;
+  *arg5 = vcpu->regs.r8;
+  *arg6 = vcpu->regs.r9;
+	return 0;
+}
+
 long elkvm_do_read(struct kvm_vm *vm) {
 	if(vm->syscall_handlers->read == NULL) {
 		printf("READ handler not found\n");
