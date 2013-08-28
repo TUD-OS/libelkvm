@@ -47,6 +47,9 @@ struct kvm_pager {
 */
 int kvm_pager_initialize(struct kvm_vm *, int);
 
+struct kvm_userspace_memory_region *
+kvm_pager_alloc_chunk(struct kvm_pager *pager, void *addr, uint64_t chunk_size,
+    int flags);
 /*
 	Let Pager create a mem chunk of the given size. The mem_chunk will be added
   to the end of the other_chunks list

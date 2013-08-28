@@ -37,6 +37,31 @@ int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
 	return 0;
 }
 
+struct kvm_userspace_memory_region *kvm_pager_alloc_chunk(struct kvm_pager *pager,
+    void *addr, uint64_t chunk_size, int flags) {
+  struct kvm_userspace_memory_region *chunk;
+  chunk = malloc(sizeof(struct kvm_userspace_memory_region));
+  if(chunk == NULL) {
+    return NULL;
+  }
+
+	chunk->userspace_addr = (__u64)addr;
+	chunk->guest_phys_addr = pager->total_memsz;
+	chunk->memory_size = chunk_size;
+	chunk->flags = flags;
+  pager->total_memsz = pager->total_memsz + chunk_size;
+
+	int chunk_count = kvm_pager_append_mem_chunk(pager, chunk);
+	if(chunk_count < 0) {
+    free(chunk);
+    return NULL;
+	}
+	/* system chunk has slot 0, so we need to add 1 to all user chunks */
+	chunk->slot = chunk_count + 1;
+
+  return chunk;
+}
+
 int kvm_pager_create_mem_chunk(struct kvm_pager *pager, void **chunk_host_p,
     int chunk_size) {
 
