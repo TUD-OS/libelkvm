@@ -101,6 +101,11 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 	return 0;
 }
 
+int elkvm_set_debug(struct kvm_vm *vm) {
+  vm->debug = 1;
+  return 0;
+}
+
 int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * path) {
 	int fd = open(path, O_RDONLY);
 	if(fd < 0) {
