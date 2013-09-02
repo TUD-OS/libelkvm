@@ -405,9 +405,11 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 
 		switch(vcpu->run_struct->exit_reason) {
       case KVM_EXIT_HYPERCALL:
-				fprintf(stderr, "KVM_EXIT_HYPERCALL\n");
-        kvm_vcpu_dump_regs(vcpu);
-        kvm_vcpu_dump_code(vcpu);
+        if(vcpu->is_debug) {
+				  fprintf(stderr, "KVM_EXIT_HYPERCALL\n");
+          kvm_vcpu_dump_regs(vcpu);
+          kvm_vcpu_dump_code(vcpu);
+        }
         err = elkvm_handle_hypercall(vcpu->vm, vcpu);
         if(err) {
           is_running = 0;
