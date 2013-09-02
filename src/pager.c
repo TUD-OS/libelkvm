@@ -46,7 +46,7 @@ struct kvm_userspace_memory_region *kvm_pager_alloc_chunk(struct kvm_pager *page
   }
 
 	chunk->userspace_addr = (__u64)addr;
-	chunk->guest_phys_addr = pager->total_memsz;
+  chunk->guest_phys_addr = pager->total_memsz;
 	chunk->memory_size = chunk_size;
 	chunk->flags = flags;
   pager->total_memsz = pager->total_memsz + chunk_size;
@@ -233,10 +233,15 @@ uint64_t kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p,
 		}
 	}
 
-	*pt_entry  = guest_physical & ~0xFFF;
-  *pt_entry |= 0x2;
-	/* set present bit */
-	*pt_entry |= 0x1;
+  /*
+   * TODO setting this page up for user makes interrupts work,
+   * fix this!
+   */
+	int err = kvm_pager_create_entry(pager, pt_entry, guest_physical,
+			writeable, executable);
+  if(err) {
+    return err;
+  }
 
 	return guest_virtual;
 }
@@ -274,12 +279,6 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 
 	err = kvm_pager_create_entry(pager, pt_entry, guest_physical,
 			writeable, executable);
-
-	//*pt_entry = guest_physical & ~0xFFF;
-	///* set user bit */
-	//*pt_entry |= 0x4;
-	///* set present bit */
-	//*pt_entry |= 0x1;
 
 	return err;
 }
