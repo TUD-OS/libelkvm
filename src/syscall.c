@@ -339,16 +339,27 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     return err;
   }
 
-  err = kvm_pager_create_mapping(&vm->pager, ret_p, (uint64_t)ret_p,
-      flags & PROT_WRITE,
-      flags & PROT_EXEC);
-  printf("MAPPING from 0x%lx to %p created\n", (uint64_t) ret_p, ret_p);
-  if(err) {
-    printf("ERROR CREATING PT entries\n");
-    return err;
+  int pages = 0;
+  void *host_current_p = ret_p;
+  uint64_t guest_addr = (uint64_t)ret_p;
+  if(length % 0x1000) {
+    pages = length / 0x1000 + 1;
+  } else {
+    pages = length / 0x1000;
+  }
+  for(int page = 0; page < pages; page++) {
+    err = kvm_pager_create_mapping(&vm->pager, host_current_p, guest_addr,
+        flags & PROT_WRITE,
+        flags & PROT_EXEC);
+    if(err) {
+      printf("ERROR CREATING PT entries\n");
+      return err;
+    }
+    host_current_p+=0x1000;
+    guest_addr+=0x1000;
   }
 
-  return ret_p;
+  return (long)ret_p;
 }
 
 long elkvm_do_mprotect(struct kvm_vm *vm) {
