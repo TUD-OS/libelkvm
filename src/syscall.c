@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <string.h>
 #include <asm/prctl.h>
+#include <sys/mman.h>
 #include <sys/prctl.h>
 
 #include <elkvm.h>
@@ -315,7 +316,16 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     return err;
   }
 
-  return result;
+  err = kvm_pager_create_mapping(&vm->pager, ret_p, (uint64_t)ret_p,
+      flags & PROT_WRITE,
+      flags & PROT_EXEC);
+  printf("MAPPING from 0x%lx to %p created\n", (uint64_t) ret_p, ret_p);
+  if(err) {
+    printf("ERROR CREATING PT entries\n");
+    return err;
+  }
+
+  return ret_p;
 }
 
 long elkvm_do_mprotect(struct kvm_vm *vm) {
