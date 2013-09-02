@@ -74,6 +74,11 @@ int kvm_vm_create(struct elkvm_opts *, struct kvm_vm *, int, int, int,
 		struct elkvm_handlers *);
 
 /*
+ * \brief Put the VM in debug mode
+ */
+int elkvm_set_debug(struct kvm_vm *);
+
+/*
  * Setup the addresses of the system regions
  */
 int elkvm_region_setup(struct kvm_vm *vm);
