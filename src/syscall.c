@@ -198,7 +198,30 @@ long elkvm_do_read(struct kvm_vm *vm) {
 }
 
 long elkvm_do_write(struct kvm_vm *vm) {
-	return -ENOSYS;
+  if(vm->syscall_handlers->write == NULL) {
+    printf("WRITE handler not found\n");
+    return -ENOSYS;
+  }
+
+  uint64_t fd = 0x0;
+  uint64_t buf_p = 0x0;
+  void *buf;
+  uint64_t count = 0x0;
+
+  int err = elkvm_syscall3(vm, vm->vcpus->vcpu, &fd, &buf_p, &count);
+  if(err) {
+    return -EIO;
+  }
+
+  buf = kvm_pager_get_host_p(&vm->pager, buf_p);
+  printf("WRITE to fd: %i from %p (guest: 0x%lx) with %zd bytes\n",
+      (int)fd, buf, buf_p, (size_t)count);
+	printf("\tDATA: %.*s\n", (int)count, (char *)buf);
+
+  long result = vm->syscall_handlers->write((int)fd, buf, (size_t)count);
+  printf("RESULT: %li\n", result);
+
+  return result;
 }
 
 long elkvm_do_open(struct kvm_vm *vm) {
