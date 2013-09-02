@@ -290,8 +290,22 @@ void *kvm_pager_get_host_p(struct kvm_pager *pager, uint64_t guest_virtual) {
 		return NULL;
 	}
 
-	uint64_t guest_physical = (*entry & 0x000FFFFFFFFFF000) | (guest_virtual & 0xFFF);
-	return (void *)(guest_physical + pager->system_chunk.userspace_addr);
+  struct kvm_userspace_memory_region *chunk = NULL;
+  uint64_t guest_physical = (*entry & 0x000FFFFFFFFFF000) | (guest_virtual & 0xFFF);
+  if(guest_physical < pager->system_chunk.guest_phys_addr ||
+      pager->system_chunk.guest_phys_addr +
+      pager->system_chunk.memory_size <= guest_physical) {
+    struct chunk_list *cl = pager->other_chunks;
+    while(guest_physical < cl->chunk->guest_phys_addr ||
+        cl->chunk->guest_phys_addr + cl->chunk->memory_size < guest_physical) {
+      assert(cl->next != NULL);
+      cl = cl->next;
+    }
+    chunk = cl->chunk;
+  } else {
+    chunk = &pager->system_chunk;
+  }
+	return (void *)((guest_physical - chunk->guest_phys_addr) + chunk->userspace_addr);
 }
 
 uint64_t *kvm_pager_page_table_walk(struct kvm_pager *pager, uint64_t guest_virtual,
