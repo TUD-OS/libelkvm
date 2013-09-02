@@ -46,7 +46,7 @@ int elkvm_handle_hypercall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 int elkvm_handle_interrupt(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
   uint64_t interrupt_vector = elkvm_popq(vm, vcpu);
 
-  if(vcpu->is_debug) {
+  if(vm->debug) {
     printf(" INTERRUPT with vector 0x%lx detected\n", interrupt_vector);
   }
 
@@ -105,7 +105,7 @@ int elkvm_handle_interrupt(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 
 int elkvm_handle_syscall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 	uint64_t syscall_num = elkvm_popq(vm, vcpu);
-  if(vcpu->is_debug) {
+  if(vm->debug) {
     fprintf(stderr, " SYSCALL %3lu detected\n", syscall_num);
   }
 
@@ -114,7 +114,7 @@ int elkvm_handle_syscall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
     fprintf(stderr, "\tINVALID syscall_num: %lu\n", syscall_num);
 		result = -ENOSYS;
 	} else {
-    if(vcpu->is_debug) {
+    if(vm->debug) {
       fprintf(stderr, "(%s)\n", elkvm_syscalls[syscall_num].name);
     }
 		result = elkvm_syscalls[syscall_num].func(vm);
@@ -196,12 +196,12 @@ long elkvm_do_read(struct kvm_vm *vm) {
 	}
 
 	buf = kvm_pager_get_host_p(&vm->pager, buf_p);
-  if(vcpu->is_debug) {
+  if(vm->debug) {
     printf("READ from fd: %i to %p with %zd bytes\n", (int)fd, buf, (size_t)count);
   }
 
 	long result = vm->syscall_handlers->read((int)fd, buf, (size_t)count);
-  if(vcpu->is_debug) {
+  if(vm->debug) {
     printf("RESULT (%li): %.*s\n", result, (int)result, buf);
   }
 
@@ -226,14 +226,14 @@ long elkvm_do_write(struct kvm_vm *vm) {
   }
 
   buf = kvm_pager_get_host_p(&vm->pager, buf_p);
-  if(vcpu->is_debug) {
+  if(vm->debug) {
     printf("WRITE to fd: %i from %p (guest: 0x%lx) with %zd bytes\n",
       (int)fd, buf, buf_p, (size_t)count);
     printf("\tDATA: %.*s\n", (int)count, (char *)buf);
   }
 
   long result = vm->syscall_handlers->write((int)fd, buf, (size_t)count);
-  if(vcpu->is_debug) {
+  if(vm->debug) {
     printf("RESULT: %li\n", result);
   }
 
@@ -258,13 +258,13 @@ long elkvm_do_open(struct kvm_vm *vm) {
 	}
 	pathname = kvm_pager_get_host_p(&vm->pager, pathname_p);
 
-  if(vcpu->is_debug) {
+  if(vm->debug) {
     printf("OPEN file %s with flags %i and mode %x\n", pathname,
 			(int)flags, (mode_t)mode);
   }
 	long result = vm->syscall_handlers->open(pathname, (int)flags, (mode_t)mode);
 
-  if(vcpu->is_debug) {
+  if(vm->debug) {
     printf("RESULT: %li\n", result);
   }
 
@@ -284,12 +284,12 @@ long elkvm_do_close(struct kvm_vm *vm) {
 		return -EIO;
 	}
 
-  if(vcpu->is_debug) {
+  if(vm->debug) {
     printf("CLOSE file with fd: %li\n", fd);
   }
 	long result = vm->syscall_handlers->close((int)fd);
 
-  if(vcpu->is_debug) {
+  if(vm->debug) {
     printf("RESULT: %li\n", result);
   }
 
@@ -316,12 +316,12 @@ long elkvm_do_fstat(struct kvm_vm *vm) {
   }
 	buf = kvm_pager_get_host_p(&vm->pager, buf_p);
 
-  if(vcpu->is_debug) {
+  if(vm->debug) {
     printf("FSTAT file with fd %li buf at %p\n", fd, buf);
   }
   long result = vm->syscall_handlers->fstat(fd, buf);
 
-  if(vcpu->is_debug) {
+  if(vm->debug) {
     printf("RESULT: %li\n", result);
   }
 
@@ -409,7 +409,7 @@ long elkvm_do_brk(struct kvm_vm *vm) {
   uint64_t user_brk_req = 0;
   struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
   int err = elkvm_syscall1(vm, vcpu, &user_brk_req);
-  if(vcpu->is_debug) {
+  if(vm->debug) {
     printf("BRK reguested with address: 0x%lx\n", user_brk_req);
   }
   if(err) {
@@ -433,7 +433,7 @@ long elkvm_do_brk(struct kvm_vm *vm) {
   /* if the requested brk address is still within the current data region,
    * just push the brk */
   err = elkvm_brk(vm, user_brk_req);
-  if(vcpu->is_debug) {
+  if(vm->debug) {
     printf("BRK done: err: %i (%s) newbrk: 0x%lx\n", err, strerror(err), vm->pager.brk_addr);
   }
   if(err) {
@@ -490,13 +490,13 @@ long elkvm_do_access(struct kvm_vm *vm) {
   if(pathname == NULL) {
     return EFAULT;
   }
-  if(vcpu->is_debug) {
+  if(vm->debug) {
     printf("CALLING ACCESS handler with pathname %s and mode %i\n",
       pathname, (int)mode);
   }
 
   long result = vm->syscall_handlers->access(pathname, mode);
-  if(vcpu->is_debug) {
+  if(vm->debug) {
     printf("ACCESS result: %li\n", result);
   }
 
@@ -516,7 +516,7 @@ long elkvm_do_uname(struct kvm_vm *vm) {
 		return -EIO;
 	}
 	buf = (struct utsname *)kvm_pager_get_host_p(&vm->pager, bufp);
-  if(vcpu->is_debug) {
+  if(vm->debug) {
     printf("CALLING UNAME handler with buf pointing to: %p (0x%lx)\n", buf,
 			host_to_guest_physical(&vm->pager, buf));
   }
@@ -526,7 +526,7 @@ long elkvm_do_uname(struct kvm_vm *vm) {
 
 	long result = vm->syscall_handlers->uname(buf);
 	result = 1;
-  if(vcpu->is_debug) {
+  if(vm->debug) {
     printf("UNAME result: %li\n", result);
     printf("\tsyname: %s nodename: %s release: %s version: %s machine: %s\n",
 			buf->sysname, buf->nodename, buf->release, buf->version, buf->machine);
@@ -542,7 +542,7 @@ long elkvm_do_getuid(struct kvm_vm *vm) {
   struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
 
 	long result = vm->syscall_handlers->getuid();
-  if(vcpu->is_debug) {
+  if(vm->debug) {
     printf("GETUID RESULT: %li\n", result);
   }
 
@@ -561,7 +561,7 @@ long elkvm_do_getgid(struct kvm_vm *vm) {
   struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
 
 	long result = vm->syscall_handlers->getgid();
-  if(vcpu->is_debug) {
+  if(vm->debug) {
     printf("GETGID RESULT: %li\n", result);
   }
 
@@ -584,7 +584,7 @@ long elkvm_do_geteuid(struct kvm_vm *vm) {
   struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
 
 	long result = vm->syscall_handlers->geteuid();
-  if(vcpu->is_debug) {
+  if(vm->debug) {
     printf("GETEUID RESULT: %li\n", result);
   }
 
@@ -599,7 +599,7 @@ long elkvm_do_getegid(struct kvm_vm *vm) {
   struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
 
 	long result = vm->syscall_handlers->getegid();
-  if(vcpu->is_debug) {
+  if(vm->debug) {
     printf("GETEGID RESULT: %li\n", result);
   }
 
@@ -620,7 +620,7 @@ long elkvm_do_arch_prctl(struct kvm_vm *vm) {
     return EFAULT;
   }
 
-  if(vcpu->is_debug) {
+  if(vm->debug) {
     printf("ARCH PRCTL with code %i user_addr 0x%lx\n", (int)code, user_addr);
   }
   switch(code) {
