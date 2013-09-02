@@ -399,7 +399,6 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 
 	while(is_running) {
 		int err = kvm_vcpu_run(vcpu);
-    printf("KVM EXIT reason %i(DEBUG: %i)\n", vcpu->run_struct->exit_reason, KVM_EXIT_DEBUG);
 		if(err) {
 			break;
 		}
