@@ -304,8 +304,6 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 	/* at last push argc on the stack */
 	elkvm_pushq(vm, vm->vcpus->vcpu, opts->argc);
 
-  elkvm_dump_stack(vm, vm->vcpus->vcpu);
-
 	return 0;
 }
 

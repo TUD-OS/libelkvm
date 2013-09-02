@@ -10,7 +10,6 @@ int elkvm_heap_initialize(struct kvm_vm *vm, struct elkvm_memory_region *region,
 	vm->heap->data = region;
   vm->heap->next = NULL;
   uint64_t data_end = region->guest_virtual + size;
-  printf("SETTING brk to: 0x%lx\n", data_end);
 
   int err = kvm_pager_set_brk(&vm->pager, data_end);
   if(err) {
@@ -45,14 +44,8 @@ int elkvm_brk(struct kvm_vm *vm, uint64_t newbrk) {
   int err;
 
   if(elkvm_within_current_heap_region(vm, newbrk)) {
-    printf("new brk (0x%lx) is larger than oldbrk (0x%lx), "
-        "but fits in region: 0x%lx (0x%lx)\n",
-        newbrk, vm->pager.brk_addr,
-        vm->heap->data->guest_virtual, vm->heap->data->region_size);
     err = elkvm_brk_nogrow(vm, newbrk);
   } else {
-    printf("new brk (0x%lx) does not fit in region 0x%lx (0x%lx)\n",
-        newbrk, vm->heap->data->guest_virtual, vm->heap->data->region_size);
     err = elkvm_brk_grow(vm, newbrk);
   }
 
