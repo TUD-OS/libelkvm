@@ -503,6 +503,42 @@ long elkvm_do_access(struct kvm_vm *vm) {
   return -errno;
 }
 
+long elkvm_do_pipe(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_select(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_sched_yield(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_mremap(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_msync(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_mincore(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_madvise(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_shmget(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_shmat(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
 long elkvm_do_uname(struct kvm_vm *vm) {
 	if(vm->syscall_handlers->uname == NULL) {
 		return -ENOSYS;

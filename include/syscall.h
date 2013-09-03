@@ -54,6 +54,15 @@ long elkvm_do_pwrite64(struct kvm_vm *);
 long elkvm_do_readv(struct kvm_vm *);
 long elkvm_do_writev(struct kvm_vm *);
 long elkvm_do_access(struct kvm_vm *);
+long elkvm_do_pipe(struct kvm_vm *);
+long elkvm_do_select(struct kvm_vm *);
+long elkvm_do_sched_yield(struct kvm_vm *);
+long elkvm_do_mremap(struct kvm_vm *);
+long elkvm_do_msync(struct kvm_vm *);
+long elkvm_do_mincore(struct kvm_vm *);
+long elkvm_do_madvise(struct kvm_vm *);
+long elkvm_do_shmget(struct kvm_vm *);
+long elkvm_do_shmat(struct kvm_vm *);
 /* ... */
 long elkvm_do_uname(struct kvm_vm *);
 /* ... */
@@ -94,6 +103,15 @@ static struct {
   [__NR_readv]       = { elkvm_do_readv, "READV" },
   [__NR_writev]      = { elkvm_do_writev, "WRITEV" },
   [__NR_access]      = { elkvm_do_access, "ACCESS" },
+  [__NR_pipe]        = { elkvm_do_pipe, "PIPE" },
+  [__NR_select]      = { elkvm_do_select, "SELECT" },
+  [__NR_sched_yield] = { elkvm_do_sched_yield, "SCHED YIELD" },
+  [__NR_mremap]      = { elkvm_do_mremap, "MREMAP" },
+  [__NR_msync]       = { elkvm_do_msync, "MSYNC" },
+  [__NR_mincore]     = { elkvm_do_mincore, "MINCORE" },
+  [__NR_madvise]     = { elkvm_do_madvise, "MADVISE" },
+  [__NR_shmget]      = { elkvm_do_shmget, "SHMGET" },
+  [__NR_shmat]       = { elkvm_do_shmat, "SHMAT" },
 	/* ... */
 	[__NR_uname] = { elkvm_do_uname, "UNAME"},
   /* ... */
