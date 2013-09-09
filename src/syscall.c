@@ -546,6 +546,66 @@ long elkvm_do_shmat(struct kvm_vm *vm) {
   return -ENOSYS;
 }
 
+long elkvm_do_shmctl(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_dup(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_dup2(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_pause(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_nanosleep(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_getitimer(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_alarm(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_setitimer(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_getpid(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_sendfile(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_socket(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_connect(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_accept(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_sendto(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_recvfrom(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
 long elkvm_do_uname(struct kvm_vm *vm) {
 	if(vm->syscall_handlers->uname == NULL) {
 		return -ENOSYS;

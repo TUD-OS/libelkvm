@@ -57,6 +57,21 @@ long elkvm_do_mincore(struct kvm_vm *);
 long elkvm_do_madvise(struct kvm_vm *);
 long elkvm_do_shmget(struct kvm_vm *);
 long elkvm_do_shmat(struct kvm_vm *);
+long elkvm_do_shmctl(struct kvm_vm *);
+long elkvm_do_dup(struct kvm_vm *);
+long elkvm_do_dup2(struct kvm_vm *);
+long elkvm_do_pause(struct kvm_vm *);
+long elkvm_do_nanosleep(struct kvm_vm *);
+long elkvm_do_getitimer(struct kvm_vm *);
+long elkvm_do_alarm(struct kvm_vm *);
+long elkvm_do_setitimer(struct kvm_vm *);
+long elkvm_do_getpid(struct kvm_vm *);
+long elkvm_do_sendfile(struct kvm_vm *);
+long elkvm_do_socket(struct kvm_vm *);
+long elkvm_do_connect(struct kvm_vm *);
+long elkvm_do_accept(struct kvm_vm *);
+long elkvm_do_sendto(struct kvm_vm *);
+long elkvm_do_recvfrom(struct kvm_vm *);
 /* ... */
 long elkvm_do_uname(struct kvm_vm *);
 /* ... */
@@ -106,6 +121,21 @@ static struct {
   [__NR_madvise]     = { elkvm_do_madvise, "MADVISE" },
   [__NR_shmget]      = { elkvm_do_shmget, "SHMGET" },
   [__NR_shmat]       = { elkvm_do_shmat, "SHMAT" },
+  [__NR_shmctl]      = { elkvm_do_shmctl, "SHMCTL" },
+  [__NR_dup]         = { elkvm_do_dup, "DUP" },
+  [__NR_dup2]        = { elkvm_do_dup2, "DUP2" },
+  [__NR_pause]       = { elkvm_do_pause, "PAUSE" },
+  [__NR_nanosleep]   = { elkvm_do_nanosleep, "NANOSLEEP" },
+  [__NR_getitimer]   = { elkvm_do_getitimer, "GETITIMER" },
+  [__NR_alarm]       = { elkvm_do_alarm, "ALARM" },
+  [__NR_setitimer]   = { elkvm_do_setitimer, "SETITIMER" },
+  [__NR_getpid]      = { elkvm_do_getpid, "GETPID" },
+  [__NR_sendfile]    = { elkvm_do_sendfile, "SENDFILE" },
+  [__NR_socket]      = { elkvm_do_socket, "SOCKET" },
+  [__NR_connect]     = { elkvm_do_connect, "CONNECT" },
+  [__NR_accept]      = { elkvm_do_accept, "ACCEPT" },
+  [__NR_sendto]      = { elkvm_do_sendto, "SENDTO" },
+  [__NR_recvfrom]    = { elkvm_do_recvfrom, "RECVFROM" },
 	/* ... */
 	[__NR_uname] = { elkvm_do_uname, "UNAME"},
   /* ... */
