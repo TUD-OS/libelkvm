@@ -14,6 +14,7 @@ extern "C" {
 #include "kvm.h"
 #include "pager.h"
 #include "region.h"
+#include "vcpu.h"
 
 #define VM_MODE_X86    1
 #define VM_MODE_PAGING 2
@@ -112,6 +113,11 @@ int kvm_vm_destroy(struct kvm_vm *);
  * Maps a new mem chunk into the VM
 */
 int kvm_vm_map_chunk(struct kvm_vm *, struct kvm_userspace_memory_region *);
+
+/*
+ * \brief Emulates (skips) the VMCALL instruction
+ */
+int elkvm_emulate_vmcall(struct kvm_vm *, struct kvm_vcpu *);
 
 int elkvm_dump_valid_msrs(struct elkvm_opts *);
 

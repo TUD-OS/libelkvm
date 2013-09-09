@@ -416,6 +416,11 @@ int kvm_vm_map_chunk(struct kvm_vm *vm, struct kvm_userspace_memory_region *chun
 	return err;
 }
 
+int elkvm_emulate_vmcall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+  /* INTEL VMCALL instruction is three bytes long */
+  vcpu->regs.rip +=3;
+}
+
 int elkvm_dump_valid_msrs(struct elkvm_opts *opts) {
 	struct kvm_msr_list *list = malloc(
 			sizeof(struct kvm_msr_list) + 255 * sizeof(uint32_t));
