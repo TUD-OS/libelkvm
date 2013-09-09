@@ -17,30 +17,37 @@ int elkvm_handle_hypercall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 	}
 
   int call = kvm_vcpu_get_hypercall_type(vm, vcpu);
-
-  /* syscall */
-		if(call == 1) {
-			int err = elkvm_handle_syscall(vm, vcpu);
-			if(err) {
-				return err;
-			}
-      return 0;
-    }
-
-    /* interrupt */
-    if(call == 2) {
-      int err = elkvm_handle_interrupt(vm, vcpu);
+  switch(call) {
+    case ELKVM_HYPERCALL_SYSCALL:
+			err = elkvm_handle_syscall(vm, vcpu);
+      break;
+    case ELKVM_HYPERCALL_INTERRUPT:
+      err = elkvm_handle_interrupt(vm, vcpu);
       if(err) {
         return err;
       }
+      break;
+    default:
+      fprintf(stderr,
+          "Hypercall was something else, don't know how to handle, ABORT!\n");
+      return 1;
+  }
 
-      return 0;
-    }
+	if(err) {
+		return err;
+	}
 
-    fprintf(stderr,
-        "Hypercall was something else, don't know how to handle, ABORT!\n");
-		/* TODO interrupts should be handled here */
-    return 1;
+  err = elkvm_emulate_vmcall(vm, vcpu);
+  if(err) {
+    return err;
+  }
+
+  err = kvm_vcpu_set_regs(vcpu);
+  if(err) {
+    return err;
+  }
+
+  return 0;
 }
 
 int elkvm_handle_interrupt(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
