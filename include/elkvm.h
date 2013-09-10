@@ -119,6 +119,8 @@ int kvm_vm_map_chunk(struct kvm_vm *, struct kvm_userspace_memory_region *);
  */
 int elkvm_emulate_vmcall(struct kvm_vm *, struct kvm_vcpu *);
 
+struct kvm_vcpu *elkvm_vcpu_get(struct kvm_vm *, int vcpu_id);
+
 int elkvm_dump_valid_msrs(struct elkvm_opts *);
 
 /*

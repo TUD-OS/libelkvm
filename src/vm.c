@@ -416,6 +416,20 @@ int kvm_vm_map_chunk(struct kvm_vm *vm, struct kvm_userspace_memory_region *chun
 	return err;
 }
 
+struct kvm_vcpu *elkvm_vcpu_get(struct kvm_vm *vm, int vcpu_id) {
+  struct vcpu_list *vcpu_list = vm->vcpus;
+  for(int i = 0; i < vcpu_id && vcpu_list != NULL; i++) {
+    vcpu_list = vcpu_list->next;
+  }
+
+  if(vcpu_list == NULL) {
+    return NULL;
+  }
+
+  return vcpu_list->vcpu;
+}
+
+
 int elkvm_emulate_vmcall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
   /* INTEL VMCALL instruction is three bytes long */
   vcpu->regs.rip +=3;
@@ -458,3 +472,4 @@ void elkvm_dump_region(struct elkvm_memory_region *region) {
 		elkvm_dump_region(region->rc);
 	}
 }
+
