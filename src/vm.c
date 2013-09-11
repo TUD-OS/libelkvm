@@ -429,6 +429,13 @@ struct kvm_vcpu *elkvm_vcpu_get(struct kvm_vm *vm, int vcpu_id) {
   return vcpu_list->vcpu;
 }
 
+int elkvm_chunk_count(struct kvm_vm *vm) {
+  struct chunk_list *c;
+  int count = elkvm_pager_chunk_count(&vm->pager, &c);
+  /* count the system chunk */
+  return count + 1;
+}
+
 
 int elkvm_emulate_vmcall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
   /* INTEL VMCALL instruction is three bytes long */
