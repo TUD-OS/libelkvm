@@ -436,6 +436,13 @@ int elkvm_chunk_count(struct kvm_vm *vm) {
   return count + 1;
 }
 
+struct kvm_userspace_memory_region elkvm_get_chunk(struct kvm_vm *vm, int chunk) {
+  if(chunk == 0) {
+    return elkvm_pager_get_system_chunk(&vm->pager);
+  } else {
+    return *elkvm_pager_get_chunk(&vm->pager, chunk-1);
+  }
+}
 
 int elkvm_emulate_vmcall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
   /* INTEL VMCALL instruction is three bytes long */
