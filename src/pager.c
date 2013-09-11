@@ -135,6 +135,21 @@ elkvm_pager_get_system_chunk(struct kvm_pager *pager) {
   return pager->system_chunk;
 }
 
+struct kvm_userspace_memory_region *
+elkvm_pager_get_chunk(struct kvm_pager *pager, int c) {
+  struct chunk_list *current = pager->other_chunks;
+  int elem = 0;
+  while(current->next != NULL && elem < c) {
+    current = current->next;
+  }
+
+  if(elem == c) {
+    return current->chunk;
+  } else {
+    return NULL;
+  }
+}
+
 int kvm_pager_create_page_tables(struct kvm_pager *pager, int mode) {
 	if(pager == NULL ||  pager->host_pml4_p == NULL) {
 		return -EINVAL;

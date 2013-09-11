@@ -75,6 +75,7 @@ int elkvm_pager_chunk_count(struct kvm_pager *pager, struct chunk_list **current
 
 struct kvm_userspace_memory_region elkvm_pager_get_system_chunk(
     struct kvm_pager *);
+struct kvm_userspace_memory_region *elkvm_pager_get_chunk(struct kvm_pager *, int);
 
 /*
  * \brief Create a Mapping in Kernel Space
