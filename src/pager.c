@@ -103,12 +103,8 @@ int kvm_pager_append_mem_chunk(struct kvm_pager *pager,
 		return 0;
 	}
 
-	int chunk_count = 0;
-	struct chunk_list *current = pager->other_chunks;
-	while(current->next != NULL) {
-		chunk_count++;
-		current = current->next;
-	}
+  struct chunk_list *current = pager->other_chunks;
+  int chunk_count = elkvm_pager_chunk_count(pager, &current);
 
 	current->next = malloc(sizeof(struct chunk_list));
 	if(current->next == NULL) {
@@ -121,6 +117,17 @@ int kvm_pager_append_mem_chunk(struct kvm_pager *pager,
 	current->next = NULL;
 
 	return chunk_count;
+}
+
+int elkvm_pager_chunk_count(struct kvm_pager *pager, struct chunk_list **current) {
+	int chunk_count = 0;
+	*current = pager->other_chunks;
+	while((*current) != NULL && (*current)->next != NULL) {
+		chunk_count++;
+		*current = (*current)->next;
+	}
+
+  return chunk_count;
 }
 
 int kvm_pager_create_page_tables(struct kvm_pager *pager, int mode) {

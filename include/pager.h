@@ -71,6 +71,8 @@ int kvm_pager_is_invalid_guest_base(struct kvm_pager *, uint64_t);
 */
 int kvm_pager_append_mem_chunk(struct kvm_pager *, struct kvm_userspace_memory_region *);
 
+int elkvm_pager_chunk_count(struct kvm_pager *pager, struct chunk_list **current);
+
 /*
  * \brief Create a Mapping in Kernel Space
  * params are pager, host virtual address, writeable and executable bit
