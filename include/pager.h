@@ -73,6 +73,9 @@ int kvm_pager_append_mem_chunk(struct kvm_pager *, struct kvm_userspace_memory_r
 
 int elkvm_pager_chunk_count(struct kvm_pager *pager, struct chunk_list **current);
 
+struct kvm_userspace_memory_region elkvm_pager_get_system_chunk(
+    struct kvm_pager *);
+
 /*
  * \brief Create a Mapping in Kernel Space
  * params are pager, host virtual address, writeable and executable bit
