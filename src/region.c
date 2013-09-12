@@ -109,7 +109,7 @@ struct elkvm_memory_region *
 struct elkvm_memory_region_list *elkvm_region_list_prepend(struct kvm_vm *vm,
     struct elkvm_memory_region *region) {
   struct elkvm_memory_region_list *l =
-    malloc(sizeof(struct elkvm_memory_region_list *));
+    malloc(sizeof(struct elkvm_memory_region_list));
   if(l == NULL) {
     return l;
   }
