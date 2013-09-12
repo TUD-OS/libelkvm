@@ -1,5 +1,9 @@
 #include "vcpu.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* 64bit Linux puts the Stack at 47bits */
 #define LINUX_64_STACK_BASE 0x800000000000
 
@@ -25,3 +29,6 @@ int expand_stack(struct kvm_vm *, struct kvm_vcpu *);
  */
 void elkvm_dump_stack(struct kvm_vm *, struct kvm_vcpu *vcpu);
 
+#ifdef __cplusplus
+}
+#endif
