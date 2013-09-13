@@ -614,7 +614,7 @@ int kvm_vcpu_had_page_fault(struct kvm_vcpu *vcpu) {
 	return vcpu->sregs.cr2 != 0x0;
 }
 
-int kvm_vcpu_get_hypercall_type(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+uint64_t kvm_vcpu_get_hypercall_type(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
   uint64_t type = elkvm_popq(vm, vcpu);
   return type;
 }
