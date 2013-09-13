@@ -221,6 +221,8 @@ int kvm_vcpu_get_msr(struct kvm_vcpu *vcpu, uint32_t index, uint64_t *res_p) {
 int kvm_vcpu_set_msr(struct kvm_vcpu *vcpu, uint32_t index, uint64_t data) {
 	struct kvm_msrs *msr = malloc(
 			sizeof(struct kvm_msrs) + sizeof(struct kvm_msr_entry));
+  memset(msr, 0, sizeof(struct kvm_msrs) + sizeof(struct kvm_msr_entry));
+
 	msr->nmsrs = 1;
 	msr->entries[0].index = index;
 	msr->entries[0].data  = data;
