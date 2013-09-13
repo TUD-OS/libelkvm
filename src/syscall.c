@@ -668,6 +668,14 @@ long elkvm_do_exit(struct kvm_vm *vm) {
   return -ENOSYS;
 }
 
+long elkvm_do_wait4(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_kill(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
 long elkvm_do_uname(struct kvm_vm *vm) {
 	if(vm->syscall_handlers->uname == NULL) {
 		return -ENOSYS;
@@ -697,6 +705,14 @@ long elkvm_do_uname(struct kvm_vm *vm) {
 			buf->sysname, buf->nodename, buf->release, buf->version, buf->machine);
   }
 	return result;
+}
+
+long elkvm_do_semget(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_semop(struct kvm_vm *vm) {
+  return -ENOSYS;
 }
 
 long elkvm_do_getuid(struct kvm_vm *vm) {

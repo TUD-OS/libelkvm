@@ -87,8 +87,11 @@ long elkvm_do_fork(struct kvm_vm *);
 long elkvm_do_vfork(struct kvm_vm *);
 long elkvm_do_execve(struct kvm_vm *);
 long elkvm_do_exit(struct kvm_vm *);
-/* ... */
+long elkvm_do_wait4(struct kvm_vm *);
+long elkvm_do_kill(struct kvm_vm *);
 long elkvm_do_uname(struct kvm_vm *);
+long elkvm_do_semget(struct kvm_vm *);
+long elkvm_do_semop(struct kvm_vm *);
 /* ... */
 long elkvm_do_getuid(struct kvm_vm *);
 long elkvm_do_syslog(struct kvm_vm *);
@@ -166,8 +169,11 @@ static struct {
   [__NR_vfork]       = { elkvm_do_vfork, "VFORK" },
   [__NR_execve]      = { elkvm_do_execve, "EXECVE" },
   [__NR_exit]        = { elkvm_do_exit, "EXIT" },
-	/* ... */
-	[__NR_uname] = { elkvm_do_uname, "UNAME"},
+  [__NR_wait4]       = { elkvm_do_wait4, "WAIT4" },
+  [__NR_kill]        = { elkvm_do_kill, "KILL" },
+  [__NR_uname]       = { elkvm_do_uname, "UNAME" },
+  [__NR_semget]      = { elkvm_do_semget, "SEMGET" },
+  [__NR_semop]       = { elkvm_do_semop, "SEMOP" },
   /* ... */
   [__NR_getuid]  = { elkvm_do_getuid, "GETUID" },
   [__NR_syslog]  = { elkvm_do_syslog, "SYSLOG" },
