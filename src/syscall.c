@@ -608,6 +608,26 @@ long elkvm_do_recvfrom(struct kvm_vm *vm) {
   return -ENOSYS;
 }
 
+long elkvm_do_sendmsg(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_recvmsg(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_shutdown(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_bind(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_listen(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
 long elkvm_do_uname(struct kvm_vm *vm) {
 	if(vm->syscall_handlers->uname == NULL) {
 		return -ENOSYS;

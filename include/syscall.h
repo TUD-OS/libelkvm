@@ -72,6 +72,11 @@ long elkvm_do_connect(struct kvm_vm *);
 long elkvm_do_accept(struct kvm_vm *);
 long elkvm_do_sendto(struct kvm_vm *);
 long elkvm_do_recvfrom(struct kvm_vm *);
+long elkvm_do_sendmsg(struct kvm_vm *);
+long elkvm_do_recvmsg(struct kvm_vm *);
+long elkvm_do_shutdown(struct kvm_vm *);
+long elkvm_do_bind(struct kvm_vm *);
+long elkvm_do_listen(struct kvm_vm *);
 /* ... */
 long elkvm_do_uname(struct kvm_vm *);
 /* ... */
@@ -136,6 +141,11 @@ static struct {
   [__NR_accept]      = { elkvm_do_accept, "ACCEPT" },
   [__NR_sendto]      = { elkvm_do_sendto, "SENDTO" },
   [__NR_recvfrom]    = { elkvm_do_recvfrom, "RECVFROM" },
+  [__NR_sendmsg]     = { elkvm_do_sendmsg, "SENDMSG" },
+  [__NR_recvmsg]     = { elkvm_do_recvmsg, "RECVMSG" },
+  [__NR_shutdown]    = { elkvm_do_shutdown, "SHUTDOWN" },
+  [__NR_bind]        = { elkvm_do_bind, "BIND" },
+  [__NR_listen]      = { elkvm_do_listen, "LISTEN" },
 	/* ... */
 	[__NR_uname] = { elkvm_do_uname, "UNAME"},
   /* ... */
