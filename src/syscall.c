@@ -16,7 +16,7 @@ int elkvm_handle_hypercall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 		return err;
 	}
 
-  int call = kvm_vcpu_get_hypercall_type(vm, vcpu);
+  uint64_t call = kvm_vcpu_get_hypercall_type(vm, vcpu);
   switch(call) {
     case ELKVM_HYPERCALL_SYSCALL:
 			err = elkvm_handle_syscall(vm, vcpu);
