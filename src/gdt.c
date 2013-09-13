@@ -94,7 +94,7 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 	entry++;
 
 
-	struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
+	struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
 	uint64_t syscall_star = kernel_cs_selector;
 	uint64_t sysret_star = cs_selector | 0x3;
 	uint64_t star = (sysret_star << 48) | (syscall_star << 32);
