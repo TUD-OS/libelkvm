@@ -266,13 +266,15 @@ long elkvm_do_open(struct kvm_vm *vm) {
 	pathname = kvm_pager_get_host_p(&vm->pager, pathname_p);
 
   if(vm->debug) {
-    printf("OPEN file %s with flags %i and mode %x\n", pathname,
-			(int)flags, (mode_t)mode);
   }
 	long result = vm->syscall_handlers->open(pathname, (int)flags, (mode_t)mode);
 
   if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("OPEN file %s with flags %i and mode %x\n", pathname,
+			(int)flags, (mode_t)mode);
     printf("RESULT: %li\n", result);
+    printf("=================================\n");
   }
 
 	return result;
