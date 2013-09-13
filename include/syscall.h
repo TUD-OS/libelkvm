@@ -77,6 +77,11 @@ long elkvm_do_recvmsg(struct kvm_vm *);
 long elkvm_do_shutdown(struct kvm_vm *);
 long elkvm_do_bind(struct kvm_vm *);
 long elkvm_do_listen(struct kvm_vm *);
+long elkvm_do_getsockname(struct kvm_vm *);
+long elkvm_do_getpeername(struct kvm_vm *);
+long elkvm_do_socketpair(struct kvm_vm *);
+long elkvm_do_setsockopt(struct kvm_vm *);
+long elkvm_do_getsockopt(struct kvm_vm *);
 /* ... */
 long elkvm_do_uname(struct kvm_vm *);
 /* ... */
@@ -146,6 +151,11 @@ static struct {
   [__NR_shutdown]    = { elkvm_do_shutdown, "SHUTDOWN" },
   [__NR_bind]        = { elkvm_do_bind, "BIND" },
   [__NR_listen]      = { elkvm_do_listen, "LISTEN" },
+  [__NR_getsockname] = { elkvm_do_getsockname, "GETSOCKNAME" },
+  [__NR_getpeername] = { elkvm_do_getpeername, "GETPEERNAME" },
+  [__NR_socketpair]  = { elkvm_do_socketpair, "SOCKETPAIR" },
+  [__NR_setsockopt]  = { elkvm_do_setsockopt, "SETSOCKOPT" },
+  [__NR_getsockopt]  = { elkvm_do_getsockopt, "GETSOCKOPT" },
 	/* ... */
 	[__NR_uname] = { elkvm_do_uname, "UNAME"},
   /* ... */

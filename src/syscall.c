@@ -628,6 +628,26 @@ long elkvm_do_listen(struct kvm_vm *vm) {
   return -ENOSYS;
 }
 
+long elkvm_do_getsockname(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_getpeername(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_socketpair(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_setsockopt(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_getsockopt(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
 long elkvm_do_uname(struct kvm_vm *vm) {
 	if(vm->syscall_handlers->uname == NULL) {
 		return -ENOSYS;
