@@ -648,6 +648,26 @@ long elkvm_do_getsockopt(struct kvm_vm *vm) {
   return -ENOSYS;
 }
 
+long elkvm_do_clone(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_fork(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_vfork(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_execve(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_exit(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
 long elkvm_do_uname(struct kvm_vm *vm) {
 	if(vm->syscall_handlers->uname == NULL) {
 		return -ENOSYS;

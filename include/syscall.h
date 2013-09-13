@@ -82,6 +82,11 @@ long elkvm_do_getpeername(struct kvm_vm *);
 long elkvm_do_socketpair(struct kvm_vm *);
 long elkvm_do_setsockopt(struct kvm_vm *);
 long elkvm_do_getsockopt(struct kvm_vm *);
+long elkvm_do_clone(struct kvm_vm *);
+long elkvm_do_fork(struct kvm_vm *);
+long elkvm_do_vfork(struct kvm_vm *);
+long elkvm_do_execve(struct kvm_vm *);
+long elkvm_do_exit(struct kvm_vm *);
 /* ... */
 long elkvm_do_uname(struct kvm_vm *);
 /* ... */
@@ -156,6 +161,11 @@ static struct {
   [__NR_socketpair]  = { elkvm_do_socketpair, "SOCKETPAIR" },
   [__NR_setsockopt]  = { elkvm_do_setsockopt, "SETSOCKOPT" },
   [__NR_getsockopt]  = { elkvm_do_getsockopt, "GETSOCKOPT" },
+  [__NR_clone]       = { elkvm_do_clone, "CLONE" },
+  [__NR_fork]        = { elkvm_do_fork, "FORK" },
+  [__NR_vfork]       = { elkvm_do_vfork, "VFORK" },
+  [__NR_execve]      = { elkvm_do_execve, "EXECVE" },
+  [__NR_exit]        = { elkvm_do_exit, "EXIT" },
 	/* ... */
 	[__NR_uname] = { elkvm_do_uname, "UNAME"},
   /* ... */
