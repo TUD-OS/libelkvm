@@ -511,53 +511,53 @@ void kvm_vcpu_dump_msr(struct kvm_vcpu *vcpu, uint32_t msr) {
 	uint64_t r;
 	int err = kvm_vcpu_get_msr(vcpu, msr, &r);
 	if(err) {
-		printf("WARNING: Could not get MSR: 0x%x\n", msr);
+		fprintf(stderr, "WARNING: Could not get MSR: 0x%x\n", msr);
 		return;
 	}
 
-	printf(" MSR: 0x%x: 0x%lx\n", msr, r);
+	fprintf(stderr, " MSR: 0x%x: 0x%lx\n", msr, r);
 }
 
 void kvm_vcpu_dump_regs(struct kvm_vcpu *vcpu) {
 	int err = kvm_vcpu_get_regs(vcpu);
 	if(err != 0) {
-		printf("WARNING: Could not get VCPU registers\n");
+		fprintf(stderr, "WARNING: Could not get VCPU registers\n");
 		return;
 	}
 
-	printf("\n Registers:\n");
-	printf(  " ----------\n");
-	printf(" rip: %016llx   rsp: %016llx flags: %016llx",
+	fprintf(stderr, "\n Registers:\n");
+	fprintf(stderr,   " ----------\n");
+	fprintf(stderr, " rip: %016llx   rsp: %016llx flags: %016llx",
 			vcpu->regs.rip, vcpu->regs.rsp, vcpu->regs.rflags);
-  printf(" [");
-  printf("%s", ((vcpu->regs.rflags >> 16) & 0x1) ? "RF " : "");
-  printf("%s", ((vcpu->regs.rflags >> 11) & 0x1) ? "OF " : "");
-  printf("%s", ((vcpu->regs.rflags >> 10) & 0x1) ? "DF " : "");
-  printf("%s", ((vcpu->regs.rflags >>  9) & 0x1) ? "IF " : "");
-  printf("%s", ((vcpu->regs.rflags >>  8) & 0x1) ? "TF " : "");
-  printf("%s", ((vcpu->regs.rflags >>  7) & 0x1) ? "SF " : "");
-  printf("%s", ((vcpu->regs.rflags >>  6) & 0x1) ? "ZF " : "");
-  printf("%s", ((vcpu->regs.rflags >>  4) & 0x1) ? "AF " : "");
-  printf("%s", ((vcpu->regs.rflags >>  2) & 0x1) ? "PF " : "");
-  printf("%s", ((vcpu->regs.rflags) & 0x1) ? "CF" : "");
-  printf("]\n");
+  fprintf(stderr, " [");
+  fprintf(stderr, "%s", ((vcpu->regs.rflags >> 16) & 0x1) ? "RF " : "");
+  fprintf(stderr, "%s", ((vcpu->regs.rflags >> 11) & 0x1) ? "OF " : "");
+  fprintf(stderr, "%s", ((vcpu->regs.rflags >> 10) & 0x1) ? "DF " : "");
+  fprintf(stderr, "%s", ((vcpu->regs.rflags >>  9) & 0x1) ? "IF " : "");
+  fprintf(stderr, "%s", ((vcpu->regs.rflags >>  8) & 0x1) ? "TF " : "");
+  fprintf(stderr, "%s", ((vcpu->regs.rflags >>  7) & 0x1) ? "SF " : "");
+  fprintf(stderr, "%s", ((vcpu->regs.rflags >>  6) & 0x1) ? "ZF " : "");
+  fprintf(stderr, "%s", ((vcpu->regs.rflags >>  4) & 0x1) ? "AF " : "");
+  fprintf(stderr, "%s", ((vcpu->regs.rflags >>  2) & 0x1) ? "PF " : "");
+  fprintf(stderr, "%s", ((vcpu->regs.rflags) & 0x1) ? "CF" : "");
+  fprintf(stderr, "]\n");
 
-	printf(" rax: %016llx   rbx: %016llx   rcx: %016llx\n",
+	fprintf(stderr, " rax: %016llx   rbx: %016llx   rcx: %016llx\n",
 			vcpu->regs.rax, vcpu->regs.rbx, vcpu->regs.rcx);
-	printf(" rdx: %016llx   rsi: %016llx   rdi: %016llx\n",
+	fprintf(stderr, " rdx: %016llx   rsi: %016llx   rdi: %016llx\n",
 			vcpu->regs.rdx, vcpu->regs.rsi, vcpu->regs.rdi);
-	printf(" rbp: %016llx    r8: %016llx    r9: %016llx\n",
+	fprintf(stderr, " rbp: %016llx    r8: %016llx    r9: %016llx\n",
 			vcpu->regs.rbp, vcpu->regs.r8,  vcpu->regs.r9);
-	printf(" r10: %016llx   r11: %016llx   r12: %016llx\n",
+	fprintf(stderr, " r10: %016llx   r11: %016llx   r12: %016llx\n",
 			vcpu->regs.r10, vcpu->regs.r11, vcpu->regs.r12);
-	printf(" r13: %016llx   r14: %016llx   r15: %016llx\n",
+	fprintf(stderr, " r13: %016llx   r14: %016llx   r15: %016llx\n",
 			vcpu->regs.r13, vcpu->regs.r14, vcpu->regs.r15);
 
-	printf(" cr0: %016llx   cr2: %016llx   cr3: %016llx\n", vcpu->sregs.cr0, vcpu->sregs.cr2, vcpu->sregs.cr3);
-	printf(" cr4: %016llx   cr8: %016llx\n", vcpu->sregs.cr4, vcpu->sregs.cr8);
-	printf("\n Segment registers:\n");
-	printf(  " ------------------\n");
-	printf(" register  selector  base              limit     type  p dpl db s l g avl\n");
+	fprintf(stderr, " cr0: %016llx   cr2: %016llx   cr3: %016llx\n", vcpu->sregs.cr0, vcpu->sregs.cr2, vcpu->sregs.cr3);
+	fprintf(stderr, " cr4: %016llx   cr8: %016llx\n", vcpu->sregs.cr4, vcpu->sregs.cr8);
+	fprintf(stderr, "\n Segment registers:\n");
+	fprintf(stderr,   " ------------------\n");
+	fprintf(stderr, " register  selector  base              limit     type  p dpl db s l g avl\n");
 	print_segment("cs ", vcpu->sregs.cs);
 	print_segment("ss ", vcpu->sregs.ss);
 	print_segment("ds ", vcpu->sregs.ds);
@@ -569,17 +569,17 @@ void kvm_vcpu_dump_regs(struct kvm_vcpu *vcpu) {
 	print_dtable("gdt",  vcpu->sregs.gdt);
 	print_dtable("idt",  vcpu->sregs.idt);
 
-	printf("\n APIC:\n");
-	printf(  " -----\n");
-	printf(" efer: %016lx  apic base: %016lx  nmi: TODO\n",
+	fprintf(stderr, "\n APIC:\n");
+	fprintf(stderr,   " -----\n");
+	fprintf(stderr, " efer: %016lx  apic base: %016lx  nmi: TODO\n",
 	       (uint64_t) vcpu->sregs.efer, (uint64_t) vcpu->sregs.apic_base
 	       );
 
-	printf("\n Interrupt bitmap:\n");
-	printf(  " -----------------\n");
+	fprintf(stderr, "\n Interrupt bitmap:\n");
+	fprintf(stderr,   " -----------------\n");
 	for (int i = 0; i < (KVM_NR_INTERRUPTS + 63) / 64; i++)
-		printf(" %016lx", (uint64_t) vcpu->sregs.interrupt_bitmap[i]);
-	printf("\n");
+		fprintf(stderr, " %016lx", (uint64_t) vcpu->sregs.interrupt_bitmap[i]);
+	fprintf(stderr, "\n");
 
 	return;
 }
@@ -589,12 +589,12 @@ void kvm_vcpu_dump_code(struct kvm_vcpu *vcpu) {
 	if(err) {
 		return;
 	}
-	printf("\n Code:\n");
-	printf(  " -----\n");
+	fprintf(stderr, "\n Code:\n");
+	fprintf(stderr,   " -----\n");
 	while(ud_disassemble(&vcpu->ud_obj)) {
-		printf(" %s\n", ud_insn_asm(&vcpu->ud_obj));
+		fprintf(stderr, " %s\n", ud_insn_asm(&vcpu->ud_obj));
 	}
-	printf("\n");
+	fprintf(stderr, "\n");
 
 	return;
 }
