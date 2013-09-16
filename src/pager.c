@@ -421,15 +421,15 @@ int kvm_pager_set_brk(struct kvm_pager *pager, uint64_t guest_addr) {
 int kvm_pager_handle_pagefault(struct kvm_pager *pager, uint64_t pfla,
     uint32_t err_code) {
 
+    struct kvm_vcpu *vcpu = elkvm_vcpu_get(pager->vm, 0);
 		void *host_p = kvm_pager_get_host_p(pager, pfla);
 
     if(pager->vm->debug) {
       printf("PFLA: 0x%lx\nCURRENT STACK TOP:0x%lx\n",
           pfla, pager->vm->current_user_stack->guest_virtual);
     }
-    if((pfla & ~0xFFF) ==
-        ((pager->vm->current_user_stack->guest_virtual & ~0xFFF) - 0x1000)) {
-      int err = expand_stack(pager->vm, elkvm_vcpu_get(pager->vm, 0));
+    if(is_stack_expansion(pager->vm, vcpu, pfla)) {
+      int err = expand_stack(pager->vm, vcpu);
       kvm_pager_dump_page_fault_info(pager, pfla, err_code, host_p);
       if(err) {
         kvm_pager_dump_page_tables(pager);
