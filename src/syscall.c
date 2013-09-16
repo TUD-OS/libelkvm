@@ -419,8 +419,12 @@ long elkvm_do_brk(struct kvm_vm *vm) {
   struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
   int err = elkvm_syscall1(vm, vcpu, &user_brk_req);
   if(vm->debug) {
-    printf("BRK reguested with address: 0x%lx\n", user_brk_req);
+    printf("\n============ LIBELKVM ===========\n");
+    printf("BRK reguested with address: 0x%lx current brk address: 0x%lx\n",
+        user_brk_req, vm->pager.brk_addr);
+    printf("=================================\n");
   }
+
   if(err) {
     return -EIO;
   }
@@ -434,7 +438,6 @@ long elkvm_do_brk(struct kvm_vm *vm) {
    * adjust the new brk */
   /* TODO free mapped pages, mark used regions as free, merge regions */
   if(user_brk_req < vm->pager.brk_addr) {
-    printf("new brk (0x%lx) is smaller: 0x%lx\n", user_brk_req, vm->pager.brk_addr);
     vm->pager.brk_addr = user_brk_req;
     return user_brk_req;
   }
