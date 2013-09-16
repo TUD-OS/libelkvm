@@ -68,7 +68,7 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 	}
 
 	struct elkvm_flat idth;
-	char *isr_path = "/home/flo/Dokumente/projekte/libelkvm/res/isr";
+	char *isr_path = RES_PATH "/isr";
 	err = elkvm_load_flat(vm, &idth, isr_path);
 	if(err) {
 		return err;
@@ -80,7 +80,7 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 	}
 
 	struct elkvm_flat sysenter;
-	char *sysenter_path = "/home/flo/Dokumente/projekte/libelkvm/res/entry";
+	char *sysenter_path = RES_PATH "/entry";
 	err = elkvm_load_flat(vm, &sysenter, sysenter_path);
 	if(err) {
 		return err;

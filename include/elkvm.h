@@ -22,6 +22,10 @@ extern "C" {
 
 #define ELKVM_USER_CHUNK_OFFSET 1024*1024*1024
 
+#ifdef _PREFIX_
+#define RES_PATH _PREFIX_ "/share/libelkvm"
+#endif
+
 struct kvm_vm {
 	int fd;
 	struct vcpu_list *vcpus;
