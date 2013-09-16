@@ -61,13 +61,22 @@ int elkvm_pushq(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t val) {
 }
 
 int expand_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+  uint64_t oldrsp = vm->current_user_stack->guest_virtual & ~0xFFF;
+  uint64_t newrsp = oldrsp - 0x1000;
+
 	struct elkvm_memory_region *region = elkvm_region_create(vm, 0x1000);
 	if(region == NULL) {
 		return -ENOMEM;
 	}
 	int err = kvm_pager_create_mapping(&vm->pager, region->host_base_p,
-			vcpu->regs.rsp & ~0xFFF, 1, 0);
-	return err;
+			newrsp, 1, 0);
+  if(err) {
+    return err;
+  }
+
+  region->guest_virtual = newrsp;
+  vm->current_user_stack = region;
+  return 0;
 }
 
 void elkvm_dump_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
@@ -80,7 +89,9 @@ void elkvm_dump_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 
   fprintf(stderr, " Host Address\tGuest Address\t\tValue\t\tValue\n");
   for(int i = 0; i < 6; i++) {
-    fprintf(stderr, " %p\t0x%016lx\t0x%016lx\t0x%016lx\n", host_p, guest, *host_p, *(host_p+1));
+    fprintf(stderr, " %p\t0x%016lx\t0x%016lx\t0x%016lx\n",
+        host_p, guest,
+        *host_p, *(host_p+1));
     guest  += 0x10;
     host_p+=2;
   }

@@ -236,11 +236,11 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 	env_region->guest_virtual = LINUX_64_STACK_BASE -
 		env_region->region_size;
 
-	/* get a 4 page large region for the stack */
-	/* TODO check if this still makes sense! */
-	struct elkvm_memory_region *stack_region = elkvm_region_create(vm, 0x4000);
-	stack_region->guest_virtual = env_region->guest_virtual;
-	stack_region->grows_downward = 1;
+	/* get a page for the stack, this is expanded as needed */
+	vm->current_user_stack = elkvm_region_create(vm, 0x1000);
+  assert(vm->current_user_stack != NULL);
+	vm->current_user_stack->guest_virtual = env_region->guest_virtual;
+	vm->current_user_stack->grows_downward = 1;
 
 	/* get a frame for the kernel (interrupt) stack */
   /* this is only ONE page large */

@@ -39,6 +39,7 @@ struct kvm_vm {
 	struct elkvm_memory_region *kernel_stack;
 	struct elkvm_memory_region *gdt_region;
 	struct elkvm_memory_region *idt_region;
+  struct elkvm_memory_region *current_user_stack;
 
   int debug;
 };
