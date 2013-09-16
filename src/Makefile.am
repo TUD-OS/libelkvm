@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -D'_PREFIX_="$(prefix)"'
 lib_LTLIBRARIES = libelkvm.la
 libelkvm_la_SOURCES = elfloader.c \
 											gdt.c\
@@ -11,3 +11,6 @@ libelkvm_la_SOURCES = elfloader.c \
 											tss.c\
 											vcpu.c \
 										 	vm.c
+libelkvmdir = $(datadir)/libelkvm
+libelkvm_DATA = ../share/entry\
+								../share/isr
