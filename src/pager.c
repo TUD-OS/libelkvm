@@ -35,6 +35,8 @@ int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
 		return err;
 	}
 
+  vm->pager.vm = vm;
+
 	return 0;
 }
 
