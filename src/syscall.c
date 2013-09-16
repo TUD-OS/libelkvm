@@ -129,6 +129,7 @@ int elkvm_handle_syscall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 	/* binary expects syscall result in rax */
 	vcpu->regs.rax = result;
 
+  /* TODO remove this, done in handle_hypercall */
 	int err = kvm_vcpu_set_regs(vcpu);
 	return err;
 }
@@ -556,7 +557,30 @@ long elkvm_do_shmctl(struct kvm_vm *vm) {
 }
 
 long elkvm_do_dup(struct kvm_vm *vm) {
-  return -ENOSYS;
+	if(vm->syscall_handlers->dup == NULL) {
+    printf("DUP handler not found\n");
+		return -ENOSYS;
+	}
+  struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
+
+  uint64_t oldfd;
+
+  int err = elkvm_syscall1(vm, vcpu, &oldfd);
+  if(err) {
+    return err;
+  }
+
+  if(vm->debug) {
+    printf("CALLING DUP handler with oldfd %i\n",
+      (int)oldfd);
+  }
+
+  long result = vm->syscall_handlers->dup(oldfd);
+  if(vm->debug) {
+    printf("DUP result: %li\n", result);
+  }
+
+  return -errno;
 }
 
 long elkvm_do_dup2(struct kvm_vm *vm) {
