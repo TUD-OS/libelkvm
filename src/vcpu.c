@@ -515,7 +515,7 @@ void kvm_vcpu_dump_msr(struct kvm_vcpu *vcpu, uint32_t msr) {
 		return;
 	}
 
-	fprintf(stderr, " MSR: 0x%x: 0x%lx\n", msr, r);
+	fprintf(stderr, " MSR: 0x%x: 0x%016lx\n", msr, r);
 }
 
 void kvm_vcpu_dump_regs(struct kvm_vcpu *vcpu) {
