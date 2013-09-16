@@ -60,6 +60,7 @@ struct elkvm_handlers {
 	long (*munmap) (void *addr, size_t length);
   /* ... */
   long (*access) (const char *pathname, int mode);
+  long (*dup) (int oldfd);
   /* ... */
   long (*getuid)(void);
   long (*getgid)(void);
