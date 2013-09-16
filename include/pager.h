@@ -137,6 +137,8 @@ int kvm_pager_create_entry(struct kvm_pager *, uint64_t *, uint64_t, int, int);
 int kvm_pager_set_brk(struct kvm_pager *, uint64_t);
 int kvm_pager_handle_pagefault(struct kvm_pager *, uint64_t, uint32_t);
 
+void kvm_pager_dump_page_fault_info(struct kvm_pager *, uint64_t pfla,
+    uint32_t err_code, void *host_p);
 void kvm_pager_dump_page_tables(struct kvm_pager *);
 void kvm_pager_dump_table(struct kvm_pager *, void *, int);
 

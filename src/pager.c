@@ -4,6 +4,7 @@
 
 #include <elkvm.h>
 #include <pager.h>
+#include <stack.h>
 #include <vcpu.h>
 
 int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
@@ -423,6 +424,13 @@ int kvm_pager_handle_pagefault(struct kvm_pager *pager, uint64_t pfla,
 			kvm_pager_dump_page_tables(pager);
 			printf("\n Invalid");
 		}
+    kvm_pager_dump_page_fault_info(pager, pfla, err_code, host_p);
+
+    return 1;
+}
+
+void kvm_pager_dump_page_fault_info(struct kvm_pager *pager, uint64_t pfla,
+    uint32_t err_code, void *host_p) {
 		printf(" Page Fault:\n");
 		printf(" -------------------\n");
 		printf(" PFLA: 0x%016lx, expected host address: %p\n", pfla, host_p);
@@ -445,8 +453,6 @@ int kvm_pager_handle_pagefault(struct kvm_pager *pager, uint64_t pfla,
           (err_code >> 3) & 0x1,
           (err_code >> 4) & 0x1);
     }
-
-    return 1;
 }
 
 void kvm_pager_dump_page_tables(struct kvm_pager *pager) {
