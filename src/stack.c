@@ -28,7 +28,7 @@ uint32_t elkvm_popd(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
   uint32_t *host_p = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
   assert(host_p != NULL);
 
-  vcpu->regs.rsp -= 0x4;
+  vcpu->regs.rsp += 0x4;
   err = kvm_vcpu_set_regs(vcpu);
   assert(err == 0);
 
