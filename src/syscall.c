@@ -55,18 +55,34 @@ int elkvm_handle_interrupt(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 
   if(vm->debug) {
     printf(" INTERRUPT with vector 0x%lx detected\n", interrupt_vector);
+    kvm_vcpu_dump_regs(vcpu);
+    elkvm_dump_stack(vm, vcpu);
+  }
+
+  /* General Protection */
+  if(interrupt_vector == 0x0d) {
+    uint32_t err_code = elkvm_popd(vm, vcpu);
+    printf("GENERAL PROTECTION FAULT\n");
+    printf("Error Code:\n");
+    printf("\tEXT: %i IDT: %i TI: %i IDX: %i\n",
+        err_code & 0x1,
+        (err_code >> 1) & 0x1,
+        (err_code >> 2) & 0x2,
+        (err_code >> 3) & 0xFFF);
+    return 1;
+
   }
 
   /* page fault */
 	if(interrupt_vector == 0x0e) {
-    uint32_t err_code = elkvm_popd(vm, vcpu);
+    uint32_t err_code = elkvm_popq(vm, vcpu);
     int err = kvm_pager_handle_pagefault(&vm->pager, vcpu->sregs.cr2, err_code);
     if(vcpu->sregs.cr2 == 0x0) {
       printf("\n\nABORT: SEGMENTATION FAULT\n\n");
       exit(1);
       return 1;
     }
-		return 1;
+		return err;
 	}
 
 	return 1;
