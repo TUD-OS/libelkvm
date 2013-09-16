@@ -253,7 +253,7 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 	//TODO find out why this is!
 	vcpu->sregs.apic_base = 0xfee00900;
 
-	vcpu->sregs.cs.selector = 0x0008;
+	vcpu->sregs.cs.selector = 0x0013;
 	vcpu->sregs.cs.base     = 0x0;
 	vcpu->sregs.cs.limit    = 0xFFFFFFFF;
 	vcpu->sregs.cs.type     = 0xb;
@@ -337,7 +337,7 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 	vcpu->sregs.ldt.g        = 0x0;
 	vcpu->sregs.ldt.avl      = 0x0;
 
-	vcpu->sregs.ss.selector = 0x0010;
+	vcpu->sregs.ss.selector = 0x000b;
 	vcpu->sregs.ss.base     = 0x0;
 	vcpu->sregs.ss.limit    = 0xFFFFFFFF;
 	vcpu->sregs.ss.type     = 0x3;

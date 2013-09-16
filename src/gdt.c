@@ -26,20 +26,20 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 	struct elkvm_gdt_segment_descriptor *entry =
 		vm->gdt_region->host_base_p + sizeof(struct elkvm_gdt_segment_descriptor);
 
-	/* user code segment */
-	elkvm_gdt_create_segment_descriptor(entry, 0x0, 0xFFFFFFFF,
-			GDT_SEGMENT_READABLE | GDT_SEGMENT_EXECUTABLE | GDT_SEGMENT_BIT |
-			GDT_SEGMENT_PRESENT  | GDT_SEGMENT_PRIVILEDGE_USER | GDT_SEGMENT_DIRECTION_BIT,
-			GDT_SEGMENT_PAGE_GRANULARITY | GDT_SEGMENT_LONG);
-	uint64_t cs_selector = (uint64_t)entry - (uint64_t)vm->gdt_region->host_base_p;
-
-	entry++;
-
 	/* user stack segment */
 	elkvm_gdt_create_segment_descriptor(entry, 0x0, 0xFFFFFFFF,
 			GDT_SEGMENT_PRESENT | GDT_SEGMENT_WRITEABLE | GDT_SEGMENT_BIT |
 			GDT_SEGMENT_PRIVILEDGE_USER,
 			GDT_SEGMENT_PAGE_GRANULARITY | GDT_SEGMENT_LONG );
+	uint64_t ss_selector = (uint64_t)entry - (uint64_t)vm->gdt_region->host_base_p;
+	entry++;
+
+	/* user code segment */
+	elkvm_gdt_create_segment_descriptor(entry, 0x0, 0xFFFFFFFF,
+			GDT_SEGMENT_READABLE | GDT_SEGMENT_EXECUTABLE | GDT_SEGMENT_BIT |
+			GDT_SEGMENT_PRESENT  | GDT_SEGMENT_PRIVILEDGE_USER | GDT_SEGMENT_DIRECTION_BIT,
+			GDT_SEGMENT_PAGE_GRANULARITY | GDT_SEGMENT_LONG);
+
 	entry++;
 
 	/* user data segment */
@@ -96,7 +96,7 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 
 	struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
 	uint64_t syscall_star = kernel_cs_selector;
-	uint64_t sysret_star = cs_selector | 0x3;
+	uint64_t sysret_star = (ss_selector - 0x8) | 0x3;
 	uint64_t star = (sysret_star << 48) | (syscall_star << 32);
 
 	err = kvm_vcpu_set_msr(vcpu,
