@@ -11,10 +11,7 @@
 #include <vcpu.h>
 
 int elkvm_handle_hypercall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
-	int err = kvm_vcpu_get_regs(vcpu);
-	if(err) {
-		return err;
-	}
+  int err = 0;
 
   uint64_t call = kvm_vcpu_get_hypercall_type(vm, vcpu);
   switch(call) {
@@ -38,11 +35,6 @@ int elkvm_handle_hypercall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 	}
 
   err = elkvm_emulate_vmcall(vm, vcpu);
-  if(err) {
-    return err;
-  }
-
-  err = kvm_vcpu_set_regs(vcpu);
   if(err) {
     return err;
   }

@@ -399,15 +399,22 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 		kvm_pager_dump_page_tables(&vcpu->vm->pager);
 	}
 
-  int err = kvm_vcpu_set_regs(vcpu);
-  if(err) {
-    return err;
-  }
+  int err = 0;
 	while(is_running) {
+    err = kvm_vcpu_set_regs(vcpu);
+    if(err) {
+      return err;
+    }
+
 		err = kvm_vcpu_run(vcpu);
 		if(err) {
 			break;
 		}
+
+    err = kvm_vcpu_get_regs(vcpu);
+    if(err) {
+      return err;
+    }
 
 		switch(vcpu->run_struct->exit_reason) {
       case KVM_EXIT_HYPERCALL:
@@ -523,12 +530,6 @@ void kvm_vcpu_dump_msr(struct kvm_vcpu *vcpu, uint32_t msr) {
 }
 
 void kvm_vcpu_dump_regs(struct kvm_vcpu *vcpu) {
-	int err = kvm_vcpu_get_regs(vcpu);
-	if(err != 0) {
-		fprintf(stderr, "WARNING: Could not get VCPU registers\n");
-		return;
-	}
-
 	fprintf(stderr, "\n Registers:\n");
 	fprintf(stderr,   " ----------\n");
 	fprintf(stderr, " rip: %016llx   rsp: %016llx flags: %016llx",
@@ -604,11 +605,6 @@ void kvm_vcpu_dump_code(struct kvm_vcpu *vcpu) {
 }
 
 int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *vcpu) {
-	int err = kvm_vcpu_get_regs(vcpu);
-	if(err != 0) {
-		return err;
-	}
-
 	void *host_p = kvm_pager_get_host_p(&vcpu->vm->pager, vcpu->regs.rip);
 	size_t disassembly_size = 40;
 	ud_set_input_buffer(&vcpu->ud_obj, (char *)host_p, disassembly_size);
