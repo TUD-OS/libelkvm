@@ -430,7 +430,9 @@ int kvm_pager_handle_pagefault(struct kvm_pager *pager, uint64_t pfla,
     }
     if(is_stack_expansion(pager->vm, vcpu, pfla)) {
       int err = expand_stack(pager->vm, vcpu);
-      kvm_pager_dump_page_fault_info(pager, pfla, err_code, host_p);
+      if(pager->vm->debug) {
+        kvm_pager_dump_page_fault_info(pager, pfla, err_code, host_p);
+      }
       if(err) {
         kvm_pager_dump_page_tables(pager);
         return err;

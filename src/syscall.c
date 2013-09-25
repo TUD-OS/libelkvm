@@ -70,7 +70,6 @@ int elkvm_handle_interrupt(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 
     uint32_t err_code = elkvm_popq(vm, vcpu);
     int err = kvm_pager_handle_pagefault(&vm->pager, vcpu->sregs.cr2, err_code);
-    printf("PAGE FAULT HANDLED: %i\n\n", err);
 
 		return err;
 	}
