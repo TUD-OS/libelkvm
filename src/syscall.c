@@ -763,7 +763,31 @@ long elkvm_do_umask(struct kvm_vm *vm) {
 }
 
 long elkvm_do_gettimeofday(struct kvm_vm *vm) {
-  return -ENOSYS;
+  if(vm->syscall_handlers->gettimeofday == NULL) {
+    return -ENOSYS;
+  }
+
+  uint64_t tv_p = 0;
+  uint64_t tz_p = 0;
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  int err = elkvm_syscall2(vm, vcpu, &tv_p, &tz_p);
+  if(err) {
+    return err;
+  }
+
+  struct timeval  *tv = kvm_pager_get_host_p(&vm->pager, tv_p);
+  struct timezone *tz = kvm_pager_get_host_p(&vm->pager, tz_p);
+
+  long result = vm->syscall_handlers->gettimeofday(tv, tz);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("GETTIMEOFDAY with timeval: %lx (%p) timezone: %lx (%p)\n",
+        tv_p, tv, tz_p, tz);
+    printf("RESULT: %li\n", result);
+    printf("=================================\n");
+  }
+
+  return result;
 }
 
 long elkvm_do_getrlimit(struct kvm_vm *vm) {

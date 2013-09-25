@@ -6,6 +6,7 @@ extern "C" {
 
 #include <poll.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/utsname.h>
 #include <unistd.h>
@@ -69,6 +70,8 @@ struct elkvm_handlers {
   long (*getegid)(void);
 	/* ... */
 	long (*uname) (struct utsname *buf);
+  /* ... */
+  long (*gettimeofday) (struct timeval *tv, struct timezone *tz);
   /* ... */
   long (*time) (time_t *t);
   /* ... */
