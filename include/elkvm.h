@@ -70,6 +70,8 @@ struct elkvm_handlers {
 	/* ... */
 	long (*uname) (struct utsname *buf);
   /* ... */
+  long (*time) (time_t *t);
+  /* ... */
   void (*exit_group) (int status);
 };
 

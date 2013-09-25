@@ -896,7 +896,28 @@ long elkvm_do_arch_prctl(struct kvm_vm *vm) {
 }
 
 long elkvm_do_time(struct kvm_vm *vm) {
-  return -ENOSYS;
+  if(vm->syscall_handlers->time == NULL) {
+    return -ENOSYS;
+  }
+
+  uint64_t time_p = 0;
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  int err = elkvm_syscall1(vm, vcpu, &time_p);
+  if(err) {
+    return err;
+  }
+
+  time_t *time = kvm_pager_get_host_p(&vm->pager, time_p);
+
+  long result = vm->syscall_handlers->time(time);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("TIME with arg %lx (%p)\n", time_p, time);
+    printf("RESULT: %li\n", result);
+    printf("=================================\n");
+  }
+
+  return result;
 }
 
 long elkvm_do_exit_group(struct kvm_vm *vm) {
