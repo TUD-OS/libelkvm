@@ -758,6 +758,34 @@ long elkvm_do_semop(struct kvm_vm *vm) {
   return -ENOSYS;
 }
 
+long elkvm_do_umask(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_gettimeofday(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_getrlimit(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_getrusage(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_sysinfo(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_times(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_ptrace(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
 long elkvm_do_getuid(struct kvm_vm *vm) {
 	if(vm->syscall_handlers->getuid == NULL) {
 		printf("GETUID handler not found\n");
@@ -865,6 +893,10 @@ long elkvm_do_arch_prctl(struct kvm_vm *vm) {
   }
 
   return 0;
+}
+
+long elkvm_do_time(struct kvm_vm *vm) {
+  return -ENOSYS;
 }
 
 long elkvm_do_exit_group(struct kvm_vm *vm) {

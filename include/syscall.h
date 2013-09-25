@@ -93,6 +93,13 @@ long elkvm_do_uname(struct kvm_vm *);
 long elkvm_do_semget(struct kvm_vm *);
 long elkvm_do_semop(struct kvm_vm *);
 /* ... */
+long elkvm_do_umask(struct kvm_vm *);
+long elkvm_do_gettimeofday(struct kvm_vm *);
+long elkvm_do_getrlimit(struct kvm_vm *);
+long elkvm_do_getrusage(struct kvm_vm *);
+long elkvm_do_sysinfo(struct kvm_vm *);
+long elkvm_do_times(struct kvm_vm *);
+long elkvm_do_ptrace(struct kvm_vm *);
 long elkvm_do_getuid(struct kvm_vm *);
 long elkvm_do_syslog(struct kvm_vm *);
 long elkvm_do_getgid(struct kvm_vm *);
@@ -102,6 +109,8 @@ long elkvm_do_geteuid(struct kvm_vm *);
 long elkvm_do_getegid(struct kvm_vm *);
 /* ... */
 long elkvm_do_arch_prctl(struct kvm_vm *);
+/* ... */
+long elkvm_do_time(struct kvm_vm *);
 /* ... */
 long elkvm_do_exit_group(struct kvm_vm *);
 
@@ -175,15 +184,24 @@ static struct {
   [__NR_semget]      = { elkvm_do_semget, "SEMGET" },
   [__NR_semop]       = { elkvm_do_semop, "SEMOP" },
   /* ... */
-  [__NR_getuid]  = { elkvm_do_getuid, "GETUID" },
-  [__NR_syslog]  = { elkvm_do_syslog, "SYSLOG" },
-  [__NR_getgid]  = { elkvm_do_getgid, "GETGID" },
-  [__NR_setuid]  = { elkvm_do_setuid, "SETUID" },
-  [__NR_setgid]  = { elkvm_do_setgid, "SETGID" },
-  [__NR_geteuid] = { elkvm_do_geteuid, "GETEUID" },
-  [__NR_getegid] = { elkvm_do_getegid, "GETEGID" },
+  [__NR_umask]        = { elkvm_do_umask, "UMASK" },
+  [__NR_gettimeofday] = { elkvm_do_gettimeofday, "GETTIMEOFDAY" },
+  [__NR_getrlimit]    = { elkvm_do_getrlimit , "GETRLIMIT" },
+  [__NR_getrusage]    = { elkvm_do_getrusage, "GETRUSAGE" },
+  [__NR_sysinfo]      = { elkvm_do_sysinfo, "SYSINFO" },
+  [__NR_times]        = { elkvm_do_times, "TIMES" },
+  [__NR_ptrace]       = { elkvm_do_ptrace, "PTRACE" },
+  [__NR_getuid]       = { elkvm_do_getuid, "GETUID" },
+  [__NR_syslog]       = { elkvm_do_syslog, "SYSLOG" },
+  [__NR_getgid]       = { elkvm_do_getgid, "GETGID" },
+  [__NR_setuid]       = { elkvm_do_setuid, "SETUID" },
+  [__NR_setgid]       = { elkvm_do_setgid, "SETGID" },
+  [__NR_geteuid]      = { elkvm_do_geteuid, "GETEUID" },
+  [__NR_getegid]      = { elkvm_do_getegid, "GETEGID" },
   /* ... */
   [__NR_arch_prctl] = { elkvm_do_arch_prctl, "ARCH PRCTL" },
+  /* ... */
+  [__NR_time]       = { elkvm_do_time, "TIME" },
   /* ... */
   [__NR_exit_group] = { elkvm_do_exit_group, "EXIT GROUP" },
 };
