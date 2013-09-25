@@ -12,7 +12,6 @@ uint64_t elkvm_popq(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 
 	//vm->region[MEMORY_REGION_STACK].region_size -= 0x8;
 	vcpu->regs.rsp += 0x8;
-	assert(err == 0);
 
 	return *host_p;
 }
@@ -22,7 +21,6 @@ uint32_t elkvm_popd(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
   assert(host_p != NULL);
 
   vcpu->regs.rsp += 0x4;
-  assert(err == 0);
 
   return *host_p;
 }
@@ -34,7 +32,7 @@ int elkvm_pushq(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t val) {
 	uint64_t *host_p = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
 	if(host_p == NULL) {
 		/* current stack is full, we need to expand the stack */
-		err = expand_stack(vm, vcpu);
+		int err = expand_stack(vm, vcpu);
 		if(err) {
 			return err;
 		}
@@ -43,7 +41,7 @@ int elkvm_pushq(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t val) {
 	}
 	*host_p = val;
 
-	return err;
+	return 0;
 }
 
 int expand_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
