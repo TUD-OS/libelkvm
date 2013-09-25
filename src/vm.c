@@ -231,6 +231,7 @@ int elkvm_cleanup(struct elkvm_opts *opts) {
 }
 
 int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
 	/* for now the region to hold env etc. will be 12 pages large */
 	struct elkvm_memory_region *env_region = elkvm_region_create(vm, 0x12000);
 	env_region->guest_virtual = LINUX_64_STACK_BASE -
@@ -256,21 +257,21 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
   /* as stack grows downward we save it's virtual address at the page afterwards */
   vm->kernel_stack->guest_virtual += 0x1000;
 
-	int err = kvm_vcpu_get_regs(vm->vcpus->vcpu);
+	int err = kvm_vcpu_get_regs(vcpu);
 	if(err) {
 		return err;
 	}
 
-	vm->vcpus->vcpu->regs.rsp = env_region->guest_virtual;
+	vcpu->regs.rsp = env_region->guest_virtual;
 
-	err = kvm_vcpu_set_regs(vm->vcpus->vcpu);
+	err = kvm_vcpu_set_regs(vcpu);
 	if(err) {
 		return err;
 	}
 
 	err = kvm_pager_create_mapping(&vm->pager,
 			env_region->host_base_p,
-			vm->vcpus->vcpu->regs.rsp, 1, 0);
+			vcpu->regs.rsp, 1, 0);
 	if(err) {
 		return err;
 	}
@@ -291,12 +292,12 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
   int bytes = elkvm_push_auxv(vm, env_region, auxv, i);
   int bytes_total = bytes;
 
-  elkvm_pushq(vm, vm->vcpus->vcpu, 0);
+  elkvm_pushq(vm, vcpu, 0);
 	bytes = elkvm_copy_and_push_str_arr_p(vm,
       env_region, bytes,
       opts->environ);
   bytes_total = bytes_total + bytes;
-	elkvm_pushq(vm, vm->vcpus->vcpu, 0);
+	elkvm_pushq(vm, vcpu, 0);
   assert(bytes > 0);
 
 	/* followed by argv pointers */
@@ -307,7 +308,7 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
   assert(bytes > 0);
 
 	/* at last push argc on the stack */
-	elkvm_pushq(vm, vm->vcpus->vcpu, opts->argc);
+	elkvm_pushq(vm, vcpu, opts->argc);
 
 	return 0;
 }
