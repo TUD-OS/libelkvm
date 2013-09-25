@@ -399,8 +399,12 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 		kvm_pager_dump_page_tables(&vcpu->vm->pager);
 	}
 
+  int err = kvm_vcpu_set_regs(vcpu);
+  if(err) {
+    return err;
+  }
 	while(is_running) {
-		int err = kvm_vcpu_run(vcpu);
+		err = kvm_vcpu_run(vcpu);
 		if(err) {
 			break;
 		}

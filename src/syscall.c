@@ -146,8 +146,7 @@ int elkvm_handle_syscall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 	vcpu->regs.rax = result;
 
   /* TODO remove this, done in handle_hypercall */
-	int err = kvm_vcpu_set_regs(vcpu);
-	return err;
+	return 0;
 }
 
 int elkvm_syscall1(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t *arg) {
