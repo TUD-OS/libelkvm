@@ -63,6 +63,8 @@ struct elkvm_handlers {
   long (*access) (const char *pathname, int mode);
   long (*dup) (int oldfd);
   /* ... */
+  long (*getpid)(void);
+  /* ... */
   long (*getuid)(void);
   long (*getgid)(void);
   /* ... */

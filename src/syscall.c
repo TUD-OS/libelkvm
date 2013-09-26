@@ -612,7 +612,19 @@ long elkvm_do_setitimer(struct kvm_vm *vm) {
 }
 
 long elkvm_do_getpid(struct kvm_vm *vm) {
-  return -ENOSYS;
+  if(vm->syscall_handlers->getpid == NULL) {
+    return -ENOSYS;
+  }
+
+  long pid = vm->syscall_handlers->getpid();
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("GETPID\n");
+    printf("RESULT: %li\n", pid);
+    printf("=================================\n");
+  }
+
+  return pid;
 }
 
 long elkvm_do_sendfile(struct kvm_vm *vm) {
