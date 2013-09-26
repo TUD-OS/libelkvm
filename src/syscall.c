@@ -51,6 +51,14 @@ int elkvm_handle_interrupt(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
     elkvm_dump_stack(vm, vcpu);
   }
 
+  /* Stack Segment */
+  if(interrupt_vector == 0x0c) {
+    uint64_t err_code = elkvm_popq(vm, vcpu);
+    printf("STACK SEGMENT FAULT\n");
+    printf("Error Code: %lu\n", err_code);
+    return 1;
+  }
+
   /* General Protection */
   if(interrupt_vector == 0x0d) {
     uint64_t err_code = elkvm_popq(vm, vcpu);
