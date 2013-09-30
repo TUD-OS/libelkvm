@@ -50,7 +50,7 @@ int elkvm_idt_setup(struct kvm_vm *vm, struct elkvm_flat *default_handler) {
 	vcpu->sregs.idt.base = vm->idt_region->guest_virtual;
 	vcpu->sregs.idt.limit = 0xFFF;
 
-	err = kvm_vcpu_set_regs(vcpu);
+	err = kvm_vcpu_set_sregs(vcpu);
 
 	return err;
 }

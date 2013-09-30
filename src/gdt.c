@@ -106,7 +106,7 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 		return err;
 	}
 
-	err = kvm_vcpu_get_regs(vcpu);
+	err = kvm_vcpu_get_sregs(vcpu);
 	if(err) {
 		return err;
 	}
@@ -118,7 +118,7 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 	vcpu->sregs.tr.limit = sizeof(struct elkvm_tss64);
 	vcpu->sregs.tr.selector = tr_selector;
 
-	err = kvm_vcpu_set_regs(vcpu);
+	err = kvm_vcpu_set_sregs(vcpu);
 	if(err) {
 		return err;
 	}

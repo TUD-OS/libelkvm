@@ -75,11 +75,13 @@ int kvm_vcpu_set_cr3(struct kvm_vcpu *, uint64_t);
 	Get the VCPU's registers
 */
 int kvm_vcpu_get_regs(struct kvm_vcpu *);
+int kvm_vcpu_get_sregs(struct kvm_vcpu *);
 
 /*
 	Set the VCPU's registers
 */
 int kvm_vcpu_set_regs(struct kvm_vcpu *);
+int kvm_vcpu_set_sregs(struct kvm_vcpu *);
 
 int kvm_vcpu_get_msr(struct kvm_vcpu *, uint32_t, uint64_t *);
 int kvm_vcpu_set_msr(struct kvm_vcpu *, uint32_t, uint64_t);

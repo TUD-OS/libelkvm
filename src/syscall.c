@@ -70,6 +70,11 @@ int elkvm_handle_interrupt(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 
   /* page fault */
 	if(interrupt_vector == 0x0e) {
+    int err = kvm_vcpu_get_sregs(vcpu);
+    if(err) {
+      return err;
+    }
+
     if(vcpu->sregs.cr2 == 0x0) {
       printf("\n\nABORT: SEGMENTATION FAULT\n\n");
       exit(1);
@@ -77,7 +82,7 @@ int elkvm_handle_interrupt(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
     }
 
     uint32_t err_code = elkvm_popq(vm, vcpu);
-    int err = kvm_pager_handle_pagefault(&vm->pager, vcpu->sregs.cr2, err_code);
+    err = kvm_pager_handle_pagefault(&vm->pager, vcpu->sregs.cr2, err_code);
 
 		return err;
 	}
@@ -895,7 +900,12 @@ long elkvm_do_arch_prctl(struct kvm_vm *vm) {
   uint64_t user_addr = 0;
   struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
 
-  int err = elkvm_syscall2(vm, vcpu, &code, &user_addr);
+  int err = kvm_vcpu_get_sregs(vcpu);
+  if(err) {
+    return err;
+  }
+
+  err = elkvm_syscall2(vm, vcpu, &code, &user_addr);
   if(err) {
     return err;
   }
@@ -922,6 +932,11 @@ long elkvm_do_arch_prctl(struct kvm_vm *vm) {
       break;
     default:
       return EINVAL;
+  }
+
+  err = kvm_vcpu_set_sregs(vcpu);
+  if(err) {
+    return err;
   }
 
   return 0;

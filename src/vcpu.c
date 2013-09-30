@@ -116,14 +116,14 @@ int kvm_vcpu_set_rip(struct kvm_vcpu * vcpu, uint64_t rip) {
 int kvm_vcpu_set_cr3(struct kvm_vcpu *vcpu, uint64_t cr3) {
 	assert(vcpu != NULL);
 
-	int err = kvm_vcpu_get_regs(vcpu);
+	int err = kvm_vcpu_get_sregs(vcpu);
 	if(err) {
 		return err;
 	}
 
 	vcpu->sregs.cr3 = cr3;
 
-	err = kvm_vcpu_set_regs(vcpu);
+	err = kvm_vcpu_set_sregs(vcpu);
 	if(err) {
 		return err;
 	}
@@ -141,7 +141,15 @@ int kvm_vcpu_get_regs(struct kvm_vcpu *vcpu) {
 		return -errno;
 	}
 
-	err = ioctl(vcpu->fd, KVM_GET_SREGS, &vcpu->sregs);
+	return 0;
+}
+
+int kvm_vcpu_get_sregs(struct kvm_vcpu *vcpu) {
+	if(vcpu->fd < 1) {
+		return -EIO;
+	}
+
+	int err = ioctl(vcpu->fd, KVM_GET_SREGS, &vcpu->sregs);
 	if(err) {
 		return -errno;
 	}
@@ -159,12 +167,20 @@ int kvm_vcpu_set_regs(struct kvm_vcpu *vcpu) {
 		return -errno;
 	}
 
-	err = ioctl(vcpu->fd, KVM_SET_SREGS, &vcpu->sregs);
+	return 0;
+}
+
+int kvm_vcpu_set_sregs(struct kvm_vcpu *vcpu) {
+	if(vcpu->fd < 1) {
+		return -EIO;
+	}
+
+	int err = ioctl(vcpu->fd, KVM_SET_SREGS, &vcpu->sregs);
 	if(err) {
 		return -errno;
 	}
 
-	return 0;
+  return 0;
 }
 
 int kvm_vcpu_destroy(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
@@ -242,6 +258,11 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 	vcpu->regs.rsp = LINUX_64_STACK_BASE;
 	/* for some reason this needs to be set */
 	vcpu->regs.rflags = 0x00000002;
+
+  int err = kvm_vcpu_set_regs(vcpu);
+  if(err) {
+    return err;
+  }
 
 	vcpu->sregs.cr0 = VCPU_CR0_FLAG_PAGING | VCPU_CR0_FLAG_CACHE_DISABLE |
 			VCPU_CR0_FLAG_NOT_WRITE_THROUGH |
@@ -364,7 +385,7 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 	//memset(&vcpu->sregs.tr, 0, sizeof(struct kvm_segment));
 	//memset(&vcpu->sregs.ldt, 0, sizeof(struct kvm_segment));
 
-	int err = kvm_vcpu_set_regs(vcpu);
+	err = kvm_vcpu_set_sregs(vcpu);
 	return err;
 }
 
