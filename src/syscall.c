@@ -771,6 +771,26 @@ long elkvm_do_semop(struct kvm_vm *vm) {
   return -ENOSYS;
 }
 
+long elkvm_do_semctl(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_shmdt(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_msgget(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_msgsnd(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_msgrcv(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
 long elkvm_do_umask(struct kvm_vm *vm) {
   return -ENOSYS;
 }

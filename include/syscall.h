@@ -92,6 +92,11 @@ long elkvm_do_kill(struct kvm_vm *);
 long elkvm_do_uname(struct kvm_vm *);
 long elkvm_do_semget(struct kvm_vm *);
 long elkvm_do_semop(struct kvm_vm *);
+long elkvm_do_semctl(struct kvm_vm *);
+long elkvm_do_shmdt(struct kvm_vm *);
+long elkvm_do_msgget(struct kvm_vm *);
+long elkvm_do_msgsnd(struct kvm_vm *);
+long elkvm_do_msgrcv(struct kvm_vm *);
 /* ... */
 long elkvm_do_umask(struct kvm_vm *);
 long elkvm_do_gettimeofday(struct kvm_vm *);
@@ -183,6 +188,11 @@ static struct {
   [__NR_uname]       = { elkvm_do_uname, "UNAME" },
   [__NR_semget]      = { elkvm_do_semget, "SEMGET" },
   [__NR_semop]       = { elkvm_do_semop, "SEMOP" },
+  [__NR_semctl]      = { elkvm_do_semctl, "SEMCTL" },
+  [__NR_shmdt]       = { elkvm_do_shmdt, "SHMDT" },
+  [__NR_msgget]      = { elkvm_do_msgget, "MSGGET" },
+  [__NR_msgsnd]      = { elkvm_do_msgsnd, "MSGSND" },
+  [__NR_msgrcv]      = { elkvm_do_msgrcv, "MSGRCV" },
   /* ... */
   [__NR_umask]        = { elkvm_do_umask, "UMASK" },
   [__NR_gettimeofday] = { elkvm_do_gettimeofday, "GETTIMEOFDAY" },
