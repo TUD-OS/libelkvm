@@ -791,6 +791,26 @@ long elkvm_do_msgrcv(struct kvm_vm *vm) {
   return -ENOSYS;
 }
 
+long elkvm_do_msgctl(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_fcntl(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_flock(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_fsync(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_fdatasync(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
 long elkvm_do_umask(struct kvm_vm *vm) {
   return -ENOSYS;
 }

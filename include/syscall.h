@@ -97,6 +97,11 @@ long elkvm_do_shmdt(struct kvm_vm *);
 long elkvm_do_msgget(struct kvm_vm *);
 long elkvm_do_msgsnd(struct kvm_vm *);
 long elkvm_do_msgrcv(struct kvm_vm *);
+long elkvm_do_msgctl(struct kvm_vm *);
+long elkvm_do_fcntl(struct kvm_vm *);
+long elkvm_do_flock(struct kvm_vm *);
+long elkvm_do_fsync(struct kvm_vm *);
+long elkvm_do_fdatasync(struct kvm_vm *);
 /* ... */
 long elkvm_do_umask(struct kvm_vm *);
 long elkvm_do_gettimeofday(struct kvm_vm *);
@@ -193,6 +198,11 @@ static struct {
   [__NR_msgget]      = { elkvm_do_msgget, "MSGGET" },
   [__NR_msgsnd]      = { elkvm_do_msgsnd, "MSGSND" },
   [__NR_msgrcv]      = { elkvm_do_msgrcv, "MSGRCV" },
+  [__NR_msgctl]      = { elkvm_do_msgctl, "MSGCTL" },
+  [__NR_fcntl]       = { elkvm_do_fcntl, "FCNTL" },
+  [__NR_flock]       = { elkvm_do_flock, "FLOCK" },
+  [__NR_fsync]       = { elkvm_do_fsync, "FSYNC" },
+  [__NR_fdatasync]   = { elkvm_do_fdatasync, "FDATASYNC" },
   /* ... */
   [__NR_umask]        = { elkvm_do_umask, "UMASK" },
   [__NR_gettimeofday] = { elkvm_do_gettimeofday, "GETTIMEOFDAY" },
