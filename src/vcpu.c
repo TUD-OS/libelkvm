@@ -422,9 +422,17 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 
   int err = 0;
 	while(is_running) {
+
     err = kvm_vcpu_set_regs(vcpu);
     if(err) {
       return err;
+    }
+
+    if(vcpu->singlestep) {
+      err = kvm_vcpu_singlestep(vcpu);
+      if(err) {
+        return err;
+      }
     }
 
 		err = kvm_vcpu_run(vcpu);
