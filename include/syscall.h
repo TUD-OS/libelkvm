@@ -107,6 +107,11 @@ long elkvm_do_ftruncate(struct kvm_vm *);
 long elkvm_do_getdents(struct kvm_vm *);
 long elkvm_do_getcwd(struct kvm_vm *);
 long elkvm_do_chdir(struct kvm_vm *);
+long elkvm_do_fchdir(struct kvm_vm *);
+long elkvm_do_rename(struct kvm_vm *);
+long elkvm_do_mkdir(struct kvm_vm *);
+long elkvm_do_rmdir(struct kvm_vm *);
+long elkvm_do_creat(struct kvm_vm *);
 /* ... */
 long elkvm_do_umask(struct kvm_vm *);
 long elkvm_do_gettimeofday(struct kvm_vm *);
@@ -213,6 +218,11 @@ static struct {
   [__NR_getdents]    = { elkvm_do_getdents, "GETDENTS" },
   [__NR_getcwd]      = { elkvm_do_getcwd, "GETCWD" },
   [__NR_chdir]       = { elkvm_do_chdir, "CHDIR" },
+  [__NR_fchdir]      = { elkvm_do_fchdir, "FCHDIR" },
+  [__NR_rename]      = { elkvm_do_rename, "RENAME" },
+  [__NR_mkdir]       = { elkvm_do_mkdir, "MKDIR" },
+  [__NR_rmdir]       = { elkvm_do_rmdir, "RMDIR" },
+  [__NR_creat]       = { elkvm_do_creat, "CREAT" },
   /* ... */
   [__NR_umask]        = { elkvm_do_umask, "UMASK" },
   [__NR_gettimeofday] = { elkvm_do_gettimeofday, "GETTIMEOFDAY" },

@@ -926,6 +926,26 @@ long elkvm_do_chdir(struct kvm_vm *vm) {
   return -ENOSYS;
 }
 
+long elkvm_do_fchdir(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_rename(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_mkdir(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_rmdir(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_creat(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
 long elkvm_do_umask(struct kvm_vm *vm) {
   return -ENOSYS;
 }
