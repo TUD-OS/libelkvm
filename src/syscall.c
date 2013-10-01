@@ -455,7 +455,34 @@ long elkvm_do_mprotect(struct kvm_vm *vm) {
 }
 
 long elkvm_do_munmap(struct kvm_vm *vm) {
-	return -ENOSYS;
+  if(vm->syscall_handlers->munmap == NULL) {
+    printf("MUNMAP handler not found\n");
+    return -ENOSYS;
+  }
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+
+  uint64_t addr_p = 0;
+  void *addr = NULL;
+  uint64_t length = 0;
+  int err = elkvm_syscall2(vm, vcpu, &addr_p, &length);
+  if(err) {
+    return err;
+  }
+
+  addr = kvm_pager_get_host_p(&vm->pager, addr_p);
+
+  long result = vm->syscall_handlers->munmap(addr, length);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("MUNMAP reguested with address: 0x%lx (%p) length: 0x%lx\n",
+        addr_p, addr, length);
+    printf("RESULT: %li\n", result);
+    if(result < 0) {
+      printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
+    }
+    printf("=================================\n");
+  }
+  return result;
 }
 
 long elkvm_do_brk(struct kvm_vm *vm) {
