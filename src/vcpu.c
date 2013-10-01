@@ -402,6 +402,7 @@ int kvm_vcpu_singlestep(struct kvm_vcpu *vcpu) {
 int kvm_vcpu_run(struct kvm_vcpu *vcpu) {
 	int err = ioctl(vcpu->fd, KVM_RUN, 0);
 	if (err < 0 && (errno != EINTR && errno != EAGAIN)) {
+    fprintf(stderr, "ERROR running VCPU No: %i Msg: %s\n", errno, strerror(errno));
 		return -1;
 	}
 
