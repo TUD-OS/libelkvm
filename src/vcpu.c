@@ -490,6 +490,12 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 			case KVM_EXIT_DEBUG:
 				fprintf(stderr, "KVM_EXIT_DEBUG\n");
 				break;
+      case KVM_EXIT_MMIO:
+        fprintf(stderr, "KVM_EXIT_MMIO\n");
+        break;
+      case KVM_EXIT_WATCHDOG:
+        fprintf(stderr, "KVM_EXIT_WATCHDOG\n");
+        break;
 			default:
 				fprintf(stderr, "KVM VCPU exit for unknown reason: %i\n",
 						vcpu->run_struct->exit_reason);
