@@ -482,7 +482,20 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
     }
     printf("=================================\n");
   }
-  return result;
+
+  if(result < 0) {
+    return result;
+  }
+
+  struct kvm_userspace_memory_region *region =
+    kvm_pager_find_region_for_host_p(&vm->pager, addr);
+  assert(region != &vm->pager.system_chunk);
+
+  region->memory_size = 0;
+  err = kvm_vm_map_chunk(vm, region);
+  printf("KVM VM UNMAP CHUNK: %i\n", err);
+
+  return err;
 }
 
 long elkvm_do_brk(struct kvm_vm *vm) {
