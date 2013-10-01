@@ -117,7 +117,10 @@ long elkvm_do_unlink(struct kvm_vm *);
 long elkvm_do_symlink(struct kvm_vm *);
 long elkvm_do_readlink(struct kvm_vm *);
 long elkvm_do_chmod(struct kvm_vm *);
-/* ... */
+long elkvm_do_fchmod(struct kvm_vm *);
+long elkvm_do_chown(struct kvm_vm *);
+long elkvm_do_fchown(struct kvm_vm *);
+long elkvm_do_lchown(struct kvm_vm *);
 long elkvm_do_umask(struct kvm_vm *);
 long elkvm_do_gettimeofday(struct kvm_vm *);
 long elkvm_do_getrlimit(struct kvm_vm *);
@@ -233,7 +236,10 @@ static struct {
   [__NR_symlink]     = { elkvm_do_symlink, "SYMLINK" },
   [__NR_readlink]    = { elkvm_do_readlink, "READLINK" },
   [__NR_chmod]       = { elkvm_do_chmod, "CHMOD" },
-  /* ... */
+  [__NR_fchmod]      = { elkvm_do_fchmod, "FCHMOD" },
+  [__NR_chown]       = { elkvm_do_chown, "CHOWN" },
+  [__NR_fchown]      = { elkvm_do_fchown, "FCHOWN" },
+  [__NR_lchown]      = { elkvm_do_lchown, "LCHOWN" },
   [__NR_umask]        = { elkvm_do_umask, "UMASK" },
   [__NR_gettimeofday] = { elkvm_do_gettimeofday, "GETTIMEOFDAY" },
   [__NR_getrlimit]    = { elkvm_do_getrlimit , "GETRLIMIT" },

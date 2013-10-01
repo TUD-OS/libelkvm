@@ -966,6 +966,22 @@ long elkvm_do_chmod(struct kvm_vm *vm) {
   return -ENOSYS;
 }
 
+long elkvm_do_fchmod(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_chown(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_fchown(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_lchown(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
 long elkvm_do_umask(struct kvm_vm *vm) {
   return -ENOSYS;
 }
