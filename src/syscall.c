@@ -566,7 +566,34 @@ long elkvm_do_readv(struct kvm_vm *vm) {
 }
 
 long elkvm_do_writev(struct kvm_vm *vm) {
-  return -ENOSYS;
+  if(vm->syscall_handlers->writev == NULL) {
+    printf("WRITEV handler not found\n");
+    return -ENOSYS;
+  }
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+
+  uint64_t fd = 0;
+  uint64_t iov_p = 0;
+  struct iovec *guest_iov = NULL;
+  uint64_t iovcnt = 0;
+
+  int err = elkvm_syscall3(vm, vcpu, &fd, &iov_p, &iovcnt);
+  if(err) {
+    return err;
+  }
+
+  struct iovec host_iov[iovcnt];
+  elkvm_get_host_iov(vm, iov_p, iovcnt, host_iov);
+
+  long result = vm->syscall_handlers->writev(fd, host_iov, iovcnt);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("WRITEV with fd: %i iov: 0x%lx iovcnt: %i\n",
+        (int)fd, iov_p, (int)iovcnt);
+    printf("RESULT: %li\n", result);
+    printf("=================================\n");
+  }
+  return result;
 }
 
 long elkvm_do_access(struct kvm_vm *vm) {
