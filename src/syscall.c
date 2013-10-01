@@ -491,6 +491,14 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
     kvm_pager_find_region_for_host_p(&vm->pager, addr);
   assert(region != &vm->pager.system_chunk);
 
+  for(uint64_t guest_addr = addr_p;
+      guest_addr < addr_p + length;
+      guest_addr += 0x1000) {
+    err = kvm_pager_destroy_mapping(&vm->pager, guest_addr);
+    printf("DESTROY MAPPING from 0x%lx, res: %i\n", guest_addr, err);
+    assert(err == 0);
+  }
+
   region->memory_size = 0;
   err = kvm_vm_map_chunk(vm, region);
   printf("KVM VM UNMAP CHUNK: %i\n", err);
