@@ -489,6 +489,10 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
   struct kvm_userspace_memory_region *region =
     kvm_pager_find_region_for_host_p(&vm->pager, addr);
   assert(region != &vm->pager.system_chunk);
+  printf("Region: slot: %i flags: %i\n"
+      "\tguest_phys_addr: 0x%llx size: 0x%llx userspace_addr: 0x%llx\n",
+      region->slot, region->flags, region->guest_phys_addr,
+      region->memory_size, region->userspace_addr);
 
   for(uint64_t guest_addr = addr_p;
       guest_addr < addr_p + length;
