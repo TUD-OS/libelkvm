@@ -906,6 +906,26 @@ long elkvm_do_fdatasync(struct kvm_vm *vm) {
   return -ENOSYS;
 }
 
+long elkvm_do_truncate(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_ftruncate(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_getdents(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_getcwd(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_chdir(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
 long elkvm_do_umask(struct kvm_vm *vm) {
   return -ENOSYS;
 }

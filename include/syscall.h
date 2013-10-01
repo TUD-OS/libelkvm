@@ -102,6 +102,11 @@ long elkvm_do_fcntl(struct kvm_vm *);
 long elkvm_do_flock(struct kvm_vm *);
 long elkvm_do_fsync(struct kvm_vm *);
 long elkvm_do_fdatasync(struct kvm_vm *);
+long elkvm_do_truncate(struct kvm_vm *);
+long elkvm_do_ftruncate(struct kvm_vm *);
+long elkvm_do_getdents(struct kvm_vm *);
+long elkvm_do_getcwd(struct kvm_vm *);
+long elkvm_do_chdir(struct kvm_vm *);
 /* ... */
 long elkvm_do_umask(struct kvm_vm *);
 long elkvm_do_gettimeofday(struct kvm_vm *);
@@ -203,6 +208,11 @@ static struct {
   [__NR_flock]       = { elkvm_do_flock, "FLOCK" },
   [__NR_fsync]       = { elkvm_do_fsync, "FSYNC" },
   [__NR_fdatasync]   = { elkvm_do_fdatasync, "FDATASYNC" },
+  [__NR_truncate]    = { elkvm_do_truncate, "TRUNCATE" },
+  [__NR_ftruncate]   = { elkvm_do_ftruncate, "FTRUNCATE" },
+  [__NR_getdents]    = { elkvm_do_getdents, "GETDENTS" },
+  [__NR_getcwd]      = { elkvm_do_getcwd, "GETCWD" },
+  [__NR_chdir]       = { elkvm_do_chdir, "CHDIR" },
   /* ... */
   [__NR_umask]        = { elkvm_do_umask, "UMASK" },
   [__NR_gettimeofday] = { elkvm_do_gettimeofday, "GETTIMEOFDAY" },
