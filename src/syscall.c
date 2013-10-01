@@ -324,7 +324,33 @@ long elkvm_do_close(struct kvm_vm *vm) {
 }
 
 long elkvm_do_stat(struct kvm_vm *vm) {
-	return -ENOSYS;
+  if(vm->syscall_handlers->stat == NULL) {
+    printf("STAT handler not found\n");
+    return -ENOSYS;
+  }
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+
+  uint64_t path_p = 0;
+  uint64_t buf_p = 0;
+  char *path = NULL;
+  struct stat *buf;
+  int err = elkvm_syscall2(vm, vcpu, &path_p, &buf_p);
+  if(err) {
+    return -EIO;
+  }
+  path = kvm_pager_get_host_p(&vm->pager, path_p);
+  buf  = kvm_pager_get_host_p(&vm->pager, buf_p);
+
+  long result = vm->syscall_handlers->stat(path, buf);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("STAT file %s with buf at: 0x%lx (%p)\n",
+        path, buf_p, buf);
+    printf("RESULT: %li\n", result);
+    printf("=================================\n");
+  }
+
+  return result;
 }
 
 long elkvm_do_fstat(struct kvm_vm *vm) {
