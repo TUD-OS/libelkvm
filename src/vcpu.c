@@ -402,6 +402,7 @@ int kvm_vcpu_singlestep(struct kvm_vcpu *vcpu) {
 int kvm_vcpu_run(struct kvm_vcpu *vcpu) {
 	int err = ioctl(vcpu->fd, KVM_RUN, 0);
 	if (err < 0 && (errno != EINTR && errno != EAGAIN)) {
+    fprintf(stderr, "ERROR running VCPU No: %i Msg: %s\n", errno, strerror(errno));
 		return -1;
 	}
 
@@ -489,6 +490,26 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 			case KVM_EXIT_DEBUG:
 				fprintf(stderr, "KVM_EXIT_DEBUG\n");
 				break;
+      case KVM_EXIT_MMIO:
+        fprintf(stderr, "KVM_EXIT_MMIO\n");
+        fprintf(stderr, "\tphys_addr: 0x%llx data[0] %x data[1] %x"
+            " data[2] %x data[3] %x data[4] %x data[5] %x "
+            " data[6] %x data[7] %x len 0x%x write %i\n",
+            vcpu->run_struct->mmio.phys_addr,
+            vcpu->run_struct->mmio.data[0],
+            vcpu->run_struct->mmio.data[1],
+            vcpu->run_struct->mmio.data[2],
+            vcpu->run_struct->mmio.data[3],
+            vcpu->run_struct->mmio.data[4],
+            vcpu->run_struct->mmio.data[5],
+            vcpu->run_struct->mmio.data[6],
+            vcpu->run_struct->mmio.data[7],
+            vcpu->run_struct->mmio.len,
+            vcpu->run_struct->mmio.is_write);
+        break;
+      case KVM_EXIT_WATCHDOG:
+        fprintf(stderr, "KVM_EXIT_WATCHDOG\n");
+        break;
 			default:
 				fprintf(stderr, "KVM VCPU exit for unknown reason: %i\n",
 						vcpu->run_struct->exit_reason);

@@ -147,7 +147,6 @@ int elkvm_handle_syscall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 	/* binary expects syscall result in rax */
 	vcpu->regs.rax = result;
 
-  /* TODO remove this, done in handle_hypercall */
 	return 0;
 }
 
