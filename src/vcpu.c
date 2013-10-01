@@ -506,9 +506,11 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
             vcpu->run_struct->mmio.data[7],
             vcpu->run_struct->mmio.len,
             vcpu->run_struct->mmio.is_write);
+				is_running = 0;
         break;
       case KVM_EXIT_WATCHDOG:
         fprintf(stderr, "KVM_EXIT_WATCHDOG\n");
+				is_running = 0;
         break;
 			default:
 				fprintf(stderr, "KVM VCPU exit for unknown reason: %i\n",
@@ -519,6 +521,7 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 
 		if(	vcpu->singlestep ||
         vcpu->run_struct->exit_reason == KVM_EXIT_DEBUG ||
+        vcpu->run_struct->exit_reason == KVM_EXIT_MMIO ||
 				vcpu->run_struct->exit_reason == KVM_EXIT_SHUTDOWN) {
 			kvm_vcpu_dump_regs(vcpu);
       elkvm_dump_stack(vcpu->vm, vcpu);
