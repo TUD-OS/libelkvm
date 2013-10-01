@@ -521,6 +521,7 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 
 		if(	vcpu->singlestep ||
         vcpu->run_struct->exit_reason == KVM_EXIT_DEBUG ||
+        vcpu->run_struct->exit_reason == KVM_EXIT_MMIO ||
 				vcpu->run_struct->exit_reason == KVM_EXIT_SHUTDOWN) {
 			kvm_vcpu_dump_regs(vcpu);
       elkvm_dump_stack(vcpu->vm, vcpu);
