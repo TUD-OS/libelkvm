@@ -946,6 +946,26 @@ long elkvm_do_creat(struct kvm_vm *vm) {
   return -ENOSYS;
 }
 
+long elkvm_do_link(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_unlink(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_symlink(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_readlink(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_chmod(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
 long elkvm_do_umask(struct kvm_vm *vm) {
   return -ENOSYS;
 }

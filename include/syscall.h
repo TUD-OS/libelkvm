@@ -112,6 +112,11 @@ long elkvm_do_rename(struct kvm_vm *);
 long elkvm_do_mkdir(struct kvm_vm *);
 long elkvm_do_rmdir(struct kvm_vm *);
 long elkvm_do_creat(struct kvm_vm *);
+long elkvm_do_link(struct kvm_vm *);
+long elkvm_do_unlink(struct kvm_vm *);
+long elkvm_do_symlink(struct kvm_vm *);
+long elkvm_do_readlink(struct kvm_vm *);
+long elkvm_do_chmod(struct kvm_vm *);
 /* ... */
 long elkvm_do_umask(struct kvm_vm *);
 long elkvm_do_gettimeofday(struct kvm_vm *);
@@ -223,6 +228,11 @@ static struct {
   [__NR_mkdir]       = { elkvm_do_mkdir, "MKDIR" },
   [__NR_rmdir]       = { elkvm_do_rmdir, "RMDIR" },
   [__NR_creat]       = { elkvm_do_creat, "CREAT" },
+  [__NR_link]        = { elkvm_do_link, "LINK" },
+  [__NR_unlink]      = { elkvm_do_unlink, "UNLINK" },
+  [__NR_symlink]     = { elkvm_do_symlink, "SYMLINK" },
+  [__NR_readlink]    = { elkvm_do_readlink, "READLINK" },
+  [__NR_chmod]       = { elkvm_do_chmod, "CHMOD" },
   /* ... */
   [__NR_umask]        = { elkvm_do_umask, "UMASK" },
   [__NR_gettimeofday] = { elkvm_do_gettimeofday, "GETTIMEOFDAY" },
