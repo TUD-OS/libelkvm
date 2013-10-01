@@ -519,8 +519,50 @@ long elkvm_do_pread64(struct kvm_vm *vm) {
   return -ENOSYS;
 }
 
+void elkvm_get_host_iov(struct kvm_vm *vm, uint64_t iov_p, uint64_t iovcnt,
+    struct iovec *host_iov) {
+  struct iovec *guest_iov = NULL;
+  guest_iov = kvm_pager_get_host_p(&vm->pager, iov_p);
+
+  for(int i = 0; i < iovcnt; i++) {
+    host_iov[i].iov_base = kvm_pager_get_host_p(&vm->pager,
+        (uint64_t)guest_iov[i].iov_base);
+    host_iov[i].iov_len  = guest_iov[i].iov_len;
+  }
+
+}
+
 long elkvm_do_readv(struct kvm_vm *vm) {
-  return -ENOSYS;
+  if(vm->syscall_handlers->readv == NULL) {
+    printf("READV handler not found\n");
+    return -ENOSYS;
+  }
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+
+  uint64_t fd = 0;
+  uint64_t iov_p = 0;
+  uint64_t iovcnt = 0;
+
+  int err = elkvm_syscall3(vm, vcpu, &fd, &iov_p, &iovcnt);
+  if(err) {
+    return err;
+  }
+
+  struct iovec host_iov[iovcnt];
+  elkvm_get_host_iov(vm, iov_p, iovcnt, host_iov);
+
+  long result = vm->syscall_handlers->readv(fd, host_iov, iovcnt);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("READV with fd: %i (%p) iov: 0x%lx iovcnt: %i\n",
+        (int)fd, &fd, iov_p, (int)iovcnt);
+    printf("RESULT: %li\n", result);
+    if(result < 0) {
+      printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
+    }
+    printf("=================================\n");
+  }
+  return result;
 }
 
 long elkvm_do_writev(struct kvm_vm *vm) {

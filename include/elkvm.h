@@ -8,6 +8,7 @@ extern "C" {
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/uio.h>
 #include <sys/utsname.h>
 #include <unistd.h>
 #include <libelf.h>
@@ -60,6 +61,7 @@ struct elkvm_handlers {
 	long (*mprotect) (void *addr, size_t len, int prot);
 	long (*munmap) (void *addr, size_t length);
   /* ... */
+  long (*readv) (int fd, struct iovec *iov, int iovcnt);
   long (*access) (const char *pathname, int mode);
   long (*dup) (int oldfd);
   /* ... */
