@@ -290,6 +290,18 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 	return err;
 }
 
+int kvm_pager_destroy_mapping(struct kvm_pager *pager, uint64_t guest_virtual) {
+	uint64_t *pt_entry = kvm_pager_page_table_walk(pager, guest_virtual,
+			0, 0, 0);
+
+  if(pt_entry == NULL) {
+    return -1;
+  }
+
+  *pt_entry = 0;
+  return 0;
+}
+
 void *kvm_pager_get_host_p(struct kvm_pager *pager, uint64_t guest_virtual) {
 	uint64_t *entry = kvm_pager_page_table_walk(pager, guest_virtual, 0, 0, 0);
 	if(entry == NULL) {

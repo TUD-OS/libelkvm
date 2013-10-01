@@ -91,6 +91,11 @@ uint64_t kvm_pager_map_kernel_page(struct kvm_pager *, void *,int, int);
 int kvm_pager_create_mapping(struct kvm_pager *, void *, uint64_t, int, int);
 
 /*
+ * \brief Destroy a Mapping in the Page tables
+ */
+int kvm_pager_destroy_mapping(struct kvm_pager *pager, uint64_t guest_virtual);
+
+/*
  * \brief Find the memory region for a host address
 */
 struct kvm_userspace_memory_region *
