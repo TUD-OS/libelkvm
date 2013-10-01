@@ -951,7 +951,33 @@ long elkvm_do_link(struct kvm_vm *vm) {
 }
 
 long elkvm_do_unlink(struct kvm_vm *vm) {
-  return -ENOSYS;
+  if(vm->syscall_handlers->unlink == NULL) {
+    printf("UNLINK handler not found\n");
+    return -ENOSYS;
+  }
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+
+  uint64_t pathname_p = 0;
+  char *pathname = NULL;
+
+  int err = elkvm_syscall1(vm, vcpu, &pathname_p);
+  if(err) {
+    return err;
+  }
+
+  pathname = kvm_pager_get_host_p(&vm->pager, pathname_p);
+  long result = vm->syscall_handlers->unlink(pathname);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("UNLINK with pathname at: %p (%s)\n",
+        pathname, pathname);
+    printf("RESULT: %li\n", result);
+    if(result < 0) {
+      printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
+    }
+    printf("=================================\n");
+  }
+  return result;
 }
 
 long elkvm_do_symlink(struct kvm_vm *vm) {

@@ -75,6 +75,7 @@ struct elkvm_handlers {
   long (*getegid)(void);
 	/* ... */
 	long (*uname) (struct utsname *buf);
+  long (*unlink) (const char *pathname);
   /* ... */
   long (*gettimeofday) (struct timeval *tv, struct timezone *tz);
   /* ... */
