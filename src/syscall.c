@@ -435,6 +435,7 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     pages = length / 0x1000;
   }
   for(int page = 0; page < pages; page++) {
+    printf("CREATE PT entry from 0x%lx to %p\n", guest_addr, host_current_p);
     err = kvm_pager_create_mapping(&vm->pager, host_current_p, guest_addr,
         flags & PROT_WRITE,
         flags & PROT_EXEC);
@@ -442,6 +443,8 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
       printf("ERROR CREATING PT entries\n");
       return err;
     }
+    void *addr = kvm_pager_get_host_p(&vm->pager, guest_addr);
+    printf("ENTRY created from 0x%lx to %p\n", guest_addr, addr);
     host_current_p+=0x1000;
     guest_addr+=0x1000;
   }
@@ -469,26 +472,12 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
   }
 
   addr = kvm_pager_get_host_p(&vm->pager, addr_p);
-
-  long result = vm->syscall_handlers->munmap(addr, length);
-  if(vm->debug) {
-    printf("\n============ LIBELKVM ===========\n");
-    printf("MUNMAP reguested with address: 0x%lx (%p) length: 0x%lx\n",
-        addr_p, addr, length);
-    printf("RESULT: %li\n", result);
-    if(result < 0) {
-      printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
-    }
-    printf("=================================\n");
-  }
-
-  if(result < 0) {
-    return result;
-  }
+  printf("UNMAP guest address 0x%lx (%p)\n", addr_p, addr);
 
   struct kvm_userspace_memory_region *region =
     kvm_pager_find_region_for_host_p(&vm->pager, addr);
   assert(region != &vm->pager.system_chunk);
+  assert(region != NULL);
   printf("Region: slot: %i flags: %i\n"
       "\tguest_phys_addr: 0x%llx size: 0x%llx userspace_addr: 0x%llx\n",
       region->slot, region->flags, region->guest_phys_addr,
@@ -502,11 +491,29 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
     assert(err == 0);
   }
 
-  region->memory_size = 0;
-  err = kvm_vm_map_chunk(vm, region);
-  printf("KVM VM UNMAP CHUNK: %i\n", err);
+//  region->memory_size = 0;
+//  err = kvm_vm_map_chunk(vm, region);
+//  printf("KVM VM UNMAP CHUNK: %i\n", err);
+//  long result = vm->syscall_handlers->munmap(addr, length);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("MUNMAP reguested with address: 0x%lx (%p) length: 0x%lx\n",
+        addr_p, addr, length);
+    //printf("RESULT: %li\n", result);
+    //if(result < 0) {
+    //  printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
+    //}
+    printf("=================================\n");
+  }
 
-  return err;
+  return 0;
+
+//  if(result < 0) {
+//    return result;
+//  }
+//
+//
+//  return err;
 }
 
 long elkvm_do_brk(struct kvm_vm *vm) {
