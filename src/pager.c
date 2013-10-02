@@ -211,8 +211,8 @@ struct kvm_userspace_memory_region *
       assert(region != NULL);
       printf("\tuserspace_addr: 0x%llx size: 0x%llx\n",
           region->userspace_addr, region->memory_size);
-			if((void *)region->userspace_addr <= host_mem_p &&
-					host_mem_p < ((void *)region->userspace_addr + region->memory_size)) {
+
+      if(address_in_region(region, host_mem_p)) {
 				return region;
 			}
 			cl = cl->next;
@@ -306,8 +306,7 @@ void *kvm_pager_get_host_p(struct kvm_pager *pager, uint64_t guest_virtual) {
     chunk = &pager->system_chunk;
   } else {
     struct chunk_list *cl = pager->other_chunks;
-    while(guest_physical < cl->chunk->guest_phys_addr ||
-        cl->chunk->guest_phys_addr + cl->chunk->memory_size < guest_physical) {
+    while(!guest_address_in_region(cl->chunk, guest_physical)) {
       assert(cl->next != NULL);
       cl = cl->next;
     }
