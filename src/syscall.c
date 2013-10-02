@@ -442,6 +442,8 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
       printf("ERROR CREATING PT entries\n");
       return err;
     }
+//    void *addr = kvm_pager_get_host_p(&vm->pager, guest_addr);
+//    assert((uint64_t)addr == guest_addr);
     host_current_p+=0x1000;
     guest_addr+=0x1000;
   }
@@ -454,7 +456,57 @@ long elkvm_do_mprotect(struct kvm_vm *vm) {
 }
 
 long elkvm_do_munmap(struct kvm_vm *vm) {
-	return -ENOSYS;
+  if(vm->syscall_handlers->munmap == NULL) {
+    printf("MUNMAP handler not found\n");
+    return -ENOSYS;
+  }
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+
+  uint64_t addr_p = 0;
+  void *addr = NULL;
+  uint64_t length = 0;
+  int err = elkvm_syscall2(vm, vcpu, &addr_p, &length);
+  if(err) {
+    return err;
+  }
+
+  addr = kvm_pager_get_host_p(&vm->pager, addr_p);
+
+  struct kvm_userspace_memory_region *region =
+    kvm_pager_find_region_for_host_p(&vm->pager, addr);
+  assert(region != &vm->pager.system_chunk);
+  assert(region != NULL);
+
+  for(uint64_t guest_addr = addr_p;
+      guest_addr < addr_p + length;
+      guest_addr += 0x1000) {
+    err = kvm_pager_destroy_mapping(&vm->pager, guest_addr);
+    assert(err == 0);
+  }
+
+//  region->memory_size = 0;
+//  err = kvm_vm_map_chunk(vm, region);
+//  printf("KVM VM UNMAP CHUNK: %i\n", err);
+//  long result = vm->syscall_handlers->munmap(addr, length);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("MUNMAP reguested with address: 0x%lx (%p) length: 0x%lx\n",
+        addr_p, addr, length);
+    //printf("RESULT: %li\n", result);
+    //if(result < 0) {
+    //  printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
+    //}
+    printf("=================================\n");
+  }
+
+  return 0;
+
+//  if(result < 0) {
+//    return result;
+//  }
+//
+//
+//  return err;
 }
 
 long elkvm_do_brk(struct kvm_vm *vm) {

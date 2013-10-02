@@ -204,13 +204,8 @@ struct kvm_userspace_memory_region *
 
 		struct chunk_list *cl = pager->other_chunks;
 		while(cl != NULL) {
-      printf("looking at cl: %p\n", cl);
-      printf("\tchunk: %p\n", cl->chunk);
-      printf("\tnext:  %p\n", cl->next);
 			struct kvm_userspace_memory_region *region = cl->chunk;
       assert(region != NULL);
-      printf("\tuserspace_addr: 0x%llx size: 0x%llx\n",
-          region->userspace_addr, region->memory_size);
 
       if(address_in_region(region, host_mem_p)) {
 				return region;
@@ -292,6 +287,18 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 			writeable, executable);
 
 	return err;
+}
+
+int kvm_pager_destroy_mapping(struct kvm_pager *pager, uint64_t guest_virtual) {
+	uint64_t *pt_entry = kvm_pager_page_table_walk(pager, guest_virtual,
+			0, 0, 0);
+
+  if(pt_entry == NULL) {
+    return -1;
+  }
+
+  *pt_entry = 0;
+  return 0;
 }
 
 void *kvm_pager_get_host_p(struct kvm_pager *pager, uint64_t guest_virtual) {
