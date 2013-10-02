@@ -198,15 +198,19 @@ int kvm_pager_is_invalid_guest_base(struct kvm_pager *pager, uint64_t guest_base
 
 struct kvm_userspace_memory_region *
 	kvm_pager_find_region_for_host_p(struct kvm_pager *pager, void *host_mem_p) {
-		if(((void *)pager->system_chunk.userspace_addr <= host_mem_p) &&
-				(host_mem_p < ((void *)pager->system_chunk.userspace_addr +
-					pager->system_chunk.memory_size))) {
+    if(address_in_region(&pager->system_chunk, host_mem_p)) {
 			return &pager->system_chunk;
 		}
 
 		struct chunk_list *cl = pager->other_chunks;
 		while(cl != NULL) {
+      printf("looking at cl: %p\n", cl);
+      printf("\tchunk: %p\n", cl->chunk);
+      printf("\tnext:  %p\n", cl->next);
 			struct kvm_userspace_memory_region *region = cl->chunk;
+      assert(region != NULL);
+      printf("\tuserspace_addr: 0x%llx size: 0x%llx\n",
+          region->userspace_addr, region->memory_size);
 			if((void *)region->userspace_addr <= host_mem_p &&
 					host_mem_p < ((void *)region->userspace_addr + region->memory_size)) {
 				return region;
@@ -298,9 +302,9 @@ void *kvm_pager_get_host_p(struct kvm_pager *pager, uint64_t guest_virtual) {
 
   struct kvm_userspace_memory_region *chunk = NULL;
   uint64_t guest_physical = (*entry & 0x000FFFFFFFFFF000) | (guest_virtual & 0xFFF);
-  if(guest_physical < pager->system_chunk.guest_phys_addr ||
-      pager->system_chunk.guest_phys_addr +
-      pager->system_chunk.memory_size <= guest_physical) {
+  if(guest_address_in_region(&pager->system_chunk, guest_physical)) {
+    chunk = &pager->system_chunk;
+  } else {
     struct chunk_list *cl = pager->other_chunks;
     while(guest_physical < cl->chunk->guest_phys_addr ||
         cl->chunk->guest_phys_addr + cl->chunk->memory_size < guest_physical) {
@@ -308,8 +312,6 @@ void *kvm_pager_get_host_p(struct kvm_pager *pager, uint64_t guest_virtual) {
       cl = cl->next;
     }
     chunk = cl->chunk;
-  } else {
-    chunk = &pager->system_chunk;
   }
 	return (void *)((guest_physical - chunk->guest_phys_addr) + chunk->userspace_addr);
 }

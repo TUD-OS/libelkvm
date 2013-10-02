@@ -155,6 +155,18 @@ static inline uint64_t host_to_guest_physical(struct kvm_pager *pager, void *hos
 	return (uint64_t)(host_p - region->userspace_addr + region->guest_phys_addr);
 }
 
+static inline int address_in_region(struct kvm_userspace_memory_region *r,
+    void *host_addr) {
+  return ((void *)r->userspace_addr <= host_addr) &&
+      (host_addr < ((void *)r->userspace_addr + r->memory_size));
+}
+
+static inline int guest_address_in_region(struct kvm_userspace_memory_region *r,
+    uint64_t guest_physical) {
+  return (r->guest_phys_addr <= guest_physical) &&
+      (guest_physical < (r->guest_phys_addr + r->memory_size));
+}
+
 /*
  * \brief Check if an entry exists in a pml4, pdpt, pd or pt
 */
