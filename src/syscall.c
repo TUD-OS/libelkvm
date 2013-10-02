@@ -1085,6 +1085,13 @@ long elkvm_do_gettimeofday(struct kvm_vm *vm) {
     printf("GETTIMEOFDAY with timeval: %lx (%p) timezone: %lx (%p)\n",
         tv_p, tv, tz_p, tz);
     printf("RESULT: %li\n", result);
+    if(result == 0) {
+      printf("timeval: tv_sec: %lu tv_usec: %lu\n", tv->tv_sec, tv->tv_usec);
+      printf("timezone: tz_minuteswest: %i tz_dsttime %i\n",
+          tz->tz_minuteswest, tz->tz_dsttime);
+    } else {
+      printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
+    }
     printf("=================================\n");
   }
 
