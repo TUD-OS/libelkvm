@@ -435,7 +435,6 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     pages = length / 0x1000;
   }
   for(int page = 0; page < pages; page++) {
-    printf("CREATE PT entry from 0x%lx to %p\n", guest_addr, host_current_p);
     err = kvm_pager_create_mapping(&vm->pager, host_current_p, guest_addr,
         flags & PROT_WRITE,
         flags & PROT_EXEC);
@@ -443,8 +442,8 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
       printf("ERROR CREATING PT entries\n");
       return err;
     }
-    void *addr = kvm_pager_get_host_p(&vm->pager, guest_addr);
-    printf("ENTRY created from 0x%lx to %p\n", guest_addr, addr);
+//    void *addr = kvm_pager_get_host_p(&vm->pager, guest_addr);
+//    assert((uint64_t)addr == guest_addr);
     host_current_p+=0x1000;
     guest_addr+=0x1000;
   }
@@ -472,22 +471,16 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
   }
 
   addr = kvm_pager_get_host_p(&vm->pager, addr_p);
-  printf("UNMAP guest address 0x%lx (%p)\n", addr_p, addr);
 
   struct kvm_userspace_memory_region *region =
     kvm_pager_find_region_for_host_p(&vm->pager, addr);
   assert(region != &vm->pager.system_chunk);
   assert(region != NULL);
-  printf("Region: slot: %i flags: %i\n"
-      "\tguest_phys_addr: 0x%llx size: 0x%llx userspace_addr: 0x%llx\n",
-      region->slot, region->flags, region->guest_phys_addr,
-      region->memory_size, region->userspace_addr);
 
   for(uint64_t guest_addr = addr_p;
       guest_addr < addr_p + length;
       guest_addr += 0x1000) {
     err = kvm_pager_destroy_mapping(&vm->pager, guest_addr);
-    printf("DESTROY MAPPING from 0x%lx, res: %i\n", guest_addr, err);
     assert(err == 0);
   }
 

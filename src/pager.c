@@ -204,13 +204,8 @@ struct kvm_userspace_memory_region *
 
 		struct chunk_list *cl = pager->other_chunks;
 		while(cl != NULL) {
-      printf("looking at cl: %p\n", cl);
-      printf("\tchunk: %p\n", cl->chunk);
-      printf("\tnext:  %p\n", cl->next);
 			struct kvm_userspace_memory_region *region = cl->chunk;
       assert(region != NULL);
-      printf("\tuserspace_addr: 0x%llx size: 0x%llx\n",
-          region->userspace_addr, region->memory_size);
 			if((void *)region->userspace_addr <= host_mem_p &&
 					host_mem_p < ((void *)region->userspace_addr + region->memory_size)) {
 				return region;
