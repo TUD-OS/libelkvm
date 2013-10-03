@@ -1258,6 +1258,26 @@ long elkvm_do_capget(struct kvm_vm *vm) {
   return -ENOSYS;
 }
 
+long elkvm_do_capset(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_rt_sigpending(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_rt_sigtimedwait(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_rt_sigqueueinfo(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_rt_sigsuspend(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
 long elkvm_do_arch_prctl(struct kvm_vm *vm) {
   uint64_t code = 0;
   uint64_t user_addr = 0;

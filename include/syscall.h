@@ -152,6 +152,11 @@ long elkvm_do_setfsuid(struct kvm_vm *);
 long elkvm_do_setfsgid(struct kvm_vm *);
 long elkvm_do_getsid(struct kvm_vm *);
 long elkvm_do_capget(struct kvm_vm *);
+long elkvm_do_capset(struct kvm_vm *);
+long elkvm_do_rt_sigpending(struct kvm_vm *);
+long elkvm_do_rt_sigtimedwait(struct kvm_vm *);
+long elkvm_do_rt_sigqueueinfo(struct kvm_vm *);
+long elkvm_do_rt_sigsuspend(struct kvm_vm *);
 /* ... */
 long elkvm_do_arch_prctl(struct kvm_vm *);
 /* ... */
@@ -288,6 +293,11 @@ static struct {
   [__NR_setfsgid]       = { elkvm_do_setfsgid, "SETFSGID" },
   [__NR_getsid]         = { elkvm_do_getsid, "GETSID" },
   [__NR_capget]         = { elkvm_do_capget, "CAPGET" },
+  [__NR_capset]         = { elkvm_do_capset, "CAPSET" },
+  [__NR_rt_sigpending]  = { elkvm_do_rt_sigpending, "RT SIGPENDING" },
+  [__NR_rt_sigtimedwait] = { elkvm_do_rt_sigtimedwait, "RT SIGTIMEDWAIT" },
+  [__NR_rt_sigqueueinfo] = { elkvm_do_rt_sigqueueinfo, "RT SIGQUEUEINFO" },
+  [__NR_rt_sigsuspend]   = { elkvm_do_rt_sigsuspend, "RT SIGSUSPEND" },
   /* ... */
   [__NR_arch_prctl] = { elkvm_do_arch_prctl, "ARCH PRCTL" },
   /* ... */
