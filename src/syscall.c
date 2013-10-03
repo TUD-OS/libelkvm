@@ -1190,6 +1190,14 @@ long elkvm_do_getegid(struct kvm_vm *vm) {
 	return result;
 }
 
+long elkvm_do_setpgid(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_getppid(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
 long elkvm_do_arch_prctl(struct kvm_vm *vm) {
   uint64_t code = 0;
   uint64_t user_addr = 0;
