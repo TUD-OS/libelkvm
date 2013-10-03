@@ -142,6 +142,11 @@ long elkvm_do_setsid(struct kvm_vm *);
 long elkvm_do_setreuid(struct kvm_vm *);
 long elkvm_do_setregid(struct kvm_vm *);
 long elkvm_do_getgroups(struct kvm_vm *);
+long elkvm_do_setgroups(struct kvm_vm *);
+long elkvm_do_setresuid(struct kvm_vm *);
+long elkvm_do_getresuid(struct kvm_vm *);
+long elkvm_do_setresgid(struct kvm_vm *);
+long elkvm_do_getresgid(struct kvm_vm *);
 /* ... */
 long elkvm_do_arch_prctl(struct kvm_vm *);
 /* ... */
@@ -268,6 +273,11 @@ static struct {
   [__NR_setreuid]       = { elkvm_do_setreuid, "SETREUID" },
   [__NR_setregid]       = { elkvm_do_setregid, "SETREGID" },
   [__NR_getgroups]      = { elkvm_do_getgroups, "GETGROUPS" },
+  [__NR_setgroups]      = { elkvm_do_setgroups, "SETGROUPS" },
+  [__NR_setresuid]      = { elkvm_do_setresuid, "SETRESUID" },
+  [__NR_getresuid]      = { elkvm_do_getresuid, "GETRESUID" },
+  [__NR_setresgid]      = { elkvm_do_setresgid, "SETRESGID" },
+  [__NR_getresgid]      = { elkvm_do_getresgid, "GETRESGID" },
   /* ... */
   [__NR_arch_prctl] = { elkvm_do_arch_prctl, "ARCH PRCTL" },
   /* ... */
