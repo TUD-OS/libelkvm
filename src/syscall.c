@@ -1198,6 +1198,26 @@ long elkvm_do_getppid(struct kvm_vm *vm) {
   return -ENOSYS;
 }
 
+long elkvm_do_getpgrp(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_setsid(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_setreuid(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_setregid(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_getgroups(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
 long elkvm_do_arch_prctl(struct kvm_vm *vm) {
   uint64_t code = 0;
   uint64_t user_addr = 0;
