@@ -412,11 +412,11 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   }
   addr = kvm_pager_get_host_p(&vm->pager, addr_p);
 
-  void *ret_p = NULL;
+  struct region_mapping mapping;
   long result = vm->syscall_handlers->mmap((void *)addr_p, length, prot,
-      flags, fd, offset, &ret_p);
+      flags, fd, offset, &mapping);
   struct kvm_userspace_memory_region *chunk =
-    kvm_pager_alloc_chunk(&vm->pager, ret_p, length, 0);
+    kvm_pager_alloc_chunk(&vm->pager, mapping.host_p, length, 0);
   if(chunk == NULL) {
     return -ENOMEM;
   }
@@ -427,8 +427,8 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   }
 
   int pages = 0;
-  void *host_current_p = ret_p;
-  uint64_t guest_addr = (uint64_t)ret_p;
+  void *host_current_p = mapping.host_p;
+  uint64_t guest_addr = (uint64_t)mapping.host_p;
   if(length % 0x1000) {
     pages = length / 0x1000 + 1;
   } else {
@@ -448,7 +448,7 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     guest_addr+=0x1000;
   }
 
-  return (long)ret_p;
+  return (long)mapping.host_p;
 }
 
 long elkvm_do_mprotect(struct kvm_vm *vm) {

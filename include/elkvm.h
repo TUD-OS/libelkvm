@@ -46,6 +46,8 @@ struct kvm_vm {
   int debug;
 };
 
+struct region_mapping;
+
 struct elkvm_handlers {
 	long (*read) (int fd, void *buf, size_t count);
 	long (*write) (int fd, void *buf, size_t count);
@@ -57,7 +59,7 @@ struct elkvm_handlers {
 	long (*poll) (struct pollfd *fds, nfds_t nfds, int timeout);
 	long (*lseek) (int fd, off_t offset, int whence);
 	long (*mmap) (void *addr, size_t length, int prot, int flags, int fd,
-      off_t offset, void **);
+      off_t offset, struct region_mapping *);
 	long (*mprotect) (void *addr, size_t len, int prot);
 	long (*munmap) (void *addr, size_t length);
   /* ... */

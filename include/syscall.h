@@ -306,3 +306,9 @@ static struct {
   [__NR_exit_group] = { elkvm_do_exit_group, "EXIT GROUP" },
 };
 
+struct region_mapping {
+  void *host_p;
+  uint64_t guest_virt;
+  size_t length;
+  size_t mapped;
+};
