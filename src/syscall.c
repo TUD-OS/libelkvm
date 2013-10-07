@@ -415,6 +415,18 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   struct region_mapping mapping;
   long result = vm->syscall_handlers->mmap((void *)addr_p, length, prot,
       flags, fd, offset, &mapping);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("MMAP addr_p %p length %lu prot %lu flags %lu fd %lu offset %lu\n",
+        addr, length, prot, flags, fd, offset);
+    printf("RESULT: %li\n", result);
+    if(result >= 0) {
+      printf("MAPPING: host_p: %p guest_virt: 0x%lx length %zd mapped %zd\n",
+          mapping.host_p, mapping.guest_virt, mapping.length, mapping.mapped);
+    }
+    printf("=================================\n");
+  }
+
   struct kvm_userspace_memory_region *chunk =
     kvm_pager_alloc_chunk(&vm->pager, mapping.host_p, length, 0);
   if(chunk == NULL) {
