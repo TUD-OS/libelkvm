@@ -46,7 +46,12 @@ struct kvm_vm {
   int debug;
 };
 
-struct region_mapping;
+struct region_mapping {
+  void *host_p;
+  uint64_t guest_virt;
+  size_t length;
+  size_t mapped;
+};
 
 struct elkvm_handlers {
 	long (*read) (int fd, void *buf, size_t count);
