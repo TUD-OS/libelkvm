@@ -426,6 +426,9 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     }
     printf("=================================\n");
   }
+  if(result < 0) {
+    return -errno;
+  }
 
   struct kvm_userspace_memory_region *chunk =
     kvm_pager_alloc_chunk(&vm->pager, mapping.host_p, length, 0);
