@@ -440,7 +440,9 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
 
   int pages = 0;
   void *host_current_p = mapping.host_p;
-  uint64_t guest_addr = (uint64_t)mapping.host_p;
+  uint64_t guest_addr = mapping.guest_virt;
+  assert(guest_addr != 0);
+
   if(length % 0x1000) {
     pages = length / 0x1000 + 1;
   } else {
@@ -460,7 +462,7 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     guest_addr+=0x1000;
   }
 
-  return (long)mapping.host_p;
+  return (long)mapping.guest_virt;
 }
 
 long elkvm_do_mprotect(struct kvm_vm *vm) {
