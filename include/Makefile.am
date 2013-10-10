@@ -6,6 +6,7 @@ libelkvminclude_HEADERS = elfloader.h\
 													heap.h\
 													kvm.h\
 													idt.h\
+													list.h\
 													mem_chunk.h\
 													pager.h\
 													region.h\
