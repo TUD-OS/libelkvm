@@ -369,7 +369,7 @@ long elkvm_do_fstat(struct kvm_vm *vm) {
 	buf = kvm_pager_get_host_p(&vm->pager, buf_p);
 
   if(vm->debug) {
-    printf("FSTAT file with fd %li buf at %p\n", fd, buf);
+    printf("FSTAT file with fd %li buf at 0x%lx (%p)\n", fd, buf_p, buf);
   }
   long result = vm->syscall_handlers->fstat(fd, buf);
 
