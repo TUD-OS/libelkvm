@@ -6,6 +6,7 @@
 
 #include <elkvm.h>
 #include <heap.h>
+#include <mapping.h>
 #include <stack.h>
 #include <syscall.h>
 #include <vcpu.h>
@@ -412,17 +413,22 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   }
   addr = kvm_pager_get_host_p(&vm->pager, addr_p);
 
-  struct region_mapping mapping;
+  struct region_mapping *mapping = elkvm_mapping_alloc();
   long result = vm->syscall_handlers->mmap((void *)addr_p, length, prot,
-      flags, fd, offset, &mapping);
+      flags, fd, offset, mapping);
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
     printf("MMAP addr_p %p length %lu prot %lu flags %lu fd %lu offset %lu\n",
         addr, length, prot, flags, fd, offset);
     printf("RESULT: %li\n", result);
+    if(length % 0x1000) {
+      mapping->mapped_pages = length / 0x1000 + 1;
+    } else {
+      mapping->mapped_pages = length / 0x1000;
+    }
     if(result >= 0) {
-      printf("MAPPING: host_p: %p guest_virt: 0x%lx length %zd mapped %zd\n",
-          mapping.host_p, mapping.guest_virt, mapping.length, mapping.mapped);
+      printf("MAPPING: %p host_p: %p guest_virt: 0x%lx length %zd mapped pages %i\n",
+          mapping, mapping->host_p, mapping->guest_virt, mapping->length, mapping->mapped_pages);
     }
     printf("=================================\n");
   }
@@ -431,7 +437,7 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   }
 
   struct kvm_userspace_memory_region *chunk =
-    kvm_pager_alloc_chunk(&vm->pager, mapping.host_p, length, 0);
+    kvm_pager_alloc_chunk(&vm->pager, mapping->host_p, length, 0);
   if(chunk == NULL) {
     return -ENOMEM;
   }
@@ -441,17 +447,16 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     return err;
   }
 
-  int pages = 0;
-  void *host_current_p = mapping.host_p;
-  uint64_t guest_addr = mapping.guest_virt;
+  void *host_current_p = mapping->host_p;
+  uint64_t guest_addr = mapping->guest_virt;
   assert(guest_addr != 0);
 
   if(length % 0x1000) {
-    pages = length / 0x1000 + 1;
+    mapping->mapped_pages = length / 0x1000 + 1;
   } else {
-    pages = length / 0x1000;
+    mapping->mapped_pages = length / 0x1000;
   }
-  for(int page = 0; page < pages; page++) {
+  for(int page = 0; page < mapping->mapped_pages; page++) {
     err = kvm_pager_create_mapping(&vm->pager, host_current_p, guest_addr,
         flags & PROT_WRITE,
         flags & PROT_EXEC);
@@ -465,7 +470,8 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     guest_addr+=0x1000;
   }
 
-  return (long)mapping.guest_virt;
+  list_push(vm->mappings, mapping);
+  return (long)mapping->guest_virt;
 }
 
 long elkvm_do_mprotect(struct kvm_vm *vm) {
