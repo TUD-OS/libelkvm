@@ -500,10 +500,13 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
   assert(region != &vm->pager.system_chunk);
   assert(region != NULL);
 
+  struct region_mapping *mapping = elkvm_mapping_find(vm, addr);
+
   for(uint64_t guest_addr = addr_p;
       guest_addr < addr_p + length;
       guest_addr += 0x1000) {
     err = kvm_pager_destroy_mapping(&vm->pager, guest_addr);
+    mapping->mapped_pages--;
     assert(err == 0);
   }
 
@@ -514,7 +517,8 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
     printf("MUNMAP reguested with address: 0x%lx (%p) length: 0x%lx\n",
-        addr_p, addr, length);
+        addr_p, addr, length, mapping->mapped_pages);
+    printf("MAPPING %p pages mapped: %u\n", mapping, mapping->mapped_pages);
     //printf("RESULT: %li\n", result);
     //if(result < 0) {
     //  printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
