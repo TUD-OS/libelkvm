@@ -510,19 +510,22 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
     assert(err == 0);
   }
 
-//  region->memory_size = 0;
-//  err = kvm_vm_map_chunk(vm, region);
-//  printf("KVM VM UNMAP CHUNK: %i\n", err);
-//  long result = vm->syscall_handlers->munmap(addr, length);
+  long result = -1;
+  if(mapping->mapped_pages == 0) {
+    region->memory_size = 0;
+    err = kvm_vm_map_chunk(vm, region);
+    result = vm->syscall_handlers->munmap(mapping);
+  }
+
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
     printf("MUNMAP reguested with address: 0x%lx (%p) length: 0x%lx\n",
         addr_p, addr, length, mapping->mapped_pages);
     printf("MAPPING %p pages mapped: %u\n", mapping, mapping->mapped_pages);
-    //printf("RESULT: %li\n", result);
-    //if(result < 0) {
-    //  printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
-    //}
+    printf("RESULT: %li\n", result);
+    if(result < 0) {
+      printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
+    }
     printf("=================================\n");
   }
 

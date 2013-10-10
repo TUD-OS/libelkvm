@@ -68,7 +68,7 @@ struct elkvm_handlers {
 	long (*mmap) (void *addr, size_t length, int prot, int flags, int fd,
       off_t offset, struct region_mapping *);
 	long (*mprotect) (void *addr, size_t len, int prot);
-	long (*munmap) (void *addr, size_t length);
+	long (*munmap) (struct region_mapping *mapping);
   /* ... */
   long (*readv) (int fd, struct iovec *iov, int iovcnt);
   long (*writev) (int fd, struct iovec *iov, int iovcnt);
