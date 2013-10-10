@@ -17,6 +17,7 @@ extern "C" {
 #include "pager.h"
 #include "region.h"
 #include "vcpu.h"
+#include "list.h"
 
 #define VM_MODE_X86    1
 #define VM_MODE_PAGING 2
@@ -28,6 +29,13 @@ extern "C" {
 #define RES_PATH _PREFIX_ "/share/libelkvm"
 #endif
 
+struct region_mapping {
+  void *host_p;
+  uint64_t guest_virt;
+  size_t length;
+  unsigned mapped_pages;
+};
+
 struct kvm_vm {
 	int fd;
 	struct vcpu_list *vcpus;
@@ -35,6 +43,7 @@ struct kvm_vm {
 	int run_struct_size;
 	struct elkvm_memory_region_list *root_region;
 	struct elkvm_handlers *syscall_handlers;
+  list(struct region_mapping *, mappings);
 
 	struct elkvm_memory_region *text;
 	struct elkvm_memory_region_list *heap;
@@ -44,13 +53,6 @@ struct kvm_vm {
   struct elkvm_memory_region *current_user_stack;
 
   int debug;
-};
-
-struct region_mapping {
-  void *host_p;
-  uint64_t guest_virt;
-  size_t length;
-  size_t mapped;
 };
 
 struct elkvm_handlers {
@@ -66,7 +68,7 @@ struct elkvm_handlers {
 	long (*mmap) (void *addr, size_t length, int prot, int flags, int fd,
       off_t offset, struct region_mapping *);
 	long (*mprotect) (void *addr, size_t len, int prot);
-	long (*munmap) (void *addr, size_t length);
+	long (*munmap) (struct region_mapping *mapping);
   /* ... */
   long (*readv) (int fd, struct iovec *iov, int iovcnt);
   long (*writev) (int fd, struct iovec *iov, int iovcnt);
