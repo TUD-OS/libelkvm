@@ -447,6 +447,10 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
     }
 
 		switch(vcpu->run_struct->exit_reason) {
+      case KVM_EXIT_UNKNOWN:
+        fprintf(stderr, "KVM exit for unknown reason (KVM_EXIT_UNKNOWN)\n");
+        is_running = 0;
+        break;
       case KVM_EXIT_HYPERCALL:
         if(vcpu->singlestep) {
 				  fprintf(stderr, "KVM_EXIT_HYPERCALL\n");
