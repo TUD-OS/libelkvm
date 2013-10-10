@@ -4,6 +4,7 @@ libelkvminclude_HEADERS = elfloader.h\
 													elkvm.h\
 													gdt.h\
 													heap.h\
+													mapping.h\
 													kvm.h\
 													idt.h\
 													list.h\
