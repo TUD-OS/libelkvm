@@ -57,10 +57,10 @@ int elfloader_load_binary(struct kvm_vm *vm, const char *binary) {
 		return err;
 	}
 
-//	err = elfloader_load_section_headers(vm, &bin);
-//	if(err) {
-//		return err;
-//	}
+	err = elfloader_load_section_headers(vm, &bin);
+	if(err) {
+		return err;
+	}
 
 	err = kvm_vcpu_set_rip(vm->vcpus->vcpu, ehdr.e_entry);
 	if(err) {
