@@ -236,6 +236,27 @@ int elfloader_load_program_header(struct kvm_vm *vm, struct Elf_binary *bin,
 }
 
 int elfloader_load_section_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
-	return -1;
+  Elf_Scn *scn = NULL;
+  size_t shstrndx;
+
+  elf_getshdrstrndx(bin->e, &shstrndx);
+
+  while((scn = elf_nextscn(bin->e, scn)) != NULL) {
+		GElf_Shdr shdr;
+		gelf_getshdr(scn, &shdr);
+
+    switch(shdr.sh_type) {
+      case SHT_NOBITS:
+        ;
+          char *name = elf_strptr(bin->e, shstrndx, shdr.sh_name);
+          if(strcmp(name, ".bss") == 0) {
+            void *addr = kvm_pager_get_host_p(&vm->pager, shdr.sh_addr);
+            memset(addr, 0, shdr.sh_size);
+          }
+        break;
+    }
+  }
+
+	return 0;
 }
 
