@@ -90,7 +90,8 @@ int kvm_pager_create_mem_chunk(struct kvm_pager *pager, void **chunk_host_p,
     return -ENOMEM;
   }
 
-	return 0;
+  err = kvm_vm_map_chunk(pager->vm, chunk);
+	return err;
 }
 
 int kvm_pager_append_mem_chunk(struct kvm_pager *pager,
