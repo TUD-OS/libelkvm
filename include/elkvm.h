@@ -158,6 +158,16 @@ int elkvm_dump_valid_msrs(struct elkvm_opts *);
 void elkvm_print_regions(struct kvm_vm *);
 void elkvm_dump_region(struct elkvm_memory_region *);
 
+/**
+ * \brief Enable VCPU debug mode
+ */
+int elkvm_debug_enable(struct kvm_vcpu *vcpu);
+
+/**
+ * \brief Set the VCPU in singlestepping mode
+ */
+int elkvm_debug_singlestep(struct kvm_vcpu *vcpu);
+
 #ifdef __cplusplus
 }
 #endif
