@@ -9,6 +9,8 @@ struct elkvm_memory_region *elkvm_region_create(struct kvm_vm *vm, uint64_t size
   struct elkvm_memory_region *current = current_root->data;
 
   do {
+    current = current_root->data;
+    assert(current != NULL);
     current = elkvm_region_find(current, size);
   } while((current == NULL) && !((current_root = current_root->next) == NULL));
 
