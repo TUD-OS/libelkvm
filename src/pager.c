@@ -83,7 +83,7 @@ int kvm_pager_create_mem_chunk(struct kvm_pager *pager, void **chunk_host_p,
 		return err;
 	}
   struct kvm_userspace_memory_region *chunk =
-    kvm_pager_alloc_chunk(pager, chunk_host_p, chunk_size, 0);
+    kvm_pager_alloc_chunk(pager, *chunk_host_p, chunk_size, 0);
   if(chunk == NULL) {
     free(*chunk_host_p);
     *chunk_host_p = NULL;
