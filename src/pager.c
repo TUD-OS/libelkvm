@@ -83,14 +83,15 @@ int kvm_pager_create_mem_chunk(struct kvm_pager *pager, void **chunk_host_p,
 		return err;
 	}
   struct kvm_userspace_memory_region *chunk =
-    kvm_pager_alloc_chunk(pager, chunk_host_p, chunk_size, 0);
+    kvm_pager_alloc_chunk(pager, *chunk_host_p, chunk_size, 0);
   if(chunk == NULL) {
     free(*chunk_host_p);
     *chunk_host_p = NULL;
     return -ENOMEM;
   }
 
-	return 0;
+  err = kvm_vm_map_chunk(pager->vm, chunk);
+	return err;
 }
 
 int kvm_pager_append_mem_chunk(struct kvm_pager *pager,
@@ -271,6 +272,8 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 	}
 
 	uint64_t guest_physical = host_to_guest_physical(pager, host_mem_p);
+  assert(guest_physical != 0);
+
 	uint64_t *pt_entry = kvm_pager_page_table_walk(pager, guest_virtual,
 			writeable, executable, 1);
 
@@ -535,6 +538,9 @@ void kvm_pager_dump_table(struct kvm_pager *pager, void *host_p, int level) {
 					(*entry >> 63));
 			present[entries++] = (void *)entry_guest_physical +
 				pager->system_chunk.userspace_addr;
+      if(*entry & 0x1) {
+        assert(entry_guest_physical != 0);
+      }
 		}
 		entry++;
 	}
