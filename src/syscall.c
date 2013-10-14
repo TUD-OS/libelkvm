@@ -547,7 +547,6 @@ long elkvm_do_brk(struct kvm_vm *vm) {
     printf("\n============ LIBELKVM ===========\n");
     printf("BRK reguested with address: 0x%lx current brk address: 0x%lx\n",
         user_brk_req, vm->pager.brk_addr);
-    printf("=================================\n");
   }
 
   if(err) {
@@ -571,7 +570,9 @@ long elkvm_do_brk(struct kvm_vm *vm) {
    * just push the brk */
   err = elkvm_brk(vm, user_brk_req);
   if(vm->debug) {
-    printf("BRK done: err: %i (%s) newbrk: 0x%lx\n", err, strerror(err), vm->pager.brk_addr);
+    printf("BRK done: err: %i (%s) newbrk: 0x%lx\n",
+        err, strerror(err), vm->pager.brk_addr);
+    printf("=================================\n");
   }
   if(err) {
     return err;
