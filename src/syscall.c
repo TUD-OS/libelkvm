@@ -558,10 +558,19 @@ long elkvm_do_brk(struct kvm_vm *vm) {
     return vm->pager.brk_addr;
   }
 
-  /* if the requested brk address is smaller than the current brk,
-   * adjust the new brk */
-  /* TODO free mapped pages, mark used regions as free, merge regions */
+  /*
+   * if the requested brk address is smaller than the current brk,
+   * adjust the new brk, free mapped pages
+   * TODO mark used regions as free, merge regions
+   */
   if(user_brk_req < vm->pager.brk_addr) {
+    for(uint64_t guest_addr = vm->pager.brk_addr;
+        guest_addr >= next_page(user_brk_req);
+        guest_addr -= 0x1000) {
+      err = kvm_pager_destroy_mapping(&vm->pager, guest_addr);
+      assert(err == 0);
+    }
+
     vm->pager.brk_addr = user_brk_req;
     return user_brk_req;
   }
