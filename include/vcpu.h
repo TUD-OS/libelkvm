@@ -108,11 +108,6 @@ int kvm_vcpu_run(struct kvm_vcpu *);
  */
 int kvm_vcpu_loop(struct kvm_vcpu *vcpu);
 
-/*
- * \brief Set singlestepping for the VCPU
-*/
-int kvm_vcpu_singlestep(struct kvm_vcpu *);
-
 uint64_t kvm_vcpu_get_hypercall_type(struct kvm_vm *, struct kvm_vcpu *);
 
 int kvm_vcpu_had_page_fault(struct kvm_vcpu *);
