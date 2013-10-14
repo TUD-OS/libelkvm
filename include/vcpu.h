@@ -39,6 +39,7 @@ struct kvm_vcpu {
 	struct kvm_run *run_struct;
 	struct kvm_vm *vm;
 	int singlestep;
+  struct kvm_guest_debug debug;
 };
 
 struct vcpu_list {
