@@ -19,6 +19,7 @@ extern "C" {
 #define VCPU_CR4_FLAG_OSXSAVE 0x40000
 #define VCPU_CR4_FLAG_OSFXSR  0x200
 #define VCPU_CR4_FLAG_PAE     0x20
+#define VCPU_CR4_FLAG_DE      0x8
 
 #define VCPU_EFER_FLAG_SCE 0x1
 #define VCPU_EFER_FLAG_LME 0x100
