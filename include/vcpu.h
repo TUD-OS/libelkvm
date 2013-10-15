@@ -8,6 +8,7 @@ extern "C" {
 #include <stdbool.h>
 #include <udis86.h>
 
+#include "list.h"
 #include "elkvm.h"
 
 #define VCPU_CR0_FLAG_PAGING            0x80000000
@@ -40,6 +41,7 @@ struct kvm_vcpu {
 	struct kvm_vm *vm;
 	int singlestep;
   struct kvm_guest_debug debug;
+  list(struct elkvm_sw_bp *, breakpoints);
 };
 
 struct vcpu_list {
