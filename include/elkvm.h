@@ -168,6 +168,8 @@ int elkvm_debug_enable(struct kvm_vcpu *vcpu);
  */
 int elkvm_debug_singlestep(struct kvm_vcpu *vcpu);
 
+int elkvm_debug_breakpoint(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t rip);
+
 #ifdef __cplusplus
 }
 #endif
