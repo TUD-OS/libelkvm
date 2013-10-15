@@ -1,7 +1,28 @@
+#include <assert.h>
+#include <errno.h>
 #include <sys/ioctl.h>
 
 #include <elkvm.h>
 #include "debug.h"
+
+int elkvm_handle_debug(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+  uint8_t *host_p = (uint8_t *)kvm_pager_get_host_p(&vm->pager, vcpu->regs.rip);
+  assert(host_p != NULL);
+
+  struct elkvm_sw_bp *bp;
+  list_each(vcpu->breakpoints, p) {
+    if(p->guest_virtual_addr == vcpu->regs.rip) {
+      bp = p;
+    }
+  }
+
+  *host_p = bp->orig_inst;
+  bp->count++;
+
+  printf("Hit Breakpoint %p the %ith time\n", bp, bp->count);
+
+ return -1;
+}
 
 int elkvm_debug_enable(struct kvm_vcpu *vcpu) {
   vcpu->debug.control |= KVM_GUESTDBG_ENABLE;
