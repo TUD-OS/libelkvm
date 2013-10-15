@@ -8,6 +8,7 @@ extern "C" {
 #include <stdbool.h>
 #include <udis86.h>
 
+#include "list.h"
 #include "elkvm.h"
 
 #define VCPU_CR0_FLAG_PAGING            0x80000000
@@ -18,6 +19,7 @@ extern "C" {
 #define VCPU_CR4_FLAG_OSXSAVE 0x40000
 #define VCPU_CR4_FLAG_OSFXSR  0x200
 #define VCPU_CR4_FLAG_PAE     0x20
+#define VCPU_CR4_FLAG_DE      0x8
 
 #define VCPU_EFER_FLAG_SCE 0x1
 #define VCPU_EFER_FLAG_LME 0x100
@@ -39,6 +41,8 @@ struct kvm_vcpu {
 	struct kvm_run *run_struct;
 	struct kvm_vm *vm;
 	int singlestep;
+  struct kvm_guest_debug debug;
+  list(struct elkvm_sw_bp *, breakpoints);
 };
 
 struct vcpu_list {
@@ -106,11 +110,6 @@ int kvm_vcpu_run(struct kvm_vcpu *);
  * \brief Enter the VCPU loop
  */
 int kvm_vcpu_loop(struct kvm_vcpu *vcpu);
-
-/*
- * \brief Set singlestepping for the VCPU
-*/
-int kvm_vcpu_singlestep(struct kvm_vcpu *);
 
 uint64_t kvm_vcpu_get_hypercall_type(struct kvm_vm *, struct kvm_vcpu *);
 

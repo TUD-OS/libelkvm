@@ -389,16 +389,6 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 	return err;
 }
 
-int kvm_vcpu_singlestep(struct kvm_vcpu *vcpu) {
-	struct kvm_guest_debug debug = {
-		.control        = KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_SINGLESTEP,
-	};
-
-	vcpu->singlestep = 1;
-
-	return ioctl(vcpu->fd, KVM_SET_GUEST_DEBUG, &debug);
-}
-
 int kvm_vcpu_run(struct kvm_vcpu *vcpu) {
 	int err = ioctl(vcpu->fd, KVM_RUN, 0);
 	if (err < 0 && (errno != EINTR && errno != EAGAIN)) {
@@ -429,12 +419,12 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
       return err;
     }
 
-    if(vcpu->singlestep) {
-      err = kvm_vcpu_singlestep(vcpu);
-      if(err) {
-        return err;
-      }
-    }
+//    if(vcpu->singlestep) {
+//      err = kvm_vcpu_singlestep(vcpu);
+//      if(err) {
+//        return err;
+//      }
+//    }
 
 		err = kvm_vcpu_run(vcpu);
 		if(err) {
@@ -495,6 +485,12 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 				break;
 			case KVM_EXIT_DEBUG:
 				fprintf(stderr, "KVM_EXIT_DEBUG\n");
+        err = elkvm_handle_debug(vcpu->vm, vcpu);
+        if(err) {
+          is_running = 0;
+          fprintf(stderr, "ELKVM: Could not handle debug exit!\n");
+          fprintf(stderr, "Errno: %i Msg: %s\n", err, strerror(err));
+        }
 				break;
       case KVM_EXIT_MMIO:
         fprintf(stderr, "KVM_EXIT_MMIO\n");
