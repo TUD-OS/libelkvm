@@ -43,7 +43,13 @@ int elkvm_debug_breakpoint(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t ri
   vcpu->debug.control |= KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_USE_SW_BP;
 
   uint8_t *host_p = (uint8_t *)kvm_pager_get_host_p(&vm->pager, rip);
+  assert(host_p != NULL);
+
   struct elkvm_sw_bp *bp = malloc(sizeof(struct elkvm_sw_bp));
+  if(bp == NULL) {
+    return -ENOMEM;
+  }
+
   bp->guest_virtual_addr = rip;
   bp->orig_inst = *host_p;
   bp->count = 0;
