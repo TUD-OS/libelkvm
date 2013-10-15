@@ -8,4 +8,6 @@ struct elkvm_sw_bp {
   unsigned count;
 };
 
+int elkvm_handle_debug(struct kvm_vm *, struct kvm_vcpu *);
 int elkvm_set_guest_debug(struct kvm_vcpu *vcpu);
+

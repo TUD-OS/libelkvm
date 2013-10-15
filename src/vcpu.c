@@ -485,6 +485,12 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 				break;
 			case KVM_EXIT_DEBUG:
 				fprintf(stderr, "KVM_EXIT_DEBUG\n");
+        err = elkvm_handle_debug(vcpu->vm, vcpu);
+        if(err) {
+          is_running = 0;
+          fprintf(stderr, "ELKVM: Could not handle debug exit!\n");
+          fprintf(stderr, "Errno: %i Msg: %s\n", err, strerror(err));
+        }
 				break;
       case KVM_EXIT_MMIO:
         fprintf(stderr, "KVM_EXIT_MMIO\n");
