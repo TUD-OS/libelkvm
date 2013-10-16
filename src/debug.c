@@ -10,12 +10,7 @@ int elkvm_handle_debug(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
   uint8_t *host_p = (uint8_t *)kvm_pager_get_host_p(&vm->pager, vcpu->regs.rip);
   assert(host_p != NULL);
 
-  struct elkvm_sw_bp *bp = NULL;
-  list_each(vcpu->breakpoints, p) {
-    if(p->guest_virtual_addr == vcpu->regs.rip) {
-      bp = p;
-    }
-  }
+  struct elkvm_sw_bp *bp = elkvm_find_bp_for_rip(vcpu, vcpu->regs.rip);
 
   if(bp != NULL) {
     *host_p = bp->orig_inst;
@@ -110,5 +105,14 @@ int elkvm_debug_shell(struct kvm_vm *vm) {
 
   return 0;
 
+}
+
+struct elkvm_sw_bp *elkvm_find_bp_for_rip(struct kvm_vcpu *vcpu, uint64_t rip) {
+  list_each(vcpu->breakpoints, p) {
+    if(p->guest_virtual_addr == vcpu->regs.rip) {
+      return p;
+    }
+  }
+  return NULL;
 }
 
