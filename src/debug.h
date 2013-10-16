@@ -8,6 +8,7 @@ struct elkvm_sw_bp {
   uint8_t orig_inst;
   uint8_t *host_addr;
   unsigned count;
+  unsigned ignore_count;
 };
 
 int elkvm_handle_debug(struct kvm_vm *, struct kvm_vcpu *);

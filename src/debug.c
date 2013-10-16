@@ -31,6 +31,10 @@ int elkvm_handle_debug(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
     elkvm_set_guest_debug(vcpu);
 
     printf("Hit Breakpoint %p the %ith time\n", bp, bp->count);
+
+    if(bp->count <= bp->ignore_count) {
+      return 0;
+    }
   }
 
   int abort = elkvm_debug_shell(vm);
