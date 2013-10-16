@@ -40,11 +40,18 @@ int elkvm_debug_singlestep(struct kvm_vcpu *vcpu) {
   return elkvm_set_guest_debug(vcpu);
 }
 
-int elkvm_debug_breakpoint(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t rip) {
+int elkvm_debug_bp_set(struct kvm_vcpu *vcpu, struct elkvm_sw_bp *bp) {
+  assert(vcpu != NULL);
+  assert(bp != NULL);
+
   static const uint8_t int3 = 0xcc;
-
   vcpu->debug.control |= KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_USE_SW_BP;
+  *bp->host_addr = int3;
 
+  return elkvm_set_guest_debug(vcpu);
+}
+
+int elkvm_debug_breakpoint(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t rip) {
   uint8_t *host_p = (uint8_t *)kvm_pager_get_host_p(&vm->pager, rip);
   assert(host_p != NULL);
 
@@ -53,10 +60,12 @@ int elkvm_debug_breakpoint(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t ri
     return -ENOMEM;
   }
 
-  *host_p = int3;
-  list_push_front(vcpu->breakpoints, bp);
+  int res = elkvm_debug_bp_set(vcpu, bp);
+  if(res == 0) {
+    list_push_front(vcpu->breakpoints, bp);
+  }
 
-  return elkvm_set_guest_debug(vcpu);
+  return res;
 }
 
 struct elkvm_sw_bp *elkvm_bp_alloc(uint8_t *host_p, uint64_t rip) {
