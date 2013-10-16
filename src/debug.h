@@ -1,10 +1,12 @@
 #pragma once
 
+#include <elkvm.h>
 #include <vcpu.h>
 
 struct elkvm_sw_bp {
   uint64_t guest_virtual_addr;
   uint8_t orig_inst;
+  uint8_t *host_addr;
   unsigned count;
 };
 
