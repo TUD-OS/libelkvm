@@ -7,6 +7,14 @@
 #include "debug.h"
 
 int elkvm_handle_debug(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+  if(vcpu->reinject != NULL) {
+    elkvm_debug_bp_set(vcpu, vcpu->reinject);
+    vcpu->reinject = NULL;
+    /* TODO what happens if this is a bp as well? */
+    /* TODO what happens if we are singlestepping anyways? */
+    return 0;
+  }
+
   uint8_t *host_p = (uint8_t *)kvm_pager_get_host_p(&vm->pager, vcpu->regs.rip);
   assert(host_p != NULL);
 
@@ -15,6 +23,7 @@ int elkvm_handle_debug(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
   if(bp != NULL) {
     *host_p = bp->orig_inst;
     bp->count++;
+    vcpu->reinject = bp;
 
     printf("Hit Breakpoint %p the %ith time\n", bp, bp->count);
   }
