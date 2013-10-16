@@ -149,6 +149,7 @@ int elfloader_load_program_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
         uint64_t guest_virtual = loadable_region->guest_virtual;
 				for(int page = 0; page < pages; page++) {
 					void *host_physical_p = loadable_region->host_base_p + (page * 0x1000);
+          printf("MAP 0x%lx to %p\n", guest_virtual, host_physical_p);
 					err = kvm_pager_create_mapping(&vm->pager, host_physical_p,
               guest_virtual,
 							phdr.p_flags & PF_W, phdr.p_flags & PF_X);
@@ -210,11 +211,15 @@ int elfloader_load_program_header(struct kvm_vm *vm, struct Elf_binary *bin,
 		 * seek to the beginning of the first page that contains the program
 		 * header we are to load
 		 */
+    /* XXX this fails if text and data are not sequential */
 		int off = lseek(bin->fd, phdr.p_offset & ~0xFFF, SEEK_SET);
+    printf("OFFSET in filet set to 0x%x\n", off);
 		if(off < 0) {
 			return -errno;
 		}
 
+    printf("READING %i bytes to 0x%lx (%p)\n",
+        remaining_bytes, region->guest_virtual, buf);
 		while((bytes = read(bin->fd, buf, bufsize)) > 0) {
 			remaining_bytes -= bytes;
 			if(remaining_bytes < bufsize) {
@@ -228,6 +233,7 @@ int elfloader_load_program_header(struct kvm_vm *vm, struct Elf_binary *bin,
 		 * fill the rest with 0s
 		*/
 		int bytes_diff = phdr.p_memsz - phdr.p_filesz;
+    printf("NULLing %i bytes from 0x??? (%p)\n", bytes_diff, buf);
 		if(bytes_diff > 0) {
 			memset(buf, 0, bytes_diff);
 		}
@@ -251,6 +257,8 @@ int elfloader_load_section_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
           char *name = elf_strptr(bin->e, shstrndx, shdr.sh_name);
           if(strcmp(name, ".bss") == 0) {
             void *addr = kvm_pager_get_host_p(&vm->pager, shdr.sh_addr);
+            printf("NULLing %i bytes from 0x%lx (%p)\n",
+                (int)shdr.sh_size, shdr.sh_addr, addr);
             memset(addr, 0, shdr.sh_size);
           }
         break;
