@@ -49,6 +49,9 @@ int elkvm_debug_breakpoint(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t ri
   assert(host_p != NULL);
 
   struct elkvm_sw_bp *bp = elkvm_bp_alloc(host_p, rip);
+  if(bp == NULL) {
+    return -ENOMEM;
+  }
 
   *host_p = int3;
   list_push_front(vcpu->breakpoints, bp);
@@ -59,10 +62,11 @@ int elkvm_debug_breakpoint(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t ri
 struct elkvm_sw_bp *elkvm_bp_alloc(uint8_t *host_p, uint64_t rip) {
   struct elkvm_sw_bp *bp = malloc(sizeof(struct elkvm_sw_bp));
   if(bp == NULL) {
-    return -ENOMEM;
+    return NULL;
   }
 
   bp->guest_virtual_addr = rip;
+  bp->host_addr = host_p;
   bp->orig_inst = *host_p;
   bp->count = 0;
 
