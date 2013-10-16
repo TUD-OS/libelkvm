@@ -48,6 +48,15 @@ int elkvm_debug_breakpoint(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t ri
   uint8_t *host_p = (uint8_t *)kvm_pager_get_host_p(&vm->pager, rip);
   assert(host_p != NULL);
 
+  struct elkvm_sw_bp *bp = elkvm_bp_alloc(host_p, rip);
+
+  *host_p = int3;
+  list_push_front(vcpu->breakpoints, bp);
+
+  return elkvm_set_guest_debug(vcpu);
+}
+
+struct elkvm_sw_bp *elkvm_bp_alloc(uint8_t *host_p, uint64_t rip) {
   struct elkvm_sw_bp *bp = malloc(sizeof(struct elkvm_sw_bp));
   if(bp == NULL) {
     return -ENOMEM;
@@ -57,11 +66,9 @@ int elkvm_debug_breakpoint(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t ri
   bp->orig_inst = *host_p;
   bp->count = 0;
 
-  *host_p = int3;
-  list_push_front(vcpu->breakpoints, bp);
-
-  return elkvm_set_guest_debug(vcpu);
+  return bp;
 }
+
 
 int elkvm_set_guest_debug(struct kvm_vcpu *vcpu) {
   return ioctl(vcpu->fd, KVM_SET_GUEST_DEBUG, &vcpu->debug);
