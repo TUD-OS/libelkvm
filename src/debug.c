@@ -97,6 +97,7 @@ struct elkvm_sw_bp *elkvm_bp_alloc(uint8_t *host_p, uint64_t rip) {
   bp->host_addr = host_p;
   bp->orig_inst = *host_p;
   bp->count = 0;
+  bp->ignore_count = 0;
 
   return bp;
 }
