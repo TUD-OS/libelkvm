@@ -30,7 +30,8 @@ int elkvm_handle_debug(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
     vcpu->debug.control |= KVM_GUESTDBG_SINGLESTEP;
     elkvm_set_guest_debug(vcpu);
 
-    printf("Hit Breakpoint %p the %ith time\n", bp, bp->count);
+    printf("Hit Breakpoint %p (rip: 0x%lx) the %ith time\n",
+        bp, bp->guest_virtual_addr, bp->count);
 
     if(bp->count <= bp->ignore_count) {
       return 0;
