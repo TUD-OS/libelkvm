@@ -30,7 +30,8 @@ int elkvm_handle_debug(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
     vcpu->debug.control |= KVM_GUESTDBG_SINGLESTEP;
     elkvm_set_guest_debug(vcpu);
 
-    printf("Hit Breakpoint %p the %ith time\n", bp, bp->count);
+    printf("Hit Breakpoint %p (rip: 0x%lx) the %ith time\n",
+        bp, bp->guest_virtual_addr, bp->count);
 
     if(bp->count <= bp->ignore_count) {
       return 0;
@@ -96,6 +97,7 @@ struct elkvm_sw_bp *elkvm_bp_alloc(uint8_t *host_p, uint64_t rip) {
   bp->host_addr = host_p;
   bp->orig_inst = *host_p;
   bp->count = 0;
+  bp->ignore_count = 0;
 
   return bp;
 }
