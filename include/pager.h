@@ -182,3 +182,11 @@ static inline int entry_exists(uint64_t *e) {
 static uint64_t next_page(uint64_t addr) {
   return (addr & ~0xFFF) + 0x1000;
 }
+
+static int pages_from_size(uint64_t size) {
+  if(size % 1000) {
+    return (size / 0x1000) + 1;
+  } else {
+    return size / 0x1000;
+  }
+}

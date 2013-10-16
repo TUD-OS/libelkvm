@@ -143,7 +143,7 @@ int elfloader_load_program_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
 				}
 
 				uint64_t total_size = phdr.p_memsz + (phdr.p_vaddr & 0xFFF);
-				int pages = (total_size / 0x1000) + 1;
+        int pages = pages_from_size(total_size);
 
         loadable_region->guest_virtual = (phdr.p_vaddr & ~0xFFF);
         uint64_t guest_virtual = loadable_region->guest_virtual;
