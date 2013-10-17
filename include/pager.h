@@ -179,6 +179,10 @@ static inline int entry_exists(uint64_t *e) {
 	return *e & 0x1;
 }
 
+static uint64_t page_begin(uint64_t addr) {
+  return (addr & ~0xFFF);
+}
+
 static uint64_t next_page(uint64_t addr) {
   return (addr & ~0xFFF) + 0x1000;
 }
@@ -190,3 +194,8 @@ static int pages_from_size(uint64_t size) {
     return size / 0x1000;
   }
 }
+
+static int offset_in_page(uint64_t addr) {
+  return addr & 0xFFF;
+}
+

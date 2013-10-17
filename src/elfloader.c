@@ -158,14 +158,14 @@ int elkvm_loader_pt_load(struct kvm_vm *vm, GElf_Phdr phdr, struct Elf_binary *b
 		return err;
 	}
 
-	uint64_t total_size = phdr.p_memsz + (phdr.p_vaddr & 0xFFF);
+	uint64_t total_size = phdr.p_memsz + offset_in_page(phdr.p_vaddr);
   int pages = pages_from_size(total_size);
 
-  loadable_region->guest_virtual = (phdr.p_vaddr & ~0xFFF);
+  loadable_region->guest_virtual = page_begin(phdr.p_vaddr);
   uint64_t guest_virtual = loadable_region->guest_virtual;
+
 	for(int page = 0; page < pages; page++) {
 		void *host_physical_p = loadable_region->host_base_p + (page * 0x1000);
-    printf("MAP 0x%lx to %p\n", guest_virtual, host_physical_p);
 		err = kvm_pager_create_mapping(&vm->pager, host_physical_p,
         guest_virtual,
 				phdr.p_flags & PF_W, phdr.p_flags & PF_X);
