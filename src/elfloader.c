@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <elfloader.h>
+#include "elfloader.h"
 #include <elkvm.h>
 #include <heap.h>
 #include <kvm.h>
