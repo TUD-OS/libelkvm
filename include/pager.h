@@ -22,6 +22,9 @@
 #define PT_BIT_USED        0x32
 #define PT_BIT_NXE         (1L << 63)
 
+#define ELKVM_EXEC         (1 << 0)
+#define ELKVM_WRITE        (1 << 1)
+
 struct kvm_vm;
 
 struct chunk_list {
@@ -82,6 +85,9 @@ struct kvm_userspace_memory_region *elkvm_pager_get_chunk(struct kvm_pager *, in
  * params are pager, host virtual address, writeable and executable bit
  */
 uint64_t kvm_pager_map_kernel_page(struct kvm_pager *, void *,int, int);
+
+int kvm_pager_map_region(struct kvm_pager *pager, void *host_start_p,
+    uint64_t guest_start_addr, int pages, int access);
 
 /*
  * \brief Create a Mapping in the Page Tables for a physical address

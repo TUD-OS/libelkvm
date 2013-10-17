@@ -253,6 +253,23 @@ uint64_t kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p,
 	return guest_virtual;
 }
 
+int kvm_pager_map_region(struct kvm_pager *pager, void *host_start_p,
+    uint64_t guest_start_addr, int pages, int access) {
+
+  void *host_p = host_start_p;
+  uint64_t guest_addr = guest_start_addr;
+
+  for(int i = 0; i < pages; i++, host_p+=0x1000, guest_addr+=0x1000) {
+    int err = kvm_pager_create_mapping(pager, host_p, guest_addr,
+        access & ELKVM_WRITE, access & ELKVM_EXEC);
+		if(err) {
+			return err;
+		}
+  }
+
+  return 0;
+}
+
 int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 		uint64_t guest_virtual, int writeable, int executable) {
 	int err;
