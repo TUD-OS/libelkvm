@@ -103,8 +103,6 @@ int elfloader_load_program_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
 		return -err;
 	}
 
-	char *buf = (char *)vm->pager.system_chunk.userspace_addr;
-
 	bool pt_interp_forbidden = false;
 	bool pt_phdr_forbidden = false;
 
