@@ -41,6 +41,8 @@ int elfloader_load_section_headers(struct kvm_vm *, struct Elf_binary *);
 */
 int elfloader_check_elf(Elf *);
 
+int elkvm_loader_pt_load(struct kvm_vm *vm, GElf_Phdr phdr, struct Elf_binary *bin);
+
 #ifdef __cplusplus
 }
 #endif

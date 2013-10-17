@@ -135,39 +135,7 @@ int elfloader_load_program_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
 			case PT_LOAD:
 				pt_interp_forbidden = true;
 				pt_phdr_forbidden = true;
-				struct elkvm_memory_region *loadable_region =
-					elkvm_region_create(vm, phdr.p_memsz);
-				err = elfloader_load_program_header(vm, bin, phdr, loadable_region);
-				if(err) {
-					return err;
-				}
-
-				uint64_t total_size = phdr.p_memsz + (phdr.p_vaddr & 0xFFF);
-        int pages = pages_from_size(total_size);
-
-        loadable_region->guest_virtual = (phdr.p_vaddr & ~0xFFF);
-        uint64_t guest_virtual = loadable_region->guest_virtual;
-				for(int page = 0; page < pages; page++) {
-					void *host_physical_p = loadable_region->host_base_p + (page * 0x1000);
-          printf("MAP 0x%lx to %p\n", guest_virtual, host_physical_p);
-					err = kvm_pager_create_mapping(&vm->pager, host_physical_p,
-              guest_virtual,
-							phdr.p_flags & PF_W, phdr.p_flags & PF_X);
-					if(err) {
-						return err;
-					}
-          guest_virtual = guest_virtual + 0x1000;
-				}
-				if(phdr.p_flags & PF_X) {
-					/* executable region should be text */
-					vm->text = loadable_region;
-				} else if(phdr.p_flags & PF_W) {
-          err = elkvm_heap_initialize(vm, loadable_region, total_size);
-          if(err) {
-            return err;
-          }
-				}
-
+        elkvm_loader_pt_load(vm, phdr, bin);
 				break;
 			case PT_PHDR:
 				if(pt_phdr_forbidden) {
@@ -180,6 +148,43 @@ int elfloader_load_program_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
 	}
 
 	return 0;
+}
+
+int elkvm_loader_pt_load(struct kvm_vm *vm, GElf_Phdr phdr, struct Elf_binary *bin) {
+	struct elkvm_memory_region *loadable_region =
+		elkvm_region_create(vm, phdr.p_memsz);
+	int err = elfloader_load_program_header(vm, bin, phdr, loadable_region);
+	if(err) {
+		return err;
+	}
+
+	uint64_t total_size = phdr.p_memsz + (phdr.p_vaddr & 0xFFF);
+  int pages = pages_from_size(total_size);
+
+  loadable_region->guest_virtual = (phdr.p_vaddr & ~0xFFF);
+  uint64_t guest_virtual = loadable_region->guest_virtual;
+	for(int page = 0; page < pages; page++) {
+		void *host_physical_p = loadable_region->host_base_p + (page * 0x1000);
+    printf("MAP 0x%lx to %p\n", guest_virtual, host_physical_p);
+		err = kvm_pager_create_mapping(&vm->pager, host_physical_p,
+        guest_virtual,
+				phdr.p_flags & PF_W, phdr.p_flags & PF_X);
+		if(err) {
+			return err;
+		}
+    guest_virtual = guest_virtual + 0x1000;
+	}
+	if(phdr.p_flags & PF_X) {
+		/* executable region should be text */
+		vm->text = loadable_region;
+	} else if(phdr.p_flags & PF_W) {
+    err = elkvm_heap_initialize(vm, loadable_region, total_size);
+    if(err) {
+      return err;
+    }
+	}
+
+  return 0;
 }
 
 int elfloader_load_program_header(struct kvm_vm *vm, struct Elf_binary *bin,
