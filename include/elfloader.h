@@ -18,23 +18,18 @@ struct Elf_binary {
 /*
  * Load the Program headers of an ELF binary
 */
-int elfloader_load_program_headers(struct kvm_vm *, struct Elf_binary *);
+int elkvm_loader_parse_program(struct kvm_vm *, struct Elf_binary *);
 
 /*
  * Load a single program header from the ELF binary into the specified buffer
 */
-int elfloader_load_program_header(struct kvm_vm *, struct Elf_binary *, GElf_Phdr,
+int elkvm_loader_load_program_header(struct kvm_vm *, struct Elf_binary *, GElf_Phdr,
 		struct elkvm_memory_region *);
-
-/*
- * Load the Section headers of an ELF binary
-*/
-int elfloader_load_section_headers(struct kvm_vm *, struct Elf_binary *);
 
 /*
  * Check for correct ELF headers
 */
-int elfloader_check_elf(Elf *);
+int elkvm_loader_check_elf(Elf *);
 
 int elkvm_loader_pt_load(struct kvm_vm *vm, GElf_Phdr phdr, struct Elf_binary *bin);
 GElf_Phdr elkvm_loader_find_data_header(struct Elf_binary *bin);

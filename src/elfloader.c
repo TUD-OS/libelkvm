@@ -47,12 +47,12 @@ int elkvm_load_binary(struct kvm_vm *vm, const char *binary) {
 		return -EIO;
 	}
 
-	int err = elfloader_check_elf(bin.e);
+	int err = elkvm_loader_check_elf(bin.e);
 	if(err) {
 		return err;
 	}
 
-	err = elfloader_load_program_headers(vm, &bin);
+	err = elkvm_loader_parse_program(vm, &bin);
 	if(err) {
 		return err;
 	}
@@ -68,7 +68,7 @@ int elkvm_load_binary(struct kvm_vm *vm, const char *binary) {
 	return 0;
 }
 
-int elfloader_check_elf(Elf *e) {
+int elkvm_loader_check_elf(Elf *e) {
 	GElf_Ehdr ehdr;
 	if(gelf_getehdr(e, &ehdr) == NULL) {
 		return -1;
@@ -91,7 +91,7 @@ int elfloader_check_elf(Elf *e) {
 	return 0;
 }
 
-int elfloader_load_program_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
+int elkvm_loader_parse_program(struct kvm_vm *vm, struct Elf_binary *bin) {
 
 	int err = elf_getphdrnum(bin->e, &bin->phdr_num);
 	if(err) {
@@ -149,7 +149,7 @@ int elkvm_loader_pt_load(struct kvm_vm *vm, GElf_Phdr phdr, struct Elf_binary *b
 		elkvm_region_create(vm, total_size);
   loadable_region->guest_virtual = page_begin(phdr.p_vaddr);
 
-	int err = elfloader_load_program_header(vm, bin, phdr, loadable_region);
+	int err = elkvm_loader_load_program_header(vm, bin, phdr, loadable_region);
 	if(err) {
 		return err;
 	}
@@ -179,7 +179,7 @@ int elkvm_loader_pt_load(struct kvm_vm *vm, GElf_Phdr phdr, struct Elf_binary *b
   return 0;
 }
 
-int elfloader_load_program_header(struct kvm_vm *vm, struct Elf_binary *bin,
+int elkvm_loader_load_program_header(struct kvm_vm *vm, struct Elf_binary *bin,
 		GElf_Phdr phdr, struct elkvm_memory_region *region) {
 
 		/*
