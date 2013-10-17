@@ -206,7 +206,11 @@ static int pages_from_size(uint64_t size) {
   }
 }
 
-static int offset_in_page(uint64_t addr) {
+static int page_remain(uint64_t addr) {
+  return 0x1000 - (addr & 0xFFF);
+}
+
+static unsigned int offset_in_page(uint64_t addr) {
   return addr & 0xFFF;
 }
 

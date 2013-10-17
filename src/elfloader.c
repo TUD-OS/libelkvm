@@ -57,11 +57,6 @@ int elfloader_load_binary(struct kvm_vm *vm, const char *binary) {
 		return err;
 	}
 
-	err = elfloader_load_section_headers(vm, &bin);
-	if(err) {
-		return err;
-	}
-
 	err = kvm_vcpu_set_rip(vm->vcpus->vcpu, ehdr.e_entry);
 	if(err) {
 		return err;
@@ -205,74 +200,166 @@ int elfloader_load_program_header(struct kvm_vm *vm, struct Elf_binary *bin,
     return -EIO;
   }
 
-  char *buf = region->host_base_p;
+  elkvm_loader_pad_begin(vm, region, bin, phdr);
+  elkvm_loader_read_segment(vm, region, bin, phdr);
+  elkvm_loader_pad_end(vm, region, bin, phdr);
 
-		/*
-		 * make sure we are going to read full pages
-		 */
-		int remaining_bytes = ((phdr.p_filesz + (phdr.p_offset & 0xFFF)) & ~0xFFF)
-			+ 0x1000;
-		int bufsize = remaining_bytes < 32768 ? remaining_bytes : 32768;
-
-		int bytes = 0;
-		/*
-		 * seek to the beginning of the first page that contains the program
-		 * header we are to load
-		 */
-    /* XXX this fails if text and data are not sequential */
-		int off = lseek(bin->fd, phdr.p_offset & ~0xFFF, SEEK_SET);
-    printf("OFFSET in filet set to 0x%x\n", off);
-		if(off < 0) {
-			return -errno;
-		}
-
-    printf("READING %i bytes to 0x%lx (%p)\n",
-        remaining_bytes, region->guest_virtual, buf);
-		while((bytes = read(bin->fd, buf, bufsize)) > 0) {
-			remaining_bytes -= bytes;
-			if(remaining_bytes < bufsize) {
-				bufsize = remaining_bytes;
-			}
-			buf += bytes;
-		}
-
-		/*
-		 * if the header's memsize is larger than its filesize we are supposed to
-		 * fill the rest with 0s
-		*/
-		int bytes_diff = phdr.p_memsz - phdr.p_filesz;
-    printf("NULLing %i bytes from 0x??? (%p)\n", bytes_diff, buf);
-		if(bytes_diff > 0) {
-			memset(buf, 0, bytes_diff);
-		}
-
-		return 0;
+  return 0;
 }
 
-int elfloader_load_section_headers(struct kvm_vm *vm, struct Elf_binary *bin) {
-  Elf_Scn *scn = NULL;
-  size_t shstrndx;
+int elkvm_loader_pad_end(struct kvm_vm *vm, struct elkvm_memory_region *region,
+    struct Elf_binary *bin, GElf_Phdr phdr) {
+  void *host_p = region->host_base_p + offset_in_page(phdr.p_vaddr) + phdr.p_filesz;
+  size_t padsize = page_remain((uint64_t)host_p);
 
-  elf_getshdrstrndx(bin->e, &shstrndx);
+  if(phdr.p_flags & PF_X) {
+    /* executable segment should be text */
+    return elkvm_loader_pad_text_end(vm, region, bin, host_p, padsize);
+  }
+  if(phdr.p_flags & PF_W) {
+    padsize += (phdr.p_memsz - phdr.p_filesz);
+    /* set uninitialized data to 0s */
+    memset(host_p, 0, padsize);
+    //elkvm_loader_pad_data_end();
+    return 0;
+    /* TODO set brk */
+  }
 
-  while((scn = elf_nextscn(bin->e, scn)) != NULL) {
-		GElf_Shdr shdr;
-		gelf_getshdr(scn, &shdr);
+  /* this should never happen */
+  assert(false);
+  return -1;
 
-    switch(shdr.sh_type) {
-      case SHT_NOBITS:
-        ;
-          char *name = elf_strptr(bin->e, shstrndx, shdr.sh_name);
-          if(strcmp(name, ".bss") == 0) {
-            void *addr = kvm_pager_get_host_p(&vm->pager, shdr.sh_addr);
-            printf("NULLing %i bytes from 0x%lx (%p)\n",
-                (int)shdr.sh_size, shdr.sh_addr, addr);
-            memset(addr, 0, shdr.sh_size);
-          }
-        break;
+}
+
+int elkvm_loader_read_segment(struct kvm_vm *vm,
+    struct elkvm_memory_region *region, struct Elf_binary *bin, GElf_Phdr phdr) {
+  char *buf = region->host_base_p + offset_in_page(phdr.p_vaddr);
+
+	/*
+	 * make sure we are going to read full pages
+	 */
+	int remaining_bytes = phdr.p_filesz;
+	int bufsize = remaining_bytes < 32768 ? remaining_bytes : 32768;
+
+	int bytes = 0;
+
+	int off = lseek(bin->fd, phdr.p_offset, SEEK_SET);
+	if(off < 0) {
+		return -errno;
+	}
+
+	while((bytes = read(bin->fd, buf, bufsize)) > 0) {
+		remaining_bytes -= bytes;
+		if(remaining_bytes < bufsize) {
+			bufsize = remaining_bytes;
+		}
+		buf += bytes;
+	}
+
+  return 0;
+
+}
+
+int elkvm_loader_pad_begin(struct kvm_vm *vm, struct elkvm_memory_region *region,
+    struct Elf_binary *bin, GElf_Phdr phdr) {
+
+  size_t padsize = offset_in_page(phdr.p_vaddr);
+
+  if(phdr.p_flags & PF_X) {
+    /* executable segment should be text */
+    return elkvm_loader_pad_text_begin(vm, region, bin, padsize);
+  }
+  if(phdr.p_flags & PF_W) {
+    return elkvm_loader_pad_data_begin(vm, region, bin, padsize);
+  }
+
+  /* this should never happen */
+  assert(false);
+  return -1;
+}
+
+int elkvm_loader_pad_text_end(struct kvm_vm *vm,
+    struct elkvm_memory_region *region, struct Elf_binary *bin,
+    void *host_p, size_t padsize) {
+  /*
+   * find the first page of the data segment and pad the remainder of the
+   * last page of text with its contents
+   */
+
+  GElf_Phdr data_header = elkvm_loader_find_data_header(bin);
+  uint64_t data_end = data_header.p_offset + data_header.p_memsz;
+
+	int off = lseek(bin->fd, data_header.p_offset, SEEK_SET);
+	if(off < 0) {
+		return -errno;
+	}
+
+	size_t bytes = read(bin->fd, host_p, padsize);
+  assert(bytes == padsize);
+
+  return 0;
+}
+
+int elkvm_loader_pad_text_begin(struct kvm_vm *vm,
+    struct elkvm_memory_region *region, struct Elf_binary *bin,
+    size_t padsize) {
+  assert(bin->e > 0);
+
+  GElf_Ehdr ehdr;
+  gelf_getehdr(bin->e, &ehdr);
+
+  memcpy(region->host_base_p, &ehdr, padsize);
+
+  return 0;
+}
+
+int elkvm_loader_pad_data_begin(struct kvm_vm *vm,
+    struct elkvm_memory_region *region, struct Elf_binary *bin,
+    size_t padsize) {
+  GElf_Phdr text_header = elkvm_loader_find_text_header(bin);
+
+  uint64_t text_end = text_header.p_offset + text_header.p_filesz;
+
+	int off = lseek(bin->fd, text_end - padsize - 1, SEEK_SET);
+	if(off < 0) {
+		return -errno;
+	}
+
+	size_t bytes = read(bin->fd, region->host_base_p, padsize);
+  assert(bytes == padsize);
+
+  return 0;
+}
+
+GElf_Phdr elkvm_loader_find_data_header(struct Elf_binary *bin) {
+  GElf_Phdr phdr;
+	for(int i = 0; i < bin->phdr_num; i++) {
+		gelf_getphdr(bin->e, i, &phdr);
+
+    if(phdr.p_type == PT_LOAD &&
+        phdr.p_flags & PF_W) {
+      return phdr;
     }
   }
 
-	return 0;
+  /* every elf file should have a data header */
+  assert(false);
+  return phdr;
+}
+
+GElf_Phdr elkvm_loader_find_text_header(struct Elf_binary *bin) {
+  GElf_Phdr phdr;
+	for(int i = 0; i < bin->phdr_num; i++) {
+		gelf_getphdr(bin->e, i, &phdr);
+
+    if(phdr.p_type == PT_LOAD &&
+        phdr.p_flags & PF_X) {
+      return phdr;
+    }
+  }
+
+  /* every elf file should have a text header */
+  assert(false);
+  return phdr;
 }
 
