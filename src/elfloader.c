@@ -16,7 +16,7 @@
 #include <vcpu.h>
 
 
-int elfloader_load_binary(struct kvm_vm *vm, const char *binary) {
+int elkvm_load_binary(struct kvm_vm *vm, const char *binary) {
 	if(binary == "") {
 		return -EIO;
 	}

@@ -16,11 +16,6 @@ struct Elf_binary {
 };
 
 /*
- * Loads an ELF binary into the beginnig of the VM's system_chunk
-*/
-int elfloader_load_binary(struct kvm_vm *, const char *);
-
-/*
  * Load the Program headers of an ELF binary
 */
 int elfloader_load_program_headers(struct kvm_vm *, struct Elf_binary *);
