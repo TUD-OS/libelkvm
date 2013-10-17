@@ -170,6 +170,11 @@ int elkvm_debug_singlestep(struct kvm_vcpu *vcpu);
 
 int elkvm_debug_breakpoint(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t rip);
 
+/*
+ * Loads an ELF binary into the VM's system_chunk
+*/
+int elkvm_load_binary(struct kvm_vm *vm, const char *binary);
+
 #ifdef __cplusplus
 }
 #endif

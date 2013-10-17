@@ -5,6 +5,7 @@ extern "C" {
 #endif
 
 #include <linux/kvm.h>
+#include <gelf.h>
 
 #define KVM_EXPECT_VERSION 12
 #define KVM_DEV_PATH "/dev/kvm"

@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <inttypes.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -21,6 +22,9 @@
 #define PT_BIT_NO_CACHE    0x16
 #define PT_BIT_USED        0x32
 #define PT_BIT_NXE         (1L << 63)
+
+#define ELKVM_EXEC         (1 << 0)
+#define ELKVM_WRITE        (1 << 1)
 
 struct kvm_vm;
 
@@ -82,6 +86,9 @@ struct kvm_userspace_memory_region *elkvm_pager_get_chunk(struct kvm_pager *, in
  * params are pager, host virtual address, writeable and executable bit
  */
 uint64_t kvm_pager_map_kernel_page(struct kvm_pager *, void *,int, int);
+
+int kvm_pager_map_region(struct kvm_pager *pager, void *host_start_p,
+    uint64_t guest_start_addr, int pages, int access);
 
 /*
  * \brief Create a Mapping in the Page Tables for a physical address
@@ -179,6 +186,31 @@ static inline int entry_exists(uint64_t *e) {
 	return *e & 0x1;
 }
 
+static uint64_t page_begin(uint64_t addr) {
+  return (addr & ~0xFFF);
+}
+
+static bool page_aligned(uint64_t addr) {
+  return ((addr & ~0xFFF) == addr);
+}
+
 static uint64_t next_page(uint64_t addr) {
   return (addr & ~0xFFF) + 0x1000;
 }
+
+static int pages_from_size(uint64_t size) {
+  if(size % 1000) {
+    return (size / 0x1000) + 1;
+  } else {
+    return size / 0x1000;
+  }
+}
+
+static int page_remain(uint64_t addr) {
+  return 0x1000 - (addr & 0xFFF);
+}
+
+static unsigned int offset_in_page(uint64_t addr) {
+  return addr & 0xFFF;
+}
+

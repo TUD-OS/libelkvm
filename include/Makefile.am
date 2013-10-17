@@ -1,7 +1,6 @@
 libelkvmincludedir = $(includedir)/elkvm
 
-libelkvminclude_HEADERS = elfloader.h\
-													elkvm.h\
+libelkvminclude_HEADERS = elkvm.h\
 													gdt.h\
 													heap.h\
 													mapping.h\
