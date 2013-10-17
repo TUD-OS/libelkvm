@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <inttypes.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -187,6 +188,10 @@ static inline int entry_exists(uint64_t *e) {
 
 static uint64_t page_begin(uint64_t addr) {
   return (addr & ~0xFFF);
+}
+
+static bool page_aligned(uint64_t addr) {
+  return ((addr & ~0xFFF) == addr);
 }
 
 static uint64_t next_page(uint64_t addr) {

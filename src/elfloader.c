@@ -191,15 +191,21 @@ int elfloader_load_program_header(struct kvm_vm *vm, struct Elf_binary *bin,
 		 * ELF specification says to read the whole page into memory
 		 * this means we have "dirty" bytes at the beginning and end
 		 * of every loadable program header
+     * These bytes are to be filled, with different data depending on
+     * if we are dealing with the text or the data region here.
+     * For Text the padding in the beginning should be filled with
+     * the ELF header, the program header table and "other information"
+     * Padding in the end should be a copy of the beginning of data
+     * For Data the padding in the beginning should be filled with
+     * a copy of the end of text
+     * Padding in the end may contain file information
 		 */
 
-		/*
-		 * buffers need to be page aligned
-		*/
-		if(((uint64_t)region->host_base_p & ~0xFFF) != (uint64_t)region->host_base_p) {
-			return -EIO;
-		}
-		char *buf = region->host_base_p;
+  if(!page_aligned((uint64_t)region->host_base_p)) {
+    return -EIO;
+  }
+
+  char *buf = region->host_base_p;
 
 		/*
 		 * make sure we are going to read full pages
