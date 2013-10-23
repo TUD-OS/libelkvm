@@ -207,17 +207,17 @@ int elkvm_init(struct elkvm_opts *opts, int argc, char **argv, char **environ) {
 
 	opts->fd = open(KVM_DEV_PATH, O_RDWR);
 	if(opts->fd < 0) {
-		return opts->fd;
+		return -errno;
 	}
 
 	int version = ioctl(opts->fd, KVM_GET_API_VERSION, 0);
 	if(version != KVM_EXPECT_VERSION) {
-		return -1;
+		return -ENOPROTOOPT;
 	}
 
 	opts->run_struct_size = ioctl(opts->fd, KVM_GET_VCPU_MMAP_SIZE, 0);
 	if(opts->run_struct_size <= 0) {
-		return -1;
+		return -EIO;
 	}
 
 	return 0;
