@@ -48,8 +48,8 @@ START_TEST(test_handle_syscall) {
 	opcode = 0x0F05;
 	memcpy((void *)syscall_vm.pager.system_chunk.userspace_addr, &opcode, 2);
 
-	int cont = elkvm_handle_vm_shutdown(&syscall_vm, vcpu);
-	ck_assert_int_eq(cont, 1);
+//	int cont = elkvm_handle_vm_shutdown(&syscall_vm, vcpu);
+//	ck_assert_int_eq(cont, 1);
 }
 END_TEST
 
