@@ -37,7 +37,7 @@ START_TEST(test_push_stack) {
 	ck_assert_int_eq(err, 0);
 
 	uint16_t magic_val = 0x42;
-	err = push_stack(&stack_vm, vcpu, magic_val);
+	err = elkvm_pushq(&stack_vm, vcpu, magic_val);
 	ck_assert_int_eq(err, 0);
 
 	err = kvm_vcpu_get_regs(vcpu);
@@ -63,10 +63,10 @@ START_TEST(test_pop_stack) {
 	ck_assert_int_eq(err, 0);
 
 	uint16_t magic_val = 0x42;
-  err = push_stack(&stack_vm, vcpu, magic_val);
+  err = elkvm_pushq(&stack_vm, vcpu, magic_val);
 
 	uint64_t old_rsp = vcpu->regs.rsp;
-	uint16_t popped_val = pop_stack(&stack_vm, vcpu);
+	uint16_t popped_val = elkvm_popq(&stack_vm, vcpu);
 	ck_assert_int_eq(popped_val, magic_val);
 
 	//check that stack pointer has changed!
