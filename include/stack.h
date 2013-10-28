@@ -40,7 +40,7 @@ inline int is_stack_expansion(struct kvm_vm *vm, struct kvm_vcpu *vcpu,
   uint64_t pages = (stack_top - aligned_pfla) / 0x1000;
 
   /* TODO right now this is an arbitrary number... */
-  return pages < 0x10;
+  return pages < 0x20;
 }
 
 #ifdef __cplusplus
