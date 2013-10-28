@@ -393,7 +393,33 @@ long elkvm_do_poll(struct kvm_vm *vm) {
 }
 
 long elkvm_do_lseek(struct kvm_vm *vm) {
-	return -ENOSYS;
+  if(vm->syscall_handlers->lseek == NULL) {
+    printf("LSEEK handler not found\n");
+    return -ENOSYS;
+  }
+
+  uint64_t fd;
+  uint64_t off;
+  uint64_t whence;
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+
+  int err = elkvm_syscall3(vm, vcpu, &fd, &off, &whence);
+  if(err) {
+    return -EFAULT;
+  }
+
+  long result = vm->syscall_handlers->lseek(fd, off, whence);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("LSEEK fd %lu offset %lu whence %lu\n",
+        fd, off, whence);
+    printf("RESULT: %li\n", result);
+    printf("=================================\n");
+
+  }
+  return result;
+
+
 }
 
 long elkvm_do_mmap(struct kvm_vm *vm) {

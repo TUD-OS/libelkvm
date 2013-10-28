@@ -42,6 +42,10 @@ long pass_fstat(int fd, struct stat *buf) {
   return fstat(fd, buf);
 }
 
+long pass_lseek(int fd, off_t offset, int whence) {
+  return lseek(fd, offset, whence);
+}
+
 long pass_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset,
     struct region_mapping *mapping) {
   void *host_p = mmap(addr, length, prot, flags, fd, offset);
@@ -119,7 +123,7 @@ struct elkvm_handlers example_handlers = {
 	.fstat = pass_fstat,
 	.lstat = NULL,
 	.poll = NULL,
-	.lseek = NULL,
+	.lseek = pass_lseek,
 	.mmap = pass_mmap,
   .mprotect = NULL,
   .munmap = pass_munmap,
