@@ -36,3 +36,4 @@ ltmain.sh
 share/vmxoff
 share/entry
 share/isr
+examples/timekeeper/src/timekeeper
