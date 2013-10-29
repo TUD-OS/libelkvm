@@ -130,7 +130,7 @@ int elkvm_handle_interrupt(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
    Syscalls of more than 6 arguments are not supported.  */
 
 int elkvm_handle_syscall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
-	uint64_t syscall_num = elkvm_popq(vm, vcpu);
+	uint64_t syscall_num = vcpu->regs.rax;
   if(vm->debug) {
     fprintf(stderr, " SYSCALL %3lu detected\n", syscall_num);
   }
