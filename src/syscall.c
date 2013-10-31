@@ -472,7 +472,13 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   }
   err = kvm_vm_map_chunk(vm, chunk);
   if(err) {
+    printf("\n============ LIBELKVM ===========\n");
     printf("ERROR mapping chunk %p\n", chunk);
+    printf("SLOT: %u FLAGS: %u GUEST: 0x%llx SIZE: 0x%llx HOST: 0x%llx\n",
+        chunk->slot, chunk->flags, chunk->guest_phys_addr, chunk->memory_size,
+        chunk->userspace_addr);
+    printf("=================================\n");
+
     return err;
   }
 
