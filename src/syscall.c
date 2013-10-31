@@ -145,7 +145,7 @@ int elkvm_handle_syscall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
     }
 		result = elkvm_syscalls[syscall_num].func(vm);
     if(syscall_num == __NR_exit_group) {
-      return 1;
+      return ELKVM_HYPERCALL_EXIT;
     }
 	}
 	/* binary expects syscall result in rax */

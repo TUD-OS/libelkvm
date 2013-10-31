@@ -450,7 +450,9 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
           kvm_vcpu_dump_code(vcpu);
         }
         err = elkvm_handle_hypercall(vcpu->vm, vcpu);
-        if(err) {
+        if(err == ELKVM_HYPERCALL_EXIT) {
+          is_running = 0;
+        } else if(err) {
           is_running = 0;
           fprintf(stderr, "ELKVM: Could not handle hypercall!\n");
           fprintf(stderr, "Errno: %i Msg: %s\n", err, strerror(err));

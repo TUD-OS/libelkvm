@@ -5,6 +5,8 @@
 
 #define ELKVM_HYPERCALL_SYSCALL   1
 #define ELKVM_HYPERCALL_INTERRUPT 2
+
+#define ELKVM_HYPERCALL_EXIT      0x42
 /*
  * \brief check what kind of syscall has been made by the guest
  * and call the appropriate handler func in the userspace binary
