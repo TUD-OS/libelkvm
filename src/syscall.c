@@ -508,10 +508,6 @@ long elkvm_do_mprotect(struct kvm_vm *vm) {
 }
 
 long elkvm_do_munmap(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->munmap == NULL) {
-    printf("MUNMAP handler not found\n");
-    return -ENOSYS;
-  }
   struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
 
   uint64_t addr_p = 0;
@@ -543,7 +539,12 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
   if(mapping->mapped_pages == 0) {
     region->memory_size = 0;
     err = kvm_vm_map_chunk(vm, region);
-    result = vm->syscall_handlers->munmap(mapping);
+    if(vm->syscall_handlers->munmap != NULL) {
+      result = vm->syscall_handlers->munmap(mapping);
+    } else {
+      printf("MUNMAP handler not found!\n");
+      result = -ENOSYS;
+    }
   }
 
   if(vm->debug) {
