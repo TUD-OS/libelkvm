@@ -558,9 +558,15 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
     printf("MUNMAP reguested with address: 0x%lx (%p) length: 0x%lx\n",
         addr_p, addr, length, mapping->mapped_pages);
     printf("MAPPING %p pages mapped: %u\n", mapping, mapping->mapped_pages);
-    printf("RESULT: %li\n", result);
-    if(result < 0) {
-      printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
+    if(mapping->mapped_pages == 0) {
+      printf("MUNMAP handler called for chunk %p\n", mapping);
+      printf("SLOT: %u FLAGS: %u GUEST: 0x%llx SIZE: 0x%llx HOST: 0x%llx\n",
+          region->slot, region->flags, region->guest_phys_addr,
+          region->memory_size, region->userspace_addr);
+      printf("RESULT: %li\n", result);
+      if(result < 0) {
+        printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
+      }
     }
     printf("=================================\n");
   }
