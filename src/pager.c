@@ -35,6 +35,11 @@ int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
 		return err;
 	}
 
+  vm->pager.free_slot_id = -1;
+  for(int i = 0; i < KVM_MEMORY_SLOTS; i++) {
+    vm->pager.free_slot[i] = 0;
+  }
+
   vm->pager.vm = vm;
 
 	return 0;
@@ -59,8 +64,13 @@ struct kvm_userspace_memory_region *kvm_pager_alloc_chunk(struct kvm_pager *page
     free(chunk);
     return NULL;
 	}
-	/* system chunk has slot 0, so we need to add 1 to all user chunks */
-	chunk->slot = chunk_count + 1;
+  if(pager->free_slot_id >= 0) {
+    chunk->slot = pager->free_slot[pager->free_slot_id];
+    pager->free_slot_id--;
+  } else {
+  	/* system chunk has slot 0, so we need to add 1 to all user chunks */
+  	chunk->slot = chunk_count + 1;
+  }
 
   return chunk;
 }
@@ -132,6 +142,26 @@ int elkvm_pager_chunk_count(struct kvm_pager *pager, struct chunk_list **current
 	}
 
   return chunk_count;
+}
+
+int elkvm_pager_free_chunk(struct kvm_pager *pager,
+    struct kvm_userspace_memory_region *chunk) {
+  assert(pager != NULL);
+  assert(chunk != NULL);
+  assert(chunk != &pager->system_chunk);
+
+  struct chunk_list *cl = pager->other_chunks;
+  do {
+    if(cl->next != NULL && cl->next->chunk == chunk) {
+      struct chunk_list *l = cl->next;
+      cl->next = cl->next->next;
+      free(l->chunk);
+      free(l);
+      return 0;
+    }
+  } while(cl->next != NULL);
+
+  return -1;
 }
 
 struct kvm_userspace_memory_region
@@ -571,3 +601,13 @@ void kvm_pager_dump_table(struct kvm_pager *pager, void *host_p, int level) {
 	}
 	return;
 }
+
+void elkvm_pager_slot_dump(struct kvm_pager *pager) {
+  printf("FREE SLOT COUNT: %i\n", pager->free_slot_id);
+  printf("SLOTS: ");
+  for(int i = 0; i <= pager->free_slot_id; i++) {
+    printf("%u ", pager->free_slot[i]);
+  }
+  printf("\n");
+}
+

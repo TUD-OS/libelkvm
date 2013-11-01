@@ -26,6 +26,9 @@
 #define ELKVM_EXEC         (1 << 0)
 #define ELKVM_WRITE        (1 << 1)
 
+/* KVM allows only for so many memory slots in Linux 3.8 */
+#define KVM_MEMORY_SLOTS 32
+
 struct kvm_vm;
 
 struct chunk_list {
@@ -44,6 +47,8 @@ struct kvm_pager {
 	uint64_t guest_next_free;
   uint64_t brk_addr;
   uint64_t total_memsz;
+  uint32_t free_slot[KVM_MEMORY_SLOTS];
+  int free_slot_id;
 };
 
 /*
@@ -76,6 +81,9 @@ int kvm_pager_is_invalid_guest_base(struct kvm_pager *, uint64_t);
 int kvm_pager_append_mem_chunk(struct kvm_pager *, struct kvm_userspace_memory_region *);
 
 int elkvm_pager_chunk_count(struct kvm_pager *pager, struct chunk_list **current);
+
+int elkvm_pager_free_chunk(struct kvm_pager *pager,
+    struct kvm_userspace_memory_region *chunk);
 
 struct kvm_userspace_memory_region elkvm_pager_get_system_chunk(
     struct kvm_pager *);

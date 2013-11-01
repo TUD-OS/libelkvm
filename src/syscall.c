@@ -551,6 +551,7 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
       printf("MUNMAP handler not found!\n");
       result = -ENOSYS;
     }
+    err = elkvm_pager_free_chunk(&vm->pager, region);
   }
 
   if(vm->debug) {

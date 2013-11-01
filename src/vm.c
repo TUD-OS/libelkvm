@@ -395,6 +395,12 @@ int elkvm_copy_and_push_str_arr_p(struct kvm_vm *vm,
 }
 
 int kvm_vm_map_chunk(struct kvm_vm *vm, struct kvm_userspace_memory_region *chunk) {
+  if(chunk->memory_size == 0) {
+    vm->pager.free_slot_id++;
+    assert(vm->pager.free_slot_id < KVM_MEMORY_SLOTS);
+    vm->pager.free_slot[vm->pager.free_slot_id] = chunk->slot;
+  }
+
 	int err = ioctl(vm->fd, KVM_SET_USER_MEMORY_REGION, chunk);
 //	if(err) {
 //		long sz = sysconf(_SC_PAGESIZE);
