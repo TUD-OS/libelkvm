@@ -30,6 +30,8 @@ int elkvm_heap_initialize(struct kvm_vm *vm, struct elkvm_memory_region *region,
 int elkvm_heap_grow(struct kvm_vm *vm, uint64_t size) {
   struct elkvm_memory_region_list *newtop;
   newtop = malloc(sizeof(struct elkvm_memory_region_list));
+  assert(newtop != NULL);
+
   newtop->next = vm->heap;
   newtop->data = elkvm_region_create(vm, size);
   if(newtop->data == NULL) {

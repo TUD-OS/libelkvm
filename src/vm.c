@@ -401,6 +401,7 @@ int kvm_vm_map_chunk(struct kvm_vm *vm, struct kvm_userspace_memory_region *chun
     vm->pager.free_slot[vm->pager.free_slot_id] = chunk->slot;
   }
 
+  assert(chunk->slot < KVM_MEMORY_SLOTS);
 	int err = ioctl(vm->fd, KVM_SET_USER_MEMORY_REGION, chunk);
 //	if(err) {
 //		long sz = sysconf(_SC_PAGESIZE);
@@ -433,8 +434,7 @@ struct kvm_vcpu *elkvm_vcpu_get(struct kvm_vm *vm, int vcpu_id) {
 }
 
 int elkvm_chunk_count(struct kvm_vm *vm) {
-  struct chunk_list *c;
-  int count = elkvm_pager_chunk_count(&vm->pager, &c);
+  int count = elkvm_pager_chunk_count(&vm->pager);
   /* count the system chunk */
   return count + 1;
 }

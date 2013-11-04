@@ -106,42 +106,12 @@ int kvm_pager_create_mem_chunk(struct kvm_pager *pager, void **chunk_host_p,
 
 int kvm_pager_append_mem_chunk(struct kvm_pager *pager,
 		struct kvm_userspace_memory_region *chunk) {
-
-	if(pager->other_chunks == NULL) {
-		pager->other_chunks = malloc(sizeof(struct chunk_list));
-		if(pager->other_chunks == NULL) {
-			return -ENOMEM;
-		}
-		pager->other_chunks->chunk = chunk;
-		pager->other_chunks->next = NULL;
-		return 0;
-	}
-
-  struct chunk_list *current = pager->other_chunks;
-  int chunk_count = elkvm_pager_chunk_count(pager, &current);
-
-	current->next = malloc(sizeof(struct chunk_list));
-	if(current->next == NULL) {
-		return -ENOMEM;
-	}
-
-	chunk_count++;
-	current = current->next;
-	current->chunk = chunk;
-	current->next = NULL;
-
-	return chunk_count;
+  list_push(pager->other_chunks, chunk);
+  return list_length(pager->other_chunks);
 }
 
-int elkvm_pager_chunk_count(struct kvm_pager *pager, struct chunk_list **current) {
-	int chunk_count = 0;
-	*current = pager->other_chunks;
-	while((*current) != NULL && (*current)->next != NULL) {
-		chunk_count++;
-		*current = (*current)->next;
-	}
-
-  return chunk_count;
+int elkvm_pager_chunk_count(struct kvm_pager *pager) {
+  return list_length(pager->other_chunks);
 }
 
 int elkvm_pager_free_chunk(struct kvm_pager *pager,
@@ -150,19 +120,8 @@ int elkvm_pager_free_chunk(struct kvm_pager *pager,
   assert(chunk != NULL);
   assert(chunk != &pager->system_chunk);
 
-  struct chunk_list *cl = pager->other_chunks;
-  do {
-    if(cl->next != NULL && cl->next->chunk == chunk) {
-      struct chunk_list *l = cl->next;
-      cl->next = cl->next->next;
-      free(l->chunk);
-      free(l);
-      return 0;
-    }
-    cl = cl->next;
-  } while(cl->next != NULL);
-
-  return -1;
+  list_remove(pager->other_chunks, chunk);
+  return 0;
 }
 
 struct kvm_userspace_memory_region
@@ -172,17 +131,15 @@ elkvm_pager_get_system_chunk(struct kvm_pager *pager) {
 
 struct kvm_userspace_memory_region *
 elkvm_pager_get_chunk(struct kvm_pager *pager, int c) {
-  struct chunk_list *current = pager->other_chunks;
-  int elem = 0;
-  while(current->next != NULL && elem < c) {
-    current = current->next;
+  int i = 0;
+  list_each(pager->other_chunks, chunk) {
+    if(i == c) {
+      return chunk;
+    }
+    i++;
   }
 
-  if(elem == c) {
-    return current->chunk;
-  } else {
-    return NULL;
-  }
+  return NULL;
 }
 
 int kvm_pager_create_page_tables(struct kvm_pager *pager, int mode) {
@@ -216,13 +173,11 @@ int kvm_pager_is_invalid_guest_base(struct kvm_pager *pager, uint64_t guest_base
 		return 1;
 	}
 
-	struct chunk_list *cl = pager->other_chunks;
-	while(cl != NULL) {
-		if(cl->chunk->guest_phys_addr <= guest_base &&
-				guest_base < cl->chunk->guest_phys_addr + cl->chunk->memory_size) {
+  list_each(pager->other_chunks, chunk) {
+		if(chunk->guest_phys_addr <= guest_base &&
+				guest_base < chunk->guest_phys_addr + chunk->memory_size) {
 			return 1;
 		}
-		cl = cl->next;
 	}
 
 	return 0;
@@ -234,15 +189,12 @@ struct kvm_userspace_memory_region *
 			return &pager->system_chunk;
 		}
 
-		struct chunk_list *cl = pager->other_chunks;
-		while(cl != NULL) {
-			struct kvm_userspace_memory_region *region = cl->chunk;
+    list_each(pager->other_chunks, region) {
       assert(region != NULL);
 
       if(address_in_region(region, host_mem_p)) {
 				return region;
 			}
-			cl = cl->next;
 		}
 
 		return NULL;
@@ -363,12 +315,11 @@ void *kvm_pager_get_host_p(struct kvm_pager *pager, uint64_t guest_virtual) {
   if(guest_address_in_region(&pager->system_chunk, guest_physical)) {
     chunk = &pager->system_chunk;
   } else {
-    struct chunk_list *cl = pager->other_chunks;
-    while(!guest_address_in_region(cl->chunk, guest_physical)) {
-      assert(cl->next != NULL);
-      cl = cl->next;
+    list_each(pager->other_chunks, c) {
+      if(guest_address_in_region(c, guest_physical)) {
+        chunk = c;
+      }
     }
-    chunk = cl->chunk;
   }
 	return (void *)((guest_physical - chunk->guest_phys_addr) + chunk->userspace_addr);
 }
