@@ -472,7 +472,13 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   }
   err = kvm_vm_map_chunk(vm, chunk);
   if(err) {
+    printf("\n============ LIBELKVM ===========\n");
     printf("ERROR mapping chunk %p\n", chunk);
+    printf("SLOT: %u FLAGS: %u GUEST: 0x%llx SIZE: 0x%llx HOST: 0x%llx\n",
+        chunk->slot, chunk->flags, chunk->guest_phys_addr, chunk->memory_size,
+        chunk->userspace_addr);
+    printf("=================================\n");
+
     return err;
   }
 
@@ -508,10 +514,6 @@ long elkvm_do_mprotect(struct kvm_vm *vm) {
 }
 
 long elkvm_do_munmap(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->munmap == NULL) {
-    printf("MUNMAP handler not found\n");
-    return -ENOSYS;
-  }
   struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
 
   uint64_t addr_p = 0;
@@ -543,7 +545,13 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
   if(mapping->mapped_pages == 0) {
     region->memory_size = 0;
     err = kvm_vm_map_chunk(vm, region);
-    result = vm->syscall_handlers->munmap(mapping);
+    if(vm->syscall_handlers->munmap != NULL) {
+      result = vm->syscall_handlers->munmap(mapping);
+    } else {
+      printf("MUNMAP handler not found!\n");
+      result = -ENOSYS;
+    }
+    err = elkvm_pager_free_chunk(&vm->pager, region);
   }
 
   if(vm->debug) {
@@ -551,9 +559,15 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
     printf("MUNMAP reguested with address: 0x%lx (%p) length: 0x%lx\n",
         addr_p, addr, length, mapping->mapped_pages);
     printf("MAPPING %p pages mapped: %u\n", mapping, mapping->mapped_pages);
-    printf("RESULT: %li\n", result);
-    if(result < 0) {
-      printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
+    if(mapping->mapped_pages == 0) {
+      printf("MUNMAP handler called for chunk %p\n", mapping);
+      printf("SLOT: %u FLAGS: %u GUEST: 0x%llx SIZE: 0x%llx HOST: 0x%llx\n",
+          region->slot, region->flags, region->guest_phys_addr,
+          region->memory_size, region->userspace_addr);
+      printf("RESULT: %li\n", result);
+      if(result < 0) {
+        printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
+      }
     }
     printf("=================================\n");
   }
