@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include "list.h"
 
 #define PAGER_MODE_X86     1
 #define PAGER_MODE_X86_E   2
@@ -31,17 +32,12 @@
 
 struct kvm_vm;
 
-struct chunk_list {
-	struct chunk_list *next;
-	struct kvm_userspace_memory_region *chunk;
-};
-
 struct kvm_pager {
 	uint64_t guest_top_pm;
 	int mode;
 	struct kvm_vm *vm;
 	struct kvm_userspace_memory_region system_chunk;
-	struct chunk_list *other_chunks;
+  list(struct kvm_userspace_memory_region *, other_chunks);
 	void *host_pml4_p;
 	void *host_next_free_tbl_p;
 	uint64_t guest_next_free;
@@ -80,7 +76,7 @@ int kvm_pager_is_invalid_guest_base(struct kvm_pager *, uint64_t);
 */
 int kvm_pager_append_mem_chunk(struct kvm_pager *, struct kvm_userspace_memory_region *);
 
-int elkvm_pager_chunk_count(struct kvm_pager *pager, struct chunk_list **current);
+int elkvm_pager_chunk_count(struct kvm_pager *pager);
 
 int elkvm_pager_free_chunk(struct kvm_pager *pager,
     struct kvm_userspace_memory_region *chunk);

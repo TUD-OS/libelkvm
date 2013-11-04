@@ -433,8 +433,7 @@ struct kvm_vcpu *elkvm_vcpu_get(struct kvm_vm *vm, int vcpu_id) {
 }
 
 int elkvm_chunk_count(struct kvm_vm *vm) {
-  struct chunk_list *c;
-  int count = elkvm_pager_chunk_count(&vm->pager, &c);
+  int count = elkvm_pager_chunk_count(&vm->pager);
   /* count the system chunk */
   return count + 1;
 }
