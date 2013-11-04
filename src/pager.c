@@ -159,6 +159,7 @@ int elkvm_pager_free_chunk(struct kvm_pager *pager,
       free(l);
       return 0;
     }
+    cl = cl->next;
   } while(cl->next != NULL);
 
   return -1;
