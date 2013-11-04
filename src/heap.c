@@ -60,6 +60,7 @@ int elkvm_brk(struct kvm_vm *vm, uint64_t newbrk) {
 }
 
 int elkvm_brk_nogrow(struct kvm_vm *vm, uint64_t newbrk) {
+  assert(vm->pager.brk_addr >= vm->heap->data->guest_virtual);
   uint64_t newbrk_offset = ((vm->pager.brk_addr - vm->heap->data->guest_virtual)
     & ~0xFFF)
     + 0x1000;
