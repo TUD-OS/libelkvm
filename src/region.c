@@ -17,11 +17,12 @@ struct elkvm_memory_region *elkvm_region_create(struct kvm_vm *vm, uint64_t size
   if(current == NULL) {
     /* TODO get a new memory chunk and add that to the list of root regions */
     void *chunk_p;
-    int err = kvm_pager_create_mem_chunk(&vm->pager, &chunk_p, ELKVM_SYSTEM_MEMGROW);
+    uint64_t grow_size = size > ELKVM_SYSTEM_MEMGROW ? size : ELKVM_SYSTEM_MEMGROW;
+    int err = kvm_pager_create_mem_chunk(&vm->pager, &chunk_p, grow_size);
     if(err) {
       return NULL;
     }
-    current = elkvm_region_alloc(chunk_p, ELKVM_SYSTEM_MEMGROW, 0);
+    current = elkvm_region_alloc(chunk_p, grow_size, 0);
     if(current == NULL) {
       return NULL;
     }
