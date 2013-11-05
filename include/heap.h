@@ -16,5 +16,6 @@ int elkvm_brk_grow(struct kvm_vm *, uint64_t);
 int elkvm_brk_map(struct kvm_vm *, uint64_t, uint64_t);
 
 static inline bool elkvm_within_current_heap_region(struct kvm_vm *vm, uint64_t guest_addr) {
-  return guest_addr < (vm->heap->data->guest_virtual + vm->heap->data->region_size);
+  struct elkvm_memory_region **heap = list_elem_front(vm->heap);
+  return guest_addr < ((*heap)->guest_virtual + (*heap)->region_size);
 }

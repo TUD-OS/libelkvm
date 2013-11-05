@@ -46,7 +46,7 @@ struct kvm_vm {
   list(struct region_mapping *, mappings);
 
 	struct elkvm_memory_region *text;
-	struct elkvm_memory_region_list *heap;
+  list(struct elkvm_memory_region *, heap);
 	struct elkvm_memory_region *kernel_stack;
 	struct elkvm_memory_region *gdt_region;
 	struct elkvm_memory_region *idt_region;
