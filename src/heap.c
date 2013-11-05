@@ -87,6 +87,20 @@ int elkvm_brk_grow(struct kvm_vm *vm, uint64_t newbrk) {
   return 0;
 }
 
+int elkvm_brk_shrink(struct kvm_vm *vm, uint64_t newbrk) {
+    for(uint64_t guest_addr = vm->pager.brk_addr;
+        guest_addr >= next_page(newbrk);
+        guest_addr -= 0x1000) {
+      int err = kvm_pager_destroy_mapping(&vm->pager, guest_addr);
+      if(err) {
+        return err;
+      }
+    }
+
+    vm->pager.brk_addr = newbrk;
+    return 0;
+}
+
 int elkvm_brk_map(struct kvm_vm *vm, uint64_t newbrk, uint64_t off) {
   uint64_t map_addr = (vm->pager.brk_addr & ~0xFFF) + 0x1000;
 

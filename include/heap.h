@@ -10,6 +10,7 @@ int elkvm_heap_grow(struct kvm_vm *, uint64_t size);
 
 int elkvm_brk(struct kvm_vm *, uint64_t);
 int elkvm_brk_nogrow(struct kvm_vm *, uint64_t);
+int elkvm_brk_shrink(struct kvm_vm *, uint64_t newbrk);
 int elkvm_brk_grow(struct kvm_vm *, uint64_t);
 
 int elkvm_brk_map(struct kvm_vm *, uint64_t, uint64_t);
