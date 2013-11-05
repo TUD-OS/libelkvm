@@ -87,6 +87,11 @@ int elkvm_brk_grow(struct kvm_vm *vm, uint64_t newbrk) {
 }
 
 int elkvm_brk_shrink(struct kvm_vm *vm, uint64_t newbrk) {
+  struct elkvm_memory_region *heap_top = *list_elem_front(vm->heap);
+  if(newbrk < heap_top->guest_virtual) {
+    list_pop_front(vm->heap);
+  }
+
   for(uint64_t guest_addr = vm->pager.brk_addr;
       guest_addr >= next_page(newbrk);
       guest_addr -= 0x1000) {
