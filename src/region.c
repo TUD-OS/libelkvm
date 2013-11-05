@@ -70,6 +70,14 @@ struct elkvm_memory_region *elkvm_region_alloc(void *host_base_p, uint64_t size,
   return region;
 }
 
+int elkvm_region_free(struct kvm_vm *vm, struct elkvm_memory_region *region) {
+  region->guest_virtual = 0x0;
+  region->used = 0;
+  region->grows_downward = 0;
+
+  return 0;
+}
+
 struct elkvm_memory_region *
 	elkvm_region_find(struct elkvm_memory_region *region, uint64_t size) {
 		if(size > region->region_size) {
