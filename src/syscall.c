@@ -632,7 +632,38 @@ long elkvm_do_sigaction(struct kvm_vm *vm) {
 }
 
 long elkvm_do_sigprocmask(struct kvm_vm *vm) {
-  return -ENOSYS;
+  if(vm->syscall_handlers->sigprocmask == NULL) {
+    printf("SIGPROCMASK handler not found\n");
+    return -ENOSYS;
+  }
+
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+
+  uint64_t how;
+  uint64_t set_p;
+  uint64_t oldset_p;
+
+  int err = elkvm_syscall3(vm, vcpu, &how, &set_p, &oldset_p);
+  if(err) {
+    return err;
+  }
+
+  sigset_t *set = kvm_pager_get_host_p(&vm->pager, set_p);
+  sigset_t *oldset = kvm_pager_get_host_p(&vm->pager, oldset_p);
+
+  long result = vm->syscall_handlers->sigprocmask(how, set, oldset);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("RT SIGPROCMASK with how: %i (%p) set: 0x%lx (%p) oldset: 0x%lx (%p)\n",
+        (int)how, &how, set_p, set, oldset_p, oldset);
+    printf("RESULT: %li\n", result);
+    if(result < 0) {
+      printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
+    }
+    printf("=================================\n");
+
+  }
+  return result;
 }
 
 long elkvm_do_sigreturn(struct kvm_vm *vm) {

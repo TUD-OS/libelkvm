@@ -70,6 +70,8 @@ struct elkvm_handlers {
 	long (*mprotect) (void *addr, size_t len, int prot);
 	long (*munmap) (struct region_mapping *mapping);
   /* ... */
+  long (*sigprocmask)(int how, const sigset_t *set, sigset_t *oldset);
+  /* ... */
   long (*readv) (int fd, struct iovec *iov, int iovcnt);
   long (*writev) (int fd, struct iovec *iov, int iovcnt);
   long (*access) (const char *pathname, int mode);
