@@ -132,6 +132,7 @@ struct elkvm_handlers example_handlers = {
   .writev = pass_writev,
   .access = pass_access,
   .dup = pass_dup,
+  .nanosleep = NULL,
   /* ... */
   .getpid = pass_getpid,
   /* ... */

@@ -75,6 +75,7 @@ struct elkvm_handlers {
   long (*access) (const char *pathname, int mode);
   long (*dup) (int oldfd);
   /* ... */
+  long (*nanosleep)(struct timespec *req, struct timespec *rem);
   long (*getpid)(void);
   /* ... */
   long (*getuid)(void);

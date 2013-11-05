@@ -832,7 +832,32 @@ long elkvm_do_pause(struct kvm_vm *vm) {
 }
 
 long elkvm_do_nanosleep(struct kvm_vm *vm) {
-  return -ENOSYS;
+  if(vm->syscall_handlers->nanosleep == NULL) {
+    printf("NANOSLEEP handler not found\n");
+    return -ENOSYS;
+  }
+
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+
+  uint64_t req_p;
+  uint64_t rem_p;
+  int err = elkvm_syscall2(vm, vcpu, &req_p, &rem_p);
+  if(err) {
+    return err;
+  }
+
+  struct timespec *req = kvm_pager_get_host_p(&vm->pager, req_p);
+  struct timespec *rem = kvm_pager_get_host_p(&vm->pager, rem_p);
+
+  long result = vm->syscall_handlers->nanosleep(req, rem);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("NANOSLEEP\n");
+    printf("RESULT: %li\n", result);
+    printf("=================================\n");
+  }
+
+  return result;
 }
 
 long elkvm_do_getitimer(struct kvm_vm *vm) {
