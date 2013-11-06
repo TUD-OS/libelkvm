@@ -80,6 +80,10 @@ long pass_dup(int oldfd) {
   return dup(oldfd);
 }
 
+long pass_nanosleep(struct timespec *req, struct timespec *rem) {
+  return nanosleep(req, rem);
+}
+
 long pass_getpid() {
   return getpid();
 }
@@ -139,7 +143,7 @@ struct elkvm_handlers example_handlers = {
   .writev = pass_writev,
   .access = pass_access,
   .dup = pass_dup,
-  .nanosleep = NULL,
+  .nanosleep = pass_nanosleep,
   /* ... */
   .getpid = pass_getpid,
   /* ... */
