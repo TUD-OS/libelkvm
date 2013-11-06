@@ -628,7 +628,32 @@ long elkvm_do_brk(struct kvm_vm *vm) {
 }
 
 long elkvm_do_sigaction(struct kvm_vm *vm) {
-  return -ENOSYS;
+
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  uint64_t signum;
+  uint64_t act_p;
+  uint64_t oldact_p;
+
+  int err = elkvm_syscall3(vm, vcpu, &signum, &act_p, &oldact_p);
+  if(err) {
+    return err;
+  }
+
+  struct sigaction *act = kvm_pager_get_host_p(&vm->pager, act_p);
+  struct sigaction *oldact = kvm_pager_get_host_p(&vm->pager, oldact_p);
+
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf(" SIGACTION with signum: %i act: 0x%lx (%p) oldact: 0x%lx (%p)\n",
+        (int)signum, act_p, act, oldact_p, oldact);
+    if(err != 0) {
+      printf("ERROR: %i\n", errno);
+    }
+    printf("=================================\n");
+
+  }
+  err = elkvm_signal_register(vm, (int)signum, act, oldact);
+  return err;
 }
 
 long elkvm_do_sigprocmask(struct kvm_vm *vm) {
