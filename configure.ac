@@ -16,6 +16,7 @@ AC_CHECK_LIB([udis86], [ud_init])
 AC_CHECK_HEADERS([stdint.h])
 AC_CHECK_HEADERS([libelf.h])
 AC_CHECK_HEADERS([gelf.h])
+AC_CHECK_HEADERS([signal.h])
 
 #Check for typedefs, structs and compiler characteristics
 AC_TYPE_UINT64_T
