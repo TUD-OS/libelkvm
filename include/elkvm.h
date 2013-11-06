@@ -18,6 +18,7 @@ extern "C" {
 #include "region.h"
 #include "vcpu.h"
 #include "list.h"
+#include "elkvm-signal.h"
 
 #define VM_MODE_X86    1
 #define VM_MODE_PAGING 2
@@ -51,6 +52,8 @@ struct kvm_vm {
 	struct elkvm_memory_region *gdt_region;
 	struct elkvm_memory_region *idt_region;
   struct elkvm_memory_region *current_user_stack;
+
+  struct elkvm_signals sigs;
 
   int debug;
 };
