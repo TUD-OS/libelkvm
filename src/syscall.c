@@ -40,6 +40,9 @@ int elkvm_handle_hypercall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
     return err;
   }
 
+  err = elkvm_signal_deliver(vm);
+  assert(err == 0);
+
   return 0;
 }
 
