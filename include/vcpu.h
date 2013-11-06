@@ -9,7 +9,6 @@ extern "C" {
 #include <udis86.h>
 
 #include "list.h"
-#include "elkvm.h"
 
 #define VCPU_CR0_FLAG_PAGING            0x80000000
 #define VCPU_CR0_FLAG_CACHE_DISABLE     0x40000000
@@ -32,6 +31,8 @@ extern "C" {
 #define VCPU_MSR_LSTAR  0xC0000082
 #define VCPU_MSR_CSTAR  0xC0000083
 #define VCPU_MSR_SFMASK 0XC0000084
+
+struct kvm_vm;
 
 struct kvm_vcpu {
 	int fd;
