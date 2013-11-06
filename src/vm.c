@@ -96,6 +96,8 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 		return err;
 	}
 
+  elkvm_signal_init(vm);
+
 	vm->syscall_handlers = handlers;
 
 	return 0;
