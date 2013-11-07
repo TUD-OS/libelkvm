@@ -60,28 +60,18 @@ int elkvm_signal_deliver(struct kvm_vm *vm) {
   struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
   assert(vcpu != NULL);
 
-  printf("REGS AND STACK before signal delivery\n");
-  kvm_vcpu_dump_regs(vcpu);
-  elkvm_dump_stack(vm, vcpu);
-  printf("====================================\n");
-
   /* save the vcpu regs */
   memcpy(&vm->sigs.saved_vcpu.regs, &vcpu->regs,
       sizeof(struct kvm_regs) + sizeof(struct kvm_sregs));
   /* set signal handler flag in vm */
   vm->sigs.handler_active = true;
 
-  /* setup the signal handler stack frame and pass the signal number as arg */
-  elkvm_pushq(vm, vcpu, vcpu->regs.rip);
-  int signum = pending_signals[num_pending_signals];
-  vcpu->regs.rdi = signum;
-  vcpu->regs.rip = (uint64_t) vm->sigs.signals[signum].sa_handler;
   num_pending_signals--;
+  int signum = pending_signals[num_pending_signals];
 
-  printf("REGS AND STACK after signal delivery\n");
-  kvm_vcpu_dump_regs(vcpu);
-  elkvm_dump_stack(vm, vcpu);
-  printf("====================================\n");
+  /* setup the signal handler stack frame and pass the signal number as arg */
+  elkvm_pushq(vm, vcpu, (uint64_t) vm->sigs.signals[signum].sa_handler);
+  vcpu->regs.rdi = signum;
 
   return 0;
 }
