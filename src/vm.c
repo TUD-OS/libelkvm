@@ -69,7 +69,7 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 
 	struct elkvm_flat idth;
 	char *isr_path = RES_PATH "/isr";
-	err = elkvm_load_flat(vm, &idth, isr_path);
+	err = elkvm_load_flat(vm, &idth, isr_path, 1);
 	if(err) {
 		return err;
 	}
@@ -81,7 +81,7 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 
 	struct elkvm_flat sysenter;
 	char *sysenter_path = RES_PATH "/entry";
-	err = elkvm_load_flat(vm, &sysenter, sysenter_path);
+	err = elkvm_load_flat(vm, &sysenter, sysenter_path, 1);
 	if(err) {
 		return err;
 	}
@@ -108,7 +108,8 @@ int elkvm_set_debug(struct kvm_vm *vm) {
   return 0;
 }
 
-int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * path) {
+int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * path,
+    int kernel) {
 	int fd = open(path, O_RDONLY);
 	if(fd < 0) {
 		return -errno;
@@ -125,12 +126,20 @@ int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * pat
 	flat->region = elkvm_region_create(vm, stbuf.st_size);
 	flat->region->guest_virtual = 0x0;
 
-	flat->region->guest_virtual = kvm_pager_map_kernel_page(&vm->pager,
-			flat->region->host_base_p, 0, 1);
-	if(flat->region->guest_virtual == 0) {
-		close(fd);
-		return -ENOMEM;
-	}
+  if(kernel) {
+    flat->region->guest_virtual = kvm_pager_map_kernel_page(&vm->pager,
+        flat->region->host_base_p, 0, 1);
+    if(flat->region->guest_virtual == 0) {
+      close(fd);
+      return -ENOMEM;
+    }
+  } else {
+    /* XXX this will only work once! */
+    flat->region->guest_virtual = (vm->text->guest_virtual & ~0xFFF) - 0x1000;
+    err = kvm_pager_create_mapping(&vm->pager, flat->region->host_base_p,
+        flat->region->guest_virtual, 0, 1);
+    assert(err == 0);
+  }
 
 	char *buf = flat->region->host_base_p;
 	int bufsize = 0x1000;

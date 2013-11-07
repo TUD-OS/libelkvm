@@ -69,6 +69,9 @@ int elkvm_signal_deliver(struct kvm_vm *vm) {
   num_pending_signals--;
   int signum = pending_signals[num_pending_signals];
 
+  /* TODO push signal handler cleanup asm addr onto stack */
+  /* TODO push rax onto stack */
+
   /* setup the signal handler stack frame and pass the signal number as arg */
   elkvm_pushq(vm, vcpu, (uint64_t) vm->sigs.signals[signum].sa_handler);
   vcpu->regs.rdi = signum;
