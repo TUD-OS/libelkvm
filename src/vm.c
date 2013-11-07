@@ -8,7 +8,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <elkvm.h>
 #include <flats.h>
 #include <gdt.h>
 #include <idt.h>
@@ -17,6 +16,7 @@
 #include <region.h>
 #include <stack.h>
 #include <vcpu.h>
+#include <elkvm.h>
 
 int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus, int memory_size, struct elkvm_handlers *handlers) {
 	int err = 0;
@@ -86,6 +86,15 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 		return err;
 	}
 
+  char *sighandler_path = RES_PATH "/signal";
+  vm->sighandler_cleanup = malloc(sizeof(struct elkvm_flat));
+  assert(vm->sighandler_cleanup != NULL);
+
+  err = elkvm_load_flat(vm, vm->sighandler_cleanup, sighandler_path, 0);
+  if(err) {
+    return err;
+  }
+
 	/*
 	 * setup the lstar register with the syscall handler
 	 */
@@ -134,8 +143,8 @@ int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * pat
       return -ENOMEM;
     }
   } else {
-    /* XXX this will only work once! */
-    flat->region->guest_virtual = (vm->text->guest_virtual & ~0xFFF) - 0x1000;
+    /* XXX this will break! */
+    flat->region->guest_virtual = 0x1000;
     err = kvm_pager_create_mapping(&vm->pager, flat->region->host_base_p,
         flat->region->guest_virtual, 0, 1);
     assert(err == 0);
