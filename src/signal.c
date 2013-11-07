@@ -2,6 +2,7 @@
 
 #include <elkvm.h>
 
+#include "flats.h"
 #include "stack.h"
 #include "elkvm-signal.h"
 
@@ -69,9 +70,22 @@ int elkvm_signal_deliver(struct kvm_vm *vm) {
   num_pending_signals--;
   int signum = pending_signals[num_pending_signals];
 
+  printf("sighandler_cleanup: 0x%lx (%p)\n",
+      vm->sighandler_cleanup->region->guest_virtual,
+      vm->sighandler_cleanup->region->host_base_p);
+  /* push rax onto stack */
+  elkvm_pushq(vm, vcpu, vcpu->regs.rax);
+
+  /* push signal handler cleanup asm addr onto stack */
+  elkvm_pushq(vm, vcpu, vm->sighandler_cleanup->region->guest_virtual);
+
   /* setup the signal handler stack frame and pass the signal number as arg */
   elkvm_pushq(vm, vcpu, (uint64_t) vm->sigs.signals[signum].sa_handler);
   vcpu->regs.rdi = signum;
+
+//  kvm_vcpu_dump_regs(vcpu);
+//  kvm_vcpu_dump_code(vcpu);
+//  elkvm_dump_stack(vm, vcpu);
 
   return 0;
 }

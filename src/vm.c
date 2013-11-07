@@ -8,7 +8,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <elkvm.h>
 #include <flats.h>
 #include <gdt.h>
 #include <idt.h>
@@ -17,6 +16,7 @@
 #include <region.h>
 #include <stack.h>
 #include <vcpu.h>
+#include <elkvm.h>
 
 int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus, int memory_size, struct elkvm_handlers *handlers) {
 	int err = 0;
@@ -69,7 +69,7 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 
 	struct elkvm_flat idth;
 	char *isr_path = RES_PATH "/isr";
-	err = elkvm_load_flat(vm, &idth, isr_path);
+	err = elkvm_load_flat(vm, &idth, isr_path, 1);
 	if(err) {
 		return err;
 	}
@@ -81,10 +81,19 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 
 	struct elkvm_flat sysenter;
 	char *sysenter_path = RES_PATH "/entry";
-	err = elkvm_load_flat(vm, &sysenter, sysenter_path);
+	err = elkvm_load_flat(vm, &sysenter, sysenter_path, 1);
 	if(err) {
 		return err;
 	}
+
+  char *sighandler_path = RES_PATH "/signal";
+  vm->sighandler_cleanup = malloc(sizeof(struct elkvm_flat));
+  assert(vm->sighandler_cleanup != NULL);
+
+  err = elkvm_load_flat(vm, vm->sighandler_cleanup, sighandler_path, 0);
+  if(err) {
+    return err;
+  }
 
 	/*
 	 * setup the lstar register with the syscall handler
@@ -108,7 +117,8 @@ int elkvm_set_debug(struct kvm_vm *vm) {
   return 0;
 }
 
-int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * path) {
+int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * path,
+    int kernel) {
 	int fd = open(path, O_RDONLY);
 	if(fd < 0) {
 		return -errno;
@@ -125,12 +135,20 @@ int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * pat
 	flat->region = elkvm_region_create(vm, stbuf.st_size);
 	flat->region->guest_virtual = 0x0;
 
-	flat->region->guest_virtual = kvm_pager_map_kernel_page(&vm->pager,
-			flat->region->host_base_p, 0, 1);
-	if(flat->region->guest_virtual == 0) {
-		close(fd);
-		return -ENOMEM;
-	}
+  if(kernel) {
+    flat->region->guest_virtual = kvm_pager_map_kernel_page(&vm->pager,
+        flat->region->host_base_p, 0, 1);
+    if(flat->region->guest_virtual == 0) {
+      close(fd);
+      return -ENOMEM;
+    }
+  } else {
+    /* XXX this will break! */
+    flat->region->guest_virtual = 0x1000;
+    err = kvm_pager_create_mapping(&vm->pager, flat->region->host_base_p,
+        flat->region->guest_virtual, 0, 1);
+    assert(err == 0);
+  }
 
 	char *buf = flat->region->host_base_p;
 	int bufsize = 0x1000;

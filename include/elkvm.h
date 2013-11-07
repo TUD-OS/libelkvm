@@ -54,6 +54,7 @@ struct kvm_vm {
   struct elkvm_memory_region *current_user_stack;
 
   struct elkvm_signals sigs;
+  struct elkvm_flat *sighandler_cleanup;
 
   int debug;
 };

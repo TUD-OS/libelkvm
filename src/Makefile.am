@@ -17,4 +17,5 @@ libelkvm_la_SOURCES = debug.c \
 										 	vm.c
 libelkvmdir = $(datadir)/libelkvm
 libelkvm_DATA = ../share/entry\
-								../share/isr
+								../share/isr\
+								../share/signal
