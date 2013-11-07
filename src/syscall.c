@@ -40,6 +40,9 @@ int elkvm_handle_hypercall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
     return err;
   }
 
+  err = elkvm_signal_deliver(vm);
+  assert(err == 0);
+
   return 0;
 }
 
@@ -628,11 +631,67 @@ long elkvm_do_brk(struct kvm_vm *vm) {
 }
 
 long elkvm_do_sigaction(struct kvm_vm *vm) {
-  return -ENOSYS;
+
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  uint64_t signum;
+  uint64_t act_p;
+  uint64_t oldact_p;
+
+  int err = elkvm_syscall3(vm, vcpu, &signum, &act_p, &oldact_p);
+  if(err) {
+    return err;
+  }
+
+  struct sigaction *act = kvm_pager_get_host_p(&vm->pager, act_p);
+  struct sigaction *oldact = kvm_pager_get_host_p(&vm->pager, oldact_p);
+
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf(" SIGACTION with signum: %i act: 0x%lx (%p) oldact: 0x%lx (%p)\n",
+        (int)signum, act_p, act, oldact_p, oldact);
+    if(err != 0) {
+      printf("ERROR: %i\n", errno);
+    }
+    printf("=================================\n");
+
+  }
+  err = elkvm_signal_register(vm, (int)signum, act, oldact);
+  return err;
 }
 
 long elkvm_do_sigprocmask(struct kvm_vm *vm) {
-  return -ENOSYS;
+  if(vm->syscall_handlers->sigprocmask == NULL) {
+    printf("SIGPROCMASK handler not found\n");
+    return -ENOSYS;
+  }
+
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+
+  uint64_t how;
+  uint64_t set_p;
+  uint64_t oldset_p;
+
+  int err = elkvm_syscall3(vm, vcpu, &how, &set_p, &oldset_p);
+  if(err) {
+    return err;
+  }
+
+  sigset_t *set = kvm_pager_get_host_p(&vm->pager, set_p);
+  sigset_t *oldset = kvm_pager_get_host_p(&vm->pager, oldset_p);
+
+  long result = vm->syscall_handlers->sigprocmask(how, set, oldset);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("RT SIGPROCMASK with how: %i (%p) set: 0x%lx (%p) oldset: 0x%lx (%p)\n",
+        (int)how, &how, set_p, set, oldset_p, oldset);
+    printf("RESULT: %li\n", result);
+    if(result < 0) {
+      printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
+    }
+    printf("=================================\n");
+
+  }
+  return result;
 }
 
 long elkvm_do_sigreturn(struct kvm_vm *vm) {
@@ -832,7 +891,32 @@ long elkvm_do_pause(struct kvm_vm *vm) {
 }
 
 long elkvm_do_nanosleep(struct kvm_vm *vm) {
-  return -ENOSYS;
+  if(vm->syscall_handlers->nanosleep == NULL) {
+    printf("NANOSLEEP handler not found\n");
+    return -ENOSYS;
+  }
+
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+
+  uint64_t req_p;
+  uint64_t rem_p;
+  int err = elkvm_syscall2(vm, vcpu, &req_p, &rem_p);
+  if(err) {
+    return err;
+  }
+
+  struct timespec *req = kvm_pager_get_host_p(&vm->pager, req_p);
+  struct timespec *rem = kvm_pager_get_host_p(&vm->pager, rem_p);
+
+  long result = vm->syscall_handlers->nanosleep(req, rem);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("NANOSLEEP\n");
+    printf("RESULT: %li\n", result);
+    printf("=================================\n");
+  }
+
+  return result;
 }
 
 long elkvm_do_getitimer(struct kvm_vm *vm) {

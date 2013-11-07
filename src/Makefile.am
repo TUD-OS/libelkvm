@@ -10,6 +10,7 @@ libelkvm_la_SOURCES = debug.c \
 											stack.c \
 											syscall.c\
 											region.c\
+											signal.c\
 											tss.c\
 											vcpu.c \
 											list/list.c\

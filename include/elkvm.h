@@ -18,6 +18,7 @@ extern "C" {
 #include "region.h"
 #include "vcpu.h"
 #include "list.h"
+#include "elkvm-signal.h"
 
 #define VM_MODE_X86    1
 #define VM_MODE_PAGING 2
@@ -52,6 +53,8 @@ struct kvm_vm {
 	struct elkvm_memory_region *idt_region;
   struct elkvm_memory_region *current_user_stack;
 
+  struct elkvm_signals sigs;
+
   int debug;
 };
 
@@ -70,11 +73,14 @@ struct elkvm_handlers {
 	long (*mprotect) (void *addr, size_t len, int prot);
 	long (*munmap) (struct region_mapping *mapping);
   /* ... */
+  long (*sigprocmask)(int how, const sigset_t *set, sigset_t *oldset);
+  /* ... */
   long (*readv) (int fd, struct iovec *iov, int iovcnt);
   long (*writev) (int fd, struct iovec *iov, int iovcnt);
   long (*access) (const char *pathname, int mode);
   long (*dup) (int oldfd);
   /* ... */
+  long (*nanosleep)(struct timespec *req, struct timespec *rem);
   long (*getpid)(void);
   /* ... */
   long (*getuid)(void);

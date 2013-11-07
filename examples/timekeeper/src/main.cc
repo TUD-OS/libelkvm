@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <errno.h>
 #include <cstring>
+#include <signal.h>
 #include <sys/mman.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -59,6 +60,10 @@ long pass_munmap(struct region_mapping *mapping) {
   return munmap(mapping->host_p, mapping->length);
 }
 
+long pass_sigprocmask(int how, const sigset_t *set, sigset_t *oldset) {
+  return sigprocmask(how, set, oldset);
+}
+
 long pass_readv(int fd, struct iovec *iov, int iovcnt) {
   return readv(fd, iov, iovcnt);
 }
@@ -73,6 +78,10 @@ long pass_access(const char *pathname, int mode) {
 
 long pass_dup(int oldfd) {
   return dup(oldfd);
+}
+
+long pass_nanosleep(struct timespec *req, struct timespec *rem) {
+  return nanosleep(req, rem);
 }
 
 long pass_getpid() {
@@ -128,10 +137,13 @@ struct elkvm_handlers example_handlers = {
   .mprotect = NULL,
   .munmap = pass_munmap,
   /* ... */
+  .sigprocmask = pass_sigprocmask,
+  /* ... */
   .readv = pass_readv,
   .writev = pass_writev,
   .access = pass_access,
   .dup = pass_dup,
+  .nanosleep = pass_nanosleep,
   /* ... */
   .getpid = pass_getpid,
   /* ... */
