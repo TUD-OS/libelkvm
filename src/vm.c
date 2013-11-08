@@ -151,7 +151,7 @@ int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * pat
   }
 
 	char *buf = flat->region->host_base_p;
-	int bufsize = 0x1000;
+	int bufsize = ELKVM_PAGESIZE;
 	int bytes = 0;
 	while((bytes = read(fd, buf, bufsize)) > 0) {
 		buf += bytes;
@@ -168,7 +168,7 @@ int elkvm_region_setup(struct kvm_vm *vm) {
 	void *system_chunk_p;
   vm->root_region = NULL;
 
-	int err = posix_memalign(&system_chunk_p, 0x1000, ELKVM_SYSTEM_MEMSIZE);
+	int err = posix_memalign(&system_chunk_p, HOST_PAGESIZE, ELKVM_SYSTEM_MEMSIZE);
 	if(err) {
 		return err;
 	}
@@ -263,14 +263,14 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 		env_region->region_size;
 
 	/* get a page for the stack, this is expanded as needed */
-	vm->current_user_stack = elkvm_region_create(vm, 0x1000);
+	vm->current_user_stack = elkvm_region_create(vm, ELKVM_PAGESIZE);
   assert(vm->current_user_stack != NULL);
 	vm->current_user_stack->guest_virtual = env_region->guest_virtual;
 	vm->current_user_stack->grows_downward = 1;
 
 	/* get a frame for the kernel (interrupt) stack */
   /* this is only ONE page large */
-	vm->kernel_stack = elkvm_region_create(vm, 0x1000);
+	vm->kernel_stack = elkvm_region_create(vm, ELKVM_PAGESIZE);
 	vm->kernel_stack->grows_downward = 1;
 
 	/* create a mapping for the kernel (interrupt) stack */
@@ -280,7 +280,7 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 		return -ENOMEM;
 	}
   /* as stack grows downward we save it's virtual address at the page afterwards */
-  vm->kernel_stack->guest_virtual += 0x1000;
+  vm->kernel_stack->guest_virtual += ELKVM_PAGESIZE;
 
 	vcpu->regs.rsp = env_region->guest_virtual;
 
