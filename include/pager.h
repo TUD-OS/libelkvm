@@ -24,9 +24,6 @@
 #define PT_BIT_USED        0x32
 #define PT_BIT_NXE         (1L << 63)
 
-#define ELKVM_EXEC         (1 << 0)
-#define ELKVM_WRITE        (1 << 1)
-
 /* KVM allows only for so many memory slots in Linux 3.8 */
 #define KVM_MEMORY_SLOTS 32
 
