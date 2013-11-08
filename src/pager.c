@@ -338,37 +338,44 @@ uint64_t *kvm_pager_page_table_walk(struct kvm_pager *pager, uint64_t guest_virt
 	int addr_low = 39;
 	int addr_high = 47;
 
-	for(int i = 0; i < 4; i++) {
+	for(int i = 0; i < 3; i++) {
 		entry = kvm_pager_find_table_entry(pager, table_base,
 				guest_virtual, addr_low, addr_high);
 		addr_low -= 9;
 		addr_high -= 9;
 		if(!entry_exists(entry)) {
-			if(!create) {
-				return NULL;
-			}
-			if(create && i < 3) {
+			if(create) {
 				int err = kvm_pager_create_table(pager, entry, opts & PT_OPT_WRITE,
             opts & PT_OPT_EXEC);
 				if(err) {
 					return NULL;
 				}
+			} else {
+				return NULL;
 			}
 		}
-		if(i < 3) {
-			if((opts & PT_OPT_WRITE) && !(*entry & 0x2)) {
-				if(create) {
-					*entry |= 0x2;
-				}
+		if((opts & PT_OPT_WRITE) && !(*entry & 0x2)) {
+			if(create) {
+				*entry |= 0x2;
 			}
-			if((opts & PT_OPT_EXEC) && (*entry & PT_BIT_NXE)) {
-				if(create) {
-					*entry &= ~PT_BIT_NXE;
-				}
-			}
-			table_base = kvm_pager_find_next_table(pager, entry);
 		}
+		if((opts & PT_OPT_EXEC) && (*entry & PT_BIT_NXE)) {
+			if(create) {
+				*entry &= ~PT_BIT_NXE;
+			}
+		}
+		table_base = kvm_pager_find_next_table(pager, entry);
 	}
+
+	entry = kvm_pager_find_table_entry(pager, table_base,
+			guest_virtual, addr_low, addr_high);
+	addr_low -= 9;
+	addr_high -= 9;
+	if(!entry_exists(entry)) {
+		if(!create) {
+			return NULL;
+		}
+  }
 
 	return entry;
 }
