@@ -146,7 +146,7 @@ int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * pat
     /* XXX this will break! */
     flat->region->guest_virtual = 0x1000;
     err = kvm_pager_create_mapping(&vm->pager, flat->region->host_base_p,
-        flat->region->guest_virtual, 0, 1);
+        flat->region->guest_virtual, PT_OPT_EXEC);
     assert(err == 0);
   }
 
@@ -286,7 +286,7 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 
 	err = kvm_pager_create_mapping(&vm->pager,
 			env_region->host_base_p,
-			vcpu->regs.rsp, 1, 0);
+			vcpu->regs.rsp, PT_OPT_WRITE);
 	if(err) {
 		return err;
 	}

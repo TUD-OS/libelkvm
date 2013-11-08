@@ -30,6 +30,12 @@
 /* KVM allows only for so many memory slots in Linux 3.8 */
 #define KVM_MEMORY_SLOTS 32
 
+typedef unsigned int ptopt_t;
+#define PT_OPT_WRITE 0x1
+#define PT_OPT_EXEC  0x2
+#define PT_OPT_LARGE 0x4
+#define PT_OPT_HUGE  0x8
+
 struct kvm_vm;
 
 struct kvm_pager {
@@ -92,14 +98,15 @@ struct kvm_userspace_memory_region *elkvm_pager_get_chunk(struct kvm_pager *, in
 uint64_t kvm_pager_map_kernel_page(struct kvm_pager *, void *,int, int);
 
 int kvm_pager_map_region(struct kvm_pager *pager, void *host_start_p,
-    uint64_t guest_start_addr, int pages, int access);
+    uint64_t guest_start_addr, unsigned pages, ptopt_t opts);
 
 /*
  * \brief Create a Mapping in the Page Tables for a physical address
  * params are pager, host virtual address, guest_virtual address, writeable
  * and executable bit
 */
-int kvm_pager_create_mapping(struct kvm_pager *, void *, uint64_t, int, int);
+int kvm_pager_create_mapping(struct kvm_pager *, void *host_mem_p,
+    uint64_t guest_virtual, ptopt_t opts);
 
 /*
  * \brief Destroy a Mapping in the Page tables
@@ -117,7 +124,8 @@ struct kvm_userspace_memory_region *
  * params are pager, guest virtual address, writeable, executable bits
  * and a create flag
  */
-uint64_t *kvm_pager_page_table_walk(struct kvm_pager *, uint64_t, int, int, int);
+uint64_t *kvm_pager_page_table_walk(struct kvm_pager *, uint64_t guest_virtual,
+    ptopt_t opts, int);
 
 /*
  * \brief Find the host pointer for a guest virtual address. Basically do a

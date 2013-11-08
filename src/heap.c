@@ -114,7 +114,7 @@ int elkvm_brk_map(struct kvm_vm *vm, uint64_t newbrk, uint64_t off) {
     (*heap_top)->guest_virtual = map_addr;
   }
   while(map_addr <= newbrk) {
-    int err = kvm_pager_create_mapping(&vm->pager, host_p, map_addr, 1, 0);
+    int err = kvm_pager_create_mapping(&vm->pager, host_p, map_addr, PT_OPT_WRITE);
     if(err) {
       return err;
     }

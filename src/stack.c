@@ -53,7 +53,7 @@ int expand_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 		return -ENOMEM;
 	}
 	int err = kvm_pager_create_mapping(&vm->pager, region->host_base_p,
-			newrsp, 1, 0);
+			newrsp, PT_OPT_WRITE);
   if(err) {
     return err;
   }

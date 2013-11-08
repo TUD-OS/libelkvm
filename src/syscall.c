@@ -495,9 +495,14 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     mapping->mapped_pages = length / 0x1000;
   }
   for(int page = 0; page < mapping->mapped_pages; page++) {
-    err = kvm_pager_create_mapping(&vm->pager, host_current_p, guest_addr,
-        flags & PROT_WRITE,
-        flags & PROT_EXEC);
+    ptopt_t opts = 0;
+    if(flags & PROT_WRITE) {
+      opts |= PT_OPT_WRITE;
+    }
+    if(flags & PROT_EXEC) {
+      opts |= PT_OPT_EXEC;
+    }
+    err = kvm_pager_create_mapping(&vm->pager, host_current_p, guest_addr, opts);
     if(err) {
       printf("ERROR CREATING PT entries\n");
       return err;

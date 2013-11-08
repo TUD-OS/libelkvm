@@ -206,8 +206,15 @@ uint64_t kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p,
 	uint64_t guest_physical = host_to_guest_physical(pager, host_mem_p);
 	uint64_t guest_virtual = (pager->guest_next_free & ~0xFFF) | (guest_physical & 0xFFF);
 
-	uint64_t *pt_entry = kvm_pager_page_table_walk(pager, guest_virtual,
-			writeable, executable, 1);
+  ptopt_t opts = 0;
+  if(writeable) {
+    opts |= PT_OPT_WRITE;
+  }
+  if(executable) {
+    opts |= PT_OPT_EXEC;
+  }
+
+	uint64_t *pt_entry = kvm_pager_page_table_walk(pager, guest_virtual, opts, 1);
 	if(pt_entry == NULL) {
 		return -EIO;
 	}
@@ -218,8 +225,7 @@ uint64_t kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p,
 		if(((uint64_t)pt_entry & ~0xFFF) == (uint64_t)pt_entry) {
 			/*this page table seems to be completely full, try the next one */
 			guest_virtual = guest_virtual + 0x100000;
-			pt_entry = kvm_pager_page_table_walk(pager, guest_virtual,
-					writeable, executable, 1);
+			pt_entry = kvm_pager_page_table_walk(pager, guest_virtual, opts, 1);
 		}
 	}
 
@@ -237,14 +243,13 @@ uint64_t kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p,
 }
 
 int kvm_pager_map_region(struct kvm_pager *pager, void *host_start_p,
-    uint64_t guest_start_addr, int pages, int access) {
+    uint64_t guest_start_addr, unsigned pages, ptopt_t opts) {
 
   void *host_p = host_start_p;
   uint64_t guest_addr = guest_start_addr;
 
   for(int i = 0; i < pages; i++, host_p+=0x1000, guest_addr+=0x1000) {
-    int err = kvm_pager_create_mapping(pager, host_p, guest_addr,
-        access & ELKVM_WRITE, access & ELKVM_EXEC);
+    int err = kvm_pager_create_mapping(pager, host_p, guest_addr, opts);
 		if(err) {
 			return err;
 		}
@@ -254,7 +259,7 @@ int kvm_pager_map_region(struct kvm_pager *pager, void *host_start_p,
 }
 
 int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
-		uint64_t guest_virtual, int writeable, int executable) {
+		uint64_t guest_virtual, ptopt_t opts) {
 	int err;
 
 	assert(pager->system_chunk.userspace_addr != 0);
@@ -274,8 +279,7 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 	uint64_t guest_physical = host_to_guest_physical(pager, host_mem_p);
   assert(guest_physical != 0);
 
-	uint64_t *pt_entry = kvm_pager_page_table_walk(pager, guest_virtual,
-			writeable, executable, 1);
+	uint64_t *pt_entry = kvm_pager_page_table_walk(pager, guest_virtual, opts, 1);
 
 	/* do NOT overwrite existing page table entries! */
 	if(entry_exists(pt_entry)) {
@@ -287,14 +291,14 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 	}
 
 	err = kvm_pager_create_entry(pager, pt_entry, guest_physical,
-			writeable, executable);
+			opts & PT_OPT_WRITE, opts & PT_OPT_EXEC);
 
 	return err;
 }
 
 int kvm_pager_destroy_mapping(struct kvm_pager *pager, uint64_t guest_virtual) {
 	uint64_t *pt_entry = kvm_pager_page_table_walk(pager, guest_virtual,
-			0, 0, 0);
+			0, 0);
 
   if(pt_entry == NULL) {
     return -1;
@@ -305,7 +309,7 @@ int kvm_pager_destroy_mapping(struct kvm_pager *pager, uint64_t guest_virtual) {
 }
 
 void *kvm_pager_get_host_p(struct kvm_pager *pager, uint64_t guest_virtual) {
-	uint64_t *entry = kvm_pager_page_table_walk(pager, guest_virtual, 0, 0, 0);
+	uint64_t *entry = kvm_pager_page_table_walk(pager, guest_virtual, 0, 0);
 	if(entry == NULL) {
 		return NULL;
 	}
@@ -325,7 +329,7 @@ void *kvm_pager_get_host_p(struct kvm_pager *pager, uint64_t guest_virtual) {
 }
 
 uint64_t *kvm_pager_page_table_walk(struct kvm_pager *pager, uint64_t guest_virtual,
-		int write, int execute, int create) {
+		ptopt_t opts, int create) {
 	uint64_t *table_base = (uint64_t *)pager->host_pml4_p;
 	/* we should always have paging in place, when this gets called! */
 	assert(table_base != NULL);
@@ -344,19 +348,20 @@ uint64_t *kvm_pager_page_table_walk(struct kvm_pager *pager, uint64_t guest_virt
 				return NULL;
 			}
 			if(create && i < 3) {
-				int err = kvm_pager_create_table(pager, entry, write, execute);
+				int err = kvm_pager_create_table(pager, entry, opts & PT_OPT_WRITE,
+            opts & PT_OPT_EXEC);
 				if(err) {
 					return NULL;
 				}
 			}
 		}
 		if(i < 3) {
-			if(write && !(*entry & 0x2)) {
+			if((opts & PT_OPT_WRITE) && !(*entry & 0x2)) {
 				if(create) {
 					*entry |= 0x2;
 				}
 			}
-			if(execute && (*entry & PT_BIT_NXE)) {
+			if((opts & PT_OPT_EXEC) && (*entry & PT_BIT_NXE)) {
 				if(create) {
 					*entry &= ~PT_BIT_NXE;
 				}
