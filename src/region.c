@@ -47,7 +47,7 @@ int elkvm_region_split(struct elkvm_memory_region *region) {
 	if(region->used) {
 		return -1;
 	}
-  if(region->region_size < 0x1000) {
+  if(region->region_size < ELKVM_PAGESIZE) {
     return -1;
   }
 	region->used = 1;
@@ -92,7 +92,7 @@ struct elkvm_memory_region *
 		}
 
 		uint64_t smaller_size = region->region_size / 2;
-		if((smaller_size <= 0x1000) ||
+		if((smaller_size <= ELKVM_PAGESIZE) ||
         ((smaller_size < size) && (size <= region->region_size))) {
 			if(region->used == 0) {
 				return region;

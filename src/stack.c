@@ -45,10 +45,10 @@ int elkvm_pushq(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t val) {
 }
 
 int expand_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
-  uint64_t oldrsp = vm->current_user_stack->guest_virtual & ~0xFFF;
-  uint64_t newrsp = oldrsp - 0x1000;
+  uint64_t oldrsp = page_begin(vm->current_user_stack->guest_virtual);
+  uint64_t newrsp = oldrsp - ELKVM_PAGESIZE;
 
-	struct elkvm_memory_region *region = elkvm_region_create(vm, 0x1000);
+	struct elkvm_memory_region *region = elkvm_region_create(vm, ELKVM_PAGESIZE);
 	if(region == NULL) {
 		return -ENOMEM;
 	}
