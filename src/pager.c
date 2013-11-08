@@ -354,9 +354,9 @@ uint64_t *kvm_pager_page_table_walk(struct kvm_pager *pager, uint64_t guest_virt
 				return NULL;
 			}
 		}
-		if((opts & PT_OPT_WRITE) && !(*entry & 0x2)) {
+		if((opts & PT_OPT_WRITE) && !(*entry & PT_BIT_WRITEABLE)) {
 			if(create) {
-				*entry |= 0x2;
+				*entry |= PT_BIT_WRITEABLE;
 			}
 		}
 		if((opts & PT_OPT_EXEC) && (*entry & PT_BIT_NXE)) {
