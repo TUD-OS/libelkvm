@@ -158,7 +158,8 @@ int kvm_pager_create_table(struct kvm_pager *, uint64_t *, int, int);
  * params are pager, host virtual address, guest physical address,
  * writeable and executable bits
  */
-int kvm_pager_create_entry(struct kvm_pager *, uint64_t *, uint64_t, int, int);
+int kvm_pager_create_entry(struct kvm_pager *, uint64_t *host_entry_p,
+   uint64_t guest_next, ptopt_t opts);
 
 int kvm_pager_set_brk(struct kvm_pager *, uint64_t);
 int kvm_pager_handle_pagefault(struct kvm_pager *, uint64_t, uint32_t);

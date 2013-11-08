@@ -233,8 +233,7 @@ uint64_t kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p,
    * TODO setting this page up for user makes interrupts work,
    * fix this!
    */
-	int err = kvm_pager_create_entry(pager, pt_entry, guest_physical,
-			writeable, executable);
+	int err = kvm_pager_create_entry(pager, pt_entry, guest_physical, opts);
   if(err) {
     return err;
   }
@@ -290,8 +289,7 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 		return 0;
 	}
 
-	err = kvm_pager_create_entry(pager, pt_entry, guest_physical,
-			opts & PT_OPT_WRITE, opts & PT_OPT_EXEC);
+	err = kvm_pager_create_entry(pager, pt_entry, guest_physical, opts);
 
 	return err;
 }
@@ -403,29 +401,33 @@ int kvm_pager_create_table(struct kvm_pager *pager, uint64_t *host_entry_p,
 	}
 	memset(pager->host_next_free_tbl_p, 0, HOST_PAGESIZE);
 	pager->host_next_free_tbl_p += HOST_PAGESIZE;
-	int err = kvm_pager_create_entry(pager, host_entry_p, guest_next_tbl,
-			writeable, executable);
-	return err;
+  ptopt_t opts = 0;
+  if(writeable) {
+    opts |= PT_OPT_WRITE;
+  }
+  if(executable) {
+    opts |= PT_OPT_EXEC;
+  }
+	return kvm_pager_create_entry(pager, host_entry_p, guest_next_tbl, opts);
 }
 
 int kvm_pager_create_entry(struct kvm_pager *pager, uint64_t *host_entry_p,
-		uint64_t guest_next, int writeable, int executable) {
+		uint64_t guest_next, ptopt_t opts) {
 	/* save base address of next tbl in entry */
-	*host_entry_p = guest_next & ~(ELKVM_PAGESIZE-1);
+	*host_entry_p = page_begin(guest_next);
 
-	/* TODO give this method a flag for marking pages as user mode */
-	*host_entry_p |= 0x4;
+	*host_entry_p |= PT_BIT_USER;
 
-	if(writeable) {
-		*host_entry_p |= 0x2;
+	if(opts & PT_OPT_WRITE) {
+		*host_entry_p |= PT_BIT_WRITEABLE;
 	}
 
-	if(!executable) {
+	if(!(opts & PT_OPT_EXEC)) {
 		*host_entry_p |= PT_BIT_NXE;
 	}
 
 	/* mark the entry as present */
-	*host_entry_p |= 0x1;
+	*host_entry_p |= PT_BIT_PRESENT;
 
 	return 0;
 }
