@@ -212,7 +212,7 @@ static uint64_t next_page(uint64_t addr) {
 }
 
 static int pages_from_size(uint64_t size) {
-  if(size % 1000) {
+  if(size % ELKVM_PAGESIZE) {
     return (size / ELKVM_PAGESIZE) + 1;
   } else {
     return size / ELKVM_PAGESIZE;
