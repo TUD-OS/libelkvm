@@ -17,7 +17,7 @@ int elkvm_heap_initialize(struct kvm_vm *vm, struct elkvm_memory_region *region,
     return err;
   }
 
-  uint64_t brk = (data_end + 0x1000) & ~0xFFF;
+  uint64_t brk = next_page(data_end);
   if(brk != data_end) {
     err = elkvm_brk(vm, brk);
     if(err) {
@@ -60,9 +60,7 @@ int elkvm_brk_nogrow(struct kvm_vm *vm, uint64_t newbrk) {
   struct elkvm_memory_region **heap = list_elem_front(vm->heap);
   uint64_t oldbrk_region_base = (*heap)->guest_virtual;
   assert(vm->pager.brk_addr >= oldbrk_region_base);
-  uint64_t newbrk_offset = ((vm->pager.brk_addr - oldbrk_region_base)
-    & ~0xFFF)
-    + 0x1000;
+  uint64_t newbrk_offset = next_page(vm->pager.brk_addr - oldbrk_region_base);
   int err = elkvm_brk_map(vm, newbrk, newbrk_offset);
   if(err) {
     return err;
@@ -95,7 +93,7 @@ int elkvm_brk_shrink(struct kvm_vm *vm, uint64_t newbrk) {
 
   for(uint64_t guest_addr = vm->pager.brk_addr;
       guest_addr >= next_page(newbrk);
-      guest_addr -= 0x1000) {
+      guest_addr -= ELKVM_PAGESIZE) {
     int err = kvm_pager_destroy_mapping(&vm->pager, guest_addr);
     if(err) {
       return err;
@@ -107,7 +105,7 @@ int elkvm_brk_shrink(struct kvm_vm *vm, uint64_t newbrk) {
 }
 
 int elkvm_brk_map(struct kvm_vm *vm, uint64_t newbrk, uint64_t off) {
-  uint64_t map_addr = (vm->pager.brk_addr & ~0xFFF) + 0x1000;
+  uint64_t map_addr = next_page(vm->pager.brk_addr);
   struct elkvm_memory_region **heap_top = list_elem_front(vm->heap);
   void *host_p = (*heap_top)->host_base_p + off;
   if((*heap_top)->guest_virtual == 0x0) {
@@ -118,8 +116,8 @@ int elkvm_brk_map(struct kvm_vm *vm, uint64_t newbrk, uint64_t off) {
     if(err) {
       return err;
     }
-    map_addr = map_addr + 0x1000;
-    host_p = host_p + 0x1000;
+    map_addr = map_addr + ELKVM_PAGESIZE;
+    host_p = host_p + ELKVM_PAGESIZE;
   }
 
   return 0;
