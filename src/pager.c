@@ -343,27 +343,24 @@ uint64_t *kvm_pager_page_table_walk(struct kvm_pager *pager, uint64_t guest_virt
 				guest_virtual, addr_low, addr_high);
 		addr_low -= 9;
 		addr_high -= 9;
-		if(!entry_exists(entry)) {
-			if(create) {
+    if(create) {
+      if(!entry_exists(entry)) {
 				int err = kvm_pager_create_table(pager, entry, opts & PT_OPT_WRITE,
             opts & PT_OPT_EXEC);
 				if(err) {
 					return NULL;
 				}
-			} else {
-				return NULL;
-			}
-		}
-		if((opts & PT_OPT_WRITE) && !(*entry & PT_BIT_WRITEABLE)) {
-			if(create) {
+      }
+      if(opts & PT_OPT_WRITE) {
 				*entry |= PT_BIT_WRITEABLE;
 			}
-		}
-		if((opts & PT_OPT_EXEC) && (*entry & PT_BIT_NXE)) {
-			if(create) {
+      if(opts & PT_OPT_EXEC) {
 				*entry &= ~PT_BIT_NXE;
 			}
 		}
+    if(!entry_exists(entry)) {
+      return NULL;
+    }
 		table_base = kvm_pager_find_next_table(pager, entry);
 	}
 
@@ -371,10 +368,8 @@ uint64_t *kvm_pager_page_table_walk(struct kvm_pager *pager, uint64_t guest_virt
 			guest_virtual, addr_low, addr_high);
 	addr_low -= 9;
 	addr_high -= 9;
-	if(!entry_exists(entry)) {
-		if(!create) {
-			return NULL;
-		}
+	if(!entry_exists(entry) && !create) {
+    return NULL;
   }
 
 	return entry;
