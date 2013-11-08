@@ -22,6 +22,7 @@
 #define PT_BIT_WRITE_CACHE 0x8
 #define PT_BIT_NO_CACHE    0x16
 #define PT_BIT_USED        0x32
+#define PT_BIT_LARGEPAGE   (1L << 7)
 #define PT_BIT_NXE         (1L << 63)
 
 #define HOST_PAGESIZE        0x1000
