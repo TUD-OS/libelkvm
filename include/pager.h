@@ -24,6 +24,10 @@
 #define PT_BIT_USED        0x32
 #define PT_BIT_NXE         (1L << 63)
 
+#define HOST_PAGESIZE        0x1000
+#define ELKVM_PAGESIZE       0x1000
+#define ELKVM_PAGESIZE_LARGE 0x200000
+#define ELKVM_PAGESIZE_HUGE  0x100000000
 /* KVM allows only for so many memory slots in Linux 3.8 */
 #define KVM_MEMORY_SLOTS 32
 
@@ -196,30 +200,30 @@ static inline int entry_exists(uint64_t *e) {
 }
 
 static uint64_t page_begin(uint64_t addr) {
-  return (addr & ~0xFFF);
+  return (addr & ~(ELKVM_PAGESIZE-1));
 }
 
 static bool page_aligned(uint64_t addr) {
-  return ((addr & ~0xFFF) == addr);
+  return ((addr & ~(ELKVM_PAGESIZE-1)) == addr);
 }
 
 static uint64_t next_page(uint64_t addr) {
-  return (addr & ~0xFFF) + 0x1000;
+  return (addr & ~(ELKVM_PAGESIZE-1)) + ELKVM_PAGESIZE;
 }
 
 static int pages_from_size(uint64_t size) {
   if(size % 1000) {
-    return (size / 0x1000) + 1;
+    return (size / ELKVM_PAGESIZE) + 1;
   } else {
-    return size / 0x1000;
+    return size / ELKVM_PAGESIZE;
   }
 }
 
 static int page_remain(uint64_t addr) {
-  return 0x1000 - (addr & 0xFFF);
+  return ELKVM_PAGESIZE - (addr & (ELKVM_PAGESIZE-1));
 }
 
 static unsigned int offset_in_page(uint64_t addr) {
-  return addr & 0xFFF;
+  return addr & (ELKVM_PAGESIZE-1);
 }
 
