@@ -36,15 +36,9 @@ void pager_teardown() {
 void region_setup() {
 	pager.system_chunk.userspace_addr = 0;
 	pager.system_chunk.memory_size = 0x400000;
-
-	pager.other_chunks = malloc(sizeof(struct chunk_list));
-	pager.other_chunks->chunk = malloc(sizeof(struct kvm_userspace_memory_region));
-	pager.other_chunks->next = NULL;
 }
 
 void region_teardown() {
-	free(pager.other_chunks->chunk);
-	free(pager.other_chunks);
 }
 
 struct kvm_pager pager;
@@ -107,34 +101,33 @@ START_TEST(test_kvm_pager_create_mem_chunk_valid) {
 	ck_assert_int_eq(err, 0);
   ck_assert_ptr_ne(chunk_p, NULL);
 	ck_assert_ptr_ne(pager.other_chunks, NULL);
-	struct chunk_list *cl = pager.other_chunks;
-	ck_assert_int_eq(cl->chunk->memory_size, size);
+	//struct chunk_list *cl = pager.other_chunks;
+	//ck_assert_int_eq(cl->chunk->memory_size, size);
 	//ck_assert_int_eq(cl->chunk->guest_phys_addr, valid_guest_base);
-	ck_assert_ptr_eq(cl->next, NULL);
 }
 END_TEST
 
 START_TEST(test_kvm_pager_create_mem_chunk_mass) {
-  int err = 0;
-  int size = 0x400000;
-  struct chunk_list *cl;
-  for(int i = 0; i < 100; i++) {
-    void *chunk_p;
-    err = kvm_pager_create_mem_chunk(&pager, &chunk_p, size);
-    ck_assert_int_eq(err, 0);
-    ck_assert_ptr_ne(chunk_p, NULL);
-    cl = pager.other_chunks;
-    ck_assert_ptr_ne(cl, NULL);
-    for(int chunks = 0; chunks < i; chunks++) {
-      ck_assert_ptr_ne(cl->next, NULL);
-      cl = cl->next;
-      if(chunks == i-1) {
-        ck_assert_int_eq(cl->chunk->memory_size, size);
-        //ck_assert_int_eq(cl->chunk->guest_phys_addr, valid_guest_base);
-      }
-    }
-    ck_assert_ptr_eq(cl->next, NULL);
-  }
+  ck_abort_msg("Create mass chunks test not implemented");
+//  int err = 0;
+//  int size = 0x400000;
+//  for(int i = 0; i < 100; i++) {
+//    void *chunk_p;
+//    err = kvm_pager_create_mem_chunk(&pager, &chunk_p, size);
+//    ck_assert_int_eq(err, 0);
+//    ck_assert_ptr_ne(chunk_p, NULL);
+//    cl = pager.other_chunks;
+//    ck_assert_ptr_ne(cl, NULL);
+//    for(int chunks = 0; chunks < i; chunks++) {
+//      ck_assert_ptr_ne(cl->next, NULL);
+//      cl = cl->next;
+//      if(chunks == i-1) {
+//        ck_assert_int_eq(cl->chunk->memory_size, size);
+//        //ck_assert_int_eq(cl->chunk->guest_phys_addr, valid_guest_base);
+//      }
+//    }
+//    ck_assert_ptr_eq(cl->next, NULL);
+//  }
 }
 END_TEST
 
@@ -184,13 +177,13 @@ START_TEST(test_kvm_pager_is_invalid_guest_base) {
 	invl = kvm_pager_is_invalid_guest_base(&pager, guest_base);
 	ck_assert_int_eq(invl, 0);
 
-	pager.other_chunks = malloc(sizeof(struct chunk_list));
+//	pager.other_chunks = malloc(sizeof(struct chunk_list));
 	struct kvm_userspace_memory_region *chunk =
 		malloc(sizeof(struct kvm_userspace_memory_region));
 	chunk->guest_phys_addr = 0x1000000;
 	chunk->memory_size = 0x10000;
-	pager.other_chunks->chunk = chunk;
-	pager.other_chunks->next = NULL;
+//	pager.other_chunks->chunk = chunk;
+//	pager.other_chunks->next = NULL;
 
 	invl = kvm_pager_is_invalid_guest_base(&pager, chunk->guest_phys_addr);
 	ck_assert_int_eq(invl, 1);
@@ -205,7 +198,7 @@ START_TEST(test_kvm_pager_is_invalid_guest_base) {
 	ck_assert_int_eq(invl, 1);
 
 	free(chunk);
-	free(pager.other_chunks);
+//	free(pager.other_chunks);
 }
 END_TEST
 
@@ -250,14 +243,15 @@ START_TEST(test_kvm_pager_find_region_for_host_p_system) {
 END_TEST
 
 START_TEST(test_kvm_pager_find_region_for_host_p_user) {
-	struct kvm_userspace_memory_region *chunk = pager.other_chunks->chunk;
-	chunk->userspace_addr = 0x400000;
-	chunk->memory_size = 0x100000;
-
-	void *p = (void *)0x427500;
-	struct kvm_userspace_memory_region *region =
-		kvm_pager_find_region_for_host_p(&pager, p);
-	ck_assert_ptr_eq(region, pager.other_chunks->chunk);
+  ck_abort_msg("find region for host_p not implemented");
+//	struct kvm_userspace_memory_region *chunk = pager.other_chunks->chunk;
+//	chunk->userspace_addr = 0x400000;
+//	chunk->memory_size = 0x100000;
+//
+//	void *p = (void *)0x427500;
+//	struct kvm_userspace_memory_region *region =
+//		kvm_pager_find_region_for_host_p(&pager, p);
+//	ck_assert_ptr_eq(region, pager.other_chunks->chunk);
 }
 END_TEST
 
@@ -274,18 +268,19 @@ START_TEST(test_kvm_pager_find_region_for_host_p_system_edge) {
 END_TEST
 
 START_TEST(test_kvm_pager_find_region_for_host_p_user_edge) {
-	struct kvm_userspace_memory_region *chunk = pager.other_chunks->chunk;
-	chunk->userspace_addr = 0x400000;
-	chunk->memory_size = 0x100000;
-
-	void *p = (void *)0x400000;
-	struct kvm_userspace_memory_region *region =
-		kvm_pager_find_region_for_host_p(&pager, p);
-	ck_assert_ptr_eq(region, pager.other_chunks->chunk);
-
-	p = (void *)0x500000;
-	region = kvm_pager_find_region_for_host_p(&pager, p);
-	ck_assert_ptr_eq(region, NULL);
+  ck_abort_msg("find region for host_p not implemented");
+//	struct kvm_userspace_memory_region *chunk = pager.other_chunks->chunk;
+//	chunk->userspace_addr = 0x400000;
+//	chunk->memory_size = 0x100000;
+//
+//	void *p = (void *)0x400000;
+//	struct kvm_userspace_memory_region *region =
+//		kvm_pager_find_region_for_host_p(&pager, p);
+//	ck_assert_ptr_eq(region, pager.other_chunks->chunk);
+//
+//	p = (void *)0x500000;
+//	region = kvm_pager_find_region_for_host_p(&pager, p);
+//	ck_assert_ptr_eq(region, NULL);
 }
 END_TEST
 
@@ -299,8 +294,10 @@ START_TEST(test_kvm_pager_create_mapping_invalid_host) {
 	pager.system_chunk.userspace_addr = 0;
 	pager.system_chunk.memory_size = 0;
 
+  ptopt_t opts = 0;
+
 	void *p = (void *)0x1000;
-	int err = kvm_pager_create_mapping(&pager, p, 0x400000, 0, 0);
+	int err = kvm_pager_create_mapping(&pager, p, 0x400000, opts);
 	ck_assert_int_eq(err, -1);
 
 }
@@ -309,7 +306,8 @@ END_TEST
 START_TEST(test_kvm_pager_create_valid_mappings) {
 	void *p = (void *)0x400000 + pager.system_chunk.userspace_addr;
 	uint64_t guest_virtual_addr = 0x600000;
-	int err = kvm_pager_create_mapping(&pager, p, guest_virtual_addr, 0, 0);
+  ptopt_t opts = 0;
+	int err = kvm_pager_create_mapping(&pager, p, guest_virtual_addr, opts);
 	ck_assert_int_eq(err, 0);
 
 	void *host_resolved_p = kvm_pager_get_host_p(&pager, guest_virtual_addr);
@@ -317,7 +315,7 @@ START_TEST(test_kvm_pager_create_valid_mappings) {
 
 	p = (void *)0x400e10 + pager.system_chunk.userspace_addr;
 	guest_virtual_addr = 0x400e10;
-	err = kvm_pager_create_mapping(&pager, p, guest_virtual_addr, 0, 0);
+	err = kvm_pager_create_mapping(&pager, p, guest_virtual_addr, opts);
 	ck_assert_int_eq(err, 0);
 
 	host_resolved_p = kvm_pager_get_host_p(&pager, guest_virtual_addr);
@@ -325,7 +323,7 @@ START_TEST(test_kvm_pager_create_valid_mappings) {
 
 	p = (void *)0x400040 + pager.system_chunk.userspace_addr;
 	guest_virtual_addr = 0x800040;
-	err = kvm_pager_create_mapping(&pager, p, guest_virtual_addr, 0, 0);
+	err = kvm_pager_create_mapping(&pager, p, guest_virtual_addr, opts);
 	ck_assert_int_eq(err, 0);
 
 	host_resolved_p = kvm_pager_get_host_p(&pager, guest_virtual_addr);
@@ -336,11 +334,12 @@ END_TEST
 START_TEST(test_kvm_pager_create_same_mapping) {
 	void *p = (void *)0x400000 + pager.system_chunk.userspace_addr;
 	uint64_t guest_virtual_addr = 0x600000;
-	int err = kvm_pager_create_mapping(&pager, p, guest_virtual_addr, 0, 0);
+  ptopt_t opts = 0;
+	int err = kvm_pager_create_mapping(&pager, p, guest_virtual_addr, opts);
 	ck_assert_int_eq(err, 0);
 
 	p = (void *)0x402000 + pager.system_chunk.userspace_addr;
-	err = kvm_pager_create_mapping(&pager, p, guest_virtual_addr, 0, 0);
+	err = kvm_pager_create_mapping(&pager, p, guest_virtual_addr, opts);
 	ck_assert_int_eq(err, -1);
 }
 END_TEST
@@ -348,7 +347,8 @@ END_TEST
 START_TEST(test_kvm_pager_create_mapping_invalid_offset) {
 	void *p = (void *)0x1e10;
 	uint64_t guest_virtual_addr = 0x600000;
-	int err = kvm_pager_create_mapping(&pager, p, guest_virtual_addr, 0, 0);
+  ptopt_t opts = 0;
+	int err = kvm_pager_create_mapping(&pager, p, guest_virtual_addr, opts);
 	ck_assert_int_eq(err, -EIO);
 }
 END_TEST
@@ -356,11 +356,12 @@ END_TEST
 START_TEST(test_kvm_pager_create_mapping_mass) {
 	void *p = (void *)pager.system_chunk.userspace_addr + 0x401500;
 	uint64_t guest = 0x600500;
+  ptopt_t opts = 0;
 
 	int err;
 	void *resolved;
 	for(int i = 0; i < 1024; i++) {
-		err = kvm_pager_create_mapping(&pager, p, guest, 0, 0);
+		err = kvm_pager_create_mapping(&pager, p, guest, opts);
 		ck_assert_int_eq(err, 0);
 
 		resolved = kvm_pager_get_host_p(&pager, guest);
@@ -378,7 +379,8 @@ START_TEST(test_kvm_pager_create_entry) {
 	pager.system_chunk.memory_size = 0x2000;
 
 	uint64_t *entry = pager.host_pml4_p + (5 * sizeof(uint64_t));
-	int err = kvm_pager_create_entry(&pager, entry, 0x1000, 0, 1);
+  ptopt_t opts = PT_OPT_EXEC;
+	int err = kvm_pager_create_entry(&pager, entry, 0x1000, opts);
 	ck_assert_int_eq(err, 0);
 	ck_assert_int_eq(*entry & 0x1, 1);
 	ck_assert_uint_eq(*entry & ~0xFFF, 0x1000);

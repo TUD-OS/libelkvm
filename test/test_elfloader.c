@@ -7,7 +7,7 @@
 #include <unistd.h>
 
 #include <elkvm.h>
-#include <elfloader.h>
+#include "elfloader.h"
 
 struct elkvm_opts elfloader_test_kvm;
 struct kvm_vm elfloader_test_vm;
@@ -29,7 +29,7 @@ START_TEST(test_elfloader_load_binary_uninitialized) {
 	const char *empty_binary_path = "";
 	elfloader_test_vm.pager.system_chunk.userspace_addr = 0;
 
-	int err = elfloader_load_binary(&elfloader_test_vm, empty_binary_path);
+	int err = elkvm_load_binary(&elfloader_test_vm, empty_binary_path);
 	ck_assert_int_eq(err, -EIO);
 }
 END_TEST
@@ -37,17 +37,17 @@ END_TEST
 START_TEST(test_elfloader_load_invalid_binary) {
 
 	const char *empty_binary_path = "";
-	int err = elfloader_load_binary(&elfloader_test_vm, empty_binary_path);
+	int err = elkvm_load_binary(&elfloader_test_vm, empty_binary_path);
 	ck_assert_int_ne(err, -EIO);
 
 	const char *invalid_binary_path = "/tmp/23129uhuuukh.bin";
-	err = elfloader_load_binary(&elfloader_test_vm, invalid_binary_path);
+	err = elkvm_load_binary(&elfloader_test_vm, invalid_binary_path);
 	ck_assert_int_eq(err, -ENOENT);
 }
 END_TEST
 
 START_TEST(test_elfloader_load_valid_binary) {
-	int err = elfloader_load_binary(&elfloader_test_vm, valid_binary_path);
+	int err = elkvm_load_binary(&elfloader_test_vm, valid_binary_path);
 	ck_assert_int_eq(err, 0);
 
 	/*
@@ -83,7 +83,7 @@ START_TEST(test_elfloader_load_program_header) {
 	gelf_getphdr(bin.e, 0, &phdr);
 
 	/* load the first program header */
-	err =	elfloader_load_program_header(&elfloader_test_vm, &bin, phdr, &region);
+	err =	elkvm_loader_load_program_header(&elfloader_test_vm, &bin, phdr, &region);
 	ck_assert_int_eq(err, 0);
 
 	/* check if it has really been loaded into the buffer */

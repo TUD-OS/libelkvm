@@ -152,23 +152,25 @@ START_TEST(test_kvm_vm_map_system_chunk_multiple) {
 	err = kvm_vm_map_chunk(&the_vm, &pager.system_chunk);
 	ck_assert_int_eq(err, 0);
 
-	pager.other_chunks = malloc(sizeof(struct chunk_list));
-	ck_assert_ptr_ne(pager.other_chunks, NULL);
-	pager.other_chunks->next = NULL;
-	pager.other_chunks->chunk = malloc(sizeof(struct kvm_userspace_memory_region));
-	ck_assert_ptr_ne(pager.other_chunks->chunk, NULL);
+//	pager.other_chunks = malloc(sizeof(struct chunk_list));
+//	ck_assert_ptr_ne(pager.other_chunks, NULL);
+//	pager.other_chunks->next = NULL;
+//	pager.other_chunks->chunk = malloc(sizeof(struct kvm_userspace_memory_region));
+//	ck_assert_ptr_ne(pager.other_chunks->chunk, NULL);
+//
+//	struct kvm_userspace_memory_region *chunk = pager.other_chunks->chunk;
+//	chunk->memory_size = 0x1600000;
+//	err = posix_memalign(&ram_p, 0x1000, chunk->memory_size);
+//	ck_assert_int_eq(err, 0);
+//	chunk->userspace_addr = (__u64)ram_p;
+//	chunk->guest_phys_addr = 0x400000;
+//	chunk->flags = 0;
+//	chunk->slot = 1;
 
-	struct kvm_userspace_memory_region *chunk = pager.other_chunks->chunk;
-	chunk->memory_size = 0x1600000;
-	err = posix_memalign(&ram_p, 0x1000, chunk->memory_size);
-	ck_assert_int_eq(err, 0);
-	chunk->userspace_addr = (__u64)ram_p;
-	chunk->guest_phys_addr = 0x400000;
-	chunk->flags = 0;
-	chunk->slot = 1;
+//	err = kvm_vm_map_chunk(&the_vm, chunk);
+//	ck_assert_int_eq(err, 0);
 
-	err = kvm_vm_map_chunk(&the_vm, chunk);
-	ck_assert_int_eq(err, 0);
+  ck_abort_msg("Map multiple chunks test not implemented");
 }
 END_TEST
 

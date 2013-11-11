@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/src
 TESTS = test_libelkvm
 check_PROGRAMS = test_libelkvm
 test_libelkvm_SOURCES = test_elfloader.c \

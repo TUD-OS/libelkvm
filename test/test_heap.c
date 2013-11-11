@@ -5,6 +5,7 @@
 #include <elkvm.h>
 #include <heap.h>
 #include <region.h>
+#include "list.h"
 
 struct kvm_vm heap_vm;
 struct elkvm_memory_region heap_region;
@@ -29,8 +30,6 @@ START_TEST(test_initialize_heap) {
   int err = elkvm_heap_initialize(&vm, &heap_region, size);
   ck_assert_int_eq(err, 0);
   ck_assert_ptr_ne(vm.heap, NULL);
-  ck_assert_ptr_eq(vm.heap->data, &heap_region);
-  ck_assert_ptr_eq(vm.heap->next, NULL);
 }
 END_TEST
 
@@ -38,11 +37,8 @@ START_TEST(test_grow_heap_no_memresize) {
   int size = 0x4000;
   int err = elkvm_heap_grow(&heap_vm, size);
   ck_assert_int_eq(err, 0);
-  ck_assert_ptr_ne(heap_vm.heap->next, NULL);
-  ck_assert_ptr_ne(heap_vm.heap->next->data, NULL);
-  ck_assert_ptr_eq(heap_vm.heap->next->data, &heap_region);
 
-  struct elkvm_memory_region *r = heap_vm.heap->data;
+  struct elkvm_memory_region *r = *list_elem_front(heap_vm.heap);
   ck_assert_ptr_ne(r, NULL);
   ck_assert_int_ge(r->region_size, size);
 }
@@ -52,11 +48,8 @@ START_TEST(test_grow_heap_memresize) {
   int size = 0x8000;
   int err = elkvm_heap_grow(&heap_vm, size);
   ck_assert_int_eq(err, 0);
-  ck_assert_ptr_ne(heap_vm.heap->next, NULL);
-  ck_assert_ptr_ne(heap_vm.heap->next->data, NULL);
-  ck_assert_ptr_eq(heap_vm.heap->next->data, &heap_region);
 
-  struct elkvm_memory_region *r = heap_vm.heap->data;
+  struct elkvm_memory_region *r = *list_elem_front(heap_vm.heap);
   ck_assert_ptr_ne(r, NULL);
   ck_assert_int_ge(r->region_size, size);
 }
