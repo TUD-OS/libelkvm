@@ -9,8 +9,8 @@ struct elkvm_memory_region *elkvm_region_create(struct kvm_vm *vm, uint64_t req_
   struct elkvm_memory_region *current = current_root->data;
 
   uint64_t size = req_size;
-  if(req_size < 0x1000) {
-    size = 0x1000;
+  if(req_size < ELKVM_PAGESIZE) {
+    size = ELKVM_PAGESIZE;
   }
 
   do {
@@ -47,7 +47,7 @@ int elkvm_region_split(struct elkvm_memory_region *region) {
 	if(region->used) {
 		return -1;
 	}
-  if(region->region_size < 0x1000) {
+  if(region->region_size < ELKVM_PAGESIZE) {
     return -1;
   }
 	region->used = 1;
@@ -85,14 +85,14 @@ int elkvm_region_free(struct kvm_vm *vm, struct elkvm_memory_region *region) {
 
 struct elkvm_memory_region *
 	elkvm_region_find(struct elkvm_memory_region *region, uint64_t size) {
-    assert(size >= 0x1000);
+    assert(size >= ELKVM_PAGESIZE);
 
 		if(size > region->region_size) {
 			return NULL;
 		}
 
 		uint64_t smaller_size = region->region_size / 2;
-		if((smaller_size <= 0x1000) ||
+		if((smaller_size <= ELKVM_PAGESIZE) ||
         ((smaller_size < size) && (size <= region->region_size))) {
 			if(region->used == 0) {
 				return region;

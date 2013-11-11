@@ -154,17 +154,17 @@ int elkvm_loader_pt_load(struct kvm_vm *vm, GElf_Phdr phdr, struct Elf_binary *b
 		return err;
 	}
 
-  int access = 0;
+  ptopt_t opts = 0;
   if(phdr.p_flags & PF_X) {
-    access |= ELKVM_EXEC;
+    opts |= PT_OPT_EXEC;
   }
   if(phdr.p_flags & PF_W) {
-    access |= ELKVM_WRITE;
+    opts |= PT_OPT_WRITE;
   }
 
   int pages = pages_from_size(total_size);
   err = kvm_pager_map_region(&vm->pager, loadable_region->host_base_p,
-      loadable_region->guest_virtual, pages, phdr.p_flags);
+      loadable_region->guest_virtual, pages, opts);
 
 	if(phdr.p_flags & PF_X) {
 		/* executable region should be text */

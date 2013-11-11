@@ -453,14 +453,10 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     printf("MMAP addr_p %p length %lu prot %lu flags %lu fd %lu offset %lu\n",
         addr, length, prot, flags, fd, offset);
     printf("RESULT: %li\n", result);
-    if(length % 0x1000) {
-      mapping->mapped_pages = length / 0x1000 + 1;
-    } else {
-      mapping->mapped_pages = length / 0x1000;
-    }
     if(result >= 0) {
       printf("MAPPING: %p host_p: %p guest_virt: 0x%lx length %zd mapped pages %i\n",
-          mapping, mapping->host_p, mapping->guest_virt, mapping->length, mapping->mapped_pages);
+          mapping, mapping->host_p, mapping->guest_virt, mapping->length,
+          pages_from_size(length));
     }
     printf("=================================\n");
   }
@@ -489,23 +485,24 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   uint64_t guest_addr = mapping->guest_virt;
   assert(guest_addr != 0);
 
-  if(length % 0x1000) {
-    mapping->mapped_pages = length / 0x1000 + 1;
-  } else {
-    mapping->mapped_pages = length / 0x1000;
-  }
+  mapping->mapped_pages = pages_from_size(length);
   for(int page = 0; page < mapping->mapped_pages; page++) {
-    err = kvm_pager_create_mapping(&vm->pager, host_current_p, guest_addr,
-        flags & PROT_WRITE,
-        flags & PROT_EXEC);
+    ptopt_t opts = 0;
+    if(flags & PROT_WRITE) {
+      opts |= PT_OPT_WRITE;
+    }
+    if(flags & PROT_EXEC) {
+      opts |= PT_OPT_EXEC;
+    }
+    err = kvm_pager_create_mapping(&vm->pager, host_current_p, guest_addr, opts);
     if(err) {
       printf("ERROR CREATING PT entries\n");
       return err;
     }
 //    void *addr = kvm_pager_get_host_p(&vm->pager, guest_addr);
 //    assert((uint64_t)addr == guest_addr);
-    host_current_p+=0x1000;
-    guest_addr+=0x1000;
+    host_current_p+=ELKVM_PAGESIZE;
+    guest_addr+=ELKVM_PAGESIZE;
   }
 
   list_push(vm->mappings, mapping);
@@ -538,7 +535,7 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
 
   for(uint64_t guest_addr = addr_p;
       guest_addr < addr_p + length;
-      guest_addr += 0x1000) {
+      guest_addr += ELKVM_PAGESIZE) {
     err = kvm_pager_destroy_mapping(&vm->pager, guest_addr);
     mapping->mapped_pages--;
     assert(err == 0);

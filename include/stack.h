@@ -29,15 +29,15 @@ int expand_stack(struct kvm_vm *, struct kvm_vcpu *);
  */
 void elkvm_dump_stack(struct kvm_vm *, struct kvm_vcpu *vcpu);
 
-inline int is_stack_expansion(struct kvm_vm *vm, struct kvm_vcpu *vcpu,
+static int is_stack_expansion(struct kvm_vm *vm, struct kvm_vcpu *vcpu,
     uint64_t pfla) {
-  uint64_t stack_top = vm->current_user_stack->guest_virtual & ~0xFFF;
+  uint64_t stack_top = page_begin(vm->current_user_stack->guest_virtual);
   if(pfla > stack_top) {
     return 0;
   }
 
-  uint64_t aligned_pfla = pfla & ~0xFFF;
-  uint64_t pages = (stack_top - aligned_pfla) / 0x1000;
+  uint64_t aligned_pfla = page_begin(pfla);
+  uint64_t pages = pages_from_size(stack_top - aligned_pfla);
 
   /* TODO right now this is an arbitrary number... */
   return pages < 0x20;
