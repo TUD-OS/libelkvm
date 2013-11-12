@@ -243,18 +243,43 @@ uint64_t kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p,
 	return guest_virtual;
 }
 
+/*
+ * XXX this will fail for mappings that are larger than what fits
+ * into offset in pd * 512 pages
+ */
 int kvm_pager_map_region(struct kvm_pager *pager, void *host_start_p,
     uint64_t guest_start_addr, unsigned pages, ptopt_t opts) {
 
-  void *host_p = host_start_p;
   uint64_t guest_addr = guest_start_addr;
+	uint64_t guest_physical = host_to_guest_physical(pager, host_start_p);
 
-  for(int i = 0; i < pages; i++, host_p+=ELKVM_PAGESIZE, guest_addr+=ELKVM_PAGESIZE) {
-    int err = kvm_pager_create_mapping(pager, host_p, guest_addr, opts);
-		if(err) {
-			return err;
-		}
+  /* get the base address of pt for first guest addr */
+  uint64_t guest_pt_base_addr = guest_addr & ~0x1FFFFF;
+  /* calc offset in that pt */
+  off_t offset = (guest_addr & 0x1FF000) >> 12;
+  /* calc amount of pages left in that pt */
+  unsigned pages_remaining = 512 - offset;
+
+  while(pages) {
+    uint64_t *pt_base = kvm_pager_page_table_walk(pager, guest_pt_base_addr, opts, 1);
+    uint64_t *pt_entry = pt_base + offset;
+
+    /* map those pages */
+    while(pages && pages_remaining) {
+      int err = kvm_pager_create_entry(pager, pt_entry, guest_physical, opts);
+      assert(err == 0);
+
+      pt_entry++;
+      guest_physical+=ELKVM_PAGESIZE;
+      pages_remaining--;
+      pages--;
+    }
+    /* do again for next pt now we have 512 pages room */
+    guest_pt_base_addr += 0x200000;
+    pages_remaining = 512;
+    offset = 0;
   }
+
 
   return 0;
 }
