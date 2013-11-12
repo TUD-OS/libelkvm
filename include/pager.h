@@ -151,7 +151,7 @@ uint64_t *kvm_pager_find_table_entry(struct kvm_pager *, uint64_t *, uint64_t,
  * \brief Creates a new table and puts the entry in a pml4, pdpt, pd or pt
  * Args: pager, entry, writeable, executable
 */
-int kvm_pager_create_table(struct kvm_pager *, uint64_t *, int, int);
+int kvm_pager_create_table(struct kvm_pager *, uint64_t *, ptopt_t opts);
 
 /*
  * \brief Creates a new entry in a pml4, pdpt, pd or pt

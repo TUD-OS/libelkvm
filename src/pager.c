@@ -349,8 +349,7 @@ uint64_t *kvm_pager_page_table_walk(struct kvm_pager *pager, uint64_t guest_virt
 		addr_high -= 9;
     if(create) {
       if(!entry_exists(entry)) {
-				int err = kvm_pager_create_table(pager, entry, opts & PT_OPT_WRITE,
-            opts & PT_OPT_EXEC);
+				int err = kvm_pager_create_table(pager, entry, opts);
 				if(err) {
 					return NULL;
 				}
@@ -399,7 +398,7 @@ uint64_t *kvm_pager_find_table_entry(struct kvm_pager *pager,
 }
 
 int kvm_pager_create_table(struct kvm_pager *pager, uint64_t *host_entry_p,
-		int writeable, int executable) {
+    ptopt_t opts) {
 
 	uint64_t guest_next_tbl = host_to_guest_physical(pager, pager->host_next_free_tbl_p);
 	if(guest_next_tbl == 0) {
@@ -407,13 +406,7 @@ int kvm_pager_create_table(struct kvm_pager *pager, uint64_t *host_entry_p,
 	}
 	memset(pager->host_next_free_tbl_p, 0, HOST_PAGESIZE);
 	pager->host_next_free_tbl_p += HOST_PAGESIZE;
-  ptopt_t opts = 0;
-  if(writeable) {
-    opts |= PT_OPT_WRITE;
-  }
-  if(executable) {
-    opts |= PT_OPT_EXEC;
-  }
+
 	return kvm_pager_create_entry(pager, host_entry_p, guest_next_tbl, opts);
 }
 
