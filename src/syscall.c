@@ -537,13 +537,10 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
 
   struct region_mapping *mapping = elkvm_mapping_find(vm, addr);
 
-  for(uint64_t guest_addr = addr_p;
-      guest_addr < addr_p + length;
-      guest_addr += ELKVM_PAGESIZE) {
-    err = kvm_pager_destroy_mapping(&vm->pager, guest_addr);
-    mapping->mapped_pages--;
-    assert(err == 0);
-  }
+  unsigned pages = pages_from_size(length);
+  err = kvm_pager_unmap_region(&vm->pager, addr_p, pages);
+  assert(err == 0);
+  mapping->mapped_pages -= pages;
 
   long result = -1;
   if(mapping->mapped_pages == 0) {

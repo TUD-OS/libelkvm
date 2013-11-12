@@ -99,6 +99,8 @@ struct kvm_userspace_memory_region *elkvm_pager_get_chunk(struct kvm_pager *, in
  */
 uint64_t kvm_pager_map_kernel_page(struct kvm_pager *, void *,int, int);
 
+int kvm_pager_unmap_region(struct kvm_pager *pager, uint64_t guest_start_addr,
+    unsigned pages);
 int kvm_pager_map_region(struct kvm_pager *pager, void *host_start_p,
     uint64_t guest_start_addr, unsigned pages, ptopt_t opts);
 

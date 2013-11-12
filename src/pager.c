@@ -247,6 +247,43 @@ uint64_t kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p,
  * XXX this will fail for mappings that are larger than what fits
  * into offset in pd * 512 pages
  */
+int kvm_pager_unmap_region(struct kvm_pager *pager, uint64_t guest_start_addr,
+    unsigned pages) {
+
+  uint64_t guest_addr = guest_start_addr;
+
+  /* get the base address of pt for first guest addr */
+  uint64_t guest_pt_base_addr = guest_addr & ~0x1FFFFF;
+  /* calc offset in that pt */
+  off_t offset = (guest_addr & 0x1FF000) >> 12;
+  /* calc amount of pages left in that pt */
+  unsigned pages_remaining = 512 - offset;
+
+  while(pages) {
+    uint64_t *pt_entry = kvm_pager_page_table_walk(pager, guest_addr, 0, 0);
+
+    /* map those pages */
+    while(pages && pages_remaining) {
+      *pt_entry = 0;
+
+      pt_entry++;
+      pages_remaining--;
+      pages--;
+    }
+    /* do again for next pt now we have 512 pages room */
+    guest_addr = guest_pt_base_addr + 0x200000;
+    guest_pt_base_addr += 0x200000;
+    pages_remaining = 512;
+    offset = 0;
+  }
+
+
+  return 0;
+}
+/*
+ * XXX this will fail for mappings that are larger than what fits
+ * into offset in pd * 512 pages
+ */
 int kvm_pager_map_region(struct kvm_pager *pager, void *host_start_p,
     uint64_t guest_start_addr, unsigned pages, ptopt_t opts) {
 
