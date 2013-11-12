@@ -7,6 +7,7 @@
 #include <vcpu.h>
 
 uint64_t elkvm_popq(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+  assert(vcpu->regs.rsp != 0x0);
 	uint64_t *host_p = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
   assert(host_p != NULL);
 
@@ -17,6 +18,7 @@ uint64_t elkvm_popq(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 }
 
 uint32_t elkvm_popd(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+  assert(vcpu->regs.rsp != 0x0);
   uint32_t *host_p = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
   assert(host_p != NULL);
 
@@ -29,6 +31,7 @@ int elkvm_pushq(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t val) {
 	//vm->region[MEMORY_REGION_STACK].region_size += 0x8;
 	vcpu->regs.rsp -= 0x8;
 
+  assert(vcpu->regs.rsp != 0x0);
 	uint64_t *host_p = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
 	if(host_p == NULL) {
 		/* current stack is full, we need to expand the stack */
@@ -64,6 +67,7 @@ int expand_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 }
 
 void elkvm_dump_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+  assert(vcpu->regs.rsp != 0x0);
   uint64_t *host_p = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
   uint64_t guest = vcpu->regs.rsp;
 

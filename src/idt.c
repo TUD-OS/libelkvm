@@ -75,6 +75,7 @@ void elkvm_idt_dump_isr(struct kvm_vm *vm, int iv) {
 		iv * sizeof(struct kvm_idt_entry);
 	uint64_t guest_isr = idt_entry_offset(entry);
 	printf("guest_isr: 0x%lx\n", guest_isr);
+  assert(guest_isr != 0x0);
 	char *isr = kvm_pager_get_host_p(&vm->pager, guest_isr);
 	printf("isr: %p\n", isr);
 

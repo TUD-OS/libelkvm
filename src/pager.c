@@ -205,6 +205,7 @@ uint64_t kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p,
 
 	uint64_t guest_physical = host_to_guest_physical(pager, host_mem_p);
 	uint64_t guest_virtual = (pager->guest_next_free & ~(ELKVM_PAGESIZE-1)) | (guest_physical & (ELKVM_PAGESIZE-1));
+  assert(guest_virtual != 0);
 
   ptopt_t opts = 0;
   if(writeable) {
@@ -225,6 +226,7 @@ uint64_t kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p,
 		if(((uint64_t)pt_entry & ~(ELKVM_PAGESIZE-1)) == (uint64_t)pt_entry) {
 			/*this page table seems to be completely full, try the next one */
 			guest_virtual = guest_virtual + 0x100000;
+      assert(guest_virtual != 0);
 			pt_entry = kvm_pager_page_table_walk(pager, guest_virtual, opts, 1);
 		}
 	}
@@ -260,6 +262,7 @@ int kvm_pager_map_region(struct kvm_pager *pager, void *host_start_p,
 int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 		uint64_t guest_virtual, ptopt_t opts) {
 	int err;
+  assert(guest_virtual != 0);
 
 	assert(pager->system_chunk.userspace_addr != 0);
 	assert((host_mem_p < pager->host_pml4_p) ||
@@ -307,6 +310,7 @@ int kvm_pager_destroy_mapping(struct kvm_pager *pager, uint64_t guest_virtual) {
 }
 
 void *kvm_pager_get_host_p(struct kvm_pager *pager, uint64_t guest_virtual) {
+  assert(guest_virtual != 0);
 	uint64_t *entry = kvm_pager_page_table_walk(pager, guest_virtual, 0, 0);
 	if(entry == NULL) {
 		return NULL;
@@ -328,6 +332,8 @@ void *kvm_pager_get_host_p(struct kvm_pager *pager, uint64_t guest_virtual) {
 
 uint64_t *kvm_pager_page_table_walk(struct kvm_pager *pager, uint64_t guest_virtual,
 		ptopt_t opts, int create) {
+  assert(guest_virtual != 0);
+
 	uint64_t *table_base = (uint64_t *)pager->host_pml4_p;
 	/* we should always have paging in place, when this gets called! */
 	assert(table_base != NULL);

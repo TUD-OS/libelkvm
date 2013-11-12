@@ -18,6 +18,7 @@ int elkvm_handle_debug(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
     return 0;
   }
 
+  assert(vcpu->regs.rip != 0x0);
   uint8_t *host_p = (uint8_t *)kvm_pager_get_host_p(&vm->pager, vcpu->regs.rip);
   assert(host_p != NULL);
 
@@ -71,6 +72,7 @@ int elkvm_debug_bp_set(struct kvm_vcpu *vcpu, struct elkvm_sw_bp *bp) {
 }
 
 int elkvm_debug_breakpoint(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t rip) {
+  assert(rip != 0x0);
   uint8_t *host_p = (uint8_t *)kvm_pager_get_host_p(&vm->pager, rip);
   assert(host_p != NULL);
 
