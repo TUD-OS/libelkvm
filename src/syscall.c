@@ -1229,18 +1229,22 @@ long elkvm_do_getdents(struct kvm_vm *vm) {
 
   buf = kvm_pager_get_host_p(&vm->pager, buf_p);
 
-  long result = vm->syscall_handlers->getcwd(buf, size);
+  char *result = vm->syscall_handlers->getcwd(buf, size);
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
     printf("GETCWD with buf at: %p size %lu\n",
         buf, size);
-    printf("RESULT: %li\n", result);
+    printf("RESULT: %p\n", result);
     if(result < 0) {
       printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
     }
     printf("=================================\n");
   }
-  return result;
+  if(result == NULL) {
+    return 0;
+  } else {
+    return buf_p;
+  }
 }
 
 long elkvm_do_getcwd(struct kvm_vm *vm) {
