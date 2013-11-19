@@ -1211,7 +1211,36 @@ long elkvm_do_ftruncate(struct kvm_vm *vm) {
 }
 
 long elkvm_do_getdents(struct kvm_vm *vm) {
-  return -ENOSYS;
+  if(vm->syscall_handlers->getcwd == NULL) {
+    printf("GETCWD handler not found\n");
+    return -ENOSYS;
+  }
+
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+
+  uint64_t buf_p = 0;
+  uint64_t size = 0;
+  char *buf = NULL;
+
+  int err = elkvm_syscall2(vm, vcpu, &buf_p, &size);
+  if(err) {
+    return err;
+  }
+
+  buf = kvm_pager_get_host_p(&vm->pager, buf_p);
+
+  long result = vm->syscall_handlers->getcwd(buf, size);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("GETCWD with buf at: %p size %lu\n",
+        buf, size);
+    printf("RESULT: %li\n", result);
+    if(result < 0) {
+      printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
+    }
+    printf("=================================\n");
+  }
+  return result;
 }
 
 long elkvm_do_getcwd(struct kvm_vm *vm) {
