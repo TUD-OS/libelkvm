@@ -91,6 +91,7 @@ struct elkvm_handlers {
   long (*getegid)(void);
 	/* ... */
 	long (*uname) (struct utsname *buf);
+  long (*mkdir) (const char *pathname, mode_t mode);
   long (*unlink) (const char *pathname);
   /* ... */
   long (*gettimeofday) (struct timeval *tv, struct timezone *tz);

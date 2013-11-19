@@ -1177,7 +1177,37 @@ long elkvm_do_rename(struct kvm_vm *vm) {
 }
 
 long elkvm_do_mkdir(struct kvm_vm *vm) {
-  return -ENOSYS;
+  if(vm->syscall_handlers->mkdir == NULL) {
+    printf("MKDIR handler not found\n");
+    return -ENOSYS;
+  }
+
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+
+  uint64_t pathname_p = 0;
+  uint64_t mode = 0;
+  char *pathname = NULL;
+
+  int err = elkvm_syscall2(vm, vcpu, &pathname_p, &mode);
+  if(err) {
+    return err;
+  }
+
+  assert(pathname_p != 0x0);
+  pathname = kvm_pager_get_host_p(&vm->pager, pathname_p);
+  long result = vm->syscall_handlers->mkdir(pathname, mode);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("MKDIR with pathname at: %p (%s) mode %lu\n",
+        pathname, pathname, mode);
+    printf("RESULT: %li\n", result);
+    if(result < 0) {
+      printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
+    }
+    printf("=================================\n");
+  }
+  return result;
+
 }
 
 long elkvm_do_rmdir(struct kvm_vm *vm) {
