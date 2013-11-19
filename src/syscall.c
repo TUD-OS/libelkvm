@@ -1181,7 +1181,33 @@ long elkvm_do_truncate(struct kvm_vm *vm) {
 }
 
 long elkvm_do_ftruncate(struct kvm_vm *vm) {
-  return -ENOSYS;
+  if(vm->syscall_handlers->ftruncate == NULL) {
+    printf("FTRUNCATE handler not found\n");
+    return -ENOSYS;
+  }
+
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+
+  uint64_t fd = 0;
+  uint64_t length;
+
+  int err = elkvm_syscall2(vm, vcpu, &fd, &length);
+  if(err) {
+    return err;
+  }
+
+  long result = vm->syscall_handlers->ftruncate(fd, length);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("FTRUNCATE with fd: %lu length %lu\n",
+        fd, length);
+    printf("RESULT: %li\n", result);
+    if(result < 0) {
+      printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
+    }
+    printf("=================================\n");
+  }
+  return result;
 }
 
 long elkvm_do_getdents(struct kvm_vm *vm) {
