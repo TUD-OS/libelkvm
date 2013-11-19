@@ -1149,7 +1149,35 @@ long elkvm_do_fdatasync(struct kvm_vm *vm) {
 }
 
 long elkvm_do_truncate(struct kvm_vm *vm) {
-  return -ENOSYS;
+  if(vm->syscall_handlers->truncate == NULL) {
+    printf("TRUNCATE handler not found\n");
+    return -ENOSYS;
+  }
+
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+
+  uint64_t path_p = 0;
+  uint64_t length;
+  char *path = NULL;
+
+  int err = elkvm_syscall2(vm, vcpu, &path_p, &length);
+  if(err) {
+    return err;
+  }
+
+  path = kvm_pager_get_host_p(&vm->pager, path_p);
+  long result = vm->syscall_handlers->truncate(path, length);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("TRUNCATE with path at: %p (%s) length %lu\n",
+        path, path, length);
+    printf("RESULT: %li\n", result);
+    if(result < 0) {
+      printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
+    }
+    printf("=================================\n");
+  }
+  return result;
 }
 
 long elkvm_do_ftruncate(struct kvm_vm *vm) {
