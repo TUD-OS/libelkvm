@@ -93,6 +93,7 @@ struct elkvm_handlers {
 	long (*uname) (struct utsname *buf);
   long (*mkdir) (const char *pathname, mode_t mode);
   long (*unlink) (const char *pathname);
+  long (*readlink) (const char *path, char *buf, size_t bufsiz);
   /* ... */
   long (*gettimeofday) (struct timeval *tv, struct timezone *tz);
   /* ... */
