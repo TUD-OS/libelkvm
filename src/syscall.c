@@ -1,8 +1,10 @@
 #include <errno.h>
+#include <asm-generic/fcntl.h>
 #include <string.h>
 #include <asm/prctl.h>
 #include <sys/mman.h>
 #include <sys/prctl.h>
+#include <unistd.h>
 
 #include <elkvm.h>
 #include <heap.h>
@@ -1133,7 +1135,54 @@ long elkvm_do_msgctl(struct kvm_vm *vm) {
 }
 
 long elkvm_do_fcntl(struct kvm_vm *vm) {
-  return -ENOSYS;
+  if(vm->syscall_handlers->fcntl == NULL) {
+    printf("FCNTL handler not found\n");
+    return -ENOSYS;
+  }
+
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+
+  uint64_t fd = 0;
+  uint64_t cmd = 0;
+  /*
+   * depending on the value of cmd arg is either an int or a pointer
+   * to a struct flock or a pointer to a struct f_owner_ex
+   */
+  uint64_t arg_p = 0;
+
+  int err = elkvm_syscall3(vm, vcpu, &fd, &cmd, &arg_p);
+  if(err) {
+    return err;
+  }
+
+  long result = 0;
+  switch(cmd) {
+    case F_GETOWN_EX:
+    case F_SETOWN_EX:
+    case F_GETLK:
+    case F_SETLK:
+    case F_SETLKW:
+      /* NULL statement */;
+      void *arg = kvm_pager_get_host_p(&vm->pager, arg_p);
+      result = vm->syscall_handlers->fcntl(fd, cmd, arg);
+      break;
+    default:
+      result = vm->syscall_handlers->fcntl(fd, cmd, arg_p);
+      break;
+  }
+
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("FCNTL with fd: %lu cmd: %lu arg_p: 0x%lx\n",
+        fd, cmd, arg_p);
+    printf("RESULT: %li\n", result);
+    if(result < 0) {
+      printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
+    }
+    printf("=================================\n");
+  }
+
+  return result;
 }
 
 long elkvm_do_flock(struct kvm_vm *vm) {

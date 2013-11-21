@@ -91,6 +91,7 @@ struct elkvm_handlers {
   long (*getegid)(void);
 	/* ... */
 	long (*uname) (struct utsname *buf);
+  long (*fcntl) (int fd, int cmd, ...);
   long (*truncate) (const char *path, off_t length);
   long (*ftruncate) (int fd, off_t length);
   char *(*getcwd) (char *buf, size_t size);
