@@ -512,7 +512,43 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
 }
 
 long elkvm_do_mprotect(struct kvm_vm *vm) {
-	return -ENOSYS;
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+
+  uint64_t addr_p = 0;
+  void *addr = NULL;
+  uint64_t len = 0;
+  uint64_t prot = 0;
+  int err = elkvm_syscall3(vm, vcpu, &addr_p, &len, &prot);
+  if(err) {
+    return err;
+  }
+
+  if(addr_p != 0x0) {
+    addr = kvm_pager_get_host_p(&vm->pager, addr_p);
+  }
+
+  struct region_mapping *mapping = elkvm_mapping_find(vm, addr);
+  assert(mapping != NULL);
+
+  ptopt_t opts = 0;
+  if(prot & PROT_WRITE) {
+    opts |= PT_OPT_WRITE;
+  }
+  if(prot & PROT_EXEC) {
+    opts |= PT_OPT_EXEC;
+  }
+  err = kvm_pager_map_region(&vm->pager, mapping->host_p, mapping->guest_virt,
+      mapping->mapped_pages, opts);
+
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("MPROTECT reguested with address: 0x%lx (%p) len: 0x%lx\n",
+        addr_p, addr, length);
+    printf("MAPPING %p pages mapped: %u\n", mapping, mapping->mapped_pages);
+    printf("RESULT: %li\n", err);
+    printf("=================================\n");
+  }
+	return err;
 }
 
 long elkvm_do_munmap(struct kvm_vm *vm) {
