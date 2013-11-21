@@ -543,7 +543,7 @@ long elkvm_do_mprotect(struct kvm_vm *vm) {
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
     printf("MPROTECT reguested with address: 0x%lx (%p) len: 0x%lx\n",
-        addr_p, addr, length);
+        addr_p, addr, len);
     printf("MAPPING %p pages mapped: %u\n", mapping, mapping->mapped_pages);
     printf("RESULT: %li\n", err);
     printf("=================================\n");
