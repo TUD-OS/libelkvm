@@ -1734,8 +1734,10 @@ long elkvm_do_time(struct kvm_vm *vm) {
     return err;
   }
 
-  assert(time_p != 0x0);
-  time_t *time = kvm_pager_get_host_p(&vm->pager, time_p);
+  time_t *time = NULL;
+  if(time_p != NULL) {
+    time = kvm_pager_get_host_p(&vm->pager, time_p);
+  }
 
   long result = vm->syscall_handlers->time(time);
   if(vm->debug) {
