@@ -1876,6 +1876,14 @@ long elkvm_do_arch_prctl(struct kvm_vm *vm) {
   return 0;
 }
 
+long elkvm_do_adjtimex(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_setrlimit(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
 long elkvm_do_gettid(struct kvm_vm *vm) {
   if(vm->syscall_handlers->gettid == NULL) {
     printf("GETTID handler not found\n");
