@@ -861,7 +861,11 @@ long elkvm_do_access(struct kvm_vm *vm) {
     printf("=================================\n");
   }
 
-  return -errno;
+  if(result) {
+    return -errno;
+  }
+
+  return 0;
 }
 
 long elkvm_do_pipe(struct kvm_vm *vm) {
