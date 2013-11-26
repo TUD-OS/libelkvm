@@ -104,6 +104,7 @@ struct elkvm_handlers {
   long (*readlink) (const char *path, char *buf, size_t bufsiz);
   /* ... */
   long (*gettimeofday) (struct timeval *tv, struct timezone *tz);
+  long (*getrusage) (int who, struct rusage *usage);
   /* ... */
   long (*gettid)(void);
   /* ... */
