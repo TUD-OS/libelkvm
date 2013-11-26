@@ -165,6 +165,7 @@ long elkvm_do_arch_prctl(struct kvm_vm *);
 long elkvm_do_gettid(struct kvm_vm *vm);
 /* ... */
 long elkvm_do_time(struct kvm_vm *);
+long elkvm_do_futex(struct kvm_vm *vm);
 /* ... */
 long elkvm_do_exit_group(struct kvm_vm *);
 long elkvm_do_epoll_wait(struct kvm_vm *);
@@ -311,6 +312,7 @@ static struct {
   [__NR_gettid]     = { elkvm_do_gettid, "GETTID" },
   /* ... */
   [__NR_time]       = { elkvm_do_time, "TIME" },
+  [__NR_futex]      = { elkvm_do_futex, "FUTEX" },
   /* ... */
   [__NR_exit_group] = { elkvm_do_exit_group, "EXIT GROUP" },
   [__NR_epoll_wait] = { elkvm_do_epoll_wait, "EPOLL WAIT" },

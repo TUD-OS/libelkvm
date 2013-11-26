@@ -1834,6 +1834,58 @@ long elkvm_do_time(struct kvm_vm *vm) {
   return result;
 }
 
+long elkvm_do_futex(struct kvm_vm *vm) {
+  if(vm->syscall_handlers->futex == NULL) {
+    printf("FUTEX handler not found\n");
+    return -ENOSYS;
+  }
+
+  uint64_t uaddr_p = 0x0;
+  uint64_t op = 0;
+  uint64_t val = 0;
+  uint64_t timeout_p = 0x0;
+  uint64_t uaddr2_p = 0x0;
+  uint64_t val3 = 0;
+  int *uaddr = NULL;
+  const struct timespec *timeout = NULL;
+  int *uaddr2 = NULL;
+
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  int err = elkvm_syscall6(vm, vcpu, &uaddr_p, &op, &val, &timeout_p, &uaddr2_p, &val3);
+  if(err) {
+    return err;
+  }
+
+  if(uaddr_p != 0x0) {
+    uaddr = kvm_pager_get_host_p(&vm->pager, uaddr_p);
+  }
+  if(timeout_p != 0x0) {
+    timeout = kvm_pager_get_host_p(&vm->pager, timeout_p);
+  }
+  if(uaddr2_p != 0x0) {
+    uaddr2 = kvm_pager_get_host_p(&vm->pager, uaddr2_p);
+  }
+
+  printf("FUTEX with uaddr %p (0x%lx) op %lu val %lu timeout %p (0x%lx)"
+      " uaddr2 %p (0x%lx) val3 %lu\n",
+      uaddr, uaddr_p, op, val, timeout, timeout_p, uaddr2, uaddr2_p, val3);
+  long result = vm->syscall_handlers->futex(uaddr, op, val, timeout, uaddr2, val3);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("FUTEX with uaddr %p (0x%lx) op %lu val %lu timeout %p (0x%lx)"
+        " uaddr2 %p (0x%lx) val3 %lu\n",
+        uaddr, uaddr_p, op, val, timeout, timeout_p, uaddr2, uaddr2_p, val3);
+    printf("RESULT: %li\n", result);
+    printf("=================================\n");
+  }
+
+  if(result) {
+    return -errno;
+  }
+  return result;
+
+}
+
 long elkvm_do_exit_group(struct kvm_vm *vm) {
   uint64_t status = 0;
   int err = elkvm_syscall1(vm, vm->vcpus->vcpu, &status);

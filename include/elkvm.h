@@ -105,6 +105,8 @@ struct elkvm_handlers {
   long (*gettid)(void);
   /* ... */
   long (*time) (time_t *t);
+  long (*futex)(int *uaddr, int op, int val, const struct timespec *timeout,
+      int *uaddr2, int val3);
   /* ... */
   void (*exit_group) (int status);
   long (*tgkill)(int tgid, int tid, int sig);
