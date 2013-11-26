@@ -109,6 +109,11 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 
 	vm->syscall_handlers = handlers;
 
+  for(int i = 0; i < RLIMIT_NLIMITS; i++) {
+    err = getrlimit(i, &vm->rlimits[i]);
+    assert(err == 0);
+  }
+
 	return 0;
 }
 
