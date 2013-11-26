@@ -824,16 +824,16 @@ long elkvm_do_access(struct kvm_vm *vm) {
   assert(path_p != 0x0);
   char *pathname = kvm_pager_get_host_p(&vm->pager, path_p);
   if(pathname == NULL) {
-    return EFAULT;
-  }
-  if(vm->debug) {
-    printf("CALLING ACCESS handler with pathname %s and mode %i\n",
-      pathname, (int)mode);
+    return -EFAULT;
   }
 
   long result = vm->syscall_handlers->access(pathname, mode);
   if(vm->debug) {
-    printf("ACCESS result: %li\n", result);
+    printf("\n============ LIBELKVM ===========\n");
+    printf("ACCESS with pathname: %s (0x%lx) mode: %i\n",
+      pathname, (int)mode);
+    printf("RESULT: %li\n", result);
+    printf("=================================\n");
   }
 
   return -errno;
