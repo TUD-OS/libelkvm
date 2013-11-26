@@ -874,7 +874,37 @@ long elkvm_do_access(struct kvm_vm *vm) {
 }
 
 long elkvm_do_pipe(struct kvm_vm *vm) {
-  return -ENOSYS;
+  if(vm->syscall_handlers->pipe == NULL) {
+    printf("PIPE handler not found\n");
+    return -ENOSYS;
+  }
+
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+
+  uint64_t pipefd_p = 0x0;
+  int *pipefd = NULL;
+
+  int err = elkvm_syscall1(vm, vcpu, &pipefd_p);
+  if(err) {
+    return err;
+  }
+
+  pipefd = kvm_pager_get_host_p(&vm->pager, pipefd_p);
+  assert(pipefd != NULL);
+
+  long result = vm->syscall_handlers->pipe(pipefd);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("PIPE with pipefds at: %p (0x%lx)\n",
+        pipefd, pipefd_p);
+    printf("RESULT: %li\n", result);
+    printf("=================================\n");
+  }
+  if(result) {
+    return -errno;
+  }
+
+  return 0;
 }
 
 long elkvm_do_select(struct kvm_vm *vm) {

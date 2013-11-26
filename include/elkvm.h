@@ -79,6 +79,7 @@ struct elkvm_handlers {
   long (*readv) (int fd, struct iovec *iov, int iovcnt);
   long (*writev) (int fd, struct iovec *iov, int iovcnt);
   long (*access) (const char *pathname, int mode);
+  long (*pipe) (int pipefd[2]);
   long (*dup) (int oldfd);
   /* ... */
   long (*nanosleep)(struct timespec *req, struct timespec *rem);
