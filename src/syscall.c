@@ -1511,9 +1511,13 @@ long elkvm_do_gettimeofday(struct kvm_vm *vm) {
         tv_p, tv, tz_p, tz);
     printf("RESULT: %li\n", result);
     if(result == 0) {
-      printf("timeval: tv_sec: %lu tv_usec: %lu\n", tv->tv_sec, tv->tv_usec);
-      printf("timezone: tz_minuteswest: %i tz_dsttime %i\n",
+      if(tv != NULL) {
+        printf("timeval: tv_sec: %lu tv_usec: %lu\n", tv->tv_sec, tv->tv_usec);
+      }
+      if(tz != NULL) {
+        printf("timezone: tz_minuteswest: %i tz_dsttime %i\n",
           tz->tz_minuteswest, tz->tz_dsttime);
+      }
     } else {
       printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
     }
