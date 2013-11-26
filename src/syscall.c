@@ -831,7 +831,7 @@ long elkvm_do_access(struct kvm_vm *vm) {
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
     printf("ACCESS with pathname: %s (0x%lx) mode: %i\n",
-      pathname, (int)mode);
+      pathname, path_p, (int)mode);
     printf("RESULT: %li\n", result);
     printf("=================================\n");
   }
@@ -1735,7 +1735,7 @@ long elkvm_do_time(struct kvm_vm *vm) {
   }
 
   time_t *time = NULL;
-  if(time_p != NULL) {
+  if(time_p != 0x0) {
     time = kvm_pager_get_host_p(&vm->pager, time_p);
   }
 
