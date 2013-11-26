@@ -4,6 +4,7 @@
 #include <asm/prctl.h>
 #include <sys/mman.h>
 #include <sys/prctl.h>
+#include <sys/resource.h>
 #include <unistd.h>
 
 #include <elkvm.h>
@@ -1627,7 +1628,28 @@ long elkvm_do_gettimeofday(struct kvm_vm *vm) {
 }
 
 long elkvm_do_getrlimit(struct kvm_vm *vm) {
-  return -ENOSYS;
+  uint64_t resource = 0x0;
+  uint64_t rlim_p = 0x0;
+  struct rlimit *rlim = NULL;
+
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  int err = elkvm_syscall2(vm, vcpu, &resource, &rlim_p);
+  if(err) {
+    return err;
+  }
+
+  assert(rlim_p != 0x0);
+  rlim = kvm_pager_get_host_p(&vm->pager, rlim_p);
+
+  memcpy(rlim, &vm->rlimits[resource], sizeof(struct rlimit));
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("GETRLIMIT with resource: %li rlim: 0x%lx (%p)\n",
+        resource, rlim_p, rlim);
+    printf("=================================\n");
+  }
+
+  return 0;
 }
 
 long elkvm_do_getrusage(struct kvm_vm *vm) {
