@@ -646,6 +646,11 @@ long elkvm_do_brk(struct kvm_vm *vm) {
   if(user_brk_req < vm->pager.brk_addr) {
     int err = elkvm_brk_shrink(vm, user_brk_req);
     assert(err == 0);
+    if(vm->debug) {
+      printf("BRK done: err: %i (%s) newbrk: 0x%lx\n",
+          err, strerror(err), vm->pager.brk_addr);
+      printf("=================================\n");
+    }
     return user_brk_req;
   }
 
