@@ -1816,3 +1816,39 @@ long elkvm_do_exit_group(struct kvm_vm *vm) {
   return -ENOSYS;
 }
 
+long elkvm_do_epoll_wait(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_epoll_ctl(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_tgkill(struct kvm_vm *vm) {
+  if(vm->syscall_handlers->tgkill == NULL) {
+    printf("TGKILL handler not found\n");
+    return -ENOSYS;
+  }
+
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+
+  uint64_t tgid = 0x0;
+  uint64_t tid = 0x0;
+  uint64_t sig = 0x0;
+
+  int err = elkvm_syscall3(vm, vcpu, &tgid, &tid, &sig);
+  if(err) {
+    return err;
+  }
+
+  long result = vm->syscall_handlers->tgkill(tgid, tid, sig);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("TGKILL with tgid %li tid %li sig %li\n", tgid, tid, sig);
+    printf("RESULT: %li\n", result);
+    printf("=================================\n");
+  }
+  return result;
+
+}
+

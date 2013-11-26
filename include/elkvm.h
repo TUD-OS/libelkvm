@@ -106,6 +106,7 @@ struct elkvm_handlers {
   long (*time) (time_t *t);
   /* ... */
   void (*exit_group) (int status);
+  long (*tgkill)(int tgid, int tid, int sig);
 };
 
 /*
