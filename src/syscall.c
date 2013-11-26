@@ -545,7 +545,7 @@ long elkvm_do_mprotect(struct kvm_vm *vm) {
     printf("MPROTECT reguested with address: 0x%lx (%p) len: 0x%lx\n",
         addr_p, addr, len);
     printf("MAPPING %p pages mapped: %u\n", mapping, mapping->mapped_pages);
-    printf("RESULT: %li\n", err);
+    printf("RESULT: %i\n", err);
     printf("=================================\n");
   }
 	return err;
