@@ -162,6 +162,8 @@ long elkvm_do_rt_sigsuspend(struct kvm_vm *);
 /* ... */
 long elkvm_do_arch_prctl(struct kvm_vm *);
 /* ... */
+long elkvm_do_gettid(struct kvm_vm *vm);
+/* ... */
 long elkvm_do_time(struct kvm_vm *);
 /* ... */
 long elkvm_do_exit_group(struct kvm_vm *);
@@ -302,6 +304,8 @@ static struct {
   [__NR_rt_sigsuspend]   = { elkvm_do_rt_sigsuspend, "RT SIGSUSPEND" },
   /* ... */
   [__NR_arch_prctl] = { elkvm_do_arch_prctl, "ARCH PRCTL" },
+  /* ... */
+  [__NR_gettid]     = { elkvm_do_gettid, "GETTID" },
   /* ... */
   [__NR_time]       = { elkvm_do_time, "TIME" },
   /* ... */

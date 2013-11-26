@@ -101,6 +101,8 @@ struct elkvm_handlers {
   /* ... */
   long (*gettimeofday) (struct timeval *tv, struct timezone *tz);
   /* ... */
+  long (*gettid)(void);
+  /* ... */
   long (*time) (time_t *t);
   /* ... */
   void (*exit_group) (int status);

@@ -1755,6 +1755,22 @@ long elkvm_do_arch_prctl(struct kvm_vm *vm) {
   return 0;
 }
 
+long elkvm_do_gettid(struct kvm_vm *vm) {
+  if(vm->syscall_handlers->gettid == NULL) {
+    printf("GETTID handler not found\n");
+    return -ENOSYS;
+  }
+
+  long result = vm->syscall_handlers->gettid();
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("GETTID\n");
+    printf("RESULT: %li\n", result);
+    printf("=================================\n");
+  }
+  return result;
+}
+
 long elkvm_do_time(struct kvm_vm *vm) {
   if(vm->syscall_handlers->time == NULL) {
     return -ENOSYS;
