@@ -119,6 +119,7 @@ int elkvm_brk_map(struct kvm_vm *vm, uint64_t newbrk, uint64_t off) {
     }
     map_addr = map_addr + ELKVM_PAGESIZE;
     host_p = host_p + ELKVM_PAGESIZE;
+    assert(host_p <= ((*heap_top)->host_base_p + (*heap_top)->region_size));
   }
 
   return 0;
