@@ -231,7 +231,7 @@ long elkvm_do_read(struct kvm_vm *vm) {
   assert(buf_p != 0x0);
 	buf = kvm_pager_get_host_p(&vm->pager, buf_p);
 
-  void *bend = buf + count;
+  void *bend = buf + count - 1;
   long result = 0;
   if(!kvm_pager_is_same_region(&vm->pager, buf, bend)) {
     struct kvm_userspace_memory_region *region;
