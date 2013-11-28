@@ -519,11 +519,10 @@ int kvm_pager_handle_pagefault(struct kvm_pager *pager, uint64_t pfla,
       }
       return 0;
     }
+    kvm_pager_dump_page_fault_info(pager, pfla, err_code, host_p);
 		if(host_p != NULL) {
 			kvm_pager_dump_page_tables(pager);
-			printf("\n Invalid");
 		}
-    kvm_pager_dump_page_fault_info(pager, pfla, err_code, host_p);
 
     return 1;
 }
