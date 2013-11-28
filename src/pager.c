@@ -198,7 +198,14 @@ struct kvm_userspace_memory_region *
 		}
 
 		return NULL;
-	}
+}
+
+bool kvm_pager_is_same_region(struct kvm_pager *pager, void *host_1, void *host_2) {
+  struct kvm_userspace_memory_region *region;
+  region = kvm_pager_find_region_for_host_p(pager, host_1);
+
+  return address_in_region(region, host_2);
+}
 
 uint64_t kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p,
 		int writeable, int executable) {
