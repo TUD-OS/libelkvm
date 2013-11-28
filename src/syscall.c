@@ -230,13 +230,14 @@ long elkvm_do_read(struct kvm_vm *vm) {
 
   assert(buf_p != 0x0);
 	buf = kvm_pager_get_host_p(&vm->pager, buf_p);
-  if(vm->debug) {
-    printf("READ from fd: %i to %p with %zd bytes\n", (int)fd, buf, (size_t)count);
-  }
 
 	long result = vm->syscall_handlers->read((int)fd, buf, (size_t)count);
   if(vm->debug) {
-    printf("RESULT (%li): %.*s\n", result, (int)result, buf);
+    printf("\n============ LIBELKVM ===========\n");
+    printf("READ from fd: %i with size 0x%lx buf 0x%lx (%p)\n",
+        (int)fd, count, buf_p, buf);
+    printf("RESULT %li\n", result);
+    printf("=================================\n");
   }
 
 	return result;
