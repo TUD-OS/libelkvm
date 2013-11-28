@@ -216,7 +216,7 @@ long elkvm_do_read(struct kvm_vm *vm) {
 		printf("READ handler not found\n");
 		return -ENOSYS;
 	}
-  struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
 
 	uint64_t fd;
 	uint64_t buf_p;
@@ -232,9 +232,25 @@ long elkvm_do_read(struct kvm_vm *vm) {
 	buf = kvm_pager_get_host_p(&vm->pager, buf_p);
 
   void *bend = buf + count;
-  assert(kvm_pager_is_same_region(&vm->pager, buf, bend));
+  long result = 0;
+  if(!kvm_pager_is_same_region(&vm->pager, buf, bend)) {
+    struct kvm_userspace_memory_region *region;
+    region = kvm_pager_find_region_for_host_p(&vm->pager, buf);
 
-	long result = vm->syscall_handlers->read((int)fd, buf, (size_t)count);
+    char *mark = (char *)region->userspace_addr + region->memory_size;
+    size_t newcount = mark - buf;
+    long result = vm->syscall_handlers->read((int)fd, buf, newcount);
+
+    mark++;
+    newcount = count - newcount;
+
+    assert(kvm_pager_is_same_region(&vm->pager, mark, bend));
+    result += vm->syscall_handlers->read((int)fd, mark, newcount);
+
+  } else {
+    result = vm->syscall_handlers->read((int)fd, buf, (size_t)count);
+  }
+
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
     printf("READ from fd: %i with size 0x%lx buf 0x%lx (%p)\n",
