@@ -231,6 +231,9 @@ long elkvm_do_read(struct kvm_vm *vm) {
   assert(buf_p != 0x0);
 	buf = kvm_pager_get_host_p(&vm->pager, buf_p);
 
+  void *bend = buf + count;
+  assert(kvm_pager_is_same_region(&vm->pager, buf, bend));
+
 	long result = vm->syscall_handlers->read((int)fd, buf, (size_t)count);
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
