@@ -495,7 +495,7 @@ void elkvm_print_regions(struct kvm_vm *vm) {
 	printf("\n System Memory Regions:\n");
 	printf(" ----------------------\n");
 	printf(" Host virtual\t\tGuest virtual\t\tSize\t\t\tD\n");
-	elkvm_dump_region(vm->root_region->data);
+	elkvm_dump_region(*list_elem_front(vm->root_region));
 	printf("\n");
 }
 
