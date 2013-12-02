@@ -9,6 +9,7 @@
 #include <elkvm.h>
 #include <heap.h>
 #include <mapping.h>
+#include <region.h>
 #include <stack.h>
 #include <syscall.h>
 #include <vcpu.h>
@@ -233,13 +234,16 @@ long elkvm_do_read(struct kvm_vm *vm) {
 
   void *bend = buf + count - 1;
   long result = 0;
-  if(!elkvm_is_same_region(vm, buf, bend)) {
+
+  struct region_mapping *mapping = elkvm_mapping_find(vm, buf);
+  if(mapping == NULL && !elkvm_is_same_region(vm, buf, bend)) {
     struct elkvm_memory_region *region;
     region = elkvm_region_find(vm, buf);
 
     char *mark = (char *)region->host_base_p + region->region_size;
     size_t newcount = mark - buf;
     long result = vm->syscall_handlers->read((int)fd, buf, newcount);
+    assert(result == newcount);
 
     mark++;
     newcount = count - newcount;
