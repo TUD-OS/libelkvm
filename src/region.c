@@ -125,6 +125,45 @@ struct elkvm_memory_region *
 		}
 }
 
+struct elkvm_memory_region *elkvm_region_find(struct kvm_vm *vm, void *host_p) {
+  list_each(vm->root_region, region) {
+    if(elkvm_address_in_region(region, host_p)) {
+      return elkvm_region_tree_traverse(region, host_p);
+    }
+  }
+
+  return NULL;
+}
+
+struct elkvm_memory_region *
+elkvm_region_tree_traverse(struct elkvm_memory_region *region, void *host_p) {
+  assert(elkvm_address_in_region(region, host_p));
+
+  if(region->lc == NULL && region->rc == NULL) {
+    return region;
+  }
+
+  if(region->lc != NULL && elkvm_address_in_region(region->lc, host_p)) {
+    return region->lc;
+  }
+
+  if(region->rc != NULL && elkvm_address_in_region(region->rc, host_p)) {
+    return region->rc;
+  }
+
+  /* this code should not be reached */
+  assert(false);
+  return NULL;
+}
+
+bool elkvm_is_same_region(struct kvm_vm *vm, void *host_1, void *host_2) {
+  struct elkvm_memory_region *region;
+  region = elkvm_region_find(vm, host_1);
+
+  return elkvm_address_in_region(region, host_2);
+}
+
+
 int elkvm_region_list_prepend(struct kvm_vm *vm, struct elkvm_memory_region *region) {
   list_push_front(vm->root_region, region);
   return 0;
