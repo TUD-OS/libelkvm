@@ -21,3 +21,8 @@ struct elkvm_memory_region *elkvm_region_find_free(struct elkvm_memory_region *,
 int elkvm_region_list_prepend(struct kvm_vm *,
     struct elkvm_memory_region *);
 
+static inline bool
+elkvm_address_in_region(struct elkvm_memory_region *region, void *host_p) {
+  return (region->host_base_p <= host_p) &&
+    (host_p < (region->host_base_p + region->region_size));
+}
