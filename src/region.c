@@ -159,6 +159,9 @@ elkvm_region_tree_traverse(struct elkvm_memory_region *region, void *host_p) {
 bool elkvm_is_same_region(struct kvm_vm *vm, void *host_1, void *host_2) {
   struct elkvm_memory_region *region;
   region = elkvm_region_find(vm, host_1);
+  if(region == NULL) {
+    return false;
+  }
 
   return elkvm_address_in_region(region, host_2);
 }
