@@ -237,6 +237,7 @@ long elkvm_do_read(struct kvm_vm *vm) {
 
   struct region_mapping *mapping = elkvm_mapping_find(vm, buf);
   if(mapping == NULL && !elkvm_is_same_region(vm, buf, bend)) {
+    assert(elkvm_region_find(vm, bend) != NULL);
     char *begin_mark = NULL;
     char *end_mark = buf;
     size_t current_count = count;
@@ -249,9 +250,8 @@ long elkvm_do_read(struct kvm_vm *vm) {
       end_mark = (char *)region->host_base_p + region->region_size;
       size_t newcount = end_mark - begin_mark;
       long result = vm->syscall_handlers->read((int)fd, begin_mark, newcount);
-      assert(result == newcount);
 
-      current_count -= newcount;
+      current_count -= result;
     } while(!elkvm_is_same_region(vm, begin_mark, bend));
     assert(current_count == 0);
 
