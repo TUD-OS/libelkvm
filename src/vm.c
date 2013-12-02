@@ -175,7 +175,8 @@ int elkvm_region_setup(struct kvm_vm *vm) {
 
   struct elkvm_memory_region *region = elkvm_region_alloc(system_chunk_p,
       ELKVM_SYSTEM_MEMSIZE, 0);
-  vm->root_region = elkvm_region_list_prepend(vm, region);
+  err = elkvm_region_list_prepend(vm, region);
+  assert(err == 0);
 
 	vm->pager.system_chunk.userspace_addr = (__u64)system_chunk_p;
 	vm->pager.system_chunk.guest_phys_addr = 0x0;
