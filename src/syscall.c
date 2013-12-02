@@ -250,12 +250,12 @@ long elkvm_do_read(struct kvm_vm *vm) {
       assert(host_begin_mark == region->host_base_p);
 
       host_end_mark = (char *)region->host_base_p + region->region_size;
-      mark_p += region->region_size;
-
       assert(host_end_mark > host_begin_mark);
+
       size_t newcount = host_end_mark - host_begin_mark;
       long result = vm->syscall_handlers->read((int)fd, host_begin_mark, newcount);
 
+      mark_p += result;
       current_count -= result;
     } while(!elkvm_is_same_region(vm, host_begin_mark, bend));
     assert(current_count == 0);
