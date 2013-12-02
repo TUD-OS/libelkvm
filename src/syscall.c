@@ -238,21 +238,24 @@ long elkvm_do_read(struct kvm_vm *vm) {
   struct region_mapping *mapping = elkvm_mapping_find(vm, buf);
   if(mapping == NULL && !elkvm_is_same_region(vm, buf, bend)) {
     assert(elkvm_region_find(vm, bend) != NULL);
-    char *begin_mark = NULL;
-    char *end_mark = buf;
+    char *host_begin_mark = NULL;
+    char *host_end_mark = buf;
+    uint64_t mark_p = buf_p;
     size_t current_count = count;
     do {
-      begin_mark = end_mark + 1;
+      host_begin_mark = kvm_pager_get_host_p(&vm->pager, mark_p);
       struct elkvm_memory_region *region = NULL;
-      region = elkvm_region_find(vm, begin_mark);
+      region = elkvm_region_find(vm, host_begin_mark);
       assert(region != NULL);
 
-      end_mark = (char *)region->host_base_p + region->region_size;
-      size_t newcount = end_mark - begin_mark;
-      long result = vm->syscall_handlers->read((int)fd, begin_mark, newcount);
+      host_end_mark = (char *)region->host_base_p + region->region_size;
+      mark_p += region->region_size;
+
+      size_t newcount = host_end_mark - host_begin_mark;
+      long result = vm->syscall_handlers->read((int)fd, host_begin_mark, newcount);
 
       current_count -= result;
-    } while(!elkvm_is_same_region(vm, begin_mark, bend));
+    } while(!elkvm_is_same_region(vm, host_begin_mark, bend));
     assert(current_count == 0);
 
   } else {
