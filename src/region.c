@@ -144,11 +144,11 @@ elkvm_region_tree_traverse(struct elkvm_memory_region *region, void *host_p) {
   }
 
   if(region->lc != NULL && elkvm_address_in_region(region->lc, host_p)) {
-    return region->lc;
+    return elkvm_region_tree_traverse(region->lc, host_p);
   }
 
   if(region->rc != NULL && elkvm_address_in_region(region->rc, host_p)) {
-    return region->rc;
+    return elkvm_region_tree_traverse(region->rc, host_p);
   }
 
   /* this code should not be reached */
