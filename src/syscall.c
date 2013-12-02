@@ -247,7 +247,9 @@ long elkvm_do_read(struct kvm_vm *vm) {
       struct elkvm_memory_region *region = NULL;
       region = elkvm_region_find(vm, host_begin_mark);
       assert(region != NULL);
-      assert(host_begin_mark == region->host_base_p);
+      if(mark_p != buf_p) {
+        assert(host_begin_mark == region->host_base_p);
+      }
 
       host_end_mark = (char *)region->host_base_p + region->region_size;
       assert(host_end_mark > host_begin_mark);
