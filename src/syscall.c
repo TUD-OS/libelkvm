@@ -233,18 +233,18 @@ long elkvm_do_read(struct kvm_vm *vm) {
 
   void *bend = buf + count - 1;
   long result = 0;
-  if(!kvm_pager_is_same_region(&vm->pager, buf, bend)) {
-    struct kvm_userspace_memory_region *region;
-    region = kvm_pager_find_region_for_host_p(&vm->pager, buf);
+  if(!elkvm_is_same_region(vm, buf, bend)) {
+    struct elkvm_memory_region *region;
+    region = elkvm_region_find(vm, buf);
 
-    char *mark = (char *)region->userspace_addr + region->memory_size;
+    char *mark = (char *)region->host_base_p + region->region_size;
     size_t newcount = mark - buf;
     long result = vm->syscall_handlers->read((int)fd, buf, newcount);
 
     mark++;
     newcount = count - newcount;
 
-    assert(kvm_pager_is_same_region(&vm->pager, mark, bend));
+    assert(elkvm_is_same_region(vm, mark, bend));
     result += vm->syscall_handlers->read((int)fd, mark, newcount);
 
   } else {
