@@ -130,12 +130,13 @@ void host_cpuid(uint32_t, uint32_t, uint32_t *, uint32_t *, uint32_t *, uint32_t
 void kvm_vcpu_dump_regs(struct kvm_vcpu *);
 
 void kvm_vcpu_dump_code(struct kvm_vcpu *);
+void kvm_vcpu_dump_code_at(struct kvm_vcpu *vcpu, uint64_t guest_addr);
 
 /*
  * \brief Get the next byte of code to be executed.
  * This is mainly here for libudis86 disassembly
  */
-int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *);
+int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *, uint64_t guest_addr);
 
 inline void print_dtable(const char *name, struct kvm_dtable dtable)
 {
