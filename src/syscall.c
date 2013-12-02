@@ -247,10 +247,12 @@ long elkvm_do_read(struct kvm_vm *vm) {
       struct elkvm_memory_region *region = NULL;
       region = elkvm_region_find(vm, host_begin_mark);
       assert(region != NULL);
+      assert(host_begin_mark == region->host_base_p);
 
       host_end_mark = (char *)region->host_base_p + region->region_size;
       mark_p += region->region_size;
 
+      assert(host_end_mark > host_begin_mark);
       size_t newcount = host_end_mark - host_begin_mark;
       long result = vm->syscall_handlers->read((int)fd, host_begin_mark, newcount);
 
