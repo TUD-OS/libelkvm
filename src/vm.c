@@ -441,6 +441,26 @@ int kvm_vm_map_chunk(struct kvm_vm *vm, struct kvm_userspace_memory_region *chun
 	return err;
 }
 
+int elkvm_chunk_remap(struct kvm_vm *vm, int num, uint64_t newsize) {
+  struct kvm_userspace_memory_region *chunk = NULL;
+  if(num == 0) {
+    chunk = &vm->pager.system_chunk;
+  } else {
+    chunk = elkvm_pager_get_chunk(&vm->pager, num - 1);
+  }
+
+  chunk->memory_size = 0;
+	int err = ioctl(vm->fd, KVM_SET_USER_MEMORY_REGION, chunk);
+  assert(err == 0);
+  free((void *)chunk->userspace_addr);
+  chunk->memory_size = newsize;
+  err = posix_memalign(((void **)&chunk->userspace_addr), ELKVM_PAGESIZE, chunk->memory_size);
+  assert(err == 0);
+	err = ioctl(vm->fd, KVM_SET_USER_MEMORY_REGION, chunk);
+  assert(err == 0);
+  return 0;
+}
+
 struct kvm_vcpu *elkvm_vcpu_get(struct kvm_vm *vm, int vcpu_id) {
   struct vcpu_list *vcpu_list = vm->vcpus;
   for(int i = 0; i < vcpu_id && vcpu_list != NULL; i++) {

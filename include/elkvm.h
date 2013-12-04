@@ -164,6 +164,13 @@ int kvm_vm_map_chunk(struct kvm_vm *, struct kvm_userspace_memory_region *);
  */
 int elkvm_emulate_vmcall(struct kvm_vm *, struct kvm_vcpu *);
 
+/*
+ * \brief Deletes (frees) the chunk with number num and hands a new chunk
+ *        with the newsize to a vm at the same memory slot.
+ *        THIS WILL DELETE ALL DATA IN THE OLD CHUNK!
+ */
+int elkvm_chunk_remap(struct kvm_vm *, int num, uint64_t newsize);
+
 struct kvm_vcpu *elkvm_vcpu_get(struct kvm_vm *, int vcpu_id);
 int elkvm_chunk_count(struct kvm_vm *);
 
