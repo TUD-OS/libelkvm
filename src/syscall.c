@@ -9,6 +9,7 @@
 #include <elkvm.h>
 #include <heap.h>
 #include <mapping.h>
+#include <region.h>
 #include <stack.h>
 #include <syscall.h>
 #include <vcpu.h>
@@ -216,7 +217,7 @@ long elkvm_do_read(struct kvm_vm *vm) {
 		printf("READ handler not found\n");
 		return -ENOSYS;
 	}
-  struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
 
 	uint64_t fd;
 	uint64_t buf_p;
@@ -231,7 +232,40 @@ long elkvm_do_read(struct kvm_vm *vm) {
   assert(buf_p != 0x0);
 	buf = kvm_pager_get_host_p(&vm->pager, buf_p);
 
-	long result = vm->syscall_handlers->read((int)fd, buf, (size_t)count);
+  void *bend = buf + count - 1;
+  long result = 0;
+
+  struct region_mapping *mapping = elkvm_mapping_find(vm, buf);
+  if(mapping == NULL && !elkvm_is_same_region(vm, buf, bend)) {
+    assert(elkvm_region_find(vm, bend) != NULL);
+    char *host_begin_mark = NULL;
+    char *host_end_mark = buf;
+    uint64_t mark_p = buf_p;
+    size_t current_count = count;
+    do {
+      host_begin_mark = kvm_pager_get_host_p(&vm->pager, mark_p);
+      struct elkvm_memory_region *region = NULL;
+      region = elkvm_region_find(vm, host_begin_mark);
+      assert(region != NULL);
+      if(mark_p != buf_p) {
+        assert(host_begin_mark == region->host_base_p);
+      }
+
+      host_end_mark = (char *)region->host_base_p + region->region_size;
+      assert(host_end_mark > host_begin_mark);
+
+      size_t newcount = host_end_mark - host_begin_mark;
+      long result = vm->syscall_handlers->read((int)fd, host_begin_mark, newcount);
+
+      mark_p += result;
+      current_count -= result;
+    } while(!elkvm_is_same_region(vm, host_begin_mark, bend));
+    assert(current_count == 0);
+
+  } else {
+    result = vm->syscall_handlers->read((int)fd, buf, (size_t)count);
+  }
+
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
     printf("READ from fd: %i with size 0x%lx buf 0x%lx (%p)\n",

@@ -646,24 +646,35 @@ void kvm_vcpu_dump_regs(struct kvm_vcpu *vcpu) {
 	return;
 }
 
-void kvm_vcpu_dump_code(struct kvm_vcpu *vcpu) {
-	int err = kvm_vcpu_get_next_code_byte(vcpu);
-	if(err) {
-		return;
-	}
+void kvm_vcpu_dump_code_common(struct kvm_vcpu *vcpu) {
 	fprintf(stderr, "\n Code:\n");
 	fprintf(stderr,   " -----\n");
 	while(ud_disassemble(&vcpu->ud_obj)) {
 		fprintf(stderr, " %s\n", ud_insn_asm(&vcpu->ud_obj));
 	}
 	fprintf(stderr, "\n");
-
-	return;
 }
 
-int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *vcpu) {
-  assert(vcpu->regs.rip != 0x0);
-	void *host_p = kvm_pager_get_host_p(&vcpu->vm->pager, vcpu->regs.rip);
+void kvm_vcpu_dump_code_at(struct kvm_vcpu *vcpu, uint64_t guest_addr) {
+	int err = kvm_vcpu_get_next_code_byte(vcpu, guest_addr);
+	if(err) {
+		return;
+	}
+  kvm_vcpu_dump_code_common(vcpu);
+}
+
+void kvm_vcpu_dump_code(struct kvm_vcpu *vcpu) {
+	int err = kvm_vcpu_get_next_code_byte(vcpu, vcpu->regs.rip);
+	if(err) {
+		return;
+	}
+  kvm_vcpu_dump_code_common(vcpu);
+}
+
+int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *vcpu, uint64_t guest_addr) {
+  assert(guest_addr != 0x0);
+	void *host_p = kvm_pager_get_host_p(&vcpu->vm->pager, guest_addr);
+  assert(host_p != NULL);
 	size_t disassembly_size = 40;
 	ud_set_input_buffer(&vcpu->ud_obj, (char *)host_p, disassembly_size);
 

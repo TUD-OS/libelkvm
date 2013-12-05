@@ -5,21 +5,21 @@
 #include <region.h>
 
 struct elkvm_memory_region *elkvm_region_create(struct kvm_vm *vm, uint64_t req_size) {
-	struct elkvm_memory_region_list *current_root = vm->root_region;
-  struct elkvm_memory_region *current = current_root->data;
 
   uint64_t size = req_size;
   if(req_size < ELKVM_PAGESIZE) {
     size = ELKVM_PAGESIZE;
   }
 
-  do {
-    current = current_root->data;
-    assert(current != NULL);
-    current = elkvm_region_find(current, size);
-  } while((current == NULL) && !((current_root = current_root->next) == NULL));
+  struct elkvm_memory_region *r = NULL;
+  list_each(vm->root_region, current) {
+    r = elkvm_region_find_free(current, size);
+    if(r != NULL) {
+      break;
+    }
+  }
 
-  if(current == NULL) {
+  if(r == NULL) {
     /* get a new memory chunk and add that to the list of root regions */
     void *chunk_p;
     uint64_t grow_size = size > ELKVM_SYSTEM_MEMGROW ? pagesize_align(size) : ELKVM_SYSTEM_MEMGROW;
@@ -27,20 +27,17 @@ struct elkvm_memory_region *elkvm_region_create(struct kvm_vm *vm, uint64_t req_
     if(err) {
       return NULL;
     }
-    current = elkvm_region_alloc(chunk_p, grow_size, 0);
-    if(current == NULL) {
+    r = elkvm_region_alloc(chunk_p, grow_size, 0);
+    if(r == NULL) {
       return NULL;
     }
-    current_root = elkvm_region_list_prepend(vm, current);
-    if(current_root == NULL) {
-      return NULL;
-    }
+    elkvm_region_list_prepend(vm, r);
 
   }
 
-	current->used = 1;
+	r->used = 1;
 
-	return current;
+	return r;
 }
 
 int elkvm_region_split(struct elkvm_memory_region *region) {
@@ -88,7 +85,7 @@ int elkvm_region_free(struct kvm_vm *vm, struct elkvm_memory_region *region) {
 }
 
 struct elkvm_memory_region *
-	elkvm_region_find(struct elkvm_memory_region *region, uint64_t size) {
+	elkvm_region_find_free(struct elkvm_memory_region *region, uint64_t size) {
     assert(size >= ELKVM_PAGESIZE);
 
 		if(size > region->region_size) {
@@ -106,13 +103,13 @@ struct elkvm_memory_region *
 		}
 
 		if(region->lc != NULL) {
-			struct elkvm_memory_region *child = elkvm_region_find(region->lc, size);
+			struct elkvm_memory_region *child = elkvm_region_find_free(region->lc, size);
 			if(child) {
 				return child;
 			}
 
 			assert(region->rc != NULL);
-			child = elkvm_region_find(region->rc, size);
+			child = elkvm_region_find_free(region->rc, size);
 			return child;
 		} else {
 			assert(region->rc == NULL);
@@ -124,20 +121,54 @@ struct elkvm_memory_region *
 			if(err != 0) {
 				return NULL;
 			}
-			return elkvm_region_find(region->lc, size);
+			return elkvm_region_find_free(region->lc, size);
 		}
 }
 
-struct elkvm_memory_region_list *elkvm_region_list_prepend(struct kvm_vm *vm,
-    struct elkvm_memory_region *region) {
-  struct elkvm_memory_region_list *l =
-    malloc(sizeof(struct elkvm_memory_region_list));
-  if(l == NULL) {
-    return l;
+struct elkvm_memory_region *elkvm_region_find(struct kvm_vm *vm, void *host_p) {
+  list_each(vm->root_region, region) {
+    if(elkvm_address_in_region(region, host_p)) {
+      return elkvm_region_tree_traverse(region, host_p);
+    }
   }
-  l->next = vm->root_region;
-  l->data = region;
-  vm->root_region = l;
-  return l;
+
+  return NULL;
+}
+
+struct elkvm_memory_region *
+elkvm_region_tree_traverse(struct elkvm_memory_region *region, void *host_p) {
+  assert(elkvm_address_in_region(region, host_p));
+
+  if(region->lc == NULL && region->rc == NULL) {
+    return region;
+  }
+
+  if(region->lc != NULL && elkvm_address_in_region(region->lc, host_p)) {
+    return elkvm_region_tree_traverse(region->lc, host_p);
+  }
+
+  if(region->rc != NULL && elkvm_address_in_region(region->rc, host_p)) {
+    return elkvm_region_tree_traverse(region->rc, host_p);
+  }
+
+  /* this code should not be reached */
+  assert(false);
+  return NULL;
+}
+
+bool elkvm_is_same_region(struct kvm_vm *vm, void *host_1, void *host_2) {
+  struct elkvm_memory_region *region;
+  region = elkvm_region_find(vm, host_1);
+  if(region == NULL) {
+    return false;
+  }
+
+  return elkvm_address_in_region(region, host_2);
+}
+
+
+int elkvm_region_list_prepend(struct kvm_vm *vm, struct elkvm_memory_region *region) {
+  list_push_front(vm->root_region, region);
+  return 0;
 }
 

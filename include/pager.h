@@ -124,6 +124,11 @@ struct kvm_userspace_memory_region *
 	kvm_pager_find_region_for_host_p(struct kvm_pager *, void *);
 
 /*
+ * \brief Checks if two host addresses lie in the same elkvm_memory_region
+ */
+bool kvm_pager_is_same_region(struct kvm_pager *, void *, void *);
+
+/*
  * \brief walk the page table to find a pt_entry
  * params are pager, guest virtual address, writeable, executable bits
  * and a create flag

@@ -175,7 +175,8 @@ int elkvm_region_setup(struct kvm_vm *vm) {
 
   struct elkvm_memory_region *region = elkvm_region_alloc(system_chunk_p,
       ELKVM_SYSTEM_MEMSIZE, 0);
-  vm->root_region = elkvm_region_list_prepend(vm, region);
+  err = elkvm_region_list_prepend(vm, region);
+  assert(err == 0);
 
 	vm->pager.system_chunk.userspace_addr = (__u64)system_chunk_p;
 	vm->pager.system_chunk.guest_phys_addr = 0x0;
@@ -495,7 +496,7 @@ void elkvm_print_regions(struct kvm_vm *vm) {
 	printf("\n System Memory Regions:\n");
 	printf(" ----------------------\n");
 	printf(" Host virtual\t\tGuest virtual\t\tSize\t\t\tD\n");
-	elkvm_dump_region(vm->root_region->data);
+	elkvm_dump_region(*list_elem_front(vm->root_region));
 	printf("\n");
 }
 

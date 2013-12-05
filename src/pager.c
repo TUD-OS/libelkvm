@@ -198,7 +198,7 @@ struct kvm_userspace_memory_region *
 		}
 
 		return NULL;
-	}
+}
 
 uint64_t kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p,
 		int writeable, int executable) {
