@@ -587,7 +587,6 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
 
   struct kvm_userspace_memory_region *region =
     kvm_pager_find_region_for_host_p(&vm->pager, addr);
-  assert(region != &vm->pager.system_chunk);
   assert(region != NULL);
 
   struct region_mapping *mapping = elkvm_mapping_find(vm, addr);
@@ -596,6 +595,10 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
   err = kvm_pager_unmap_region(&vm->pager, addr_p, pages);
   assert(err == 0);
   mapping->mapped_pages -= pages;
+  if(region == &vm->pager.system_chunk) {
+    printf("WARNING munmap on region in system_chunk called!\n");
+    return 0;
+  }
 
   long result = -1;
   if(mapping->mapped_pages == 0) {
