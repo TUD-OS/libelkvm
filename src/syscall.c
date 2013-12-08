@@ -495,7 +495,7 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   struct elkvm_memory_region *region = elkvm_region_create(vm, length);
   mapping->host_p = region->host_base_p;
   mapping->length = length;
-  mapping->mapped_pages = pages_from_size(region->region_size);
+  mapping->mapped_pages = pages_from_size(length);
 
   long result = vm->syscall_handlers->mmap((void *)addr_p, length, prot,
       flags, fd, offset, mapping);
