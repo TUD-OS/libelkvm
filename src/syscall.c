@@ -1332,6 +1332,10 @@ long elkvm_do_ftruncate(struct kvm_vm *vm) {
 }
 
 long elkvm_do_getdents(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_getcwd(struct kvm_vm *vm) {
   if(vm->syscall_handlers->getcwd == NULL) {
     printf("GETCWD handler not found\n");
     return -ENOSYS;
@@ -1366,10 +1370,6 @@ long elkvm_do_getdents(struct kvm_vm *vm) {
   } else {
     return buf_p;
   }
-}
-
-long elkvm_do_getcwd(struct kvm_vm *vm) {
-  return -ENOSYS;
 }
 
 long elkvm_do_chdir(struct kvm_vm *vm) {
