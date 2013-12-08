@@ -506,9 +506,11 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
         addr, length, prot, flags, fd, offset);
     printf("RESULT: %li\n", result);
     if(result >= 0) {
-      printf("MAPPING: %p host_p: %p guest_virt: 0x%lx length %zd mapped pages %i\n",
+      printf("REGION: %p host_base_p: %p region_size: 0x%lx guest_virt: 0x%lx used: %i\n",
+          region, region->host_base_p, region->region_size, region->guest_virtual, region->used);
+      printf("MAPPING: %p host_p: %p guest_virt: 0x%lx length %zd (0x%lx) mapped pages %i (%i)\n",
           mapping, mapping->host_p, mapping->guest_virt, mapping->length,
-          pages_from_size(length));
+          mapping->length, mapping->mapped_pages, pages_from_size(length));
     }
     printf("=================================\n");
   }
@@ -586,9 +588,9 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
     addr = kvm_pager_get_host_p(&vm->pager, addr_p);
   }
 
-  struct kvm_userspace_memory_region *region =
+  struct kvm_userspace_memory_region *chunk =
     kvm_pager_find_region_for_host_p(&vm->pager, addr);
-  assert(region != NULL);
+  assert(chunk != NULL);
 
   struct region_mapping *mapping = elkvm_mapping_find(vm, addr);
 
@@ -596,22 +598,15 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
   err = kvm_pager_unmap_region(&vm->pager, addr_p, pages);
   assert(err == 0);
   mapping->mapped_pages -= pages;
-  if(region == &vm->pager.system_chunk) {
-    printf("WARNING munmap on region in system_chunk called!\n");
+  if(chunk == &vm->pager.system_chunk) {
+    printf("WARNING munmap on chunk in system_chunk called!\n");
     return 0;
   }
 
-  long result = -1;
   if(mapping->mapped_pages == 0) {
-    region->memory_size = 0;
-    err = kvm_vm_map_chunk(vm, region);
-    if(vm->syscall_handlers->munmap != NULL) {
-      result = vm->syscall_handlers->munmap(mapping);
-    } else {
-      printf("MUNMAP handler not found!\n");
-      result = -ENOSYS;
-    }
-    err = elkvm_pager_free_chunk(&vm->pager, region);
+    struct elkvm_memory_region *region =  elkvm_region_find(vm, addr);
+      region->used = 0;
+      region->guest_virtual = 0x0;
   }
 
   if(vm->debug) {
@@ -622,24 +617,14 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
     if(mapping->mapped_pages == 0) {
       printf("MUNMAP handler called for chunk %p\n", mapping);
       printf("SLOT: %u FLAGS: %u GUEST: 0x%llx SIZE: 0x%llx HOST: 0x%llx\n",
-          region->slot, region->flags, region->guest_phys_addr,
-          region->memory_size, region->userspace_addr);
-      printf("RESULT: %li\n", result);
-      if(result < 0) {
-        printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
-      }
+          chunk->slot, chunk->flags, chunk->guest_phys_addr,
+          chunk->memory_size, chunk->userspace_addr);
     }
     printf("=================================\n");
   }
 
   return 0;
 
-//  if(result < 0) {
-//    return result;
-//  }
-//
-//
-//  return err;
 }
 
 long elkvm_do_brk(struct kvm_vm *vm) {
