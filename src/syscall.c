@@ -491,6 +491,12 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   }
 
   struct region_mapping *mapping = elkvm_mapping_alloc();
+
+  struct elkvm_memory_region *region = elkvm_region_create(vm, length);
+  mapping->host_p = region->host_base_p;
+  mapping->length = region->region_size;
+  mapping->mapped_pages = pages_from_size(region->region_size);
+
   long result = vm->syscall_handlers->mmap((void *)addr_p, length, prot,
       flags, fd, offset, mapping);
   if(vm->debug) {
@@ -509,28 +515,6 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     return -errno;
   }
 
-  struct kvm_userspace_memory_region *chunk =
-    kvm_pager_alloc_chunk(&vm->pager, mapping->host_p, length, 0);
-  if(chunk == NULL) {
-    return -ENOMEM;
-  }
-  err = kvm_vm_map_chunk(vm, chunk);
-  if(err) {
-    printf("\n============ LIBELKVM ===========\n");
-    printf("ERROR mapping chunk %p\n", chunk);
-    printf("SLOT: %u FLAGS: %u GUEST: 0x%llx SIZE: 0x%llx HOST: 0x%llx\n",
-        chunk->slot, chunk->flags, chunk->guest_phys_addr, chunk->memory_size,
-        chunk->userspace_addr);
-    printf("=================================\n");
-
-    return err;
-  }
-
-  void *host_current_p = mapping->host_p;
-  uint64_t guest_addr = mapping->guest_virt;
-  assert(guest_addr != 0);
-
-  mapping->mapped_pages = pages_from_size(length);
   ptopt_t opts = 0;
   if(flags & PROT_WRITE) {
     opts |= PT_OPT_WRITE;
