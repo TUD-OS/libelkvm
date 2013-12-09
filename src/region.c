@@ -32,6 +32,7 @@ struct elkvm_memory_region *elkvm_region_create(struct kvm_vm *vm, uint64_t req_
       return NULL;
     }
     elkvm_region_list_prepend(vm, r);
+    r  = elkvm_region_find_free(r, size);
 
   }
 

@@ -11,8 +11,9 @@
 #define PAGER_MODE_X86_E   2
 #define PAGER_MODE_X86_64  3
 
+#define ELKVM_PAGER_MEMSIZE 16*1024*1024
 #define ELKVM_SYSTEM_MEMSIZE 16*1024*1024
-#define ELKVM_SYSTEM_MEMGROW 64*1024*1024
+#define ELKVM_SYSTEM_MEMGROW 256*1024*1024
 #define KERNEL_SPACE_BOTTOM 0xFFFF800000000000
 #define ADDRESS_SPACE_TOP 0xFFFFFFFFFFFFFFFF
 
@@ -29,8 +30,11 @@
 #define ELKVM_PAGESIZE       0x1000
 #define ELKVM_PAGESIZE_LARGE 0x200000
 #define ELKVM_PAGESIZE_HUGE  0x100000000
-/* KVM allows only for so many memory slots in Linux 3.8 */
-#define KVM_MEMORY_SLOTS 32
+/*
+ * KVM allows only for 32 many memory slots in Linux 3.8
+ * and 128 slots on Linux 3.11
+ */
+#define KVM_MEMORY_SLOTS 128
 
 typedef unsigned int ptopt_t;
 #define PT_OPT_WRITE 0x1

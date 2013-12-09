@@ -491,17 +491,28 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   }
 
   struct region_mapping *mapping = elkvm_mapping_alloc();
+  assert(mapping != NULL);
+
+  struct elkvm_memory_region *region = elkvm_region_create(vm, length);
+  assert(region != NULL);
+  mapping->host_p = region->host_base_p;
+  mapping->length = length;
+  mapping->mapped_pages = pages_from_size(length);
+
   long result = vm->syscall_handlers->mmap((void *)addr_p, length, prot,
       flags, fd, offset, mapping);
+  region->guest_virtual = mapping->guest_virt;
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
     printf("MMAP addr_p %p length %lu prot %lu flags %lu fd %lu offset %lu\n",
         addr, length, prot, flags, fd, offset);
     printf("RESULT: %li\n", result);
     if(result >= 0) {
-      printf("MAPPING: %p host_p: %p guest_virt: 0x%lx length %zd mapped pages %i\n",
+      printf("REGION: %p host_base_p: %p region_size: 0x%lx guest_virt: 0x%lx used: %i\n",
+          region, region->host_base_p, region->region_size, region->guest_virtual, region->used);
+      printf("MAPPING: %p host_p: %p guest_virt: 0x%lx length %zd (0x%lx) mapped pages %i (%i)\n",
           mapping, mapping->host_p, mapping->guest_virt, mapping->length,
-          pages_from_size(length));
+          mapping->length, mapping->mapped_pages, pages_from_size(length));
     }
     printf("=================================\n");
   }
@@ -509,28 +520,6 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     return -errno;
   }
 
-  struct kvm_userspace_memory_region *chunk =
-    kvm_pager_alloc_chunk(&vm->pager, mapping->host_p, length, 0);
-  if(chunk == NULL) {
-    return -ENOMEM;
-  }
-  err = kvm_vm_map_chunk(vm, chunk);
-  if(err) {
-    printf("\n============ LIBELKVM ===========\n");
-    printf("ERROR mapping chunk %p\n", chunk);
-    printf("SLOT: %u FLAGS: %u GUEST: 0x%llx SIZE: 0x%llx HOST: 0x%llx\n",
-        chunk->slot, chunk->flags, chunk->guest_phys_addr, chunk->memory_size,
-        chunk->userspace_addr);
-    printf("=================================\n");
-
-    return err;
-  }
-
-  void *host_current_p = mapping->host_p;
-  uint64_t guest_addr = mapping->guest_virt;
-  assert(guest_addr != 0);
-
-  mapping->mapped_pages = pages_from_size(length);
   ptopt_t opts = 0;
   if(flags & PROT_WRITE) {
     opts |= PT_OPT_WRITE;
@@ -601,10 +590,9 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
     addr = kvm_pager_get_host_p(&vm->pager, addr_p);
   }
 
-  struct kvm_userspace_memory_region *region =
+  struct kvm_userspace_memory_region *chunk =
     kvm_pager_find_region_for_host_p(&vm->pager, addr);
-  assert(region != &vm->pager.system_chunk);
-  assert(region != NULL);
+  assert(chunk != NULL);
 
   struct region_mapping *mapping = elkvm_mapping_find(vm, addr);
 
@@ -612,46 +600,32 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
   err = kvm_pager_unmap_region(&vm->pager, addr_p, pages);
   assert(err == 0);
   mapping->mapped_pages -= pages;
+  if(chunk == &vm->pager.system_chunk) {
+    printf("WARNING munmap on chunk in system_chunk called!\n");
+    return 0;
+  }
 
-  long result = -1;
   if(mapping->mapped_pages == 0) {
-    region->memory_size = 0;
-    err = kvm_vm_map_chunk(vm, region);
-    if(vm->syscall_handlers->munmap != NULL) {
-      result = vm->syscall_handlers->munmap(mapping);
-    } else {
-      printf("MUNMAP handler not found!\n");
-      result = -ENOSYS;
-    }
-    err = elkvm_pager_free_chunk(&vm->pager, region);
+    struct elkvm_memory_region *region =  elkvm_region_find(vm, addr);
+    region->used = 0;
+    region->guest_virtual = 0x0;
+    list_remove(vm->mappings, mapping);
+    free(mapping);
+    mapping = NULL;
   }
 
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
     printf("MUNMAP reguested with address: 0x%lx (%p) length: 0x%lx\n",
-        addr_p, addr, length, mapping->mapped_pages);
-    printf("MAPPING %p pages mapped: %u\n", mapping, mapping->mapped_pages);
-    if(mapping->mapped_pages == 0) {
-      printf("MUNMAP handler called for chunk %p\n", mapping);
-      printf("SLOT: %u FLAGS: %u GUEST: 0x%llx SIZE: 0x%llx HOST: 0x%llx\n",
-          region->slot, region->flags, region->guest_phys_addr,
-          region->memory_size, region->userspace_addr);
-      printf("RESULT: %li\n", result);
-      if(result < 0) {
-        printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
-      }
+        addr_p, addr, length);
+    if(mapping != NULL) {
+      printf("MAPPING %p pages mapped: %u\n", mapping, mapping->mapped_pages);
     }
     printf("=================================\n");
   }
 
   return 0;
 
-//  if(result < 0) {
-//    return result;
-//  }
-//
-//
-//  return err;
 }
 
 long elkvm_do_brk(struct kvm_vm *vm) {
@@ -1359,6 +1333,10 @@ long elkvm_do_ftruncate(struct kvm_vm *vm) {
 }
 
 long elkvm_do_getdents(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_getcwd(struct kvm_vm *vm) {
   if(vm->syscall_handlers->getcwd == NULL) {
     printf("GETCWD handler not found\n");
     return -ENOSYS;
@@ -1393,10 +1371,6 @@ long elkvm_do_getdents(struct kvm_vm *vm) {
   } else {
     return buf_p;
   }
-}
-
-long elkvm_do_getcwd(struct kvm_vm *vm) {
-  return -ENOSYS;
 }
 
 long elkvm_do_chdir(struct kvm_vm *vm) {

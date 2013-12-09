@@ -12,7 +12,7 @@ int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
 		return -EIO;
 	}
 
-	struct elkvm_memory_region *pts_region = elkvm_region_create(vm, 0x400000);
+	struct elkvm_memory_region *pts_region = elkvm_region_create(vm, ELKVM_PAGER_MEMSIZE);
 	if(pts_region == NULL) {
 		return -ENOMEM;
 	}
@@ -295,8 +295,10 @@ int kvm_pager_map_region(struct kvm_pager *pager, void *host_start_p,
   /* calc offset in that pt */
   off_t offset = (guest_addr & 0x1FF000) >> 12;
   /* calc amount of pages left in that pt */
+  assert(offset <= 512);
   unsigned pages_remaining = 512 - offset;
 
+  assert(pages < (512*512));
   while(pages) {
     uint64_t *pt_base = kvm_pager_page_table_walk(pager, guest_pt_base_addr, opts, 1);
     uint64_t *pt_entry = pt_base + offset;
