@@ -232,7 +232,7 @@ long elkvm_do_read(struct kvm_vm *vm) {
   assert(buf_p != 0x0);
 	buf = kvm_pager_get_host_p(&vm->pager, buf_p);
 
-  uint64_t bend_p = buf + count - 1;
+  uint64_t bend_p = buf_p + count - 1;
   void *bend = kvm_pager_get_host_p(&vm->pager, bend_p);
   long result = 0;
 
