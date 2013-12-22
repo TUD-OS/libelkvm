@@ -248,6 +248,8 @@ long elkvm_do_read(struct kvm_vm *vm) {
       struct elkvm_memory_region *region = NULL;
       region = elkvm_region_find(vm, host_begin_mark);
       assert(region != NULL);
+      assert(region->lc == NULL);
+      assert(region->rc == NULL);
       if(mark_p != buf_p) {
         assert(host_begin_mark == region->host_base_p);
       }
@@ -257,6 +259,13 @@ long elkvm_do_read(struct kvm_vm *vm) {
 
       size_t newcount = host_end_mark - host_begin_mark;
       long result = vm->syscall_handlers->read((int)fd, host_begin_mark, newcount);
+      if(vm->debug) {
+        printf("\n============ LIBELKVM ===========\n");
+        printf("READ from fd: %i with size 0x%lx of 0x%lx buf 0x%lx (%p)\n",
+            (int)fd, newcount, count, buf_p, buf);
+        printf("RESULT %li (0x%lx)\n", result,result);
+        printf("=================================\n");
+      }
 
       mark_p += result;
       current_count -= result;
