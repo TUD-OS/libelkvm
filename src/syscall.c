@@ -232,7 +232,8 @@ long elkvm_do_read(struct kvm_vm *vm) {
   assert(buf_p != 0x0);
 	buf = kvm_pager_get_host_p(&vm->pager, buf_p);
 
-  void *bend = buf + count - 1;
+  uint64_t bend_p = buf + count - 1;
+  void *bend = kvm_pager_get_host_p(&vm->pager, bend_p);
   long result = 0;
 
   struct region_mapping *mapping = elkvm_mapping_find(vm, buf);
