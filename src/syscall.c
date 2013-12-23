@@ -1413,18 +1413,18 @@ long elkvm_do_getcwd(struct kvm_vm *vm) {
   char *result = vm->syscall_handlers->getcwd(buf, size);
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
-    printf("GETCWD with buf at: %p size %lu\n",
-        buf, size);
-    printf("RESULT: %p\n", result);
+    printf("GETCWD with buf at: 0x%lx (%p) size %lu\n",
+        buf_p, buf, size);
+    printf("RESULT: %p (%s)\n", result, result);
     if(result < 0) {
       printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
     }
     printf("=================================\n");
   }
   if(result == NULL) {
-    return 0;
+    return errno;
   } else {
-    return buf_p;
+    return 0;
   }
 }
 
