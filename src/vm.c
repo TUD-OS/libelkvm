@@ -259,15 +259,13 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 	}
 
 	/* for now the region to hold env etc. will be 12 pages large */
-	struct elkvm_memory_region *env_region = elkvm_region_create(vm, 0x12000);
-	env_region->guest_virtual = LINUX_64_STACK_BASE -
-		env_region->region_size;
+	vm->env_region = elkvm_region_create(vm, 0x12000);
+  assert(vm->env_region != NULL);
+	vm->env_region->guest_virtual = LINUX_64_STACK_BASE -
+		vm->env_region->region_size;
 
-	/* get a page for the stack, this is expanded as needed */
-	vm->current_user_stack = elkvm_region_create(vm, ELKVM_PAGESIZE);
-  assert(vm->current_user_stack != NULL);
-	vm->current_user_stack->guest_virtual = env_region->guest_virtual;
-	vm->current_user_stack->grows_downward = 1;
+	/* get memory for the stack, this is expanded as needed */
+  expand_stack(vm, vcpu);
 
 	/* get a frame for the kernel (interrupt) stack */
   /* this is only ONE page large */
@@ -283,16 +281,16 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
   /* as stack grows downward we save it's virtual address at the page afterwards */
   vm->kernel_stack->guest_virtual += ELKVM_PAGESIZE;
 
-	vcpu->regs.rsp = env_region->guest_virtual;
+	vcpu->regs.rsp = vm->env_region->guest_virtual;
 
 	err = kvm_pager_create_mapping(&vm->pager,
-			env_region->host_base_p,
+			vm->env_region->host_base_p,
 			vcpu->regs.rsp, PT_OPT_WRITE);
 	if(err) {
 		return err;
 	}
 
-	void *host_target_p = env_region->host_base_p;
+	void *host_target_p = vm->env_region->host_base_p;
 
   /* TODO put the auxv pointers onto the stack in the correct order */
   /* XXX this breaks, if we do not get the original envp */
@@ -305,12 +303,12 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
   Elf64_auxv_t *auxv = (Elf64_auxv_t *)auxv_p;
   int i;
   for(i = 0 ; auxv->a_type != AT_NULL; auxv++, i++);
-  int bytes = elkvm_push_auxv(vm, env_region, auxv, i);
+  int bytes = elkvm_push_auxv(vm, vm->env_region, auxv, i);
   int bytes_total = bytes;
 
   elkvm_pushq(vm, vcpu, 0);
 	bytes = elkvm_copy_and_push_str_arr_p(vm,
-      env_region, bytes,
+      vm->env_region, bytes,
       opts->environ);
   bytes_total = bytes_total + bytes;
 	elkvm_pushq(vm, vcpu, 0);
@@ -318,7 +316,7 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 
 	/* followed by argv pointers */
 	bytes = elkvm_copy_and_push_str_arr_p(vm,
-      env_region, bytes,
+      vm->env_region, bytes,
       opts->argv);
   bytes_total = bytes_total + bytes;
   assert(bytes > 0);
