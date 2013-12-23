@@ -618,8 +618,14 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
   struct region_mapping *mapping = elkvm_mapping_find(vm, addr);
 
   unsigned pages = pages_from_size(length);
-  err = kvm_pager_unmap_region(&vm->pager, addr_p, pages);
-  assert(err == 0);
+  //TODO use kvm_pager_unmap_region here again!
+  uint64_t cur_addr_p = addr_p;
+  while(pages) {
+    err = kvm_pager_destroy_mapping(&vm->pager, cur_addr_p);
+    assert(err == 0);
+    cur_addr_p+=ELKVM_PAGESIZE;
+    pages--;
+  }
   mapping->mapped_pages -= pages;
   if(chunk == &vm->pager.system_chunk) {
     printf("WARNING munmap on chunk in system_chunk called!\n");
