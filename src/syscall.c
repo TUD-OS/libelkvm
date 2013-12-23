@@ -1950,6 +1950,22 @@ long elkvm_do_futex(struct kvm_vm *vm) {
 
 }
 
+long elkvm_do_clock_settime(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_clock_gettime(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_clock_getres(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_clock_nanosleep(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
 long elkvm_do_exit_group(struct kvm_vm *vm) {
   uint64_t status = 0;
   int err = elkvm_syscall1(vm, vm->vcpus->vcpu, &status);

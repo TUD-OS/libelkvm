@@ -167,6 +167,10 @@ long elkvm_do_gettid(struct kvm_vm *vm);
 long elkvm_do_time(struct kvm_vm *);
 long elkvm_do_futex(struct kvm_vm *vm);
 /* ... */
+long elkvm_do_clock_settime(struct kvm_vm *);
+long elkvm_do_clock_gettime(struct kvm_vm *);
+long elkvm_do_clock_getres(struct kvm_vm *);
+long elkvm_do_clock_nanosleep(struct kvm_vm *);
 long elkvm_do_exit_group(struct kvm_vm *);
 long elkvm_do_epoll_wait(struct kvm_vm *);
 long elkvm_do_epoll_ctl(struct kvm_vm *);
@@ -314,9 +318,13 @@ static struct {
   [__NR_time]       = { elkvm_do_time, "TIME" },
   [__NR_futex]      = { elkvm_do_futex, "FUTEX" },
   /* ... */
-  [__NR_exit_group] = { elkvm_do_exit_group, "EXIT GROUP" },
-  [__NR_epoll_wait] = { elkvm_do_epoll_wait, "EPOLL WAIT" },
-  [__NR_epoll_ctl]  = { elkvm_do_epoll_ctl, "EPOLL CTL" },
-  [__NR_tgkill]     = { elkvm_do_tgkill, "TGKILL" },
+  [__NR_clock_settime]   = { elkvm_do_clock_settime, "CLOCK SETTIME" },
+  [__NR_clock_gettime]   = { elkvm_do_clock_gettime, "CLOCK GETTIME" },
+  [__NR_clock_getres]    = { elkvm_do_clock_getres, "CLOCK GETRES" },
+  [__NR_clock_nanosleep] = { elkvm_do_clock_nanosleep, "CLOCK NANOSLEEP" },
+  [__NR_exit_group]      = { elkvm_do_exit_group, "EXIT GROUP" },
+  [__NR_epoll_wait]      = { elkvm_do_epoll_wait, "EPOLL WAIT" },
+  [__NR_epoll_ctl]       = { elkvm_do_epoll_ctl, "EPOLL CTL" },
+  [__NR_tgkill]          = { elkvm_do_tgkill, "TGKILL" },
 };
 
