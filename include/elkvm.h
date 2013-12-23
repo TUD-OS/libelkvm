@@ -52,6 +52,7 @@ struct kvm_vm {
 	struct elkvm_memory_region *gdt_region;
 	struct elkvm_memory_region *idt_region;
   struct elkvm_memory_region *current_user_stack;
+  struct elkvm_memory_region *env_region;
 
   struct elkvm_signals sigs;
   struct elkvm_flat *sighandler_cleanup;
