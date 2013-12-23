@@ -1955,7 +1955,33 @@ long elkvm_do_clock_settime(struct kvm_vm *vm) {
 }
 
 long elkvm_do_clock_gettime(struct kvm_vm *vm) {
-  return -ENOSYS;
+  if(vm->syscall_handlers->clock_gettime == NULL) {
+    printf("CLOCK GETTIME handler not found\n");
+    return -ENOSYS;
+  }
+
+  uint64_t clk_id = 0x0;
+  uint64_t tp_p = 0x0;
+  struct timespec *tp = NULL;
+
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  assert(vcpu != NULL);
+
+  int err = elkvm_syscall2(vm, vcpu, &clk_id, &tp_p);
+  assert(tp_p != 0x0);
+
+  tp = kvm_pager_get_host_p(&vm->pager, tp_p);
+  assert(tp != NULL);
+
+  long result = vm->syscall_handlers->clock_gettime(clk_id, tp);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("CLOCK GETTIME with clk_id %li tp 0x%lx (%p)\n",
+        clk_id, tp_p, tp);
+    printf("RESULT: %li\n", result);
+    printf("=================================\n");
+  }
+  return result;
 }
 
 long elkvm_do_clock_getres(struct kvm_vm *vm) {
