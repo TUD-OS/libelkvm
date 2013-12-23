@@ -263,6 +263,12 @@ long elkvm_do_read(struct kvm_vm *vm) {
       }
 
       long in_result = vm->syscall_handlers->read((int)fd, host_begin_mark, newcount);
+      if(in_result < 0) {
+        return errno;
+      }
+      if(in_result < newcount) {
+        return result + in_result;
+      }
       if(vm->debug) {
         printf("\n============ LIBELKVM ===========\n");
         printf("READ from fd: %i with size 0x%lx of 0x%lx buf 0x%lx (%p)\n",
