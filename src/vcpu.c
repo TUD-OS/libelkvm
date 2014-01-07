@@ -8,6 +8,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
+#include "debug.h"
 #include <elkvm.h>
 #include <gdt.h>
 #include <idt.h>

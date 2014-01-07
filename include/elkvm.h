@@ -112,6 +112,15 @@ struct elkvm_handlers {
   long (*clock_gettime) (clockid_t clk_id, struct timespec *tp);
   void (*exit_group) (int status);
   long (*tgkill)(int tgid, int tid, int sig);
+
+  /* ELKVM debug callbacks */
+
+  /*
+   * called after a breakpoint has been hit, should return 1 to abort the program
+   * 0 otherwise, if this is set to NULL elkvm will execute a simple debug shell
+   */
+  int (*bp_callback)(struct kvm_vm *vm);
+
 };
 
 /*

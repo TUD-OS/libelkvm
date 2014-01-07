@@ -39,7 +39,13 @@ int elkvm_handle_debug(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
     }
   }
 
-  int abort = elkvm_debug_shell(vm);
+  int abort = 0;
+  if(vm->syscall_handlers->bp_callback != NULL) {
+    abort = vm->syscall_handlers->bp_callback(vm);
+  } else {
+    abort = elkvm_debug_shell(vm);
+  }
+
   if(abort) {
     return -1;
   }
