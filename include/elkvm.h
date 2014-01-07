@@ -83,7 +83,7 @@ struct elkvm_handlers {
   long (*pipe) (int pipefd[2]);
   long (*dup) (int oldfd);
   /* ... */
-  long (*nanosleep)(struct timespec *req, struct timespec *rem);
+  long (*nanosleep)(const struct timespec *req, struct timespec *rem);
   long (*getpid)(void);
   /* ... */
   long (*getuid)(void);
