@@ -161,6 +161,8 @@ long elkvm_do_rt_sigqueueinfo(struct kvm_vm *);
 long elkvm_do_rt_sigsuspend(struct kvm_vm *);
 /* ... */
 long elkvm_do_arch_prctl(struct kvm_vm *);
+long elkvm_do_adjtimex(struct kvm_vm *vm);
+long elkvm_do_setrlimit(struct kvm_vm *vm);
 /* ... */
 long elkvm_do_gettid(struct kvm_vm *vm);
 /* ... */
@@ -312,6 +314,8 @@ static struct {
   [__NR_rt_sigsuspend]   = { elkvm_do_rt_sigsuspend, "RT SIGSUSPEND" },
   /* ... */
   [__NR_arch_prctl] = { elkvm_do_arch_prctl, "ARCH PRCTL" },
+  [__NR_adjtimex]   = { elkvm_do_adjtimex, "ADJTIMEX" },
+  [__NR_setrlimit]  = { elkvm_do_setrlimit, "SETRLIMIT" },
   /* ... */
   [__NR_gettid]     = { elkvm_do_gettid, "GETTID" },
   /* ... */

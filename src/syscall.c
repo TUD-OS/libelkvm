@@ -4,6 +4,7 @@
 #include <asm/prctl.h>
 #include <sys/mman.h>
 #include <sys/prctl.h>
+#include <sys/resource.h>
 #include <unistd.h>
 
 #include <elkvm.h>
@@ -1627,11 +1628,60 @@ long elkvm_do_gettimeofday(struct kvm_vm *vm) {
 }
 
 long elkvm_do_getrlimit(struct kvm_vm *vm) {
-  return -ENOSYS;
+  uint64_t resource = 0x0;
+  uint64_t rlim_p = 0x0;
+  struct rlimit *rlim = NULL;
+
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  int err = elkvm_syscall2(vm, vcpu, &resource, &rlim_p);
+  if(err) {
+    return err;
+  }
+
+  assert(rlim_p != 0x0);
+  rlim = kvm_pager_get_host_p(&vm->pager, rlim_p);
+
+  memcpy(rlim, &vm->rlimits[resource], sizeof(struct rlimit));
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("GETRLIMIT with resource: %li rlim: 0x%lx (%p)\n",
+        resource, rlim_p, rlim);
+    printf("=================================\n");
+  }
+
+  return 0;
 }
 
 long elkvm_do_getrusage(struct kvm_vm *vm) {
-  return -ENOSYS;
+  if(vm->syscall_handlers->getrusage == NULL) {
+    printf("GETRUSAGE handler not found\n");
+    return -ENOSYS;
+  }
+
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+
+  uint64_t who = 0;
+  uint64_t usage_p = 0x0;
+  struct rusage *usage = NULL;
+
+  int err = elkvm_syscall2(vm, vcpu, &who, &usage_p);
+  if(err) {
+    return err;
+  }
+
+  assert(usage_p != 0x0);
+  assert(who == RUSAGE_SELF);
+
+  usage = kvm_pager_get_host_p(&vm->pager, usage_p);
+
+  long result = vm->syscall_handlers->getrusage(who, usage);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("RUSAGE with who: %li usage: %p (0x%lx)\n",
+        who, usage, usage_p);
+    printf("=================================\n");
+  }
+  return result;
 }
 
 long elkvm_do_sysinfo(struct kvm_vm *vm) {
@@ -1852,6 +1902,14 @@ long elkvm_do_arch_prctl(struct kvm_vm *vm) {
   }
 
   return 0;
+}
+
+long elkvm_do_adjtimex(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_setrlimit(struct kvm_vm *vm) {
+  return -ENOSYS;
 }
 
 long elkvm_do_gettid(struct kvm_vm *vm) {
