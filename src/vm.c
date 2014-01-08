@@ -18,7 +18,8 @@
 #include <vcpu.h>
 #include <elkvm.h>
 
-int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus, int memory_size, struct elkvm_handlers *handlers) {
+int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus,
+    int memory_size, const struct elkvm_handlers *handlers) {
 	int err = 0;
 
 	if(opts->fd <= 0) {

@@ -31,9 +31,6 @@ int elkvm_handle_debug(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
     vcpu->debug.control |= KVM_GUESTDBG_SINGLESTEP;
     elkvm_set_guest_debug(vcpu);
 
-    printf("Hit Breakpoint %p (rip: 0x%lx) the %ith time\n",
-        bp, bp->guest_virtual_addr, bp->count);
-
     if(bp->count <= bp->ignore_count) {
       return 0;
     }
@@ -134,13 +131,15 @@ int elkvm_debug_shell(struct kvm_vm *vm) {
       case 'h':
         printf("\ta\tAbort execution and exit shell\n");
         printf("\tx\tExit Shell and resume execution\n");
-        printf("\tr\tDump registers\n");
+        printf("\tr\tDump registers, stack and code\n");
         printf("\ts\tStep to the next instruction\n");
         break;
       case 'a':
         return 1;
       case 'r':
         kvm_vcpu_dump_regs(vcpu);
+        elkvm_dump_stack(vcpu->vm, vcpu);
+			  kvm_vcpu_dump_code(vcpu);
         break;
       case 's':
         elkvm_debug_singlestep(vcpu);

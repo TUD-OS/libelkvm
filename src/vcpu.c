@@ -487,7 +487,6 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
         is_running = 0;
 				break;
 			case KVM_EXIT_DEBUG:
-				fprintf(stderr, "KVM_EXIT_DEBUG\n");
         err = elkvm_handle_debug(vcpu->vm, vcpu);
         if(err) {
           is_running = 0;
@@ -525,7 +524,6 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 		}
 
 		if(	vcpu->singlestep ||
-        vcpu->run_struct->exit_reason == KVM_EXIT_DEBUG ||
         vcpu->run_struct->exit_reason == KVM_EXIT_MMIO ||
 				vcpu->run_struct->exit_reason == KVM_EXIT_SHUTDOWN) {
 			kvm_vcpu_dump_regs(vcpu);

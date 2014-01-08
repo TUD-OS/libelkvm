@@ -131,7 +131,7 @@ struct elkvm_handlers {
 	Return 0 on success, -1 on error
 */
 int kvm_vm_create(struct elkvm_opts *, struct kvm_vm *, int, int, int,
-		struct elkvm_handlers *);
+		const struct elkvm_handlers *);
 
 /*
  * \brief Put the VM in debug mode
