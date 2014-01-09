@@ -5,6 +5,7 @@
 #include <sys/mman.h>
 #include <sys/prctl.h>
 #include <sys/resource.h>
+#include <sys/times.h>
 #include <unistd.h>
 
 #include <elkvm.h>
@@ -1689,7 +1690,42 @@ long elkvm_do_sysinfo(struct kvm_vm *vm) {
 }
 
 long elkvm_do_times(struct kvm_vm *vm) {
-  return -ENOSYS;
+  if(vm->syscall_handlers->times == NULL) {
+    printf("TIMES handler not found\n");
+    return -ENOSYS;
+  }
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+
+  uint64_t buf_p = 0x0;
+  struct tms *buf = NULL;
+
+  int err = elkvm_syscall1(vm, vcpu, &buf_p);
+  if(err) {
+    return err;
+  }
+  assert(buf_p != 0x0);
+
+  buf = kvm_pager_get_host_p(&vm->pager, buf_p);
+  assert(buf != NULL);
+
+  long result = vm->syscall_handlers->times(buf);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("TIMES with buf: 0x%lx (%p)\n",
+        buf_p, buf);
+    printf("Result: %li\n", result);
+    if(result >= 0) {
+      printf("utime: %li stime: %li cutime: %li cstime: %li\n",
+          buf->tms_utime, buf->tms_stime, buf->tms_cutime, buf->tms_cstime);
+    }
+    printf("=================================\n");
+  }
+
+  if(result == -1) {
+    return -errno;
+  } else {
+    return result;
+  }
 }
 
 long elkvm_do_ptrace(struct kvm_vm *vm) {

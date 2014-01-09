@@ -8,6 +8,7 @@ extern "C" {
 #include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/times.h>
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <sys/utsname.h>
@@ -105,6 +106,8 @@ struct elkvm_handlers {
   /* ... */
   long (*gettimeofday) (struct timeval *tv, struct timezone *tz);
   long (*getrusage) (int who, struct rusage *usage);
+  /* ... */
+  long (*times) (struct tms *buf);
   /* ... */
   long (*gettid)(void);
   /* ... */
