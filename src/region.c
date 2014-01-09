@@ -80,7 +80,7 @@ int elkvm_region_free(struct kvm_vm *vm, struct elkvm_memory_region *region) {
   region->guest_virtual = 0x0;
   region->used = 0;
   region->grows_downward = 0;
-  //memset(region->host_base_p, 0, region->region_size);
+  memset(region->host_base_p, 0, region->region_size);
 
   return 0;
 }
