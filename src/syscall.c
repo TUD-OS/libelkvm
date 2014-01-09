@@ -545,7 +545,10 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   assert(mapping != NULL);
 
   struct elkvm_memory_region *region = elkvm_region_create(vm, length);
-  assert(region != NULL);
+  if(region == NULL) {
+    return -ENOMEM;
+  }
+
   mapping->host_p = region->host_base_p;
   mapping->length = length;
   mapping->mapped_pages = pages_from_size(length);
