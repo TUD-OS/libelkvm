@@ -1969,6 +1969,7 @@ long elkvm_do_gettid(struct kvm_vm *vm) {
 
 long elkvm_do_time(struct kvm_vm *vm) {
   if(vm->syscall_handlers->time == NULL) {
+    printf("TIME handler not found\n");
     return -ENOSYS;
   }
 
