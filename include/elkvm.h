@@ -45,7 +45,7 @@ struct kvm_vm {
 	struct kvm_pager pager;
 	int run_struct_size;
   list(struct elkvm_memory_region *, root_region);
-	struct elkvm_handlers *syscall_handlers;
+	const struct elkvm_handlers *syscall_handlers;
   list(struct region_mapping *, mappings);
 
 	struct elkvm_memory_region *text;
