@@ -392,9 +392,14 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 
 int kvm_vcpu_run(struct kvm_vcpu *vcpu) {
 	int err = ioctl(vcpu->fd, KVM_RUN, 0);
-	if (err < 0 && (errno != EINTR && errno != EAGAIN)) {
-    fprintf(stderr, "ERROR running VCPU No: %i Msg: %s\n", errno, strerror(errno));
-		return -1;
+  if(err != 0) {
+    if(errno == EINTR) {
+      fprintf(stderr, "VM interrupted by signal\n");
+      return -EINTR;
+    } else if(errno != EAGAIN) {
+      fprintf(stderr, "ERROR running VCPU No: %i Msg: %s\n", errno, strerror(errno));
+      return -1;
+    }
 	}
 
 	return 0;
