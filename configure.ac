@@ -1,7 +1,7 @@
 #Prelude
 AC_INIT([libelkvm],[0.1],[florian.pester@tu-dresden.de])
 AM_PROG_AR
-AM_INIT_AUTOMAKE([foreign -Wall -Werror 1.9.6])
+AM_INIT_AUTOMAKE([foreign -Wall -Werror 1.9.6 subdir-objects])
 AC_CONFIG_MACRO_DIR([m4])
 
 #Check for programs
