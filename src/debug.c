@@ -74,12 +74,13 @@ int elkvm_debug_bp_set(struct kvm_vcpu *vcpu, struct elkvm_sw_bp *bp) {
   return elkvm_set_guest_debug(vcpu);
 }
 
-int elkvm_debug_breakpoint(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t rip) {
+int elkvm_debug_breakpoint(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t rip,
+    int ignore_count) {
   assert(rip != 0x0);
   uint8_t *host_p = (uint8_t *)kvm_pager_get_host_p(&vm->pager, rip);
   assert(host_p != NULL);
 
-  struct elkvm_sw_bp *bp = elkvm_bp_alloc(host_p, rip);
+  struct elkvm_sw_bp *bp = elkvm_bp_alloc(host_p, rip, ignore_count);
   if(bp == NULL) {
     return -ENOMEM;
   }
@@ -92,7 +93,7 @@ int elkvm_debug_breakpoint(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t ri
   return res;
 }
 
-struct elkvm_sw_bp *elkvm_bp_alloc(uint8_t *host_p, uint64_t rip) {
+struct elkvm_sw_bp *elkvm_bp_alloc(uint8_t *host_p, uint64_t rip, int ignore_count) {
   struct elkvm_sw_bp *bp = malloc(sizeof(struct elkvm_sw_bp));
   if(bp == NULL) {
     return NULL;
@@ -102,7 +103,7 @@ struct elkvm_sw_bp *elkvm_bp_alloc(uint8_t *host_p, uint64_t rip) {
   bp->host_addr = host_p;
   bp->orig_inst = *host_p;
   bp->count = 0;
-  bp->ignore_count = 0;
+  bp->ignore_count = ignore_count;
 
   return bp;
 }
