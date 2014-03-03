@@ -739,6 +739,10 @@ long elkvm_do_brk(struct kvm_vm *vm) {
 }
 
 long elkvm_do_sigaction(struct kvm_vm *vm) {
+  if(vm->syscall_handlers->sigaction == NULL) {
+    printf("SIGACTION handler not found\n");
+    return -ENOSYS;
+  }
 
   struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
   uint64_t signum;
@@ -769,7 +773,11 @@ long elkvm_do_sigaction(struct kvm_vm *vm) {
     printf("=================================\n");
 
   }
-  err = elkvm_signal_register(vm, (int)signum, act, oldact);
+
+  if(vm->syscall_handlers->sigaction((int)signum, act, oldact)) {
+    err = elkvm_signal_register(vm, (int)signum, act, oldact);
+  }
+
   return err;
 }
 

@@ -78,6 +78,8 @@ struct elkvm_handlers {
 	long (*mprotect) (void *addr, size_t len, int prot);
 	long (*munmap) (struct region_mapping *mapping);
   /* ... */
+  long (*sigaction) (int signum, const struct sigaction *act,
+      struct sigaction *oldact);
   long (*sigprocmask)(int how, const sigset_t *set, sigset_t *oldset);
   /* ... */
   long (*readv) (int fd, struct iovec *iov, int iovcnt);
@@ -211,7 +213,8 @@ int elkvm_debug_enable(struct kvm_vcpu *vcpu);
  */
 int elkvm_debug_singlestep(struct kvm_vcpu *vcpu);
 
-int elkvm_debug_breakpoint(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t rip);
+int elkvm_debug_breakpoint(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t rip,
+    int ignore_count);
 
 /*
  * Loads an ELF binary into the VM's system_chunk
