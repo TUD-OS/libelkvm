@@ -40,12 +40,6 @@ int elkvm_load_binary(struct kvm_vm *vm, const char *binary) {
 		return -ENOMEM;
 	}
 
-	GElf_Ehdr ehdr;
-
-	if(gelf_getehdr(bin.e, &ehdr) == NULL) {
-		return -EIO;
-	}
-
 	int err = elkvm_loader_check_elf(bin.e);
 	if(err) {
 		return err;
@@ -56,15 +50,25 @@ int elkvm_load_binary(struct kvm_vm *vm, const char *binary) {
 		return err;
 	}
 
-	err = kvm_vcpu_set_rip(vm->vcpus->vcpu, ehdr.e_entry);
-	if(err) {
-		return err;
-	}
-
 	elf_end(bin.e);
 	close(bin.fd);
 
 	return 0;
+}
+
+int elkvm_loader_load_static(struct kvm_vm *vm, struct Elf_binary *bin) {
+	GElf_Ehdr ehdr;
+
+	if(gelf_getehdr(bin->e, &ehdr) == NULL) {
+		return -EIO;
+	}
+
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+	return kvm_vcpu_set_rip(vcpu, ehdr.e_entry);
+}
+
+int elkvm_loader_load_dynamic() {
+
 }
 
 int elkvm_loader_check_elf(Elf *e) {
@@ -121,6 +125,7 @@ int elkvm_loader_parse_program(struct kvm_vm *vm, struct Elf_binary *bin) {
 					return -1;
 				}
 				pt_interp_forbidden = true;
+        //TODO load dynamically
 				continue;
 			case PT_LOAD:
 				pt_interp_forbidden = true;
@@ -137,7 +142,7 @@ int elkvm_loader_parse_program(struct kvm_vm *vm, struct Elf_binary *bin) {
 
 	}
 
-	return 0;
+	return elkvm_loader_load_static(vm, bin);
 }
 
 int elkvm_loader_pt_load(struct kvm_vm *vm, GElf_Phdr phdr, struct Elf_binary *bin) {
