@@ -17,7 +17,7 @@
 
 
 int elkvm_load_binary(struct kvm_vm *vm, const char *binary) {
-	if(binary == "") {
+  if(strcmp(binary, "") == 0) {
 		return -EIO;
 	}
 
