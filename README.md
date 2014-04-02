@@ -1,5 +1,10 @@
 # Install
 
+You need to install the following additional packages in your distribution:
+* google-mock
+* check
+* libgtest-dev
+
 To build ELKVM, start by running:
 
 autogen.sh

@@ -31,7 +31,8 @@ int elkvm_idt_setup(struct kvm_vm *, struct elkvm_flat *);
 void elkvm_idt_dump(struct kvm_vm *);
 void elkvm_idt_dump_isr(struct kvm_vm *, int);
 
-inline uint64_t idt_entry_offset(struct kvm_idt_entry *entry) {
+static inline
+uint64_t idt_entry_offset(struct kvm_idt_entry *entry) {
 		return entry->offset1 | ((uint64_t)entry->offset2 << 16) | 
 			((uint64_t)entry->offset3 << 32);
 }
