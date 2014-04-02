@@ -2,6 +2,7 @@
 #include <fcntl.h>
 #include <gelf.h>
 #include <libelf.h>
+#include <linux/limits.h>
 #include <stdbool.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -45,10 +46,23 @@ int elkvm_load_binary(struct kvm_vm *vm, const char *binary) {
 		return err;
 	}
 
-	err = elkvm_loader_parse_program(vm, &bin);
-	if(err) {
-		return err;
-	}
+  char loader[PATH_MAX];
+	int is_static = elkvm_loader_parse_program(vm, &bin, loader);
+	if(is_static < 0) {
+		return is_static;
+	} else if(is_static == 0) {
+    //dynamic
+    //TODO add ld.so to arguments on stack!
+    err = elkvm_loader_load_dynamic(vm, loader);
+    if(err) {
+      return err;
+    }
+  } else {
+    err = elkvm_loader_load_static(vm, &bin);
+    if(err) {
+      return err;
+    }
+  }
 
 	elf_end(bin.e);
 	close(bin.fd);
@@ -67,8 +81,20 @@ int elkvm_loader_load_static(struct kvm_vm *vm, struct Elf_binary *bin) {
 	return kvm_vcpu_set_rip(vcpu, ehdr.e_entry);
 }
 
-int elkvm_loader_load_dynamic() {
+int elkvm_loader_load_dynamic(struct kvm_vm *vm, const char *loader) {
+  return elkvm_load_binary(vm, loader);
+}
 
+int elkvm_loader_get_dynamic_loader(struct Elf_binary *bin, GElf_Phdr phdr, char *loader) {
+	int off = lseek(bin->fd, phdr.p_offset, SEEK_SET);
+	if(off < 0) {
+		return -errno;
+	}
+
+	size_t bytes = read(bin->fd, loader, phdr.p_memsz);
+  assert(bytes == phdr.p_memsz && "short read on dynamic loader location");
+
+  return 0;
 }
 
 int elkvm_loader_check_elf(Elf *e) {
@@ -92,7 +118,7 @@ int elkvm_loader_check_elf(Elf *e) {
 	return 0;
 }
 
-int elkvm_loader_parse_program(struct kvm_vm *vm, struct Elf_binary *bin) {
+int elkvm_loader_parse_program(struct kvm_vm *vm, struct Elf_binary *bin, char *loader) {
 
 	int err = elf_getphdrnum(bin->e, &bin->phdr_num);
 	if(err) {
@@ -101,12 +127,13 @@ int elkvm_loader_parse_program(struct kvm_vm *vm, struct Elf_binary *bin) {
 
 	bool pt_interp_forbidden = false;
 	bool pt_phdr_forbidden = false;
+  bool is_static = true;
 
 	for(unsigned i = 0; i < bin->phdr_num; i++) {
 		GElf_Phdr phdr;
 		gelf_getphdr(bin->e, i, &phdr);
 
-		/* a program header's memsize may be large than or equal to its filesize */
+		/* a program header's memsize may be larger than or equal to its filesize */
 		if(phdr.p_filesz > phdr.p_memsz) {
 			return -EIO;
 		}
@@ -125,8 +152,8 @@ int elkvm_loader_parse_program(struct kvm_vm *vm, struct Elf_binary *bin) {
 					return -1;
 				}
 				pt_interp_forbidden = true;
-        //TODO load dynamically
-				continue;
+        elkvm_loader_get_dynamic_loader(bin, phdr, loader);
+        return false;
 			case PT_LOAD:
 				pt_interp_forbidden = true;
 				pt_phdr_forbidden = true;

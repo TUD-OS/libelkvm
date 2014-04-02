@@ -23,7 +23,7 @@ int elkvm_load_binary(struct kvm_vm *vm, const char *binary);
 /*
  * Load the Program headers of an ELF binary
 */
-int elkvm_loader_parse_program(struct kvm_vm *, struct Elf_binary *);
+int elkvm_loader_parse_program(struct kvm_vm *, struct Elf_binary *, char *loader);
 
 /*
  * Load a single program header from the ELF binary into the specified buffer
