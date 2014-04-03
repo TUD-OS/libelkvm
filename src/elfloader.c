@@ -119,6 +119,8 @@ int elkvm_loader_check_elf(struct Elf_binary *bin) {
 	if(err) {
 		return -err;
 	}
+
+  bin->static_linkage = true;
 	for(int i = 0; i < phdr_num; i++) {
 		GElf_Phdr phdr;
 		gelf_getphdr(bin->e, i, &phdr);
@@ -130,6 +132,7 @@ int elkvm_loader_check_elf(struct Elf_binary *bin) {
 
 		switch(phdr.p_type) {
 			case PT_INTERP:
+        bin->static_linkage = false;
         bin->loader = malloc(PATH_MAX);
         elkvm_loader_get_dynamic_loader(bin, phdr, bin->loader);
         return 0;
