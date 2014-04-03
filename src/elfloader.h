@@ -18,6 +18,7 @@ struct Elf_binary {
   int elfclass;
   char *loader;
   uint64_t base_addr;
+  uint64_t entry;
 };
 
 /*
