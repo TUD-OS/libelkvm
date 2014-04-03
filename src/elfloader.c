@@ -26,6 +26,7 @@ int elkvm_load_binary(struct kvm_vm *vm, const char *binary) {
 	}
 
 	struct Elf_binary bin;
+  bin.base_addr = 0x0;
 
 	bin.fd = open(binary, O_RDONLY);
 	if(bin.fd < 1) {
@@ -48,7 +49,7 @@ int elkvm_load_binary(struct kvm_vm *vm, const char *binary) {
 
 	err = elkvm_loader_parse_program(vm, &bin);
 	if(bin.static_linkage) {
-    err = elkvm_loader_set_entry(vm, bin.entry);
+    err = elkvm_loader_set_entry(vm, &bin);
   } else {
     err = elkvm_loader_load_dynamic(vm, bin.loader);
   }
@@ -60,7 +61,8 @@ out_close:
 	return err;
 }
 
-int elkvm_loader_set_entry(struct kvm_vm *vm, uint64_t entry) {
+int elkvm_loader_set_entry(struct kvm_vm *vm, struct Elf_binary *bin) {
+  uint64_t entry = bin->shared_obj ? bin->base_addr + bin->entry : bin->entry;
   struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
 	return kvm_vcpu_set_rip(vcpu, entry);
 }
@@ -191,10 +193,16 @@ int elkvm_loader_parse_program(struct kvm_vm *vm, struct Elf_binary *bin) {
 }
 
 int elkvm_loader_pt_load(struct kvm_vm *vm, GElf_Phdr phdr, struct Elf_binary *bin) {
-	uint64_t total_size = phdr.p_memsz + offset_in_page(phdr.p_vaddr);
+  uint64_t load_addr = phdr.p_vaddr;
+  if(bin->shared_obj && phdr.p_vaddr == 0x0) {
+    load_addr = bin->base_addr = 0x7FFFFFF00000;
+  } else if(bin->base_addr > 0x0) {
+    load_addr = bin->base_addr + phdr.p_vaddr;
+  }
+	uint64_t total_size = phdr.p_memsz + offset_in_page(load_addr);
 	struct elkvm_memory_region *loadable_region =
 		elkvm_region_create(total_size);
-  loadable_region->guest_virtual = page_begin(phdr.p_vaddr);
+  loadable_region->guest_virtual = page_begin(load_addr);
 
 	int err = elkvm_loader_load_program_header(bin, phdr, loadable_region);
 	if(err) {
