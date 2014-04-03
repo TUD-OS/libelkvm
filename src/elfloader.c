@@ -41,33 +41,25 @@ int elkvm_load_binary(struct kvm_vm *vm, const char *binary) {
 		return -ENOMEM;
 	}
 
-	int err = elkvm_loader_check_elf(bin.e);
+	int err = elkvm_loader_check_elf(&bin);
 	if(err) {
-		return err;
+    goto out_close;
 	}
 
-  char loader[PATH_MAX];
-	int is_static = elkvm_loader_parse_program(vm, &bin, loader);
-	if(is_static < 0) {
-		return is_static;
-	} else if(is_static == 0) {
+	err = elkvm_loader_parse_program(vm, &bin);
+	if(bin.static_linkage) {
+    err = elkvm_loader_load_static(vm, &bin);
+  } else {
     //dynamic
     //TODO add ld.so to arguments on stack!
-    err = elkvm_loader_load_dynamic(vm, loader);
-    if(err) {
-      return err;
-    }
-  } else {
-    err = elkvm_loader_load_static(vm, &bin);
-    if(err) {
-      return err;
-    }
+    err = elkvm_loader_load_dynamic(vm, bin.loader);
   }
 
+out_close:
 	elf_end(bin.e);
 	close(bin.fd);
 
-	return 0;
+	return err;
 }
 
 int elkvm_loader_load_static(struct kvm_vm *vm, struct Elf_binary *bin) {
@@ -97,28 +89,61 @@ int elkvm_loader_get_dynamic_loader(struct Elf_binary *bin, GElf_Phdr phdr, char
   return 0;
 }
 
-int elkvm_loader_check_elf(Elf *e) {
-	GElf_Ehdr ehdr;
-	if(gelf_getehdr(e, &ehdr) == NULL) {
-		return -1;
-	}
-
-	if(gelf_getehdr(e, &ehdr) == NULL) {
-		return -1;
-	}
+int elkvm_loader_check_elf(struct Elf_binary *bin) {
+	Elf_Kind ek = elf_kind(bin->e);
+  switch(ek) {
+    /* only deal with elf binaries for now */
+    case ELF_K_ELF:
+      break;
+    case ELF_K_AR:
+    case ELF_K_NONE:
+    default:
+      return -EINVAL;
+  }
 
 	/* for now process only 64bit ELF files */
-	int elfclass = gelf_getclass(e);
-	switch(elfclass) {
+	bin->elfclass = gelf_getclass(bin->e);
+	switch(bin->elfclass) {
+    case ELFCLASS64:
+      break;
 		case ELFCLASSNONE:
 		case ELFCLASS32:
-			return -1;
+    default:
+			return -EINVAL;
 	}
+
+	GElf_Ehdr ehdr;
+	if(gelf_getehdr(bin->e, &ehdr) == NULL) {
+		return -EIO;
+	}
+
+  bin->shared_obj = (ehdr.e_type == ET_DYN);
+  size_t phdr_num = 0;
+	int err = elf_getphdrnum(bin->e, &phdr_num);
+	if(err) {
+		return -err;
+	}
+	for(int i = 0; i < phdr_num; i++) {
+		GElf_Phdr phdr;
+		gelf_getphdr(bin->e, i, &phdr);
+
+		/* a program header's memsize may be larger than or equal to its filesize */
+		if(phdr.p_filesz > phdr.p_memsz) {
+			return -EIO;
+		}
+
+		switch(phdr.p_type) {
+			case PT_INTERP:
+        bin->loader = malloc(PATH_MAX);
+        elkvm_loader_get_dynamic_loader(bin, phdr, bin->loader);
+        return 0;
+    }
+  }
 
 	return 0;
 }
 
-int elkvm_loader_parse_program(struct kvm_vm *vm, struct Elf_binary *bin, char *loader) {
+int elkvm_loader_parse_program(struct kvm_vm *vm, struct Elf_binary *bin) {
 
 	int err = elf_getphdrnum(bin->e, &bin->phdr_num);
 	if(err) {
@@ -152,8 +177,7 @@ int elkvm_loader_parse_program(struct kvm_vm *vm, struct Elf_binary *bin, char *
 					return -1;
 				}
 				pt_interp_forbidden = true;
-        elkvm_loader_get_dynamic_loader(bin, phdr, loader);
-        return false;
+        break;
 			case PT_LOAD:
 				pt_interp_forbidden = true;
 				pt_phdr_forbidden = true;

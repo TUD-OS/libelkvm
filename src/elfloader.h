@@ -13,6 +13,11 @@ struct Elf_binary {
 	int fd;
 	Elf *e;
 	size_t phdr_num;
+  bool static_linkage;
+  bool shared_obj;
+  int elfclass;
+  char *loader;
+  uint64_t base_addr;
 };
 
 /*
@@ -23,7 +28,7 @@ int elkvm_load_binary(struct kvm_vm *vm, const char *binary);
 /*
  * Load the Program headers of an ELF binary
 */
-int elkvm_loader_parse_program(struct kvm_vm *, struct Elf_binary *, char *loader);
+int elkvm_loader_parse_program(struct kvm_vm *, struct Elf_binary *);
 
 /*
  * Load a single program header from the ELF binary into the specified buffer
@@ -34,7 +39,7 @@ int elkvm_loader_load_program_header(struct Elf_binary *, GElf_Phdr,
 /*
  * Check for correct ELF headers
 */
-int elkvm_loader_check_elf(Elf *);
+int elkvm_loader_check_elf(struct Elf_binary *);
 
 int elkvm_loader_pt_load(struct kvm_vm *vm, GElf_Phdr phdr, struct Elf_binary *bin);
 GElf_Phdr elkvm_loader_find_data_header(struct Elf_binary *bin);
