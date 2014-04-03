@@ -48,10 +48,8 @@ int elkvm_load_binary(struct kvm_vm *vm, const char *binary) {
 
 	err = elkvm_loader_parse_program(vm, &bin);
 	if(bin.static_linkage) {
-    err = elkvm_loader_load_static(vm, &bin);
+    err = elkvm_loader_set_entry(vm, bin.entry);
   } else {
-    //dynamic
-    //TODO add ld.so to arguments on stack!
     err = elkvm_loader_load_dynamic(vm, bin.loader);
   }
 
@@ -62,18 +60,13 @@ out_close:
 	return err;
 }
 
-int elkvm_loader_load_static(struct kvm_vm *vm, struct Elf_binary *bin) {
-	GElf_Ehdr ehdr;
-
-	if(gelf_getehdr(bin->e, &ehdr) == NULL) {
-		return -EIO;
-	}
-
+int elkvm_loader_set_entry(struct kvm_vm *vm, uint64_t entry) {
   struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
-	return kvm_vcpu_set_rip(vcpu, ehdr.e_entry);
+	return kvm_vcpu_set_rip(vcpu, entry);
 }
 
 int elkvm_loader_load_dynamic(struct kvm_vm *vm, const char *loader) {
+  //TODO add ld.so to arguments on stack!
   return elkvm_load_binary(vm, loader);
 }
 
@@ -118,6 +111,7 @@ int elkvm_loader_check_elf(struct Elf_binary *bin) {
 	}
 
   bin->shared_obj = (ehdr.e_type == ET_DYN);
+  bin->entry = ehdr.e_entry;
   size_t phdr_num = 0;
 	int err = elf_getphdrnum(bin->e, &phdr_num);
 	if(err) {
@@ -193,7 +187,7 @@ int elkvm_loader_parse_program(struct kvm_vm *vm, struct Elf_binary *bin) {
 
 	}
 
-  return true;
+  return 0;
 }
 
 int elkvm_loader_pt_load(struct kvm_vm *vm, GElf_Phdr phdr, struct Elf_binary *bin) {
