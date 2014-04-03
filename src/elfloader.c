@@ -174,7 +174,7 @@ int elkvm_loader_parse_program(struct kvm_vm *vm, struct Elf_binary *bin) {
 				continue;
 			case PT_INTERP:
 				if(pt_interp_forbidden) {
-					return -1;
+					return -EINVAL;
 				}
 				pt_interp_forbidden = true;
         break;
@@ -185,7 +185,7 @@ int elkvm_loader_parse_program(struct kvm_vm *vm, struct Elf_binary *bin) {
 				break;
 			case PT_PHDR:
 				if(pt_phdr_forbidden) {
-					return -1;
+					return -EINVAL;
 				}
 				pt_phdr_forbidden = true;
 				break;
@@ -193,7 +193,7 @@ int elkvm_loader_parse_program(struct kvm_vm *vm, struct Elf_binary *bin) {
 
 	}
 
-	return elkvm_loader_load_static(vm, bin);
+  return true;
 }
 
 int elkvm_loader_pt_load(struct kvm_vm *vm, GElf_Phdr phdr, struct Elf_binary *bin) {
