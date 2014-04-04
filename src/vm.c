@@ -261,6 +261,11 @@ int elkvm_cleanup(struct elkvm_opts *opts) {
 	return 0;
 }
 
+      case AT_BASE:
+        /*
+         * AT_BASE points to the base address of the dynamic linker
+         * this may be nonsense for statically linked binaries
+         */
 int elkvm_chunk_remap(struct kvm_vm *vm, int num, uint64_t newsize) {
   struct kvm_userspace_memory_region *chunk = NULL;
   if(num == 0) {
