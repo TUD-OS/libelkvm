@@ -19,7 +19,7 @@
 #include <elkvm.h>
 
 int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus,
-    int memory_size, const struct elkvm_handlers *handlers) {
+    int memory_size, const struct elkvm_handlers *handlers, const char *binary) {
 	int err = 0;
 
 	if(opts->fd <= 0) {
@@ -52,6 +52,11 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 	if(err) {
 		return err;
 	}
+
+  err = elkvm_load_binary(vm, binary);
+  if(err) {
+    return err;
+  }
 
 	err = elkvm_initialize_stack(opts, vm);
 	if(err) {

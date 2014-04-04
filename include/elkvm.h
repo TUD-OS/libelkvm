@@ -138,7 +138,7 @@ struct elkvm_handlers {
 	Return 0 on success, -1 on error
 */
 int kvm_vm_create(struct elkvm_opts *, struct kvm_vm *, int, int, int,
-		const struct elkvm_handlers *);
+		const struct elkvm_handlers *, const char *binary);
 
 /*
  * \brief Put the VM in debug mode
@@ -149,11 +149,6 @@ int elkvm_set_debug(struct kvm_vm *);
  * Setup the addresses of the system regions
  */
 int elkvm_region_setup(struct kvm_vm *vm);
-
-/*
-	Load an ELF binary, given by the filename into the VM
-*/
-int kvm_vm_load_binary(struct kvm_vm *, const char *);
 
 /*
 	Writes the state of the VM to a given file descriptor
@@ -217,11 +212,6 @@ int elkvm_debug_singlestep(struct kvm_vcpu *vcpu);
 
 int elkvm_debug_breakpoint(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t rip,
     int ignore_count);
-
-/*
- * Loads an ELF binary into the VM's system_chunk
-*/
-int elkvm_load_binary(struct kvm_vm *vm, const char *binary);
 
 #ifdef __cplusplus
 }

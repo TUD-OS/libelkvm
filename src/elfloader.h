@@ -16,6 +16,11 @@ struct Elf_binary {
 };
 
 /*
+ * Loads an ELF binary into the VM's system_chunk
+*/
+int elkvm_load_binary(struct kvm_vm *vm, const char *binary);
+
+/*
  * Load the Program headers of an ELF binary
 */
 int elkvm_loader_parse_program(struct kvm_vm *, struct Elf_binary *);
