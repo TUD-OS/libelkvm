@@ -223,6 +223,7 @@ int elkvm_loader_pt_load(struct kvm_vm *vm, GElf_Phdr phdr, struct Elf_binary *b
   int pages = pages_from_size(total_size);
   err = elkvm_pager_map_region(&vm->pager, loadable_region->host_base_p,
       loadable_region->guest_virtual, pages, opts);
+  assert(err == 0 && "could not create pt entries for loadable region");
 
 	if(phdr.p_flags & PF_X) {
 		/* executable region should be text */
