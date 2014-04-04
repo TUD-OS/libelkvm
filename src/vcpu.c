@@ -246,7 +246,7 @@ int kvm_vcpu_set_msr(struct kvm_vcpu *vcpu, uint32_t index, uint64_t data) {
 
 	int err = ioctl(vcpu->fd, KVM_SET_MSRS, msr);
 	free(msr);
-	if(err) {
+	if(err < 0) {
 		return -errno;
 	}
 
