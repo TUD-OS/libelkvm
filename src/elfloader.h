@@ -5,6 +5,8 @@
 
 #include "elkvm.h"
 
+#define LD_LINUX_SO_BASE 0x7FFFF0000000
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -17,7 +19,6 @@ struct Elf_binary {
   bool shared_obj;
   int elfclass;
   char *loader;
-  uint64_t base_addr;
   uint64_t entry;
 };
 
@@ -40,7 +41,7 @@ int elkvm_loader_load_program_header(struct Elf_binary *, GElf_Phdr,
 /*
  * Check for correct ELF headers
 */
-int elkvm_loader_check_elf(struct Elf_binary *);
+int elkvm_loader_check_elf(struct kvm_vm *, struct Elf_binary *);
 
 int elkvm_loader_pt_load(struct kvm_vm *vm, GElf_Phdr phdr, struct Elf_binary *bin);
 GElf_Phdr elkvm_loader_find_data_header(struct Elf_binary *bin);
