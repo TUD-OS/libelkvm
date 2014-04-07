@@ -450,21 +450,15 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 
-	err = kvm_vm_create(&elkvm, &vm, VM_MODE_X86_64, 1, 1024*1024, &example_handlers);
-	if(err) {
-		printf("ERROR creating VM errno: %i Msg: %s\n", -err, strerror(-err));
-		return -1;
-	}
 
 //  printf("LOADING binary %s with %i opts\n", binary, binargc);
 //  for(int i = 0; i < binargc; i++) {
 //    printf("binargv[%i] %s\n", i, binargv[i]);
 //  }
 
-	err = elkvm_load_binary(&vm, binary);
+	err = kvm_vm_create(&elkvm, &vm, VM_MODE_X86_64, 1, 1024*1024, &example_handlers, binary);
 	if(err) {
-		printf("ERROR loading binary %s\n", binary);
-    printf("Errno %i Msg: %s\n", -err, strerror(-err));
+		printf("ERROR creating VM errno: %i Msg: %s\n", -err, strerror(-err));
 		return -1;
 	}
 
