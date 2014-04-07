@@ -41,6 +41,7 @@ int elkvm_set_guest_debug(struct kvm_vcpu *vcpu) {
 }
 
         printf("\tp <addr>\tPrint String at Address\n");
+        printf("\tq\tQuit guest binary\n");
         printf("Be CAREFUL with your inputs, this doesn't really verify ANYTHING!\n");
         break;
       case 'p':
