@@ -32,6 +32,8 @@ extern "C" {
 #define RES_PATH _PREFIX_ "/share/libelkvm"
 #endif
 
+typedef uint64_t guestptr_t;
+
 struct region_mapping {
   void *host_p;
   uint64_t guest_virt;
