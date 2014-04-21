@@ -20,3 +20,4 @@ struct elkvm_sw_bp *elkvm_bp_alloc(uint8_t *host_p, uint64_t rip, int ignore_cou
 
 int elkvm_debug_shell(struct kvm_vm *vm);
 
+int elkvm_gdbstub_init(struct kvm_vm *vm);
