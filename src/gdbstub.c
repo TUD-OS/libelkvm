@@ -104,7 +104,7 @@ static void put_reply(const char* buffer)
   unsigned char csum;
   int i;
 
-  printf("put_buffer '%s'", buffer);
+  printf("put_buffer '%s'\n", buffer);
 
   do {
     put_debug_char('$');
@@ -422,12 +422,13 @@ static void debug_loop(struct kvm_vm *vm) {
   char obuf[1024];
   int ne = 0;
   Bit8u mem[255];
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
 
   while (ne == 0)
   {
     //SIM->get_param_bool(BXPN_MOUSE_ENABLED)->set(0);
     get_command(buffer);
-    printf("get_buffer '%s'", buffer);
+    printf("get_buffer '%s'\n", buffer);
 
     // At a minimum, a stub is required to support the ‘g’ and ‘G’
     // commands for register access,
@@ -449,7 +450,6 @@ static void debug_loop(struct kvm_vm *vm) {
         char buf[255];
         guestptr_t new_eip;
 
-        struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
         if (buffer[1] != 0) {
           new_eip = (guestptr_t) atoi(buffer + 1);
 
@@ -461,7 +461,6 @@ static void debug_loop(struct kvm_vm *vm) {
         }
 
         stub_trace_flag = 0;
-        //XXX maybe call vcpu_run here!
         kvm_vcpu_loop(vcpu);
 
         //if (buffer[1] != 0)
@@ -620,46 +619,46 @@ static void debug_loop(struct kvm_vm *vm) {
 //      }
 
       // ‘g’ Read general registers.
-//      case 'g':
-//      {
+      case 'g':
+      {
 #define PUTREG(buf, val, len) do { \
          Bit64u u = (val); \
          (buf) = mem2hex((const Bit8u*)&u, (buf), (len)); \
       } while (0)
-//        char* buf = obuf;
-//        PUTREG(buf, RAX, 8);
-//        PUTREG(buf, RBX, 8);
-//        PUTREG(buf, RCX, 8);
-//        PUTREG(buf, RDX, 8);
-//        PUTREG(buf, RSI, 8);
-//        PUTREG(buf, RDI, 8);
-//        PUTREG(buf, RBP, 8);
-//        PUTREG(buf, RSP, 8);
-//        PUTREG(buf, R8,  8);
-//        PUTREG(buf, R9,  8);
-//        PUTREG(buf, R10, 8);
-//        PUTREG(buf, R11, 8);
-//        PUTREG(buf, R12, 8);
-//        PUTREG(buf, R13, 8);
-//        PUTREG(buf, R14, 8);
-//        PUTREG(buf, R15, 8);
-//        Bit64u rip;
-//        rip = RIP;
-//        if (last_stop_reason == GDBSTUB_EXECUTION_BREAKPOINT)
-//        {
-//          ++rip;
-//        }
-//        PUTREG(buf, rip, 8);
-//        PUTREG(buf, BX_CPU_THIS_PTR read_eflags(), 4);
-//        PUTREG(buf, BX_CPU_THIS_PTR sregs[BX_SEG_REG_CS].selector.value, 4);
-//        PUTREG(buf, BX_CPU_THIS_PTR sregs[BX_SEG_REG_SS].selector.value, 4);
-//        PUTREG(buf, BX_CPU_THIS_PTR sregs[BX_SEG_REG_DS].selector.value, 4);
-//        PUTREG(buf, BX_CPU_THIS_PTR sregs[BX_SEG_REG_ES].selector.value, 4);
-//        PUTREG(buf, BX_CPU_THIS_PTR sregs[BX_SEG_REG_FS].selector.value, 4);
-//        PUTREG(buf, BX_CPU_THIS_PTR sregs[BX_SEG_REG_GS].selector.value, 4);
-//        put_reply(obuf);
-//        break;
-//      }
+        char* buf = obuf;
+        PUTREG(buf, vcpu->regs.rax, 8);
+        PUTREG(buf, vcpu->regs.rbx, 8);
+        PUTREG(buf, vcpu->regs.rcx, 8);
+        PUTREG(buf, vcpu->regs.rdx, 8);
+        PUTREG(buf, vcpu->regs.rsi, 8);
+        PUTREG(buf, vcpu->regs.rdi, 8);
+        PUTREG(buf, vcpu->regs.rbp, 8);
+        PUTREG(buf, vcpu->regs.rsp, 8);
+        PUTREG(buf, vcpu->regs.r8,  8);
+        PUTREG(buf, vcpu->regs.r9,  8);
+        PUTREG(buf, vcpu->regs.r10, 8);
+        PUTREG(buf, vcpu->regs.r11, 8);
+        PUTREG(buf, vcpu->regs.r12, 8);
+        PUTREG(buf, vcpu->regs.r13, 8);
+        PUTREG(buf, vcpu->regs.r14, 8);
+        PUTREG(buf, vcpu->regs.r15, 8);
+        //Bit64u rip;
+        //rip = RIP;
+        //if (last_stop_reason == GDBSTUB_EXECUTION_BREAKPOINT)
+        //{
+        //  ++rip;
+        //}
+        PUTREG(buf, vcpu->regs.rip, 8);
+        PUTREG(buf, vcpu->regs.rflags, 8);
+        PUTREG(buf, vcpu->sregs.cs.base, 8);
+        PUTREG(buf, vcpu->sregs.ss.base, 8);
+        PUTREG(buf, vcpu->sregs.ds.base, 8);
+        PUTREG(buf, vcpu->sregs.es.base, 8);
+        PUTREG(buf, vcpu->sregs.fs.base, 8);
+        PUTREG(buf, vcpu->sregs.gs.base, 8);
+        put_reply(obuf);
+        break;
+      }
 
       case '?':
         sprintf(obuf, "S%02x", SIGTRAP);
