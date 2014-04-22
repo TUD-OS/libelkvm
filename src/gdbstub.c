@@ -105,7 +105,7 @@ static void put_reply(const char* buffer)
   unsigned char csum;
   int i;
 
-  printf("put_buffer '%s'\n", buffer);
+  //printf("put_buffer '%s'\n", buffer);
 
   do {
     put_debug_char('$');
@@ -359,7 +359,7 @@ static void debug_loop(struct kvm_vm *vm) {
   {
     //SIM->get_param_bool(BXPN_MOUSE_ENABLED)->set(0);
     get_command(buffer);
-    printf("get_buffer '%s'\n", buffer);
+    //printf("get_buffer '%s'\t", buffer);
 
     // At a minimum, a stub is required to support the ‘g’ and ‘G’
     // commands for register access,
@@ -392,7 +392,6 @@ static void debug_loop(struct kvm_vm *vm) {
           vcpu->regs.rip = new_rip;
         }
 
-        stub_trace_flag = 0;
         kvm_vcpu_loop(vcpu);
         //TODO set last_stop_reason correctly!
         last_stop_reason =  GDBSTUB_EXECUTION_BREAKPOINT;
@@ -402,7 +401,7 @@ static void debug_loop(struct kvm_vm *vm) {
         //  BX_CPU_THIS_PTR gen_reg[BX_32BIT_REG_EIP].dword.erx = saved_eip;
         //}
 
-        printf("stopped with 0x%x\n", last_stop_reason);
+        //printf("stopped with 0x%x\n", last_stop_reason);
         buf[0] = 'S';
         if (last_stop_reason == GDBSTUB_EXECUTION_BREAKPOINT ||
             last_stop_reason == GDBSTUB_TRACE)
@@ -424,23 +423,13 @@ static void debug_loop(struct kvm_vm *vm) {
       {
         char buf[255];
 
-        printf("stepping\n");
         struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
         elkvm_debug_singlestep(vcpu);
         kvm_vcpu_loop(vcpu);
         elkvm_debug_singlestep_off(vcpu);
 
-        printf("stopped with %x\n", last_stop_reason);
         buf[0] = 'S';
-        if (last_stop_reason == GDBSTUB_EXECUTION_BREAKPOINT ||
-            last_stop_reason == GDBSTUB_TRACE)
-        {
-          write_signal(&buf[1], SIGTRAP);
-        }
-        else
-        {
-          write_signal(&buf[1], SIGTRAP);
-        }
+        write_signal(&buf[1], SIGTRAP);
         put_reply(buf);
         break;
       }
@@ -487,7 +476,6 @@ static void debug_loop(struct kvm_vm *vm) {
         len = strtoul(ebuf + 1, NULL, 16);
 
         void *host_p = kvm_pager_get_host_p(&vm->pager, addr);
-        printf("reading %i bytes from 0x%lx (%p) to %p\n", len, addr, host_p, obuf);
         memcpy(obuf, host_p, len);
 
 //        access_linear(addr, len, BX_READ, mem);
