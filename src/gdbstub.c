@@ -50,6 +50,7 @@ typedef unsigned short bx_bool;
 typedef unsigned long  Bit32u;
 typedef uint64_t Bit64u;
 
+#define FMT_ADDRX64 "%016llx"
 #define GDBSTUB_STOP_NO_REASON -1
 
 //static bx_list_c *gdbstub_list;
@@ -305,76 +306,6 @@ int bx_gdbstub_check(unsigned int eip)
   return GDBSTUB_STOP_NO_REASON;
 }
 
-static int remove_breakpoint(unsigned addr, int len)
-{
-  if (len != 1)
-  {
-    return(0);
-  }
-
-  for (unsigned i = 0; i < MAX_BREAKPOINTS; i++)
-  {
-    if (breakpoints[i] == addr)
-    {
-      printf("Removing breakpoint at %x", addr);
-      breakpoints[i] = 0;
-      return(1);
-    }
-  }
-  return(0);
-}
-
-static void insert_breakpoint(struct kvm_vm *vm, unsigned addr)
-{
-  unsigned int i;
-
-  printf("setting breakpoint at %x", addr);
-
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
-  elkvm_debug_breakpoint(vm, vcpu, addr, 0);
-  return;
-//  for (i = 0; i < (unsigned)MAX_BREAKPOINTS; i++)
-//  {
-//    if (breakpoints[i] == 0)
-//    {
-//      breakpoints[i] = addr;
-//      if (i >= nr_breakpoints)
-//      {
-//        nr_breakpoints = i + 1;
-//      }
-//      return;
-//    }
-//  }
-//  assert(false && "No slot for breakpoint");
-}
-
-static void do_pc_breakpoint(struct kvm_vm *vm, int insert, Bit64u addr, int len)
-{
-  for (int i = 0; i < len; ++i)
-    if (insert)
-      insert_breakpoint(vm, addr+i);
-    else
-      remove_breakpoint(addr+i, 1);
-}
-
-static void do_breakpoint(struct kvm_vm *vm, int insert, char* buffer)
-{
-  char* ebuf;
-  unsigned long type = strtoul(buffer, &ebuf, 16);
-  Bit64u addr = strtoull(ebuf+1, &ebuf, 16);
-  unsigned long len = strtoul(ebuf+1, &ebuf, 16);
-  switch (type) {
-  case 0:
-  case 1:
-    do_pc_breakpoint(vm, insert, addr, len);
-    put_reply("OK");
-    break;
-  default:
-    put_reply("");
-    break;
-  }
-}
-
 static void write_signal(char* buf, int signal)
 {
   buf[0] = hexchars[signal >> 4];
@@ -453,7 +384,7 @@ static void debug_loop(struct kvm_vm *vm) {
         if (buffer[1] != 0) {
           new_rip = (guestptr_t) atoi(buffer + 1);
 
-          printf("continuing at 0x%lx", new_rip);
+          printf("continuing at 0x%lx\n", new_rip);
 
           saved_eip = vcpu->regs.rip;
           //BX_CPU_THIS_PTR gen_reg[BX_32BIT_REG_EIP].dword.erx = new_eip;
@@ -463,13 +394,15 @@ static void debug_loop(struct kvm_vm *vm) {
 
         stub_trace_flag = 0;
         kvm_vcpu_loop(vcpu);
+        //TODO set last_stop_reason correctly!
+        last_stop_reason =  GDBSTUB_EXECUTION_BREAKPOINT;
 
         //if (buffer[1] != 0)
         //{
         //  BX_CPU_THIS_PTR gen_reg[BX_32BIT_REG_EIP].dword.erx = saved_eip;
         //}
 
-        printf("stopped with %x", last_stop_reason);
+        printf("stopped with 0x%x\n", last_stop_reason);
         buf[0] = 'S';
         if (last_stop_reason == GDBSTUB_EXECUTION_BREAKPOINT ||
             last_stop_reason == GDBSTUB_TRACE)
@@ -491,12 +424,13 @@ static void debug_loop(struct kvm_vm *vm) {
       {
         char buf[255];
 
-        printf("stepping");
-        stub_trace_flag = 1;
-        //TODO resume the CPU, but set bp to next instruction
+        printf("stepping\n");
+        struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+        elkvm_debug_singlestep(vcpu);
+        kvm_vcpu_loop(vcpu);
+        elkvm_debug_singlestep_off(vcpu);
 
-        stub_trace_flag = 0;
-        printf("stopped with %x", last_stop_reason);
+        printf("stopped with %x\n", last_stop_reason);
         buf[0] = 'S';
         if (last_stop_reason == GDBSTUB_EXECUTION_BREAKPOINT ||
             last_stop_reason == GDBSTUB_TRACE)
@@ -514,37 +448,25 @@ static void debug_loop(struct kvm_vm *vm) {
       // ‘M addr,length:XX...’
       // Write length bytes of memory starting at address addr. XX... is the data;
       // each byte is transmitted as a two-digit hexadecimal number.
-//      case 'M':
-//      {
-//        unsigned char mem[255];
-//        char* ebuf;
-//
-//        Bit64u addr = strtoull(&buffer[1], &ebuf, 16);
-//        int len = strtoul(ebuf + 1, &ebuf, 16);
-//        hex2mem(ebuf + 1, mem, len);
-//
-//        if (len == 1 && mem[0] == 0xcc)
-//        {
-//          insert_breakpoint(vm, addr);
-//          put_reply("OK");
-//        }
-//        else if (remove_breakpoint(addr, len))
-//        {
-//          put_reply("OK");
-//        }
-//        else
-//        {
-//          if (access_linear(addr, len, BX_WRITE, mem))
-//          {
-//            put_reply("OK");
-//          }
-//          else
-//          {
-//            put_reply("Eff");
-//          }
-//        }
-//        break;
-//      }
+      case 'M':
+      {
+        unsigned char mem[255];
+        char* ebuf;
+
+        guestptr_t addr = strtoull(&buffer[1], &ebuf, 16);
+        int len = strtoul(ebuf + 1, &ebuf, 16);
+        hex2mem(ebuf + 1, mem, len);
+
+        void *host_p = kvm_pager_get_host_p(&vm->pager, addr);
+        memcpy(host_p, mem, len);
+        struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+        vcpu->debug.control |= KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_USE_SW_BP;
+        int err = elkvm_set_guest_debug(vcpu);
+        assert(err == 0 && "could not set guest debug mode");
+        put_reply("OK");
+
+        break;
+      }
 
       // ‘m addr,length’
       // Read length bytes of memory starting at address addr. Note that addr may
@@ -569,7 +491,7 @@ static void debug_loop(struct kvm_vm *vm) {
         memcpy(obuf, host_p, len);
 
 //        access_linear(addr, len, BX_READ, mem);
-        mem2hex(mem, obuf, len);
+        mem2hex((Bit8u *)host_p, obuf, len);
         put_reply(obuf);
         break;
       }
@@ -646,13 +568,13 @@ static void debug_loop(struct kvm_vm *vm) {
         PUTREG(buf, vcpu->regs.r13, 8);
         PUTREG(buf, vcpu->regs.r14, 8);
         PUTREG(buf, vcpu->regs.r15, 8);
-        //Bit64u rip;
-        //rip = RIP;
-        //if (last_stop_reason == GDBSTUB_EXECUTION_BREAKPOINT)
-        //{
-        //  ++rip;
-        //}
-        PUTREG(buf, vcpu->regs.rip, 8);
+        Bit64u rip;
+        rip = vcpu->regs.rip;
+        if (last_stop_reason == GDBSTUB_EXECUTION_BREAKPOINT)
+        {
+          ++rip;
+        }
+        PUTREG(buf, rip, 8);
         PUTREG(buf, vcpu->regs.rflags, 8);
         PUTREG(buf, vcpu->sregs.cs.base, 8);
         PUTREG(buf, vcpu->sregs.ss.base, 8);
@@ -675,61 +597,58 @@ static void debug_loop(struct kvm_vm *vm) {
       // (note that this is deprecated, supporting the ‘vCont’ command is a better option),
       // ‘g’ for other operations. The thread designator thread-id has the format
       // and interpretation described in [thread-id syntax]
-//      case 'H':
-//        if (buffer[1] == 'c')
-//        {
-//          continue_thread = strtol(&buffer[2], NULL, 16);
-//          put_reply("OK");
-//        }
-//        else if (buffer[1] == 'g')
-//        {
-//          other_thread = strtol(&buffer[2], NULL, 16);
-//          put_reply("OK");
-//        }
-//        else
-//        {
-//          put_reply("Eff");
-//        }
-//        break;
+      case 'H':
+        if (buffer[1] == 'c')
+        {
+          continue_thread = strtol(&buffer[2], NULL, 16);
+          put_reply("OK");
+        }
+        else if (buffer[1] == 'g')
+        {
+          other_thread = strtol(&buffer[2], NULL, 16);
+          put_reply("OK");
+        }
+        else
+        {
+          put_reply("Eff");
+        }
+        break;
 
       // ‘q name params...’
       // ‘Q name params...’
       // General query (‘q’) and set (‘Q’). These packets are described fully in
       // Section E.4 [General Query Packets]
-//      case 'q':
-//        if (buffer[1] == 'C')
-//        {
-//          sprintf(obuf, FMT_ADDRX64, (Bit64u)1);
-//          put_reply(obuf);
-//        }
-//        else if (strncmp(&buffer[1], "Offsets", strlen("Offsets")) == 0)
-//        {
-//          sprintf(obuf, "Text=%x;Data=%x;Bss=%x",
-//                  SIM->get_param_num("text_base", gdbstub_list)->get(),
-//                  SIM->get_param_num("data_base", gdbstub_list)->get(),
-//                  SIM->get_param_num("bss_base", gdbstub_list)->get());
-//          put_reply(obuf);
-//        }
-//        else if (strncmp(&buffer[1], "Supported", strlen("Supported")) == 0)
-//        {
-//          put_reply("");
-//        }
-//        else
-//        {
-//          put_reply(""); /* not supported */
-//        }
-//        break;
+      case 'q':
+        if (buffer[1] == 'C')
+        {
+          sprintf(obuf, FMT_ADDRX64, (Bit64u)1);
+          put_reply(obuf);
+        }
+        else if (strncmp(&buffer[1], "Offsets", strlen("Offsets")) == 0)
+        {
+          sprintf(obuf, "Text=%x;Data=%x;Bss=%x", 0x0, 0x0, 0x0);
+          put_reply(obuf);
+        }
+        else if (strncmp(&buffer[1], "Supported", strlen("Supported")) == 0)
+        {
+          put_reply("");
+        }
+        else
+        {
+          put_reply(""); /* not supported */
+        }
+        break;
 
       // ‘z type,addr,kind’
       // ‘Z type,addr,kind’
       // Insert (‘Z’) or remove (‘z’) a type breakpoint or watchpoint starting at address
       // address of kind kind.
-      case 'Z':
-        do_breakpoint(vm, 1, buffer+1);
-        break;
-      case 'z':
-        do_breakpoint(vm, 0, buffer+1);
-        break;
+      //case 'Z':
+      //  do_breakpoint(vm, 1, buffer+1);
+      //  break;
+      //case 'z':
+      //  do_breakpoint(vm, 0, buffer+1);
+      //  break;
 
       // ‘k’ Kill request.
       case 'k':

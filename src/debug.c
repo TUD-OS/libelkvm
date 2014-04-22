@@ -7,47 +7,12 @@
 #include "debug.h"
 
 int elkvm_handle_debug(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
-  if(vcpu->reinject != NULL) {
-    if(vcpu->singlestep == 0) {
-      vcpu->debug.control &= ~KVM_GUESTDBG_SINGLESTEP;
-    }
-
-    elkvm_debug_bp_set(vcpu, vcpu->reinject);
-    vcpu->reinject = NULL;
-    /* TODO what happens if this is a bp as well? */
-    return 0;
-  }
-
-  assert(vcpu->regs.rip != 0x0);
-  uint8_t *host_p = (uint8_t *)kvm_pager_get_host_p(&vm->pager, vcpu->regs.rip);
-  assert(host_p != NULL);
-
-  struct elkvm_sw_bp *bp = elkvm_find_bp_for_rip(vcpu, vcpu->regs.rip);
-
-  if(bp != NULL) {
-    *host_p = bp->orig_inst;
-    bp->count++;
-    vcpu->reinject = bp;
-    vcpu->debug.control |= KVM_GUESTDBG_SINGLESTEP;
-    elkvm_set_guest_debug(vcpu);
-
-    if(bp->count <= bp->ignore_count) {
-      return 0;
-    }
-  }
-
-  int abort = 0;
+  int handled = 0;
   if(vm->syscall_handlers->bp_callback != NULL) {
-    abort = vm->syscall_handlers->bp_callback(vm);
-  } else {
-    abort = elkvm_debug_shell(vm);
+    handled = vm->syscall_handlers->bp_callback(vm);
   }
 
-  if(abort) {
-    return -1;
-  }
-
-  return 0;
+  return handled;
 }
 
 int elkvm_debug_enable(struct kvm_vcpu *vcpu) {
@@ -60,6 +25,12 @@ int elkvm_debug_singlestep(struct kvm_vcpu *vcpu) {
   vcpu->debug.control |= KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_SINGLESTEP;
   vcpu->singlestep = 1;
 
+  return elkvm_set_guest_debug(vcpu);
+}
+
+int elkvm_debug_singlestep_off(struct kvm_vcpu *vcpu) {
+  vcpu->debug.control &= ~KVM_GUESTDBG_SINGLESTEP;
+  vcpu->singlestep = 0;
   return elkvm_set_guest_debug(vcpu);
 }
 
