@@ -121,9 +121,6 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
     assert(err == 0);
   }
 
-  /* GDB stub init functions */
-  elkvm_gdbstub_init(vm);
-
 	return 0;
 }
 
