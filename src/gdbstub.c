@@ -556,13 +556,7 @@ static void debug_loop(struct kvm_vm *vm) {
         PUTREG(buf, vcpu->regs.r13, 8);
         PUTREG(buf, vcpu->regs.r14, 8);
         PUTREG(buf, vcpu->regs.r15, 8);
-        Bit64u rip;
-        rip = vcpu->regs.rip;
-        if (last_stop_reason == GDBSTUB_EXECUTION_BREAKPOINT)
-        {
-          ++rip;
-        }
-        PUTREG(buf, rip, 8);
+        PUTREG(buf, vcpu->regs.rip, 8);
         PUTREG(buf, vcpu->regs.rflags, 8);
         PUTREG(buf, vcpu->sregs.cs.base, 8);
         PUTREG(buf, vcpu->sregs.ss.base, 8);
