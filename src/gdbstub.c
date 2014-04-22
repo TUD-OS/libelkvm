@@ -448,16 +448,17 @@ static void debug_loop(struct kvm_vm *vm) {
       case 'c':
       {
         char buf[255];
-        guestptr_t new_eip;
+        guestptr_t new_rip;
 
         if (buffer[1] != 0) {
-          new_eip = (guestptr_t) atoi(buffer + 1);
+          new_rip = (guestptr_t) atoi(buffer + 1);
 
-          printf("continuing at %x", new_eip);
+          printf("continuing at 0x%lx", new_rip);
 
           saved_eip = vcpu->regs.rip;
           //BX_CPU_THIS_PTR gen_reg[BX_32BIT_REG_EIP].dword.erx = new_eip;
           //TODO reset the rip, set kvm_regs
+          vcpu->regs.rip = new_rip;
         }
 
         stub_trace_flag = 0;
@@ -554,21 +555,24 @@ static void debug_loop(struct kvm_vm *vm) {
       // multiple of the word size, the stub is free to use byte accesses, or not. For
       // this reason, this packet may not be suitable for accessing memory-mapped I/O
       // devices.
-//      case 'm':
-//      {
-//        Bit64u addr;
-//        int len;
-//        char* ebuf;
-//
-//        addr = strtoull(&buffer[1], &ebuf, 16);
-//        len = strtoul(ebuf + 1, NULL, 16);
-//        BX_INFO(("addr "FMT_ADDRX64" len %x", addr, len));
-//
+      case 'm':
+      {
+        guestptr_t addr;
+        int len;
+        char* ebuf;
+
+        addr = strtoull(&buffer[1], &ebuf, 16);
+        len = strtoul(ebuf + 1, NULL, 16);
+
+        void *host_p = kvm_pager_get_host_p(&vm->pager, addr);
+        printf("reading %i bytes from 0x%lx (%p) to %p\n", len, addr, host_p, obuf);
+        memcpy(obuf, host_p, len);
+
 //        access_linear(addr, len, BX_READ, mem);
-//        mem2hex(mem, obuf, len);
-//        put_reply(obuf);
-//        break;
-//      }
+        mem2hex(mem, obuf, len);
+        put_reply(obuf);
+        break;
+      }
 
       // ‘P n...=r...’
       // Write register n... with value r... The register number n is in hexadecimal,
