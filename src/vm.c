@@ -17,6 +17,7 @@
 #include <stack.h>
 #include <vcpu.h>
 #include <elkvm.h>
+#include "debug.h"
 
 int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus,
     int memory_size, const struct elkvm_handlers *handlers, const char *binary) {

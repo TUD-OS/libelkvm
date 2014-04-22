@@ -3,6 +3,7 @@ lib_LTLIBRARIES = libelkvm.la
 libelkvm_la_SOURCES = debug.c \
 											elfloader.c \
 											gdt.c\
+											gdbstub.c\
 											heap.c\
 											idt.c\
 											mapping.c\

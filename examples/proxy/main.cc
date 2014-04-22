@@ -407,13 +407,13 @@ int main(int argc, char **argv) {
   int opt;
   int err;
   int debug = 0;
-  int singlestep = 0;
+  int gdb = 0;
   int myopts = 1;
   opterr = 0;
   inspect = false;
   struct kvm_vcpu *vcpu = NULL;
 
-  while((opt = getopt(argc, argv, "+drs")) != -1) {
+  while((opt = getopt(argc, argv, "+drD")) != -1) {
     switch(opt) {
       case 'd':
         debug = 1;
@@ -423,8 +423,8 @@ int main(int argc, char **argv) {
         inspect = true;
         myopts++;
         break;
-      case 's':
-        singlestep = 1;
+      case 'D':
+        gdb = 1;
         myopts++;
         break;
     }
@@ -464,12 +464,6 @@ int main(int argc, char **argv) {
 
   vcpu = elkvm_vcpu_get(&vm, 0);
 
-//  uint64_t bp;
-//  bp = 0x40112c;
-//  bp = 0x40f1d7;
-//  err = elkvm_debug_breakpoint(&vm, vcpu, bp);
-//  assert(err == 0);
-
   if(debug) {
     err = elkvm_set_debug(&vm);
     if(err) {
@@ -478,13 +472,10 @@ int main(int argc, char **argv) {
     }
   }
 
-  if(singlestep) {
-    err = elkvm_debug_singlestep(vcpu);
-    printf("err: %i errno: %i\n", err, errno);
-  	if(err) {
-  		printf("ERROR putting VCPU into debug mode errno: %i Msg: %s\n", -err, strerror(errno));
-  		return -1;
-  	}
+  if(gdb) {
+    //gdbstub will take it from here!
+    elkvm_gdbstub_init(&vm);
+    return 0;
   }
 
 	err = kvm_vcpu_loop(vcpu);

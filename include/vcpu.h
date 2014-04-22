@@ -43,8 +43,6 @@ struct kvm_vcpu {
 	struct kvm_vm *vm;
 	int singlestep;
   struct kvm_guest_debug debug;
-  list(struct elkvm_sw_bp *, breakpoints);
-  struct elkvm_sw_bp *reinject;
 };
 
 struct vcpu_list {

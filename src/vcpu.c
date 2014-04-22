@@ -407,15 +407,15 @@ int kvm_vcpu_run(struct kvm_vcpu *vcpu) {
 
 int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 	int is_running = 1;
-	if(vcpu->singlestep) {
-		elkvm_gdt_dump(vcpu->vm);
-		kvm_vcpu_dump_msr(vcpu, VCPU_MSR_STAR);
-		kvm_vcpu_dump_msr(vcpu, VCPU_MSR_LSTAR);
-		kvm_vcpu_dump_msr(vcpu, VCPU_MSR_CSTAR);
-		elkvm_idt_dump(vcpu->vm);
-		elkvm_idt_dump_isr(vcpu->vm, 10);
-		kvm_pager_dump_page_tables(&vcpu->vm->pager);
-	}
+//	if(vcpu->singlestep) {
+//		elkvm_gdt_dump(vcpu->vm);
+//		kvm_vcpu_dump_msr(vcpu, VCPU_MSR_STAR);
+//		kvm_vcpu_dump_msr(vcpu, VCPU_MSR_LSTAR);
+//		kvm_vcpu_dump_msr(vcpu, VCPU_MSR_CSTAR);
+//		elkvm_idt_dump(vcpu->vm);
+//		elkvm_idt_dump_isr(vcpu->vm, 10);
+//		kvm_pager_dump_page_tables(&vcpu->vm->pager);
+//	}
 
   int err = 0;
 	while(is_running) {
@@ -488,15 +488,15 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 				break;
 			case KVM_EXIT_SHUTDOWN:
 				fprintf(stderr, "KVM VCPU did shutdown\n");
-				//is_running = elkvm_handle_vm_shutdown(vcpu->vm, vcpu);
         is_running = 0;
 				break;
 			case KVM_EXIT_DEBUG:
-        err = elkvm_handle_debug(vcpu->vm, vcpu);
-        if(err) {
+        //fprintf(stderr, "KVM_EXIT_DEBUG\n");
+        ; int debug_handled = elkvm_handle_debug(vcpu->vm, vcpu);
+        if(debug_handled == 0) {
           is_running = 0;
-          fprintf(stderr, "ELKVM: Could not handle debug exit!\n");
-          fprintf(stderr, "Errno: %i Msg: %s\n", err, strerror(err));
+        //  fprintf(stderr, "ELKVM: Could not handle debug exit!\n");
+        //  fprintf(stderr, "\tTransfer control to gdbstub\n");
         }
 				break;
       case KVM_EXIT_MMIO:
@@ -528,8 +528,7 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 				break;
 		}
 
-		if(	vcpu->singlestep ||
-        vcpu->run_struct->exit_reason == KVM_EXIT_MMIO ||
+		if(	vcpu->run_struct->exit_reason == KVM_EXIT_MMIO ||
 				vcpu->run_struct->exit_reason == KVM_EXIT_SHUTDOWN) {
 			kvm_vcpu_dump_regs(vcpu);
       elkvm_dump_stack(vcpu->vm, vcpu);

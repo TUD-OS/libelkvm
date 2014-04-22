@@ -201,17 +201,15 @@ void elkvm_print_regions(struct kvm_vm *);
 void elkvm_dump_region(struct elkvm_memory_region *);
 
 /**
+ * \brief Initialize the gdbstub and wait for gdb
+ *        to connect
+ */
+void elkvm_gdbstub_init(struct kvm_vm *vm);
+
+/**
  * \brief Enable VCPU debug mode
  */
 int elkvm_debug_enable(struct kvm_vcpu *vcpu);
-
-/**
- * \brief Set the VCPU in singlestepping mode
- */
-int elkvm_debug_singlestep(struct kvm_vcpu *vcpu);
-
-int elkvm_debug_breakpoint(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t rip,
-    int ignore_count);
 
 #ifdef __cplusplus
 }
