@@ -38,8 +38,6 @@
 
 #define NEED_CPU_REG_SHORTCUTS 1
 
-static int last_stop_reason = -1;
-
 #define GDBSTUB_EXECUTION_BREAKPOINT    (0xac1)
 #define GDBSTUB_TRACE                   (0xac2)
 #define GDBSTUB_USER_BREAK              (0xac3)
@@ -252,101 +250,12 @@ static int instr_count = 0;
 guestptr_t saved_eip = 0;
 static int bx_enter_gdbstub = 0;
 
-void bx_gdbstub_break(void)
-{
-  bx_enter_gdbstub = 1;
-}
-
-int bx_gdbstub_check(unsigned int eip)
-{
-  unsigned int i;
-  unsigned char ch;
-  long arg;
-  int r;
-
-  if (bx_enter_gdbstub)
-  {
-    bx_enter_gdbstub = 0;
-    last_stop_reason = GDBSTUB_EXECUTION_BREAKPOINT;
-    return GDBSTUB_EXECUTION_BREAKPOINT;
-  }
-
-  instr_count++;
-
-  if ((instr_count % 500) == 0)
-  {
-    arg = fcntl(socket_fd, F_GETFL);
-    fcntl(socket_fd, F_SETFL, arg | O_NONBLOCK);
-    r = recv(socket_fd, &ch, 1, 0);
-    fcntl(socket_fd, F_SETFL, arg);
-    if (r == 1)
-    {
-      printf("Got byte %x", (unsigned int)ch);
-      last_stop_reason = 0;
-      return 0;
-    }
-  }
-
-  for (i = 0; i < nr_breakpoints; i++)
-  {
-    if (eip == breakpoints[i])
-    {
-      printf("found breakpoint at %x", eip);
-      last_stop_reason = GDBSTUB_EXECUTION_BREAKPOINT;
-      return GDBSTUB_EXECUTION_BREAKPOINT;
-    }
-  }
-
-  if (stub_trace_flag == 1)
-  {
-    last_stop_reason = GDBSTUB_TRACE;
-    return GDBSTUB_TRACE;
-  }
-  last_stop_reason = GDBSTUB_STOP_NO_REASON;
-  return GDBSTUB_STOP_NO_REASON;
-}
-
 static void write_signal(char* buf, int signal)
 {
   buf[0] = hexchars[signal >> 4];
   buf[1] = hexchars[signal % 16];
   buf[2] = 0;
 }
-
-//static int access_linear(Bit64u laddress,
-//                        unsigned len,
-//                        unsigned int rw,
-//                        Bit8u* data)
-//{
-//  bx_phy_address phys;
-//  bx_bool valid;
-//
-//  if (((laddress & 0xfff) + len) > 4096)
-//  {
-//    valid = access_linear(laddress,
-//                          4096 - (laddress & 0xfff),
-//                          rw,
-//                          data);
-//    if (!valid) return(0);
-//
-//    valid = access_linear(laddress,
-//                          len + (laddress & 0xfff) - 4096,
-//                          rw,
-//                          (Bit8u *)(data + (4096 - (laddress & 0xfff))));
-//    return(valid);
-//  }
-//
-//  valid = BX_CPU(0)->dbg_xlate_linear2phy(laddress, (bx_phy_address*)&phys);
-//  if (!valid) return(0);
-//
-//  if (rw & 1) {
-//    valid = BX_MEM(0)->dbg_set_mem(phys, len, data);
-//  } else {
-//    valid = BX_MEM(0)->dbg_fetch_mem(BX_CPU(0), phys, len, data);
-//  }
-//
-//  return(valid);
-//}
 
 static void debug_loop(struct kvm_vm *vm) {
   char buffer[255];
@@ -357,7 +266,6 @@ static void debug_loop(struct kvm_vm *vm) {
 
   while (ne == 0)
   {
-    //SIM->get_param_bool(BXPN_MOUSE_ENABLED)->set(0);
     get_command(buffer);
     //printf("get_buffer '%s'\t", buffer);
 
@@ -393,25 +301,14 @@ static void debug_loop(struct kvm_vm *vm) {
         }
 
         kvm_vcpu_loop(vcpu);
-        //TODO set last_stop_reason correctly!
-        last_stop_reason =  GDBSTUB_EXECUTION_BREAKPOINT;
 
         //if (buffer[1] != 0)
         //{
         //  BX_CPU_THIS_PTR gen_reg[BX_32BIT_REG_EIP].dword.erx = saved_eip;
         //}
 
-        //printf("stopped with 0x%x\n", last_stop_reason);
         buf[0] = 'S';
-        if (last_stop_reason == GDBSTUB_EXECUTION_BREAKPOINT ||
-            last_stop_reason == GDBSTUB_TRACE)
-        {
-          write_signal(&buf[1], SIGTRAP);
-        }
-        else
-        {
-          write_signal(&buf[1], 0);
-        }
+        write_signal(&buf[1], SIGTRAP);
         put_reply(buf);
         break;
       }
@@ -478,7 +375,6 @@ static void debug_loop(struct kvm_vm *vm) {
         void *host_p = kvm_pager_get_host_p(&vm->pager, addr);
         memcpy(obuf, host_p, len);
 
-//        access_linear(addr, len, BX_READ, mem);
         mem2hex((Bit8u *)host_p, obuf, len);
         put_reply(obuf);
         break;
@@ -728,8 +624,6 @@ void elkvm_gdbstub_init(struct kvm_vm *vm) {
   printf("Waiting for gdb connection on port %d\n", portn);
   wait_for_connect(portn);
 
-  //set_debug_traps();
-  //breakpoint();
   /* Do debugger command loop */
   debug_loop(vm);
 
