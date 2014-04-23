@@ -40,19 +40,6 @@ int elkvm_set_guest_debug(struct kvm_vcpu *vcpu) {
   return ioctl(vcpu->fd, KVM_SET_GUEST_DEBUG, &vcpu->debug);
 }
 
-        printf("\tp <addr>\tPrint String at Address\n");
-        printf("\tq\tQuit guest binary\n");
-        printf("Be CAREFUL with your inputs, this doesn't really verify ANYTHING!\n");
-        break;
-      case 'p':
-        ;
-        uint64_t addr = atol(op + 2);
-        uint64_t *host_p = kvm_pager_get_host_p(&vm->pager, addr);
-        if(host_p == NULL) {
-          printf("ERROR: Address not mapped!\n");
-          break;
-        }
-        printf("%s\n", host_p);
 void elkvm_dump_memory(struct kvm_vm *vm, uint64_t addr) {
   assert(addr != 0x0 && "cannot dump address NULL");
   uint64_t *host_p = elkvm_pager_get_host_p(&vm->pager, addr);
@@ -68,3 +55,4 @@ void elkvm_dump_memory(struct kvm_vm *vm, uint64_t addr) {
   }
 }
   }
+}
