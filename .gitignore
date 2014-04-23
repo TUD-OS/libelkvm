@@ -46,4 +46,6 @@ share/vmxoff
 share/entry
 share/isr
 share/signal
+
 examples/timekeeper/src/timekeeper
+examples/proxy/proxy
