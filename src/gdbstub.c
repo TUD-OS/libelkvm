@@ -35,6 +35,7 @@
 #include <netdb.h>
 
 #include <elkvm.h>
+#include "debug.h"
 
 #define NEED_CPU_REG_SHORTCUTS 1
 
@@ -48,7 +49,7 @@ typedef unsigned short bx_bool;
 typedef unsigned long  Bit32u;
 typedef uint64_t Bit64u;
 
-#define FMT_ADDRX64 "%016llx"
+#define FMT_ADDRX64 "%016lx"
 #define GDBSTUB_STOP_NO_REASON -1
 
 //static bx_list_c *gdbstub_list;
@@ -371,12 +372,19 @@ static void debug_loop(struct kvm_vm *vm) {
 
         addr = strtoull(&buffer[1], &ebuf, 16);
         len = strtoul(ebuf + 1, NULL, 16);
+        if(addr == 0x0) {
+          put_reply("");
+        } else {
+          void *host_p = kvm_pager_get_host_p(&vm->pager, addr);
+          if(host_p != NULL) {
+            memcpy(obuf, host_p, len);
 
-        void *host_p = kvm_pager_get_host_p(&vm->pager, addr);
-        memcpy(obuf, host_p, len);
-
-        mem2hex((Bit8u *)host_p, obuf, len);
-        put_reply(obuf);
+            mem2hex((Bit8u *)host_p, obuf, len);
+            put_reply(obuf);
+          } else {
+            put_reply("");
+          }
+        }
         break;
       }
 
@@ -443,7 +451,15 @@ static void debug_loop(struct kvm_vm *vm) {
         PUTREG(buf, vcpu->regs.rsi, 8);
         PUTREG(buf, vcpu->regs.rdi, 8);
         PUTREG(buf, vcpu->regs.rbp, 8);
-        PUTREG(buf, vcpu->regs.rsp, 8);
+        if(vcpu->regs.rip < 0xffff800000000000) {
+          PUTREG(buf, vcpu->regs.rsp, 8);
+        } else {
+          /* in kernel mode, figure out the real stack and return that
+           * this really helps with backtraces (hopefully) */
+          guestptr_t *sf = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp + 24);
+          guestptr_t real_rsp = *sf;
+          PUTREG(buf, real_rsp, 8);
+        }
         PUTREG(buf, vcpu->regs.r8,  8);
         PUTREG(buf, vcpu->regs.r9,  8);
         PUTREG(buf, vcpu->regs.r10, 8);
@@ -452,7 +468,15 @@ static void debug_loop(struct kvm_vm *vm) {
         PUTREG(buf, vcpu->regs.r13, 8);
         PUTREG(buf, vcpu->regs.r14, 8);
         PUTREG(buf, vcpu->regs.r15, 8);
-        PUTREG(buf, vcpu->regs.rip, 8);
+        if(vcpu->regs.rip < 0xffff800000000000) {
+          PUTREG(buf, vcpu->regs.rip, 8);
+        } else {
+          /* in kernel mode, figure out the real stack and return that
+           * this really helps with backtraces (hopefully) */
+          guestptr_t *sf = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
+          guestptr_t real_rip = *sf;
+          PUTREG(buf, real_rip, 8);
+        }
         PUTREG(buf, vcpu->regs.rflags, 8);
         PUTREG(buf, vcpu->sregs.cs.base, 8);
         PUTREG(buf, vcpu->sregs.ss.base, 8);
@@ -614,7 +638,7 @@ static void wait_for_connect(int portn)
     printf("setsockopt(TCP_NODELAY) failed");
   }
   Bit32u ip = sockaddr.sin_addr.s_addr;
-  printf("Connected to %d.%d.%d.%d\n", ip & 0xff, (ip >> 8) & 0xff, (ip >> 16) & 0xff, (ip >> 24) & 0xff);
+  printf("Connected to %ld.%ld.%ld.%ld\n", ip & 0xff, (ip >> 8) & 0xff, (ip >> 16) & 0xff, (ip >> 24) & 0xff);
 }
 
 void elkvm_gdbstub_init(struct kvm_vm *vm) {
