@@ -619,12 +619,10 @@ long elkvm_do_mprotect(struct kvm_vm *vm) {
     return err;
   }
 
+  assert(page_aligned(addr_p) && "mprotect address must be page aligned");
   if(addr_p != 0x0) {
     addr = kvm_pager_get_host_p(&vm->pager, addr_p);
   }
-
-  struct region_mapping *mapping = elkvm_mapping_find(vm, addr);
-  assert(mapping != NULL);
 
   ptopt_t opts = 0;
   if(prot & PROT_WRITE) {
@@ -633,13 +631,17 @@ long elkvm_do_mprotect(struct kvm_vm *vm) {
   if(prot & PROT_EXEC) {
     opts |= PT_OPT_EXEC;
   }
-  err = kvm_pager_map_region(&vm->pager, mapping->host_p, mapping->guest_virt,
-      mapping->mapped_pages, opts);
+  err = kvm_pager_map_region(&vm->pager, addr, addr_p,
+      pages_from_size(len), opts);
+  assert(err == 0 && "mprotect mapping failed");
 
   if(vm->debug) {
+    struct region_mapping *mapping = elkvm_mapping_find(vm, addr);
+    assert(mapping != NULL);
+
     printf("\n============ LIBELKVM ===========\n");
-    printf("MPROTECT reguested with address: 0x%lx (%p) len: 0x%lx\n",
-        addr_p, addr, len);
+    printf("MPROTECT reguested with address: 0x%lx (%p) len: 0x%lx W: %i E: %i prot: %i\n",
+        addr_p, addr, len, opts & PT_OPT_WRITE, opts & PT_OPT_EXEC, (int)prot);
     printf("MAPPING %p pages mapped: %u\n", mapping, mapping->mapped_pages);
     printf("RESULT: %i\n", err);
     printf("=================================\n");
@@ -722,6 +724,9 @@ long elkvm_do_brk(struct kvm_vm *vm) {
 
   /* if the requested brk address is 0 just return the current brk address */
   if(user_brk_req == 0) {
+    if(vm->debug) {
+      printf("=================================\n");
+    }
     return vm->pager.brk_addr;
   }
 
