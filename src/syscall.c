@@ -16,6 +16,8 @@
 #include <syscall.h>
 #include <vcpu.h>
 
+#include "elfloader.h"
+
 int elkvm_handle_hypercall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
   int err = 0;
 
@@ -552,14 +554,30 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   mapping->host_p = region->host_base_p;
   mapping->length = length;
   mapping->mapped_pages = pages_from_size(length);
+  mapping->guest_virt = addr;
+
+  if(addr && (flags & MAP_FIXED)) {
+    void *h = kvm_pager_get_host_p(&vm->pager, mapping->guest_virt);
+    if(h) {
+      printf("MAP_FIXED: %i\n", flags & MAP_FIXED);
+      printf("existing mapping from guest 0x%lx to host %p found\n",
+        mapping->guest_virt, h);
+      return -EINVAL;
+    }
+  }
 
   long result = vm->syscall_handlers->mmap((void *)addr_p, length, prot,
       flags, fd, offset, mapping);
   region->guest_virtual = mapping->guest_virt;
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
-    printf("MMAP addr_p %p length %lu prot %lu flags %lu fd %lu offset %lu\n",
-        addr, length, prot, flags, fd, offset);
+    printf("MMAP addr_p %p length %lu prot %lu flags %lu",
+        addr, length, prot, flags);
+    if(!(flags & MAP_ANONYMOUS)) {
+      printf(" fd %lu offset %lu", fd, offset);
+    }
+    printf("\n");
+
     printf("RESULT: %li\n", result);
     if(result >= 0) {
       printf("REGION: %p host_base_p: %p region_size: 0x%lx guest_virt: 0x%lx used: %i\n",
@@ -575,10 +593,10 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   }
 
   ptopt_t opts = 0;
-  if(flags & PROT_WRITE) {
+  if(prot & PROT_WRITE) {
     opts |= PT_OPT_WRITE;
   }
-  if(flags & PROT_EXEC) {
+  if(prot & PROT_EXEC) {
     opts |= PT_OPT_EXEC;
   }
   err = kvm_pager_map_region(&vm->pager, mapping->host_p, mapping->guest_virt,
