@@ -324,17 +324,22 @@ int elkvm_loader_pad_begin(struct elkvm_memory_region *region,
 
   size_t padsize = offset_in_page(phdr.p_vaddr);
 
-  if(phdr.p_flags & PF_X) {
-    /* executable segment should be text */
-    return elkvm_loader_pad_text_begin(region, bin, padsize);
-  }
-  if(phdr.p_flags & PF_W) {
-    return elkvm_loader_pad_data_begin(region, bin, padsize);
+  if(padsize) {
+    if(phdr.p_flags & PF_X) {
+      /* executable segment should be text */
+      printf("PADDING text with %zd bytes\n", padsize);
+      return elkvm_loader_pad_text_begin(vm, region, bin, padsize);
+    } else if(phdr.p_flags & PF_W) {
+      printf("PADDING data with %zd bytes\n", padsize);
+      return elkvm_loader_pad_data_begin(vm, region, bin, padsize);
+    }
+
+    /* this should never happen */
+    assert(false);
+    return -1;
   }
 
-  /* this should never happen */
-  assert(false);
-  return -1;
+  return 0;
 }
 
 int elkvm_loader_pad_text_end(struct Elf_binary *bin, void *host_p, size_t padsize) {
