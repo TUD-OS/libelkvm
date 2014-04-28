@@ -16,3 +16,5 @@ int elkvm_debug_singlestep(struct kvm_vcpu *vcpu);
  */
 int elkvm_debug_singlestep_off(struct kvm_vcpu *vcpu);
 
+void elkvm_dump_memory(struct kvm_vm *vm, uint64_t addr);
+
