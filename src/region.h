@@ -45,7 +45,6 @@ namespace Elkvm {
       Region &find_region(const guestptr_t addr) const;
       void free_region(Region &r);
       void free_region(const void *host_p, const size_t sz);
-
   };
 
   std::array<std::vector<Region>, 15>::size_type get_freelist_idx(const size_t size);

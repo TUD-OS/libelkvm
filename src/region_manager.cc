@@ -24,9 +24,11 @@ namespace Elkvm {
 
   }
 
-  int RegionManager::add_chunk(struct kvm_pager *pager, uint64_t size) {
+  int RegionManager::add_chunk(const struct kvm_pager *const pager,
+      const size_t size) {
+
     void *chunk_p;
-    uint64_t grow_size = size > ELKVM_SYSTEM_MEMGROW ?
+    const size_t grow_size = size > ELKVM_SYSTEM_MEMGROW ?
       pagesize_align(size) : ELKVM_SYSTEM_MEMGROW;
 
     int err = kvm_pager_create_mem_chunk(pager, &chunk_p, grow_size);
