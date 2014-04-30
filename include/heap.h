@@ -5,6 +5,10 @@
 #include "elkvm.h"
 #include "region-c.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int elkvm_heap_initialize(struct kvm_vm *, struct elkvm_memory_region *, uint64_t);
 int elkvm_heap_grow(struct kvm_vm *, uint64_t size);
 
@@ -24,3 +28,7 @@ static inline uint64_t elkvm_last_heap_address(struct kvm_vm *vm) {
   struct elkvm_memory_region *heap = *(list_elem_front(vm->heap));
   return heap->guest_virtual + heap->region_size - 1;
 }
+
+#ifdef __cplusplus
+}
+#endif
