@@ -159,7 +159,33 @@ long elkvm_do_rt_sigpending(struct kvm_vm *);
 long elkvm_do_rt_sigtimedwait(struct kvm_vm *);
 long elkvm_do_rt_sigqueueinfo(struct kvm_vm *);
 long elkvm_do_rt_sigsuspend(struct kvm_vm *);
-/* ... */
+long elkvm_do_sigaltstack(struct kvm_vm *);
+long elkvm_do_utime(struct kvm_vm *);
+long elkvm_do_mknod(struct kvm_vm *);
+long elkvm_do_uselib(struct kvm_vm *);
+long elkvm_do_personality(struct kvm_vm *);
+long elkvm_do_ustat(struct kvm_vm *);
+long elkvm_do_statfs(struct kvm_vm *);
+long elkvm_do_fstatfs(struct kvm_vm *);
+long elkvm_do_sysfs(struct kvm_vm *);
+long elkvm_do_getpriority(struct kvm_vm *);
+long elkvm_do_setpriority(struct kvm_vm *);
+long elkvm_do_sched_setparam(struct kvm_vm *);
+long elkvm_do_sched_getparam(struct kvm_vm *);
+long elkvm_do_sched_setscheduler(struct kvm_vm *);
+long elkvm_do_sched_getscheduler(struct kvm_vm *);
+long elkvm_do_sched_get_priority_max(struct kvm_vm *);
+long elkvm_do_sched_get_priority_min(struct kvm_vm *);
+long elkvm_do_sched_rr_get_interval(struct kvm_vm *);
+long elkvm_do_mlock(struct kvm_vm *);
+long elkvm_do_munlock(struct kvm_vm *);
+long elkvm_do_mlockall(struct kvm_vm *);
+long elkvm_do_munlockall(struct kvm_vm *);
+long elkvm_do_vhangup(struct kvm_vm *);
+long elkvm_do_modify_ldt(struct kvm_vm *);
+long elkvm_do_pivot_root(struct kvm_vm *);
+long elkvm_do_sysctl(struct kvm_vm *);
+long elkvm_do_prctl(struct kvm_vm *);
 long elkvm_do_arch_prctl(struct kvm_vm *);
 long elkvm_do_adjtimex(struct kvm_vm *vm);
 long elkvm_do_setrlimit(struct kvm_vm *vm);
@@ -313,7 +339,33 @@ static struct {
   [__NR_rt_sigtimedwait] = { elkvm_do_rt_sigtimedwait, "RT SIGTIMEDWAIT" },
   [__NR_rt_sigqueueinfo] = { elkvm_do_rt_sigqueueinfo, "RT SIGQUEUEINFO" },
   [__NR_rt_sigsuspend]   = { elkvm_do_rt_sigsuspend, "RT SIGSUSPEND" },
-  /* ... */
+  [__NR_sigaltstack]     = { elkvm_do_sigaltstack, "SIGALTSTACK" },
+  [__NR_utime]           = { elkvm_do_utime, "UTIME" },
+  [__NR_mknod]           = { elkvm_do_mknod, "MKNOD" },
+  [__NR_uselib]          = { elkvm_do_uselib, "USELIB" },
+  [__NR_personality]     = { elkvm_do_personality, "PERSONALITY" },
+  [__NR_ustat]           = { elkvm_do_ustat, "USTAT" },
+  [__NR_statfs]          = { elkvm_do_statfs, "STATFS" },
+  [__NR_fstatfs]         = { elkvm_do_fstatfs, "FSTATFS" },
+  [__NR_sysfs]           = { elkvm_do_sysfs, "SYSFS" },
+  [__NR_getpriority]     = { elkvm_do_getpriority, "GETPRIORITY" },
+  [__NR_setpriority]     = { elkvm_do_setpriority, "SETPRIORITY" },
+  [__NR_sched_setparam]  = { elkvm_do_sched_setparam, "SCHED SETPARAM" },
+  [__NR_sched_getparam]  = { elkvm_do_sched_getparam, "SCHED GETPARAM" },
+  [__NR_sched_setscheduler] = { elkvm_do_sched_setscheduler, "SCHED SETSCHEDULER" },
+  [__NR_sched_getscheduler] = { elkvm_do_sched_getscheduler, "SCHED GETSCHEDULER" },
+  [__NR_sched_get_priority_max] = { elkvm_do_sched_get_priority_max, "SCHED GET PRIORITY MAX" },
+  [__NR_sched_get_priority_min] = { elkvm_do_sched_get_priority_min, "SCHED GET PRIORITY MIN" },
+  [__NR_sched_rr_get_interval]  = { elkvm_do_sched_rr_get_interval, "SCHED RR GET INTERVAL" },
+  [__NR_mlock]                  = { elkvm_do_mlock, "MLOCK" },
+  [__NR_munlock]                = { elkvm_do_munlock, "MUNLOCK" },
+  [__NR_mlockall]               = { elkvm_do_mlockall, "MLOCKALL" },
+  [__NR_munlockall]             = { elkvm_do_munlockall, "MUNLOCKALL" },
+  [__NR_vhangup]                = { elkvm_do_vhangup, "VHANGUP" },
+  [__NR_modify_ldt]             = { elkvm_do_modify_ldt, "MODIFY LDT" },
+  [__NR_pivot_root]             = { elkvm_do_pivot_root, "PIVOT ROOT" },
+  [__NR__sysctl]                = { elkvm_do_sysctl, " SYSCTL" },
+  [__NR_prctl]                  = { elkvm_do_prctl, "PRCTL" },
   [__NR_arch_prctl] = { elkvm_do_arch_prctl, "ARCH PRCTL" },
   [__NR_adjtimex]   = { elkvm_do_adjtimex, "ADJTIMEX" },
   [__NR_setrlimit]  = { elkvm_do_setrlimit, "SETRLIMIT" },
@@ -331,5 +383,6 @@ static struct {
   [__NR_epoll_wait]      = { elkvm_do_epoll_wait, "EPOLL WAIT" },
   [__NR_epoll_ctl]       = { elkvm_do_epoll_ctl, "EPOLL CTL" },
   [__NR_tgkill]          = { elkvm_do_tgkill, "TGKILL" },
+
 };
 

@@ -1926,6 +1926,114 @@ long elkvm_do_rt_sigsuspend(struct kvm_vm *vm) {
   return -ENOSYS;
 }
 
+long elkvm_do_sigaltstack(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_utime(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_mknod(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_uselib(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_personality(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_ustat(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_statfs(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_fstatfs(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_sysfs(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_getpriority(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_setpriority(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_sched_setparam(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_sched_getparam(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_sched_setscheduler(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_sched_getscheduler(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_sched_get_priority_max(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_sched_get_priority_min(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_sched_rr_get_interval(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_mlock(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_munlock(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_mlockall(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_munlockall(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_vhangup(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_modify_ldt(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_pivot_root(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_sysctl(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_prctl(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
 long elkvm_do_arch_prctl(struct kvm_vm *vm) {
   uint64_t code = 0;
   uint64_t user_addr = 0;
