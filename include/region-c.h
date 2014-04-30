@@ -19,8 +19,6 @@ int elkvm_region_free(struct kvm_vm *vm, struct elkvm_memory_region *region);
  */
 struct elkvm_memory_region *elkvm_region_find(struct kvm_vm *vm, void *host_p);
 
-struct elkvm_memory_region *elkvm_region_tree_traverse(struct elkvm_memory_region *region, void *host_p);
-
 int elkvm_region_list_prepend(struct kvm_vm *,
     struct elkvm_memory_region *);
 

@@ -16,27 +16,6 @@ int elkvm_region_free(struct kvm_vm *vm, struct elkvm_memory_region *region) {
   return 0;
 }
 
-struct elkvm_memory_region *
-elkvm_region_tree_traverse(struct elkvm_memory_region *region, void *host_p) {
-  assert(elkvm_address_in_region(region, host_p));
-
-  if(region->lc == NULL && region->rc == NULL) {
-    return region;
-  }
-
-  if(region->lc != NULL && elkvm_address_in_region(region->lc, host_p)) {
-    return elkvm_region_tree_traverse(region->lc, host_p);
-  }
-
-  if(region->rc != NULL && elkvm_address_in_region(region->rc, host_p)) {
-    return elkvm_region_tree_traverse(region->rc, host_p);
-  }
-
-  /* this code should not be reached */
-  assert(false);
-  return NULL;
-}
-
 int elkvm_region_list_prepend(struct kvm_vm *vm, struct elkvm_memory_region *region) {
   list_push_front(vm->root_region, region);
   return 0;
