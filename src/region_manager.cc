@@ -38,6 +38,24 @@ namespace Elkvm {
     return 0;
   }
 
+  void RegionManager::split_free_region(const size_t size) {
+    auto list_idx = get_freelist_idx(size);
+    while(list_idx < freelists.size() && freelists[list_idx].empty()) {
+      list_idx++;
+    }
+    if(list_idx >= freelists.size()) {
+      /* could not find a suitable region to split */
+      return;
+    }
+
+    Region &r = freelists[list_idx].back();
+    freelists[list_idx].pop_back();
+
+    Region new_region = r.slice_begin(size);
+    add_free_region(r);
+    add_free_region(new_region);
+  }
+
   void add_free_region(const Region &r) {
     auto list_idx = get_freelist_idx(r.size());
     freelists[list_idx].push_back(r);
