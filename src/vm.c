@@ -13,7 +13,7 @@
 #include <idt.h>
 #include <kvm.h>
 #include <pager.h>
-#include <region.h>
+#include <region-c.h>
 #include <stack.h>
 #include <vcpu.h>
 #include <elkvm.h>

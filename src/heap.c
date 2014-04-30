@@ -2,7 +2,7 @@
 
 #include <elkvm.h>
 #include <heap.h>
-#include <region.h>
+#include <region-c.h>
 
 int elkvm_heap_initialize(struct kvm_vm *vm, struct elkvm_memory_region *region,
     uint64_t size) {

@@ -17,7 +17,7 @@ extern "C" {
 
 #include "kvm.h"
 #include "pager.h"
-#include "region.h"
+#include "region-c.h"
 #include "vcpu.h"
 #include "list.h"
 #include "elkvm-signal.h"

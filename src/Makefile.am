@@ -9,8 +9,8 @@ libelkvm_la_SOURCES = debug.c \
 											mapping.c\
 										 	pager.c \
 											stack.c \
-											syscall.c\
-											region.c\
+											syscall.cc\
+											region.cc\
 											signal.c\
 											tss.c\
 											vcpu.c \

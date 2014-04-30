@@ -3,7 +3,7 @@
 #include <stdbool.h>
 
 #include "elkvm.h"
-#include "region.h"
+#include "region-c.h"
 
 int elkvm_heap_initialize(struct kvm_vm *, struct elkvm_memory_region *, uint64_t);
 int elkvm_heap_grow(struct kvm_vm *, uint64_t size);

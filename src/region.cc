@@ -2,9 +2,13 @@
 #include <stdio.h>
 
 #include <elkvm.h>
-#include <region.h>
+#include "region.h"
+
+Elkvm::RegionManager rm;
 
 struct elkvm_memory_region *elkvm_region_create(struct kvm_vm *vm, uint64_t req_size) {
+
+  rm.allocate_region(req_size);
 
   uint64_t size = req_size;
   if(req_size < ELKVM_PAGESIZE) {
@@ -60,7 +64,8 @@ int elkvm_region_split(struct elkvm_memory_region *region) {
 struct elkvm_memory_region *elkvm_region_alloc(void *host_base_p, uint64_t size,
     int down) {
   struct elkvm_memory_region *region;
-	region = malloc(sizeof(struct elkvm_memory_region));
+	region = reinterpret_cast<struct elkvm_memory_region *>(malloc(sizeof(
+          struct elkvm_memory_region)));
   if(region == NULL) {
     return NULL;
   }

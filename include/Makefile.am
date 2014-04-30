@@ -10,7 +10,6 @@ libelkvminclude_HEADERS = elkvm.h\
 													list.h\
 													mem_chunk.h\
 													pager.h\
-													region.h\
 													stack.h\
 													tss.h\
 													vcpu.h
