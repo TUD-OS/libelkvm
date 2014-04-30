@@ -215,7 +215,20 @@ long elkvm_do_afs_syscall(struct kvm_vm *vm);
 long elkvm_do_tuxcall(struct kvm_vm *vm);
 long elkvm_do_security(struct kvm_vm *vm);
 long elkvm_do_gettid(struct kvm_vm *vm);
-/* ... */
+long elkvm_do_readahead(struct kvm_vm *vm);
+long elkvm_do_setxattr(struct kvm_vm *vm);
+long elkvm_do_lsetxattr(struct kvm_vm *vm);
+long elkvm_do_fsetxattr(struct kvm_vm *vm);
+long elkvm_do_getxattr(struct kvm_vm *vm);
+long elkvm_do_lgetxattr(struct kvm_vm *vm);
+long elkvm_do_fgetxattr(struct kvm_vm *vm);
+long elkvm_do_listxattr(struct kvm_vm *vm);
+long elkvm_do_llistxattr(struct kvm_vm *vm);
+long elkvm_do_flistxattr(struct kvm_vm *vm);
+long elkvm_do_removexattr(struct kvm_vm *vm);
+long elkvm_do_lremovexattr(struct kvm_vm *vm);
+long elkvm_do_fremovexattr(struct kvm_vm *vm);
+long elkvm_do_tkill(struct kvm_vm *vm);
 long elkvm_do_time(struct kvm_vm *);
 long elkvm_do_futex(struct kvm_vm *vm);
 /* ... */
@@ -418,8 +431,21 @@ static struct {
   [__NR_afs_syscall]            = { elkvm_do_afs_syscall, "AFS SYSCALL" },
   [__NR_tuxcall]                = { elkvm_do_tuxcall, "TUXCALL" },
   [__NR_security]               = { elkvm_do_security, "SECURITY" },
-  [__NR_gettid]     = { elkvm_do_gettid, "GETTID" },
-  /* ... */
+  [__NR_gettid]                 = { elkvm_do_gettid, "GETTID" },
+  [__NR_readahead]              = { elkvm_do_readahead, "READAHEAD" },
+  [__NR_setxattr]               = { elkvm_do_setxattr, "SETXATTR" },
+  [__NR_lsetxattr]              = { elkvm_do_lsetxattr, "LETSETXATTR" },
+  [__NR_fsetxattr]              = { elkvm_do_fsetxattr, "FSETXATTR" },
+  [__NR_getxattr]               = { elkvm_do_getxattr, "GETXATTR" },
+  [__NR_lgetxattr]              = { elkvm_do_lgetxattr, "LGETXATTR" },
+  [__NR_fgetxattr]              = { elkvm_do_fgetxattr, "FGETXATTR" },
+  [__NR_listxattr]              = { elkvm_do_listxattr, "LISTXATTR" },
+  [__NR_llistxattr]             = { elkvm_do_llistxattr, "LLISTXATTR" },
+  [__NR_flistxattr]             = { elkvm_do_flistxattr, "FLISTXATTR" },
+  [__NR_removexattr]            = { elkvm_do_removexattr, "REMOVEXATTR" },
+  [__NR_lremovexattr]           = { elkvm_do_lremovexattr, "LREMOVEXATTR" },
+  [__NR_fremovexattr]           = { elkvm_do_fremovexattr, "FREMOVEXATTR" },
+  [__NR_tkill]                  = { elkvm_do_tkill, "TKILL" },
   [__NR_time]       = { elkvm_do_time, "TIME" },
   [__NR_futex]      = { elkvm_do_futex, "FUTEX" },
   /* ... */

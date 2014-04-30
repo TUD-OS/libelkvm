@@ -2206,6 +2206,62 @@ long elkvm_do_gettid(struct kvm_vm *vm) {
   return result;
 }
 
+long elkvm_do_readahead(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_setxattr(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_lsetxattr(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_fsetxattr(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_getxattr(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_lgetxattr(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_fgetxattr(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_listxattr(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_llistxattr(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_flistxattr(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_removexattr(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_lremovexattr(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_fremovexattr(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_tkill(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
 long elkvm_do_time(struct kvm_vm *vm) {
   if(vm->syscall_handlers->time == NULL) {
     printf("TIME handler not found\n");
