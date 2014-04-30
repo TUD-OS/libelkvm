@@ -16,11 +16,6 @@ int elkvm_region_free(struct kvm_vm *vm, struct elkvm_memory_region *region) {
   return 0;
 }
 
-int elkvm_region_list_prepend(struct kvm_vm *vm, struct elkvm_memory_region *region) {
-  list_push_front(vm->root_region, region);
-  return 0;
-}
-
 namespace Elkvm {
 
   bool same_region(const void *p1, const void *p2) {

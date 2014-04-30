@@ -281,7 +281,7 @@ long elkvm_do_read(struct kvm_vm *vm) {
       mark_p += in_result;
       current_count -= in_result;
       result += in_result;
-    } while(!elkvm_is_same_region(vm, host_begin_mark, bend));
+    } while(!Elkvm::same_region(host_begin_mark, bend));
     assert(current_count == 0);
 
   } else {
