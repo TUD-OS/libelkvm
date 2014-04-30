@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include <inttypes.h>
 #include <stdio.h>
 
@@ -36,6 +38,15 @@ namespace Elkvm {
 
   void *Region::last_valid_address() const {
     return host_p + rsize;
+  }
+
+  std::ostream &Region::print(std::ostream &stream) {
+    if(free) {
+      stream << "FREE ";
+    }
+    stream << "REGION[" << this << "] guest address: " << addr << " host_p: "
+      << host_p << " size: " << rsize << std::endl;
+    return stream;
   }
 
   Region Region::slice_begin(const size_t size) {

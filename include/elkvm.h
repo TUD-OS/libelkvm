@@ -36,7 +36,7 @@ typedef uint64_t guestptr_t;
 
 struct region_mapping {
   void *host_p;
-  uint64_t guest_virt;
+  guestptr_t guest_virt;
   size_t length;
   unsigned mapped_pages;
 };

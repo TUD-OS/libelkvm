@@ -23,9 +23,11 @@ namespace Elkvm {
       struct elkvm_memory_region *c_region() const;
       bool contains_address(const void *addr) const;
       void *last_valid_address() const;
-      size_t size() const { return rsize; }
+      std::ostream &print(std::ostream &);
       void set_free() { free = true; addr = 0x0; }
+      void set_guest_addr(guestptr_t a) { addr = a; };
       void set_used() { free = false; }
+      size_t size() const { return rsize; }
       Region slice_begin(const size_t size);
   };
 

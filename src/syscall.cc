@@ -1,6 +1,8 @@
+#include <cstring>
+#include <iostream>
+
 #include <errno.h>
 #include <asm-generic/fcntl.h>
-#include <string.h>
 #include <asm/prctl.h>
 #include <sys/mman.h>
 #include <sys/prctl.h>
@@ -543,15 +545,13 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   struct region_mapping *mapping = elkvm_mapping_alloc();
   assert(mapping != NULL);
 
-  struct elkvm_memory_region *region = elkvm_region_create(vm, length);
-  if(region == NULL) {
-    return -ENOMEM;
-  }
+  Elkvm::Region &region = Elkvm::rm.allocate_region(length);
 
-  mapping->host_p = region->host_base_p;
+  mapping->host_p = region.base_address();
   mapping->length = length;
   mapping->mapped_pages = pages_from_size(length);
-  mapping->guest_virt = reinterpret_cast<uint64_t>(addr);
+  mapping->guest_virt = reinterpret_cast<guestptr_t>(addr);
+  region.set_guest_addr(mapping->guest_virt);
 
   if(addr && (flags & MAP_FIXED)) {
     void *h = kvm_pager_get_host_p(&vm->pager, mapping->guest_virt);
@@ -565,7 +565,6 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
 
   long result = vm->syscall_handlers->mmap((void *)addr_p, length, prot,
       flags, fd, offset, mapping);
-  region->guest_virtual = mapping->guest_virt;
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
     printf("MMAP addr_p %p length %lu prot %lu flags %lu",
@@ -577,8 +576,7 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
 
     printf("RESULT: %li\n", result);
     if(result >= 0) {
-      printf("REGION: %p host_base_p: %p region_size: 0x%lx guest_virt: 0x%lx used: %i\n",
-          region, region->host_base_p, region->region_size, region->guest_virtual, region->used);
+      region.print(std::cout);
       printf("MAPPING: %p host_p: %p guest_virt: 0x%lx length %zd (0x%lx) mapped pages %i (%i)\n",
           mapping, mapping->host_p, mapping->guest_virt, mapping->length,
           mapping->length, mapping->mapped_pages, pages_from_size(length));
