@@ -16,16 +16,6 @@ int elkvm_region_free(struct kvm_vm *vm, struct elkvm_memory_region *region) {
   return 0;
 }
 
-struct elkvm_memory_region *elkvm_region_find(struct kvm_vm *vm, void *host_p) {
-  list_each(vm->root_region, region) {
-    if(elkvm_address_in_region(region, host_p)) {
-      return elkvm_region_tree_traverse(region, host_p);
-    }
-  }
-
-  return NULL;
-}
-
 struct elkvm_memory_region *
 elkvm_region_tree_traverse(struct elkvm_memory_region *region, void *host_p) {
   assert(elkvm_address_in_region(region, host_p));
@@ -47,17 +37,6 @@ elkvm_region_tree_traverse(struct elkvm_memory_region *region, void *host_p) {
   return NULL;
 }
 
-bool elkvm_is_same_region(struct kvm_vm *vm, void *host_1, void *host_2) {
-  struct elkvm_memory_region *region;
-  region = elkvm_region_find(vm, host_1);
-  if(region == NULL) {
-    return false;
-  }
-
-  return elkvm_address_in_region(region, host_2);
-}
-
-
 int elkvm_region_list_prepend(struct kvm_vm *vm, struct elkvm_memory_region *region) {
   list_push_front(vm->root_region, region);
   return 0;
@@ -65,7 +44,12 @@ int elkvm_region_list_prepend(struct kvm_vm *vm, struct elkvm_memory_region *reg
 
 namespace Elkvm {
 
-  struct elkvm_memory_region *Region::c_region() {
+  bool same_region(const void *p1, const void *p2) {
+    const Region &r = Elkvm::rm.find_region(p1);
+    return r.contains_address(p2);
+  }
+
+  struct elkvm_memory_region *Region::c_region() const {
     struct elkvm_memory_region *r = new(struct elkvm_memory_region);
     r->host_base_p = host_p;
     r->guest_virtual = addr;
@@ -74,6 +58,10 @@ namespace Elkvm {
     r->grows_downward = 0;
     r->rc = r->lc = NULL;
     return r;
+  }
+
+  void *Region::last_valid_address() const {
+    return host_p + size;
   }
 
 //namespace Elkvm

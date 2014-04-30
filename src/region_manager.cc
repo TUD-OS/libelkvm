@@ -70,7 +70,13 @@ namespace Elkvm {
     return 0;
   }
 
-  void RegionManager::free_region(void *host_p, size_t sz) {
+  void RegionManager::free_region(Region &r) {
+    r.set_free();
+    /* TODO add region to freelist */
+    assert(false && "not implemented");
+  }
+
+  void RegionManager::free_region(const void *host_p, const size_t sz) {
     /* TODO add region to freelist */
     assert(false && "not implemented");
   }

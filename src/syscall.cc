@@ -11,12 +11,12 @@
 #include <elkvm.h>
 #include <heap.h>
 #include <mapping.h>
-#include <region.h>
 #include <stack.h>
 #include <syscall.h>
 #include <vcpu.h>
 
 #include "elfloader.h"
+#include "region.h"
 
 int elkvm_handle_hypercall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
   int err = 0;
@@ -241,8 +241,8 @@ long elkvm_do_read(struct kvm_vm *vm) {
   long result = 0;
 
   struct region_mapping *mapping = elkvm_mapping_find(vm, buf);
-  if(mapping == NULL && !elkvm_is_same_region(vm, buf, bend)) {
-    assert(elkvm_region_find(vm, bend) != NULL);
+  if(mapping == NULL && !Elkvm::same_region(buf, bend)) {
+    assert(Elkvm::rm.address_valid(bend));
     char *host_begin_mark = NULL;
     char *host_end_mark = buf;
     uint64_t mark_p = buf_p;
@@ -250,16 +250,12 @@ long elkvm_do_read(struct kvm_vm *vm) {
     do {
       host_begin_mark = reinterpret_cast<char *>(kvm_pager_get_host_p(&vm->pager,
             mark_p));
-      struct elkvm_memory_region *region = NULL;
-      region = elkvm_region_find(vm, host_begin_mark);
-      assert(region != NULL);
-      assert(region->lc == NULL);
-      assert(region->rc == NULL);
+      Elkvm::Region &region = Elkvm::rm.find_region(host_begin_mark);
       if(mark_p != buf_p) {
-        assert(host_begin_mark == region->host_base_p);
+        assert(host_begin_mark == region.base_address());
       }
 
-      host_end_mark = (char *)region->host_base_p + region->region_size;
+      host_end_mark = reinterpret_cast<char *>(region.last_valid_address());
       assert(host_end_mark > host_begin_mark);
 
       size_t newcount = host_end_mark - host_begin_mark;
@@ -687,9 +683,8 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
   }
 
   if(mapping->mapped_pages == 0) {
-    struct elkvm_memory_region *region =  elkvm_region_find(vm, addr);
-    region->used = 0;
-    region->guest_virtual = 0x0;
+    Elkvm::Region &region = Elkvm::rm.find_region(addr);
+    Elkvm::rm.free_region(region);
     list_remove(vm->mappings, mapping);
     free(mapping);
     mapping = NULL;

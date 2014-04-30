@@ -19,11 +19,15 @@ namespace Elkvm {
         addr(0),
         size(sz),
         free(true) {}
-      bool contains_address(void *addr);
-      void set_free() { free = true; }
+      void *base_address() const { return host_p; }
+      struct elkvm_memory_region *c_region() const;
+      bool contains_address(const void *addr) const;
+      void *last_valid_address() const;
+      void set_free() { free = true; addr = 0x0; }
       void set_used() { free = false; }
-      struct elkvm_memory_region *c_region();
   };
+
+  bool same_region(const void *p1, const void *p2);
 
   class RegionManager {
     private:
@@ -32,9 +36,12 @@ namespace Elkvm {
       int add_chunk(struct kvm_pager *pager, uint64_t size);
 
     public:
+      bool address_valid(const void *host_p) const;
       Region &allocate_region(size_t size);
-      Region &find_region(void *host_p);
-      Region &find_region(guestptr_t addr);
+      Region &find_region(const void *host_p) const;
+      Region &find_region(const guestptr_t addr) const;
+      void free_region(Region &r);
+      void free_region(const void *host_p, const size_t sz);
 
   };
 
