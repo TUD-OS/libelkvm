@@ -27,7 +27,7 @@ namespace Elkvm {
     struct elkvm_memory_region *r = new(struct elkvm_memory_region);
     r->host_base_p = host_p;
     r->guest_virtual = addr;
-    r->region_size = size;
+    r->region_size = rsize;
     r->used = !free;
     r->grows_downward = 0;
     r->rc = r->lc = NULL;
@@ -35,7 +35,7 @@ namespace Elkvm {
   }
 
   void *Region::last_valid_address() const {
-    return host_p + size;
+    return host_p + rsize;
   }
 
 //namespace Elkvm

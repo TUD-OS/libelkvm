@@ -11,18 +11,19 @@ namespace Elkvm {
     private:
       void *host_p;
       guestptr_t addr;
-      size_t size;
+      size_t rsize;
       bool free;
     public:
-      Region(void *chunk_p, size_t sz) :
+      Region(void *chunk_p, size_t size) :
         host_p(chunk_p),
         addr(0),
-        size(sz),
+        rsize(size),
         free(true) {}
       void *base_address() const { return host_p; }
       struct elkvm_memory_region *c_region() const;
       bool contains_address(const void *addr) const;
       void *last_valid_address() const;
+      size_t size() const { return rsize; }
       void set_free() { free = true; addr = 0x0; }
       void set_used() { free = false; }
   };
