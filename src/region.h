@@ -38,6 +38,7 @@ namespace Elkvm {
       int add_chunk(struct kvm_pager *pager, uint64_t size);
 
     public:
+      void add_free_region(const Region &region);
       bool address_valid(const void *host_p) const;
       Region &allocate_region(size_t size);
       Region &find_region(const void *host_p) const;

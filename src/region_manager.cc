@@ -38,6 +38,11 @@ namespace Elkvm {
     return 0;
   }
 
+  void add_free_region(const Region &r) {
+    auto list_idx = get_freelist_idx(r.size());
+    freelists[list_idx].push_back(r);
+  }
+
   void RegionManager::free_region(Region &r) {
     r.set_free();
     /* TODO add region to freelist */
