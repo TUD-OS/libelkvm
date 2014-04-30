@@ -70,6 +70,11 @@ namespace Elkvm {
     return 0;
   }
 
+  void RegionManager::free_region(void *host_p, size_t sz) {
+    /* TODO add region to freelist */
+    assert(false && "not implemented");
+  }
+
 //namespace Elkvm
 }
 

@@ -13,11 +13,12 @@ namespace Elkvm {
       guestptr_t addr;
       size_t size;
       bool free;
-      bool down;
     public:
       Region(void *chunk_p, size_t sz) :
         host_p(chunk_p),
-        size(sz) {}
+        addr(0),
+        size(sz),
+        free(true) {}
       bool contains_address(void *addr);
       void set_free() { free = true; }
       void set_used() { free = false; }
