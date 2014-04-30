@@ -857,6 +857,10 @@ long elkvm_do_pread64(struct kvm_vm *vm) {
   return -ENOSYS;
 }
 
+long elkvm_do_pwrite64(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
 void elkvm_get_host_iov(struct kvm_vm *vm, uint64_t iov_p, uint64_t iovcnt,
     struct iovec *host_iov) {
   struct iovec *guest_iov = NULL;
