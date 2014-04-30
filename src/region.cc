@@ -3,62 +3,11 @@
 
 #include <elkvm.h>
 #include "region.h"
-
-Elkvm::RegionManager rm;
+#include "region-c.h"
 
 struct elkvm_memory_region *elkvm_region_create(struct kvm_vm *vm, uint64_t req_size) {
-
-  rm.allocate_region(req_size);
-
-  uint64_t size = req_size;
-  if(req_size < ELKVM_PAGESIZE) {
-    size = ELKVM_PAGESIZE;
-  }
-
-  struct elkvm_memory_region *r = NULL;
-  list_each(vm->root_region, current) {
-    r = elkvm_region_find_free(current, size);
-    if(r != NULL) {
-      break;
-    }
-  }
-
-  if(r == NULL) {
-    /* get a new memory chunk and add that to the list of root regions */
-    void *chunk_p;
-    uint64_t grow_size = size > ELKVM_SYSTEM_MEMGROW ? pagesize_align(size) : ELKVM_SYSTEM_MEMGROW;
-    int err = kvm_pager_create_mem_chunk(&vm->pager, &chunk_p, grow_size);
-    if(err) {
-      return NULL;
-    }
-    r = elkvm_region_alloc(chunk_p, grow_size, 0);
-    if(r == NULL) {
-      return NULL;
-    }
-    elkvm_region_list_prepend(vm, r);
-    r  = elkvm_region_find_free(r, size);
-
-  }
-
-	r->used = 1;
-
-	return r;
-}
-
-int elkvm_region_split(struct elkvm_memory_region *region) {
-	if(region->used) {
-		return -1;
-	}
-  if(region->region_size < ELKVM_PAGESIZE) {
-    return -1;
-  }
-	region->used = 1;
-
-  region->lc = elkvm_region_alloc(region->host_base_p, region->region_size / 2, 0);
-  region->rc = elkvm_region_alloc(region->host_base_p + region->lc->region_size,
-      region->region_size / 2, 0);
-
-	return 0;
+  Elkvm::Region &r = Elkvm::rm.allocate_region(req_size);
+	return r.c_region();
 }
 
 struct elkvm_memory_region *elkvm_region_alloc(void *host_base_p, uint64_t size,
@@ -178,3 +127,18 @@ int elkvm_region_list_prepend(struct kvm_vm *vm, struct elkvm_memory_region *reg
   return 0;
 }
 
+namespace Elkvm {
+
+  struct elkvm_memory_region *Region::c_region() {
+    struct elkvm_memory_region *r = new(struct elkvm_memory_region);
+    r->host_base_p = host_p;
+    r->guest_virtual = addr;
+    r->region_size = size;
+    r->used = !free;
+    r->grows_downward = down;
+    r->rc = r->lc = NULL;
+    return r;
+  }
+
+//namespace Elkvm
+}
