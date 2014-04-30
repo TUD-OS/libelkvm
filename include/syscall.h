@@ -200,6 +200,7 @@ static struct {
   [__NR_rt_sigreturn]   = { elkvm_do_sigreturn, "SIGRETURN" },
   [__NR_ioctl]          = { elkvm_do_ioctl, "IOCTL" },
   [__NR_pread64]        = { elkvm_do_pread64, "PREAD64" },
+  [__NR_pwrite64]       = { elkvm_do_pwrite64, "PWRITE64" },
   [__NR_readv]          = { elkvm_do_readv, "READV" },
   [__NR_writev]         = { elkvm_do_writev, "WRITEV" },
   [__NR_access]         = { elkvm_do_access, "ACCESS" },
