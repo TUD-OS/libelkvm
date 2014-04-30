@@ -231,7 +231,30 @@ long elkvm_do_fremovexattr(struct kvm_vm *vm);
 long elkvm_do_tkill(struct kvm_vm *vm);
 long elkvm_do_time(struct kvm_vm *);
 long elkvm_do_futex(struct kvm_vm *vm);
-/* ... */
+long elkvm_do_sched_setaffinity(struct kvm_vm *vm);
+long elkvm_do_sched_getaffinity(struct kvm_vm *vm);
+long elkvm_do_set_thread_area(struct kvm_vm *vm);
+long elkvm_do_io_setup(struct kvm_vm *vm);
+long elkvm_do_io_destroy(struct kvm_vm *vm);
+long elkvm_do_getevents(struct kvm_vm *vm);
+long elkvm_do_submit(struct kvm_vm *vm);
+long elkvm_do_cancel(struct kvm_vm *vm);
+long elkvm_do_get_thread_area(struct kvm_vm *vm);
+long elkvm_do_lookup_dcookie(struct kvm_vm *vm);
+long elkvm_do_epoll_create(struct kvm_vm *vm);
+long elkvm_do_epoll_ctl_old(struct kvm_vm *vm);
+long elkvm_do_epoll_wait_old(struct kvm_vm *vm);
+long elkvm_do_remap_file_pages(struct kvm_vm *vm);
+long elkvm_do_getdents64(struct kvm_vm *vm);
+long elkvm_do_set_tid_address(struct kvm_vm *vm);
+long elkvm_do_restart_syscall(struct kvm_vm *vm);
+long elkvm_do_semtimedop(struct kvm_vm *vm);
+long elkvm_do_fadive64(struct kvm_vm *vm);
+long elkvm_do_timer_create(struct kvm_vm *vm);
+long elkvm_do_timer_settime(struct kvm_vm *vm);
+long elkvm_do_timer_gettime(struct kvm_vm *vm);
+long elkvm_do_timer_getoverrun(struct kvm_vm *vm);
+long elkvm_do_timer_delete(struct kvm_vm *vm);
 long elkvm_do_clock_settime(struct kvm_vm *);
 long elkvm_do_clock_gettime(struct kvm_vm *);
 long elkvm_do_clock_getres(struct kvm_vm *);
@@ -446,9 +469,32 @@ static struct {
   [__NR_lremovexattr]           = { elkvm_do_lremovexattr, "LREMOVEXATTR" },
   [__NR_fremovexattr]           = { elkvm_do_fremovexattr, "FREMOVEXATTR" },
   [__NR_tkill]                  = { elkvm_do_tkill, "TKILL" },
-  [__NR_time]       = { elkvm_do_time, "TIME" },
-  [__NR_futex]      = { elkvm_do_futex, "FUTEX" },
-  /* ... */
+  [__NR_time]                   = { elkvm_do_time, "TIME" },
+  [__NR_futex]                  = { elkvm_do_futex, "FUTEX" },
+  [__NR_sched_setaffinity]      = { elkvm_do_sched_setaffinity, "SCHED SETAFFINITY" },
+  [__NR_sched_getaffinity]      = { elkvm_do_sched_getaffinity, "SCHED GETAFFINITY" },
+  [__NR_set_thread_area]        = { elkvm_do_set_thread_area, "SET THREAD AREA" },
+  [__NR_io_setup]               = { elkvm_do_io_setup, "IO SETUP" },
+  [__NR_io_destroy]             = { elkvm_do_io_destroy, "IO DESTROY" },
+  [__NR_io_getevents]           = { elkvm_do_getevents, "IO GETEVENTS" },
+  [__NR_io_submit]              = { elkvm_do_submit, "IO SUBMIT" },
+  [__NR_io_cancel]              = { elkvm_do_cancel, "IO CANCEL" },
+  [__NR_get_thread_area]        = { elkvm_do_get_thread_area, "GET THREAD AREA" },
+  [__NR_lookup_dcookie]         = { elkvm_do_lookup_dcookie, "LOOKUP DCOOKIE" },
+  [__NR_epoll_create]           = { elkvm_do_epoll_create, "EPOLL CREATE" },
+  [__NR_epoll_ctl_old]          = { elkvm_do_epoll_ctl_old, "EPOLL CTL OLD" },
+  [__NR_epoll_wait_old]         = { elkvm_do_epoll_wait_old, "EPOLL WAIT OLD" },
+  [__NR_remap_file_pages]       = { elkvm_do_remap_file_pages, "REMAP FILE PAGES" },
+  [__NR_getdents64]             = { elkvm_do_getdents64, "GETDENTS64" },
+  [__NR_set_tid_address]        = { elkvm_do_set_tid_address, "SET TID ADDRESS" },
+  [__NR_restart_syscall]        = { elkvm_do_restart_syscall, "RESTART SYSCALL" },
+  [__NR_semtimedop]             = { elkvm_do_semtimedop, "SEMTIMEDOP" },
+  [__NR_fadvise64]              = { elkvm_do_fadive64, "FADVISE64" },
+  [__NR_timer_create]           = { elkvm_do_timer_create, "TIMER CREATE" },
+  [__NR_timer_settime]          = { elkvm_do_timer_settime, "TIMER SETTIME" },
+  [__NR_timer_gettime]          = { elkvm_do_timer_gettime, "TIMER GETTIME" },
+  [__NR_timer_getoverrun]       = { elkvm_do_timer_getoverrun, "TIMER GETOVERRUN" },
+  [__NR_timer_delete]           = { elkvm_do_timer_delete, "TIMER DELETE" },
   [__NR_clock_settime]   = { elkvm_do_clock_settime, "CLOCK SETTIME" },
   [__NR_clock_gettime]   = { elkvm_do_clock_gettime, "CLOCK GETTIME" },
   [__NR_clock_getres]    = { elkvm_do_clock_getres, "CLOCK GETRES" },

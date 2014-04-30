@@ -2343,6 +2343,102 @@ long elkvm_do_futex(struct kvm_vm *vm) {
 
 }
 
+long elkvm_do_sched_setaffinity(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_sched_getaffinity(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_set_thread_area(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_io_setup(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_io_destroy(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_getevents(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_submit(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_cancel(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_get_thread_area(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_lookup_dcookie(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_epoll_create(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_epoll_ctl_old(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_epoll_wait_old(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_remap_file_pages(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_getdents64(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_set_tid_address(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_restart_syscall(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_semtimedop(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_fadive64(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_timer_create(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_timer_settime(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_timer_gettime(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_timer_getoverrun(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_timer_delete(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
 long elkvm_do_clock_settime(struct kvm_vm *vm) {
   return -ENOSYS;
 }
