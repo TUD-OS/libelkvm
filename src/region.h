@@ -26,6 +26,7 @@ namespace Elkvm {
       size_t size() const { return rsize; }
       void set_free() { free = true; addr = 0x0; }
       void set_used() { free = false; }
+      Region slice_begin(const size_t size);
   };
 
   bool same_region(const void *p1, const void *p2);
