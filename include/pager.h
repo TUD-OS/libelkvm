@@ -71,7 +71,7 @@ kvm_pager_alloc_chunk(struct kvm_pager *pager, void *addr,
 	Let Pager create a mem chunk of the given size. The mem_chunk will be added
   to the end of the other_chunks list
 */
-int kvm_pager_create_mem_chunk(struct kvm_pager *, void **, int);
+int kvm_pager_create_mem_chunk(const struct kvm_pager * const, void **, int);
 
 /*
 	Create Page Tables according to given mode
