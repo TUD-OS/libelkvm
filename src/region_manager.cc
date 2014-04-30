@@ -65,13 +65,12 @@ namespace Elkvm {
 
   void RegionManager::free_region(Region &r) {
     r.set_free();
-    /* TODO add region to freelist */
-    assert(false && "not implemented");
+    add_free_region(r);
   }
 
   void RegionManager::free_region(const void *host_p, const size_t sz) {
-    /* TODO add region to freelist */
-    assert(false && "not implemented");
+    Region r(host_p, sz);
+    add_free_region(r);
   }
 
   std::array<std::vector<Region>, 15>::size_type
