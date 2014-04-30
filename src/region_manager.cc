@@ -3,39 +3,7 @@
 namespace Elkvm {
 
   Region &RegionManager::allocate_region(size_t size) {
-    int list_idx = 0;
-    if(size <= 0x1000) {
-      list_idx = 0;
-    } else if(size <= 0x2000) {
-      list_idx = 1;
-    } else if(size <= 0x4000) {
-      list_idx = 2;
-    } else if(size <= 0x8000) {
-      list_idx = 3;
-    } else if(size <= 0x10000) {
-      list_idx = 4;
-    } else if(size <= 0x20000) {
-      list_idx = 5;
-    } else if(size <= 0x40000) {
-      list_idx = 6;
-    } else if(size <= 0x80000) {
-      list_idx = 7;
-    } else if(size <= 0x100000) {
-      list_idx = 8;
-    } else if(size <= 0x200000) {
-      list_idx = 9;
-    } else if(size <= 0x400000) {
-      list_idx = 10;
-    } else if(size <= 0x800000) {
-      list_idx = 11;
-    } else if(size <= 0x1000000) {
-      list_idx = 12;
-    } else if(size <= 0x2000000) {
-      list_idx = 13;
-    } else if(size <= 0x4000000) {
-      list_idx = 14;
-    }
-    /* TODO requests larger than ELKVM_GROW_SIZE */
+    int list_idx = get_freelist_idx(size);
 
     auto &freelist = freelists[list_idx];
     while(freelist.empty()) {
@@ -79,6 +47,43 @@ namespace Elkvm {
   void RegionManager::free_region(const void *host_p, const size_t sz) {
     /* TODO add region to freelist */
     assert(false && "not implemented");
+  }
+
+  std::array<std::vector<Region>, 15>::size_type
+  get_freelist_idx(const size_t size) {
+    int list_idx = 0;
+    if(size <= 0x1000) {
+      return list_idx = 0;
+    } else if(size <= 0x2000) {
+      return list_idx = 1;
+    } else if(size <= 0x4000) {
+      return list_idx = 2;
+    } else if(size <= 0x8000) {
+      return list_idx = 3;
+    } else if(size <= 0x10000) {
+      return list_idx = 4;
+    } else if(size <= 0x20000) {
+      return list_idx = 5;
+    } else if(size <= 0x40000) {
+      return list_idx = 6;
+    } else if(size <= 0x80000) {
+      return list_idx = 7;
+    } else if(size <= 0x100000) {
+      return list_idx = 8;
+    } else if(size <= 0x200000) {
+      return list_idx = 9;
+    } else if(size <= 0x400000) {
+      return list_idx = 10;
+    } else if(size <= 0x800000) {
+      return list_idx = 11;
+    } else if(size <= 0x1000000) {
+      return list_idx = 12;
+    } else if(size <= 0x2000000) {
+      return list_idx = 13;
+    } else if(size <= 0x4000000) {
+      return list_idx = 14;
+    }
+    /* TODO requests larger than ELKVM_GROW_SIZE */
   }
 
 //namespace Elkvm
