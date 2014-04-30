@@ -189,7 +189,31 @@ long elkvm_do_prctl(struct kvm_vm *);
 long elkvm_do_arch_prctl(struct kvm_vm *);
 long elkvm_do_adjtimex(struct kvm_vm *vm);
 long elkvm_do_setrlimit(struct kvm_vm *vm);
-/* ... */
+long elkvm_do_chroot(struct kvm_vm *vm);
+long elkvm_do_sync(struct kvm_vm *vm);
+long elkvm_do_acct(struct kvm_vm *vm);
+long elkvm_do_settimeofday(struct kvm_vm *vm);
+long elkvm_do_mount(struct kvm_vm *vm);
+long elkvm_do_umount2(struct kvm_vm *vm);
+long elkvm_do_swapon(struct kvm_vm *vm);
+long elkvm_do_swapoff(struct kvm_vm *vm);
+long elkvm_do_reboot(struct kvm_vm *vm);
+long elkvm_do_sethostname(struct kvm_vm *vm);
+long elkvm_do_setdomainname(struct kvm_vm *vm);
+long elkvm_do_iopl(struct kvm_vm *vm);
+long elkvm_do_ioperm(struct kvm_vm *vm);
+long elkvm_do_create_module(struct kvm_vm *vm);
+long elkvm_do_init_module(struct kvm_vm *vm);
+long elkvm_do_delete_module(struct kvm_vm *vm);
+long elkvm_do_get_kernel_syms(struct kvm_vm *vm);
+long elkvm_do_query_module(struct kvm_vm *vm);
+long elkvm_do_quotactl(struct kvm_vm *vm);
+long elkvm_do_nfsservctl(struct kvm_vm *vm);
+long elkvm_do_getpmsg(struct kvm_vm *vm);
+long elkvm_do_putpmsg(struct kvm_vm *vm);
+long elkvm_do_afs_syscall(struct kvm_vm *vm);
+long elkvm_do_tuxcall(struct kvm_vm *vm);
+long elkvm_do_security(struct kvm_vm *vm);
 long elkvm_do_gettid(struct kvm_vm *vm);
 /* ... */
 long elkvm_do_time(struct kvm_vm *);
@@ -366,10 +390,34 @@ static struct {
   [__NR_pivot_root]             = { elkvm_do_pivot_root, "PIVOT ROOT" },
   [__NR__sysctl]                = { elkvm_do_sysctl, " SYSCTL" },
   [__NR_prctl]                  = { elkvm_do_prctl, "PRCTL" },
-  [__NR_arch_prctl] = { elkvm_do_arch_prctl, "ARCH PRCTL" },
-  [__NR_adjtimex]   = { elkvm_do_adjtimex, "ADJTIMEX" },
-  [__NR_setrlimit]  = { elkvm_do_setrlimit, "SETRLIMIT" },
-  /* ... */
+  [__NR_arch_prctl]             = { elkvm_do_arch_prctl, "ARCH PRCTL" },
+  [__NR_adjtimex]               = { elkvm_do_adjtimex, "ADJTIMEX" },
+  [__NR_setrlimit]              = { elkvm_do_setrlimit, "SETRLIMIT" },
+  [__NR_chroot]                 = { elkvm_do_chroot, "CHROOT" },
+  [__NR_sync]                   = { elkvm_do_sync, "SYNC" },
+  [__NR_acct]                   = { elkvm_do_acct, "ACCT" },
+  [__NR_settimeofday]           = { elkvm_do_settimeofday, "SETTIMEOFDAY" },
+  [__NR_mount]                  = { elkvm_do_mount, "MOUNT" },
+  [__NR_umount2]                = { elkvm_do_umount2, "UMOUNT2" },
+  [__NR_swapon]                 = { elkvm_do_swapon, "SWAPON" },
+  [__NR_swapoff]                = { elkvm_do_swapoff, "SWAPOFF" },
+  [__NR_reboot]                 = { elkvm_do_reboot, "REBOOT" },
+  [__NR_sethostname]            = { elkvm_do_sethostname, "SETHOSTNAME" },
+  [__NR_setdomainname]          = { elkvm_do_setdomainname, "SETDOMAINNAME" },
+  [__NR_iopl]                   = { elkvm_do_iopl, "IOPL" },
+  [__NR_ioperm]                 = { elkvm_do_ioperm, "IOPERM" },
+  [__NR_create_module]          = { elkvm_do_create_module, "CREATE MODULE" },
+  [__NR_init_module]            = { elkvm_do_init_module, "INIT MODULE" },
+  [__NR_delete_module]          = { elkvm_do_delete_module, "DELETE MODULE" },
+  [__NR_get_kernel_syms]        = { elkvm_do_get_kernel_syms, "GET KERNEL SYMS" },
+  [__NR_query_module]           = { elkvm_do_query_module, "QUERY MODULE" },
+  [__NR_quotactl]               = { elkvm_do_quotactl, "QUOTACTL" },
+  [__NR_nfsservctl]             = { elkvm_do_nfsservctl, "NFSSERVCTL" },
+  [__NR_getpmsg]                = { elkvm_do_getpmsg, "GETPMSG" },
+  [__NR_putpmsg]                = { elkvm_do_putpmsg, "PUTPMSG" },
+  [__NR_afs_syscall]            = { elkvm_do_afs_syscall, "AFS SYSCALL" },
+  [__NR_tuxcall]                = { elkvm_do_tuxcall, "TUXCALL" },
+  [__NR_security]               = { elkvm_do_security, "SECURITY" },
   [__NR_gettid]     = { elkvm_do_gettid, "GETTID" },
   /* ... */
   [__NR_time]       = { elkvm_do_time, "TIME" },

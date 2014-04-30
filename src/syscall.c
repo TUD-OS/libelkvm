@@ -2090,6 +2090,106 @@ long elkvm_do_setrlimit(struct kvm_vm *vm) {
   return -ENOSYS;
 }
 
+long elkvm_do_chroot(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_sync(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_acct(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_settimeofday(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_mount(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_umount2(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_swapon(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_swapoff(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_reboot(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_sethostname(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_setdomainname(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_iopl(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_ioperm(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_create_module(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_init_module(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_delete_module(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_get_kernel_syms(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_query_module(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_quotactl(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_nfsservctl(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_getpmsg(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_putpmsg(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_afs_syscall(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_tuxcall(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
+long elkvm_do_security(struct kvm_vm *vm) {
+  return -ENOSYS;
+}
+
 long elkvm_do_gettid(struct kvm_vm *vm) {
   if(vm->syscall_handlers->gettid == NULL) {
     printf("GETTID handler not found\n");
