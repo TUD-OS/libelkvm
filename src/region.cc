@@ -38,7 +38,7 @@ namespace Elkvm {
     return host_p + rsize;
   }
 
-  Region slice_begin(const size_t size) {
+  Region Region::slice_begin(const size_t size) {
     assert(free);
     assert(rsize > size);
 

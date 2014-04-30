@@ -58,7 +58,7 @@ namespace Elkvm {
     add_free_region(new_region);
   }
 
-  void add_free_region(const Region &r) {
+  void RegionManager::add_free_region(const Region &r) {
     auto list_idx = get_freelist_idx(r.size());
     freelists[list_idx].push_back(r);
   }
@@ -68,7 +68,7 @@ namespace Elkvm {
     add_free_region(r);
   }
 
-  void RegionManager::free_region(const void *host_p, const size_t sz) {
+  void RegionManager::free_region(void *host_p, const size_t sz) {
     Region r(host_p, sz);
     add_free_region(r);
   }
