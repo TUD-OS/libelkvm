@@ -9,16 +9,11 @@ namespace Elkvm {
     int list_idx = get_freelist_idx(size);
 
     auto &freelist = freelists[list_idx];
-    while(freelist.empty()) {
-      list_idx++;
-      if(list_idx > freelists.size()) {
-        break;
-      }
-
+    if(freelist.empty()) {
+      int err = split_free_region(size);
+      assert(err == 0);
       freelist = freelists[list_idx];
-      /* TODO region must be split */
     }
-    /* TODO what if no freelist contained a valid entry */
 
     Region &r = freelist.back();
     freelist.pop_back();
@@ -61,9 +56,16 @@ namespace Elkvm {
     while(list_idx < freelists.size() && freelists[list_idx].empty()) {
       list_idx++;
     }
-    if(list_idx >= freelists.size()) {
-      /* could not find a suitable region to split */
-      return;
+    if(list_idx == freelists.size()) {
+      /*
+       * could not find a suitable region to split
+       * therefore we need to add a new chunk
+       */
+      int err = add_chunk(size);
+      if(err) {
+        return err;
+      }
+      list_idx--;
     }
 
     Region &r = freelists[list_idx].back();
@@ -72,6 +74,7 @@ namespace Elkvm {
     Region new_region = r.slice_begin(size);
     add_free_region(r);
     add_free_region(new_region);
+    return 0;
   }
 
   void RegionManager::add_free_region(const Region &r) {
