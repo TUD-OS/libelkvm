@@ -67,9 +67,10 @@ namespace Elkvm {
     assert(free);
     assert(rsize > size);
 
-    Region r(host_p, size);
-    host_p += size;
-    rsize  -= size;
+    Region r(host_p, pagesize_align(size));
+    host_p = reinterpret_cast<void *>(
+        next_page(reinterpret_cast<uint64_t>(host_p) + size));
+    rsize = pagesize_align(rsize - size);
     return r;
   }
 
