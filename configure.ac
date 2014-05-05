@@ -8,7 +8,6 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_PROG_CC
 AC_PROG_CC_STDC
 LT_INIT
-AM_PROG_CC_C_O
 
 #Check for libraries
 AC_CHECK_LIB([elf], [elf_begin])
