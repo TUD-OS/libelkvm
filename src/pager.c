@@ -303,6 +303,7 @@ int kvm_pager_map_region(struct kvm_pager *pager, void *host_start_p,
   assert(pages < (512*512));
   while(pages) {
     uint64_t *pt_base = kvm_pager_page_table_walk(pager, guest_pt_base_addr, opts, 1);
+    assert(pt_base != NULL && "page table walk failed in map_region");
     uint64_t *pt_entry = pt_base + offset;
 
     /* map those pages */
