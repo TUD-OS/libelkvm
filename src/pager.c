@@ -40,13 +40,11 @@ int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
     vm->pager.free_slot[i] = 0;
   }
 
-  vm->pager.vm = vm;
-
 	return 0;
 }
 
-struct kvm_userspace_memory_region *kvm_pager_alloc_chunk(struct kvm_pager *pager,
-    void *addr, uint64_t chunk_size, int flags) {
+struct kvm_userspace_memory_region *kvm_pager_alloc_chunk(
+    struct kvm_pager *const pager, void *addr, uint64_t chunk_size, int flags) {
   struct kvm_userspace_memory_region *chunk;
   chunk = malloc(sizeof(struct kvm_userspace_memory_region));
   if(chunk == NULL) {
@@ -75,7 +73,7 @@ struct kvm_userspace_memory_region *kvm_pager_alloc_chunk(struct kvm_pager *page
   return chunk;
 }
 
-int kvm_pager_create_mem_chunk(const struct kvm_pager *const pager,
+int kvm_pager_create_mem_chunk(struct kvm_pager *const pager,
     void **chunk_host_p, int chunk_size) {
 
 	if(pager == NULL) {
@@ -104,7 +102,7 @@ int kvm_pager_create_mem_chunk(const struct kvm_pager *const pager,
 	return err;
 }
 
-int kvm_pager_append_mem_chunk(struct kvm_pager *pager,
+int kvm_pager_append_mem_chunk(struct kvm_pager *const pager,
 		struct kvm_userspace_memory_region *chunk) {
   list_push(pager->other_chunks, chunk);
   return list_length(pager->other_chunks);

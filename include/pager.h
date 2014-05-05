@@ -13,7 +13,7 @@
 
 #define ELKVM_PAGER_MEMSIZE 16*1024*1024
 #define ELKVM_SYSTEM_MEMSIZE 16*1024*1024
-#define ELKVM_SYSTEM_MEMGROW 256*1024*1024
+#define ELKVM_SYSTEM_MEMGROW 128*1024*1024
 #define KERNEL_SPACE_BOTTOM 0xFFFF800000000000
 #define ADDRESS_SPACE_TOP 0xFFFFFFFFFFFFFFFF
 
@@ -65,13 +65,13 @@ struct kvm_pager {
 int kvm_pager_initialize(struct kvm_vm *, int);
 
 struct kvm_userspace_memory_region *
-kvm_pager_alloc_chunk(struct kvm_pager *pager, void *addr,
+kvm_pager_alloc_chunk(struct kvm_pager *const pager, void *addr,
     uint64_t chunk_size, int flags);
 /*
 	Let Pager create a mem chunk of the given size. The mem_chunk will be added
   to the end of the other_chunks list
 */
-int kvm_pager_create_mem_chunk(const struct kvm_pager * const, void **, int);
+int kvm_pager_create_mem_chunk(struct kvm_pager *const, void **, int);
 
 /*
 	Create Page Tables according to given mode
@@ -86,7 +86,7 @@ int kvm_pager_is_invalid_guest_base(struct kvm_pager *, uint64_t);
 /*
  * Append a kvm_userspace_memory_region to the end of the list of memory regions
 */
-int kvm_pager_append_mem_chunk(struct kvm_pager *, struct kvm_userspace_memory_region *);
+int kvm_pager_append_mem_chunk(struct kvm_pager *const, struct kvm_userspace_memory_region *);
 
 int elkvm_pager_chunk_count(struct kvm_pager *pager);
 
