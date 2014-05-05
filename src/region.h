@@ -35,12 +35,15 @@ namespace Elkvm {
 
   class RegionManager {
     private:
-      std::array<std::vector<Region>, 15> freelists;
-      int add_chunk(const struct kvm_pager *const pager, const size_t size);
-      void split_free_region(const size_t size);
+      struct kvm_pager * pager;
+      std::array<std::vector<Region>, 16> freelists;
+      int add_chunk(const size_t size);
+      int split_free_region(const size_t size);
+      std::vector<Region> allocated_regions;
 
     public:
       void add_free_region(const Region &region);
+      void add_system_chunk();
       bool address_valid(const void *host_p) const;
       Region &allocate_region(size_t size);
       Region &find_region(const void *host_p) const;

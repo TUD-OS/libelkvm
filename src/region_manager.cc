@@ -1,5 +1,8 @@
 #include "region.h"
 
+#include <algorithm>
+#include <iostream>
+
 namespace Elkvm {
 
   Region &RegionManager::allocate_region(size_t size) {
@@ -36,11 +39,19 @@ namespace Elkvm {
       return err;
     }
 
-    freelists[14].push_back(Region(chunk_p, grow_size));
+    assert(grow_size <= 0x8000000);
+    freelists[15].push_back(Region(chunk_p, grow_size));
     return 0;
   }
 
-  void RegionManager::split_free_region(const size_t size) {
+  void RegionManager::add_system_chunk() {
+    auto list_idx = get_freelist_idx(pager->system_chunk.memory_size);
+    freelists[list_idx].emplace_back(
+        reinterpret_cast<void *>(pager->system_chunk.userspace_addr),
+        pager->system_chunk.memory_size);
+  }
+
+  int RegionManager::split_free_region(const size_t size) {
     auto list_idx = get_freelist_idx(size);
     while(list_idx < freelists.size() && freelists[list_idx].empty()) {
       list_idx++;
@@ -73,7 +84,7 @@ namespace Elkvm {
     add_free_region(r);
   }
 
-  std::array<std::vector<Region>, 15>::size_type
+  std::array<std::vector<Region>, 16>::size_type
   get_freelist_idx(const size_t size) {
     int list_idx = 0;
     if(size <= 0x1000) {
@@ -106,6 +117,8 @@ namespace Elkvm {
       return list_idx = 13;
     } else if(size <= 0x4000000) {
       return list_idx = 14;
+    } else if(size <= 0x8000000) {
+      return list_idx = 15;
     }
     /* TODO requests larger than ELKVM_GROW_SIZE */
   }

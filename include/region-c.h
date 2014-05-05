@@ -12,4 +12,5 @@ struct elkvm_memory_region {
 
 struct elkvm_memory_region *elkvm_region_create(struct kvm_vm *, uint64_t);
 int elkvm_region_free(struct kvm_vm *vm, struct elkvm_memory_region *region);
+int elkvm_init_region_manager(struct kvm_pager *const pager);
 

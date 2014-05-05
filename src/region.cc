@@ -18,6 +18,12 @@ int elkvm_region_free(struct kvm_vm *vm, struct elkvm_memory_region *region) {
   return 0;
 }
 
+int elkvm_init_region_manager(struct kvm_pager *const pager) {
+  Elkvm::rm.set_pager(pager);
+  Elkvm::rm.add_system_chunk();
+  return 0;
+}
+
 namespace Elkvm {
 
   bool same_region(const void *p1, const void *p2) {
