@@ -84,6 +84,15 @@ namespace Elkvm {
     add_free_region(r);
   }
 
+  bool RegionManager::host_address_mapped(const void *const p) const {
+    for(const auto &r : allocated_regions) {
+      if(r.contains_address(p)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   std::array<std::vector<Region>, 16>::size_type
   get_freelist_idx(const size_t size) {
     int list_idx = 0;

@@ -50,9 +50,11 @@ namespace Elkvm {
       Region &find_region(const guestptr_t addr) const;
       void free_region(Region &r);
       void free_region(void *host_p, const size_t sz);
+      bool host_address_mapped(const void * const) const;
+      void set_pager(struct kvm_pager *const p) { pager = p; }
   };
 
-  std::array<std::vector<Region>, 15>::size_type get_freelist_idx(const size_t size);
+  std::array<std::vector<Region>, 16>::size_type get_freelist_idx(const size_t size);
 
   static RegionManager rm;
 

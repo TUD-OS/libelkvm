@@ -244,7 +244,7 @@ long elkvm_do_read(struct kvm_vm *vm) {
 
   struct region_mapping *mapping = elkvm_mapping_find(vm, buf);
   if(mapping == NULL && !Elkvm::same_region(buf, bend)) {
-    assert(Elkvm::rm.address_valid(bend));
+    assert(Elkvm::rm.host_address_mapped(bend));
     char *host_begin_mark = NULL;
     char *host_end_mark = buf;
     uint64_t mark_p = buf_p;
