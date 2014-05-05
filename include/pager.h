@@ -241,6 +241,10 @@ static unsigned int offset_in_page(uint64_t addr) {
 }
 
 static uint64_t pagesize_align(uint64_t size) {
-  return ((size & ~(ELKVM_PAGESIZE-1)) + ELKVM_PAGESIZE);
+  if(size % ELKVM_PAGESIZE) {
+    return ((size & ~(ELKVM_PAGESIZE-1)) + ELKVM_PAGESIZE);
+  } else {
+    return size;
+  }
 }
 
