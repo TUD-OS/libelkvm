@@ -27,8 +27,13 @@ namespace Elkvm {
 
   }
 
-  int RegionManager::add_chunk(const struct kvm_pager *const pager,
-      const size_t size) {
+  Region &RegionManager::find_region(const void *host_p) {
+    auto r = std::find(allocated_regions.begin(), allocated_regions.end(), host_p);
+    assert(r != allocated_regions.end());
+    return *r;
+  }
+
+  int RegionManager::add_chunk(const size_t size) {
 
     void *chunk_p;
     const size_t grow_size = size > ELKVM_SYSTEM_MEMGROW ?

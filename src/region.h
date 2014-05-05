@@ -48,8 +48,8 @@ namespace Elkvm {
       void add_system_chunk();
       bool address_valid(const void *host_p) const;
       Region &allocate_region(size_t size);
-      Region &find_region(const void *host_p) const;
-      Region &find_region(const guestptr_t addr) const;
+      Region &find_region(const void *host_p);
+      Region &find_region(const guestptr_t addr);
       void free_region(Region &r);
       void free_region(void *host_p, const size_t sz);
       bool host_address_mapped(const void * const) const;
