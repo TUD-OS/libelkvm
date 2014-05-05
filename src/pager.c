@@ -12,6 +12,10 @@ int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
 		return -EIO;
 	}
 
+  vm->pager.vm = vm;
+  int err = elkvm_init_region_manager(&vm->pager);
+  assert(err == 0);
+
 	struct elkvm_memory_region *pts_region = elkvm_region_create(vm, ELKVM_PAGER_MEMSIZE);
 	if(pts_region == NULL) {
 		return -ENOMEM;
@@ -25,7 +29,7 @@ int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
 			pts_region->host_base_p);
 	vm->pager.guest_next_free = KERNEL_SPACE_BOTTOM;
 
-	int err = kvm_pager_create_page_tables(&vm->pager, mode);
+	err = kvm_pager_create_page_tables(&vm->pager, mode);
 	if(err) {
 		return err;
 	}
