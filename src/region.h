@@ -22,8 +22,8 @@ namespace Elkvm {
       void *base_address() const { return host_p; }
       struct elkvm_memory_region *c_region() const;
       bool contains_address(const void *addr) const;
+      guestptr_t guest_address() const { return addr; }
       void *last_valid_address() const;
-      std::ostream &print(std::ostream &);
       void set_free() { free = true; addr = 0x0; }
       void set_guest_addr(guestptr_t a) { addr = a; };
       void set_used() { free = false; }
@@ -31,6 +31,7 @@ namespace Elkvm {
       Region slice_begin(const size_t size);
   };
 
+  std::ostream &print(std::ostream &, const Region &);
   bool same_region(const void *p1, const void *p2);
 
   class RegionManager {

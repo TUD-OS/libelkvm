@@ -26,6 +26,15 @@ int elkvm_init_region_manager(struct kvm_pager *const pager) {
 
 namespace Elkvm {
 
+  std::ostream &print(std::ostream &stream, const Region &r) {
+    if(free) {
+      stream << "FREE ";
+    }
+    stream << "REGION[" << &r << "] guest address: " << r.guest_address()
+      << " host_p: " << r.base_address() << " size: " << r.size() << std::endl;
+    return stream;
+  }
+
   bool same_region(const void *p1, const void *p2) {
     const Region &r = Elkvm::rm.find_region(p1);
     return r.contains_address(p2);

@@ -576,7 +576,7 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
 
     printf("RESULT: %li\n", result);
     if(result >= 0) {
-      region.print(std::cout);
+      print(std::cout, region);
       printf("MAPPING: %p host_p: %p guest_virt: 0x%lx length %zd (0x%lx) mapped pages %i (%i)\n",
           mapping, mapping->host_p, mapping->guest_virt, mapping->length,
           mapping->length, mapping->mapped_pages, pages_from_size(length));
