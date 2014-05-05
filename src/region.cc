@@ -40,6 +40,10 @@ namespace Elkvm {
     return r.contains_address(p2);
   }
 
+  bool operator==(const Region r, const void *const p) {
+    return r.contains_address(p);
+  }
+
   struct elkvm_memory_region *Region::c_region() const {
     struct elkvm_memory_region *r = new(struct elkvm_memory_region);
     r->host_base_p = host_p;
