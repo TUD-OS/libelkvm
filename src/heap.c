@@ -125,20 +125,26 @@ int elkvm_brk_shrink(struct kvm_vm *vm, uint64_t newbrk) {
 }
 
 int elkvm_brk_map(struct kvm_vm *vm, uint64_t newbrk, uint64_t off) {
-  uint64_t map_addr = next_page(vm->pager.brk_addr);
-  struct elkvm_memory_region **heap_top = list_elem_front(vm->heap);
-  void *host_p = (*heap_top)->host_base_p + off;
-  if((*heap_top)->guest_virtual == 0x0) {
-    (*heap_top)->guest_virtual = map_addr;
+  uint64_t map_addr = 0x0;
+  if(page_aligned(vm->pager.brk_addr)) {
+    map_addr = vm->pager.brk_addr;
+  } else {
+    map_addr = next_page(vm->pager.brk_addr);
   }
-  while(map_addr <= newbrk) {
+
+  struct elkvm_memory_region *heap_top = *list_elem_front(vm->heap);
+  void *host_p = heap_top->host_base_p + off;
+  if(heap_top->guest_virtual == 0x0) {
+    heap_top->guest_virtual = map_addr;
+  }
+  while(map_addr < newbrk) {
     int err = kvm_pager_create_mapping(&vm->pager, host_p, map_addr, PT_OPT_WRITE);
     if(err) {
       return err;
     }
     map_addr = map_addr + ELKVM_PAGESIZE;
     host_p = host_p + ELKVM_PAGESIZE;
-    assert(host_p <= ((*heap_top)->host_base_p + (*heap_top)->region_size));
+    assert(host_p <= (heap_top->host_base_p + heap_top->region_size));
   }
 
   return 0;
