@@ -29,6 +29,7 @@ namespace Elkvm {
   }
 
   int RegionManager::add_chunk(const size_t size) {
+    assert(pager != NULL && "must have pager to add chunks to region");
 
     void *chunk_p;
     const size_t grow_size = size > ELKVM_SYSTEM_MEMGROW ?

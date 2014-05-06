@@ -79,11 +79,7 @@ struct kvm_userspace_memory_region *kvm_pager_alloc_chunk(
 
 int kvm_pager_create_mem_chunk(struct kvm_pager *const pager,
     void **chunk_host_p, int chunk_size) {
-
-	if(pager == NULL) {
-    *chunk_host_p = NULL;
-		return -EIO;
-	}
+  assert(pager != NULL && "must have pager to create mem_chunk");
 
 	/* keep sizes page aligned */
 	if((chunk_size & ~0xFFF) != chunk_size) {
