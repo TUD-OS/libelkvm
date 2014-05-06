@@ -72,6 +72,7 @@ namespace Elkvm {
 
     Region &r = freelists[list_idx].back();
     freelists[list_idx].pop_back();
+    assert(r.is_free());
 
     Region new_region = r.slice_begin(size);
     add_free_region(r);
@@ -85,13 +86,20 @@ namespace Elkvm {
   }
 
   void RegionManager::free_region(Region &r) {
-    r.set_free();
-    add_free_region(r);
+    /* TODO find a way not to destruct, construct the element here */
+    auto rit = std::find(allocated_regions.begin(), allocated_regions.end(), r);
+    auto list_idx = get_freelist_idx(r.size());
+    freelists[list_idx].emplace_back(r.base_address(), r.size());
+
+    allocated_regions.erase(rit);
   }
 
   void RegionManager::free_region(void *host_p, const size_t sz) {
-    Region r(host_p, sz);
-    add_free_region(r);
+    auto rit = std::find(allocated_regions.begin(), allocated_regions.end(), host_p);
+    assert((*rit).size() == sz);
+    auto list_idx = get_freelist_idx(sz);
+    freelists[list_idx].emplace_back(host_p, sz);
+    allocated_regions.erase(rit);
   }
 
   bool RegionManager::host_address_mapped(const void *const p) const {
