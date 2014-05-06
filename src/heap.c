@@ -102,7 +102,9 @@ int elkvm_brk_shrink(struct kvm_vm *vm, uint64_t newbrk) {
     heap_top = *list_elem_front(vm->heap);
   }
 
-  for(uint64_t guest_addr = vm->pager.brk_addr;
+  uint64_t unmap_addr = page_aligned(vm->pager.brk_addr) ?
+    vm->pager.brk_addr - ELKVM_PAGESIZE : vm->pager.brk_addr;
+  for(uint64_t guest_addr = unmap_addr;
       guest_addr >= next_page(newbrk);
       guest_addr -= ELKVM_PAGESIZE) {
     int err = kvm_pager_destroy_mapping(&vm->pager, guest_addr);
