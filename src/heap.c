@@ -46,9 +46,11 @@ int elkvm_brk(struct kvm_vm *vm, uint64_t newbrk) {
     err = elkvm_brk_nogrow(vm, newbrk);
   } else {
     uint64_t tmpbrk = elkvm_last_heap_address(vm);
-    err = elkvm_brk_nogrow(vm, tmpbrk);
-    vm->pager.brk_addr = tmpbrk;
-    assert(err == 0);
+    if(!page_aligned(tmpbrk + 1)) {
+      err = elkvm_brk_nogrow(vm, tmpbrk);
+      vm->pager.brk_addr = tmpbrk;
+      assert(err == 0);
+    }
     err = elkvm_brk_grow(vm, newbrk);
   }
 
