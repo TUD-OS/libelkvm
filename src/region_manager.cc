@@ -18,6 +18,7 @@ namespace Elkvm {
     Region &r = freelist.back();
     freelist.pop_back();
     r.set_used();
+    allocated_regions.push_back(r);
     return r;
 
   }
