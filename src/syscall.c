@@ -1242,7 +1242,7 @@ long elkvm_do_uname(struct kvm_vm *vm) {
 	if(vm->syscall_handlers->uname == NULL) {
 		return -ENOSYS;
 	}
-  struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
 
 	struct utsname *buf = NULL;
 	uint64_t bufp = 0;
@@ -1250,22 +1250,19 @@ long elkvm_do_uname(struct kvm_vm *vm) {
 	if(err) {
 		return -EIO;
 	}
+
   assert(bufp != 0x0);
 	buf = (struct utsname *)kvm_pager_get_host_p(&vm->pager, bufp);
-  if(vm->debug) {
-    printf("CALLING UNAME handler with buf pointing to: %p (0x%lx)\n", buf,
-			host_to_guest_physical(&vm->pager, buf));
-  }
-	if(buf == NULL) {
-		return -EIO;
-	}
+  assert(buf != NULL && "host buffer address cannot be NULL in uname");
 
 	long result = vm->syscall_handlers->uname(buf);
-	result = 1;
   if(vm->debug) {
-    printf("UNAME result: %li\n", result);
-    printf("\tsyname: %s nodename: %s release: %s version: %s machine: %s\n",
+    printf("\n============ LIBELKVM ===========\n");
+    printf("UNAME buf at: 0x%lx (%p)\n", bufp, buf);
+    printf("syname: %s nodename: %s release: %s version: %s machine: %s\n",
 			buf->sysname, buf->nodename, buf->release, buf->version, buf->machine);
+    printf("RESULT: %li\n", result);
+    printf("=================================\n");
   }
 	return result;
 }
