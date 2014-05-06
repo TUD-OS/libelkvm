@@ -15,6 +15,7 @@ namespace Elkvm {
       freelist = freelists[list_idx];
     }
 
+    assert(!freelist.empty());
     Region &r = freelist.back();
     freelist.pop_back();
     r.set_used();
