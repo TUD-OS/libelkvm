@@ -64,7 +64,13 @@ int elkvm_brk_nogrow(struct kvm_vm *vm, uint64_t newbrk) {
   struct elkvm_memory_region **heap = list_elem_front(vm->heap);
   uint64_t oldbrk_region_base = (*heap)->guest_virtual;
   assert(vm->pager.brk_addr >= oldbrk_region_base);
-  uint64_t newbrk_offset = next_page(vm->pager.brk_addr - oldbrk_region_base);
+  uint64_t newbrk_offset = 0x0;
+  if(page_aligned(vm->pager.brk_addr)) {
+    newbrk_offset = vm->pager.brk_addr - oldbrk_region_base;
+  } else {
+    newbrk_offset = next_page(vm->pager.brk_addr - oldbrk_region_base);
+  }
+
   int err = elkvm_brk_map(vm, newbrk, newbrk_offset);
   if(err) {
     return err;
