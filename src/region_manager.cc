@@ -24,7 +24,7 @@ namespace Elkvm {
 
   Region &RegionManager::find_region(const void *host_p) {
     auto r = std::find(allocated_regions.begin(), allocated_regions.end(), host_p);
-    assert(r != allocated_regions.end());
+    assert(r != allocated_regions.end() && "no region found for given host pointer");
     return *r;
   }
 
