@@ -28,6 +28,13 @@ namespace Elkvm {
     return r.contains_address(p);
   }
 
+  bool operator==(const Region &r1, const Region &r2) {
+    return r1.base_address() == r2.base_address()
+      && r1.guest_address() == r2.guest_address()
+      && r1.size() == r2.size()
+      && r1.is_free() == r2.is_free();
+  }
+
   struct elkvm_memory_region *Region::c_region() const {
     struct elkvm_memory_region *r = new(struct elkvm_memory_region);
     r->host_base_p = host_p;
