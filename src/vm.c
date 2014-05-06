@@ -502,6 +502,7 @@ struct kvm_userspace_memory_region elkvm_get_chunk(struct kvm_vm *vm, int chunk)
 int elkvm_emulate_vmcall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
   /* INTEL VMCALL instruction is three bytes long */
   vcpu->regs.rip +=3;
+  return 0;
 }
 
 int elkvm_dump_valid_msrs(struct elkvm_opts *opts) {
