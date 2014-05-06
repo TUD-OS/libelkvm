@@ -23,6 +23,7 @@ namespace Elkvm {
       struct elkvm_memory_region *c_region() const;
       bool contains_address(const void *addr) const;
       guestptr_t guest_address() const { return addr; }
+      bool is_free() const { return free; }
       void *last_valid_address() const;
       void set_free() { free = true; addr = 0x0; }
       void set_guest_addr(guestptr_t a) { addr = a; };

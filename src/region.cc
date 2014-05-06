@@ -11,7 +11,7 @@ namespace Elkvm {
   RegionManager rm;
 
   std::ostream &print(std::ostream &stream, const Region &r) {
-    if(free) {
+    if(r.is_free()) {
       stream << "FREE ";
     }
     stream << "REGION[" << &r << "] guest address: " << r.guest_address()
