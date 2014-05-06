@@ -20,6 +20,10 @@
 #include "elfloader.h"
 #include "region.h"
 
+namespace Elkvm {
+  extern RegionManager rm;
+}
+
 int elkvm_handle_hypercall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
   int err = 0;
 

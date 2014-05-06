@@ -7,24 +7,8 @@
 #include "region.h"
 #include "region-c.h"
 
-struct elkvm_memory_region *elkvm_region_create(struct kvm_vm *vm, uint64_t req_size) {
-  Elkvm::Region &r = Elkvm::rm.allocate_region(req_size);
-	return r.c_region();
-}
-
-int elkvm_region_free(struct kvm_vm *vm, struct elkvm_memory_region *region) {
-  Elkvm::rm.free_region(region->host_base_p, region->region_size);
-  memset(region->host_base_p, 0, region->region_size);
-  return 0;
-}
-
-int elkvm_init_region_manager(struct kvm_pager *const pager) {
-  Elkvm::rm.set_pager(pager);
-  Elkvm::rm.add_system_chunk();
-  return 0;
-}
-
 namespace Elkvm {
+  RegionManager rm;
 
   std::ostream &print(std::ostream &stream, const Region &r) {
     if(free) {
@@ -76,3 +60,22 @@ namespace Elkvm {
 
 //namespace Elkvm
 }
+
+
+struct elkvm_memory_region *elkvm_region_create(struct kvm_vm *vm, uint64_t req_size) {
+  Elkvm::Region &r = Elkvm::rm.allocate_region(req_size);
+	return r.c_region();
+}
+
+int elkvm_region_free(struct kvm_vm *vm, struct elkvm_memory_region *region) {
+  Elkvm::rm.free_region(region->host_base_p, region->region_size);
+  memset(region->host_base_p, 0, region->region_size);
+  return 0;
+}
+
+int elkvm_init_region_manager(struct kvm_pager *const pager) {
+  Elkvm::rm.set_pager(pager);
+  Elkvm::rm.add_system_chunk();
+  return 0;
+}
+

@@ -57,9 +57,6 @@ namespace Elkvm {
   };
 
   std::array<std::vector<Region>, 16>::size_type get_freelist_idx(const size_t size);
-
-  static RegionManager rm;
-
 //namespace Elkvm
 }
 
