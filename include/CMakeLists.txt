@@ -16,4 +16,11 @@ SET( libelkvm_MOC_HEADERS
   vcpu.h
   )
 
-install (FILES elkvm.h DESTINATION include)
+install (FILES elkvm.h
+  elkvm-signal.h
+  list.h
+  kvm.h
+  pager.h
+  region.h
+  vcpu.h
+  DESTINATION include/elkvm)
