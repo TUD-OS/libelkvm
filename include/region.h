@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdbool.h>
 #include "list.h"
 
 struct elkvm_memory_region {
