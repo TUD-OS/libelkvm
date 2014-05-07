@@ -5,10 +5,10 @@
 #include <unistd.h>
 
 #include <elkvm.h>
-#include <flats.h>
 #include <idt.h>
 #include <pager.h>
 #include <vcpu.h>
+#include "flats.h"
 
 int elkvm_idt_setup(struct kvm_vm *vm, struct elkvm_flat *default_handler) {
 

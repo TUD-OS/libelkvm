@@ -1,0 +1,16 @@
+PROJECT( libelkvm )
+cmake_minimum_required(VERSION 2.8)
+include_directories ("${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/src" )
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
+add_definitions(-D_PREFIX_="${CMAKE_INSTALL_PREFIX}")
+#set(CMAKE_CPP_FLAGS "${CMAKE_CPP_FLAGS}")
+
+SET( CMAKE_BUILD_TYPE Debug )
+# FIND_PACKAGE( check REQUIRED )
+# FIND_PACKAGE( udis85 REQUIRED )
+ADD_SUBDIRECTORY( include )
+ADD_SUBDIRECTORY( src )
+
+
