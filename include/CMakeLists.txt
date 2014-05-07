@@ -15,3 +15,5 @@ SET( libelkvm_MOC_HEADERS
   tss.h
   vcpu.h
   )
+
+install (FILES elkvm.h DESTINATION include)

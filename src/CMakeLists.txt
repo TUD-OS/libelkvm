@@ -19,3 +19,4 @@ ADD_LIBRARY( elkvm SHARED ${libelkvm_SRCS} )
 target_link_libraries (elkvm check)
 target_link_libraries (elkvm udis86)
 
+install (TARGETS elkvm DESTINATION lib)
