@@ -1,6 +1,6 @@
 PROJECT( libelkvm )
 cmake_minimum_required(VERSION 2.8)
-include_directories ("${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/src" )
+include_directories ("${PROJECT_SOURCE_DIR}/include/elkvm" "${PROJECT_SOURCE_DIR}/src" )
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
