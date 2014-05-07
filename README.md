@@ -1,16 +1,21 @@
 # Install
 
 You need to install the following additional packages in your distribution:
-* google-mock
 * check
-* libgtest-dev
+* cmake
+* libudis86
 
-To build ELKVM, start by running:
+ELKVM uses cmake as a build system, you can build it in any directory you like to.
+In that directory you need to run the following:
 
-autogen.sh
+cmake PATH_TO_ELKVM_TOPLEVEL_DIRECTORY
 make
 make install
 ldconfig
+
+This will build the ELKVM library and an example application that just redirects all
+system calls to the host Linux kernel. You can find the source code for this
+application in the examples/ directory.
 
 You also need to add the following patch to your Linux kernel for ELKVM to work:
 
