@@ -34,7 +34,7 @@ namespace Elkvm {
 
   std::ostream &print(std::ostream &, const Region &);
   bool same_region(const void *p1, const void *p2);
-  bool operator==(const Region, const void * const);
+  bool operator==(const Region &, const void * const);
   bool operator==(const Region &, const Region &);
 
   class RegionManager {

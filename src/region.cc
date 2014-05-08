@@ -24,7 +24,7 @@ namespace Elkvm {
     return r.contains_address(p2);
   }
 
-  bool operator==(const Region r, const void *const p) {
+  bool operator==(const Region &r, const void *const p) {
     return r.contains_address(p);
   }
 
