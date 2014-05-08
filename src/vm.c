@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <elkvm.h>
 #include <flats.h>
 #include <gdt.h>
 #include <idt.h>

@@ -14,7 +14,6 @@
 #include <elkvm/elkvm.h>
 #include <elkvm/kvm.h>
 #include <elkvm/vcpu.h>
-#include <elkvm/stack.h>
 
 #include <stdint.h>
 #include <smmintrin.h>
