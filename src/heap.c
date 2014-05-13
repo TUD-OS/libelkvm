@@ -138,13 +138,13 @@ int elkvm_brk_map(struct kvm_vm *vm, uint64_t newbrk, uint64_t off) {
     heap_top->guest_virtual = map_addr;
   }
   while(map_addr < newbrk) {
+    assert(host_p < (heap_top->host_base_p + heap_top->region_size));
     int err = kvm_pager_create_mapping(&vm->pager, host_p, map_addr, PT_OPT_WRITE);
     if(err) {
       return err;
     }
     map_addr = map_addr + ELKVM_PAGESIZE;
     host_p = host_p + ELKVM_PAGESIZE;
-    assert(host_p <= (heap_top->host_base_p + heap_top->region_size));
   }
 
   return 0;
