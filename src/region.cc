@@ -56,11 +56,11 @@ namespace Elkvm {
 
   Region Region::slice_begin(const size_t size) {
     assert(free);
-    assert(rsize > size);
+    assert(rsize > pagesize_align(size));
 
     Region r(host_p, pagesize_align(size));
     host_p += r.size();
-    rsize = rsize - r.size();
+    rsize  -= r.size();
     return r;
   }
 
