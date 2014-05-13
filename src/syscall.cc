@@ -549,7 +549,7 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   struct region_mapping *mapping = elkvm_mapping_alloc();
   assert(mapping != NULL);
 
-  Elkvm::Region &region = Elkvm::rm.allocate_region(length);
+  Elkvm::Region region = Elkvm::rm.allocate_region(length);
 
   mapping->host_p = region.base_address();
   mapping->length = length;

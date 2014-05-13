@@ -5,23 +5,32 @@
 
 namespace Elkvm {
 
-  Region &RegionManager::allocate_region(size_t size) {
+  Region RegionManager::allocate_region(size_t size) {
     int list_idx = get_freelist_idx(size);
 
     auto &freelist = freelists[list_idx];
-    if(freelist.empty()) {
+    auto rit = std::find_if(freelist.begin(), freelist.end(),
+        [size](const Region &a)
+        { return a.size() >= size; });
+    if(rit == freelist.end()) {
       int err = split_free_region(size);
       assert(err == 0);
       freelist = freelists[list_idx];
+      rit = std::find_if(freelist.begin(), freelist.end(),
+          [size](const Region &a)
+          { return a.size() >= size; });
     }
 
-    assert(!freelist.empty());
-    Region &r = freelist.back();
-    freelist.pop_back();
+    assert(rit != freelist.end());
+    assert(rit->is_free());
+
+    Region r = *rit;
+    freelist.erase(rit);
     r.set_used();
     allocated_regions.push_back(r);
-    return r;
 
+    assert(size <= r.size());
+    return r;
   }
 
   Region &RegionManager::find_region(const void *host_p) {
