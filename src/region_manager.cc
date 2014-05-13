@@ -73,7 +73,8 @@ namespace Elkvm {
 
     assert(!freelists[list_idx].empty() && "freelist cannot be empty when taking elems");
 
-    Region &r = freelists[list_idx].back();
+    Region r = freelists[list_idx].back();
+    freelists[list_idx].pop_back();
     assert(r.is_free());
 
     size_t oldsize = r.size();
@@ -81,12 +82,11 @@ namespace Elkvm {
     add_free_region(r);
     add_free_region(new_region);
 
-    assert((oldsize == r.size() + new_region.size()) && "sizes of the new region "
-        "must match size of the old region");
+    assert((oldsize == r.size() + new_region.size())
+        && "sizes of the new regions must match size of the old region");
     assert(r.base_address() == (new_region.base_address() + new_region.size())
         && "new region must be right behind sliced part");
 
-    freelists[list_idx].pop_back();
     return 0;
   }
 
