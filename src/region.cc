@@ -14,8 +14,9 @@ namespace Elkvm {
     if(r.is_free()) {
       stream << "FREE ";
     }
-    stream << "REGION[" << &r << "] guest address: " << r.guest_address()
-      << " host_p: " << r.base_address() << " size: " << r.size() << std::endl;
+    stream << std::hex
+      <<"REGION[" << &r << "] guest address: 0x" << r.guest_address()
+      << " host_p: " << r.base_address() << " size: 0x" << r.size() << std::endl;
     return stream;
   }
 
