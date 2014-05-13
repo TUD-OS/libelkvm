@@ -23,89 +23,31 @@ struct elkvm_opts elkvm;
 struct kvm_vm vm;
 bool inspect;
 
-uint64_t rcs;
-
-uint32_t fastcrc(uint64_t *ptr, size_t len) {
-    uint32_t crc = 0;
-
-    for (size_t i = 0; i < len; i = i + sizeof (uint64_t))
-        crc = _mm_crc32_u64(crc, *ptr++);
-
-    return crc;
-}
-
-uint64_t inspect_regs() {
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(&vm, 0);
-  uint64_t *r = (uint64_t *) &vcpu->regs;
-  int bytes = sizeof(struct kvm_regs) + sizeof(struct kvm_sregs);
-  return fastcrc(r, bytes);
-
-//  int words = bytes / sizeof(uint32_t);
-//
-//  uint64_t sum1 = 0;
-//  uint64_t sum2 = 0;
-//
-//  for(int i = 0; i < words; i++) {
-//    sum1 = (sum1 + r[i]) % 0xFFFFFFFF;
-//    sum2 = (sum2 + sum1) % 0xFFFFFFFF;
-//  }
-//
-//  return (sum2 << 32) | sum1;
-}
-
-//int bp_cb(struct kvm_vm *vm) {
-//  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
-//  vcpu->regs.rax = 4;
-//  vcpu->regs.rdx = 5;
-//  return 0;
-//}
-//
 long pass_read(int fd, void *buf, size_t count) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return read(fd, buf, count);
 }
 
 long pass_write(int fd, void *buf, size_t count) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return write(fd, buf, count);
 }
 
 long pass_open(const char *pathname, int flags, mode_t mode) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return open(pathname, flags, mode);
 }
 
 long pass_close(int fd) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return close(fd);
 }
 
 long pass_stat(const char *path, struct stat *buf) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return stat(path, buf);
 }
 
 long pass_fstat(int fd, struct stat *buf) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return fstat(fd, buf);
 }
 
 long pass_lstat(const char *path, struct stat *buf) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return lstat(path, buf);
 }
 
@@ -115,10 +57,6 @@ long pass_lseek(int fd, off_t offset, int whence) {
 
 long pass_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset,
     struct region_mapping *mapping) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
-
   if(!(flags & MAP_ANONYMOUS)) {
     off_t pos = lseek(fd, 0, SEEK_CUR);
     assert(pos >= 0 && "could not get current file position");
@@ -155,86 +93,50 @@ long allow_sigaction(int signum, const struct sigaction *act, struct sigaction *
 }
 
 long pass_munmap(struct region_mapping *mapping) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return munmap(mapping->host_p, mapping->length);
 }
 
 long pass_readv(int fd, struct iovec *iov, int iovcnt) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return readv(fd, iov, iovcnt);
 }
 
 long pass_writev(int fd, struct iovec *iov, int iovcnt) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return writev(fd, iov, iovcnt);
 }
 
 long pass_access(const char *pathname, int mode) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return access(pathname, mode);
 }
 
 long pass_pipe(int pipefds[2]) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return pipe(pipefds);
 }
 
 long pass_dup(int oldfd) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return dup(oldfd);
 }
 
 long pass_getpid() {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return getpid();
 }
 
 long pass_getuid() {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return getuid();
 }
 
 long pass_getgid() {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return getgid();
 }
 
 long pass_geteuid() {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return geteuid();
 }
 
 long pass_getegid() {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return getegid();
 }
 
 long pass_uname(struct utsname *buf) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
 	return uname(buf);
 }
 
@@ -265,101 +167,59 @@ long pass_fcntl(int fd, int cmd, ...) {
 }
 
 long pass_truncate(const char *path, off_t length) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return truncate(path, length);
 }
 
 long pass_ftruncate(int fd, off_t length) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return ftruncate(fd, length);
 }
 
 char *pass_getcwd(char *buf, size_t size) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return getcwd(buf, size);
 }
 
 long pass_mkdir(const char *pathname, mode_t mode) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return mkdir(pathname, mode);
 }
 
 long pass_unlink(const char *pathname) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return unlink(pathname);
 }
 
 long pass_readlink(const char *path, char *buf, size_t bufsiz) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return readlink(path, buf, bufsiz);
 }
 
 long pass_gettimeofday(struct timeval *tv, struct timezone *tz) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return gettimeofday(tv, tz);
 }
 
 long pass_getrusage(int who, struct rusage *usage) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return getrusage(who, usage);
 }
 
 long pass_gettid() {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return syscall(__NR_gettid);
 }
 
 long pass_time(time_t *t) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return time(t);
 }
 
 long pass_futex(int *uaddr, int op, int val, const struct timespec *timeout,
     int *uaddr2, int val3) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return syscall(__NR_futex, uaddr, op, val, timeout, uaddr2, val3);
 }
 
 long pass_clock_gettime(clockid_t clk_id, struct timespec *tp) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return clock_gettime(clk_id, tp);
 }
 
 void pass_exit_group(int status) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   exit(status);
 }
 
 long pass_tgkill(int tgid, int tid, int sig) {
-  if(inspect) {
-    rcs += inspect_regs();
-  }
   return syscall(__NR_tgkill, tgid, tid, sig);
 }
 
@@ -436,17 +296,12 @@ int main(int argc, char **argv) {
   int gdb = 0;
   int myopts = 1;
   opterr = 0;
-  inspect = false;
   struct kvm_vcpu *vcpu = NULL;
 
-  while((opt = getopt(argc, argv, "+drD")) != -1) {
+  while((opt = getopt(argc, argv, "+dD")) != -1) {
     switch(opt) {
       case 'd':
         debug = 1;
-        myopts++;
-        break;
-      case 'r':
-        inspect = true;
         myopts++;
         break;
       case 'D':
@@ -475,12 +330,6 @@ int main(int argc, char **argv) {
 		printf("ERROR initializing VM errno: %i Msg: %s\n", -err, strerror(-err));
 		return -1;
 	}
-
-
-//  printf("LOADING binary %s with %i opts\n", binary, binargc);
-//  for(int i = 0; i < binargc; i++) {
-//    printf("binargv[%i] %s\n", i, binargv[i]);
-//  }
 
 	err = kvm_vm_create(&elkvm, &vm, VM_MODE_X86_64, 1, 1024*1024, &example_handlers, binary);
 	if(err) {
@@ -517,9 +366,6 @@ int main(int argc, char **argv) {
 	}
 
 	printf("DONE\n");
-  if(inspect) {
-    printf("Total RCS: %lu\n", rcs);
-  }
 	return 0;
 }
 
