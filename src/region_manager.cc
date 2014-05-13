@@ -12,19 +12,20 @@ namespace Elkvm {
     auto rit = std::find_if(freelist.begin(), freelist.end(),
         [size](const Region &a)
         { return a.size() >= size; });
+
     if(rit == freelist.end()) {
       int err = split_free_region(size);
       assert(err == 0);
-      freelist = freelists[list_idx];
+
       rit = std::find_if(freelist.begin(), freelist.end(),
           [size](const Region &a)
           { return a.size() >= size; });
     }
 
     assert(rit != freelist.end());
-    assert(rit->is_free());
 
     Region r = *rit;
+    assert(r.is_free());
     freelist.erase(rit);
     r.set_used();
     allocated_regions.push_back(r);
@@ -81,19 +82,32 @@ namespace Elkvm {
     }
 
     assert(!freelists[list_idx].empty() && "freelist cannot be empty when taking elems");
+    auto &freelist = freelists[list_idx];
+    auto rit = std::find_if(freelist.begin(), freelist.end(),
+        [size](const Region &a)
+        { return a.size() >= size; });
+    while(rit == freelist.end()) {
+      list_idx++;
+      freelist = freelists.at(list_idx);
+      rit = std::find_if(freelist.begin(), freelist.end(),
+          [size](const Region &a)
+          { return a.size() >= size; });
+    }
 
-    Region r = freelists[list_idx].back();
-    freelists[list_idx].pop_back();
-    assert(r.is_free());
+    assert(rit != freelist.end());
+    assert(rit->size() >= size);
 
-    size_t oldsize = r.size();
-    Region new_region = r.slice_begin(size);
-    add_free_region(r);
+    size_t oldsize = rit->size();
+    Region new_region = rit->slice_begin(size);
+
+    Region old_region = *rit;
+    freelist.erase(rit);
+    add_free_region(old_region);
     add_free_region(new_region);
 
-    assert((oldsize == r.size() + new_region.size())
+    assert((oldsize == old_region.size() + new_region.size())
         && "sizes of the new regions must match size of the old region");
-    assert(r.base_address() == (new_region.base_address() + new_region.size())
+    assert(old_region.base_address() == (new_region.base_address() + new_region.size())
         && "new region must be right behind sliced part");
 
     return 0;
@@ -107,6 +121,7 @@ namespace Elkvm {
   void RegionManager::free_region(Region &r) {
     /* TODO find a way not to destruct, construct the element here */
     auto rit = std::find(allocated_regions.begin(), allocated_regions.end(), r);
+    assert(rit != allocated_regions.end());
     auto list_idx = get_freelist_idx(r.size());
     freelists[list_idx].emplace_back(r.base_address(), r.size());
 
@@ -115,6 +130,7 @@ namespace Elkvm {
 
   void RegionManager::free_region(void *host_p, const size_t sz) {
     auto rit = std::find(allocated_regions.begin(), allocated_regions.end(), host_p);
+    assert(rit != allocated_regions.end());
     assert((*rit).size() == sz);
     auto list_idx = get_freelist_idx(sz);
     freelists[list_idx].emplace_back(host_p, sz);
