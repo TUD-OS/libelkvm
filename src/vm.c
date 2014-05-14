@@ -445,6 +445,7 @@ int kvm_vm_map_chunk(struct kvm_vm *vm, struct kvm_userspace_memory_region *chun
 
   assert(chunk->slot < KVM_MEMORY_SLOTS);
 	int err = ioctl(vm->fd, KVM_SET_USER_MEMORY_REGION, chunk);
+  return err ? -errno : 0;
 //	if(err) {
 //		long sz = sysconf(_SC_PAGESIZE);
 //		printf("Could not set memory region\n");
@@ -458,8 +459,9 @@ int kvm_vm_map_chunk(struct kvm_vm *vm, struct kvm_userspace_memory_region *chun
 //		printf("guest_phys_addr & (PAGE_SIZE-1): %i\n", pa);
 //		printf("userspace_addr & (PAGE_SIZE-1): %i\n", ua);
 //		printf("TODO verify write access\n");
+//    return -errno;
 //	}
-	return err;
+//	return 0;
 }
 
 int elkvm_chunk_remap(struct kvm_vm *vm, int num, uint64_t newsize) {
