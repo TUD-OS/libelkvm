@@ -88,6 +88,17 @@ namespace Elkvm {
         { return a.size() >= size; });
     while(rit == freelist.end()) {
       list_idx++;
+      if(list_idx == freelists.size()) {
+        /*
+         * could not find a suitable region to split
+         * therefore we need to add a new chunk
+         */
+        int err = add_chunk(size);
+        if(err) {
+          return err;
+        }
+        list_idx--;
+      }
       freelist = freelists.at(list_idx);
       rit = std::find_if(freelist.begin(), freelist.end(),
           [size](const Region &a)

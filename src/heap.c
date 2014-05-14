@@ -34,6 +34,9 @@ int elkvm_heap_grow(struct kvm_vm *vm, uint64_t size) {
     /* guest is completely out of memory */
     return -ENOMEM;
   }
+
+  assert(region->region_size >= size
+      && "allocated region must be big enough to fit the heap");
   list_push_front(vm->heap, region);
 
   return 0;
