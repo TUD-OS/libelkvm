@@ -49,6 +49,8 @@ namespace Elkvm {
 
     int err = kvm_pager_create_mem_chunk(pager, &chunk_p, grow_size);
     if(err) {
+      printf("LIBELKVM: Could not create memory chunk!\n");
+      printf("Errno: %i Msg: %s\n", -err, strerror(-err));
       return err;
     }
 
@@ -141,8 +143,10 @@ namespace Elkvm {
 
   void RegionManager::free_region(void *host_p, const size_t sz) {
     auto rit = std::find(allocated_regions.begin(), allocated_regions.end(), host_p);
+
     assert(rit != allocated_regions.end());
     assert((*rit).size() == sz);
+
     auto list_idx = get_freelist_idx(sz);
     freelists[list_idx].emplace_back(host_p, sz);
     allocated_regions.erase(rit);
