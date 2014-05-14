@@ -48,7 +48,7 @@ namespace Elkvm {
   }
 
   bool Region::contains_address(const void * const p) const {
-    return host_p <= p && p < (host_p + rsize);
+    return (host_p <= p) && (p < (host_p + rsize));
   }
 
   void *Region::last_valid_address() const {
