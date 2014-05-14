@@ -31,10 +31,11 @@
 #define ELKVM_PAGESIZE_LARGE 0x200000
 #define ELKVM_PAGESIZE_HUGE  0x100000000
 /*
- * KVM allows only for 32 many memory slots in Linux 3.8
+ * KVM allows only for 32 memory slots in Linux 3.8
  * and 128 slots on Linux 3.11
+ * its down to 125 slots in Linux 3.13
  */
-#define KVM_MEMORY_SLOTS 128
+#define KVM_MEMORY_SLOTS 125
 
 typedef unsigned int ptopt_t;
 #define PT_OPT_WRITE 0x1
