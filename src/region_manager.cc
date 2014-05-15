@@ -8,25 +8,25 @@ namespace Elkvm {
   Region RegionManager::allocate_region(size_t size) {
     int list_idx = get_freelist_idx(size);
 
-    auto &freelist = freelists[list_idx];
-    auto rit = std::find_if(freelist.begin(), freelist.end(),
+    auto rit = std::find_if(freelists[list_idx].begin(), freelists[list_idx].end(),
         [size](const Region &a)
         { return a.size() >= size; });
 
-    if(rit == freelist.end()) {
+    if(rit == freelists[list_idx].end()) {
       int err = split_free_region(size);
       assert(err == 0);
 
-      rit = std::find_if(freelist.begin(), freelist.end(),
+      rit = std::find_if(freelists[list_idx].begin(), freelists[list_idx].end(),
           [size](const Region &a)
           { return a.size() >= size; });
     }
 
-    assert(rit != freelist.end());
+    assert(rit != freelists[list_idx].end());
 
     Region r = *rit;
+    freelists[list_idx].erase(rit);
+
     assert(r.is_free());
-    freelist.erase(rit);
     r.set_used();
     allocated_regions.push_back(r);
 
@@ -68,7 +68,7 @@ namespace Elkvm {
 
   int RegionManager::split_free_region(const size_t size) {
     auto list_idx = get_freelist_idx(size);
-    while(list_idx < freelists.size() && freelists[list_idx].empty()) {
+    while((list_idx < freelists.size()) && freelists[list_idx].empty()) {
       list_idx++;
     }
     if(list_idx == freelists.size()) {
@@ -84,11 +84,10 @@ namespace Elkvm {
     }
 
     assert(!freelists[list_idx].empty() && "freelist cannot be empty when taking elems");
-    auto &freelist = freelists[list_idx];
-    auto rit = std::find_if(freelist.begin(), freelist.end(),
+    auto rit = std::find_if(freelists[list_idx].begin(), freelists[list_idx].end(),
         [size](const Region &a)
         { return a.size() >= size; });
-    while(rit == freelist.end()) {
+    while(rit == freelists[list_idx].end()) {
       list_idx++;
       if(list_idx == freelists.size()) {
         /*
@@ -101,20 +100,20 @@ namespace Elkvm {
         }
         list_idx--;
       }
-      freelist = freelists.at(list_idx);
-      rit = std::find_if(freelist.begin(), freelist.end(),
+      assert(list_idx < freelists.size());
+      rit = std::find_if(freelists[list_idx].begin(), freelists[list_idx].end(),
           [size](const Region &a)
           { return a.size() >= size; });
     }
 
-    assert(rit != freelist.end());
+    assert(rit != freelists[list_idx].end());
     assert(rit->size() >= size);
 
     size_t oldsize = rit->size();
-    Region new_region = rit->slice_begin(size);
-
     Region old_region = *rit;
-    freelist.erase(rit);
+    freelists[list_idx].erase(rit);
+    Region new_region = old_region.slice_begin(size);
+
     add_free_region(old_region);
     add_free_region(new_region);
 
@@ -145,7 +144,8 @@ namespace Elkvm {
     auto rit = std::find(allocated_regions.begin(), allocated_regions.end(), host_p);
 
     assert(rit != allocated_regions.end());
-    assert((*rit).size() == sz);
+    assert(rit->contains_address(host_p));
+    assert(rit->size() == sz);
 
     auto list_idx = get_freelist_idx(sz);
     freelists[list_idx].emplace_back(host_p, sz);
@@ -198,6 +198,7 @@ namespace Elkvm {
       return list_idx = 15;
     }
     /* TODO requests larger than ELKVM_GROW_SIZE */
+    return -1;
   }
 
 //namespace Elkvm
