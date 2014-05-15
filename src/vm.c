@@ -80,6 +80,9 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 	char *isr_path = RES_PATH "/isr";
 	err = elkvm_load_flat(vm, &idth, isr_path, 1);
 	if(err) {
+    if(err == -ENOENT) {
+      printf("LIBELKVM: ISR shared file could not be found\n");
+    }
 		return err;
 	}
 
@@ -92,6 +95,9 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 	char *sysenter_path = RES_PATH "/entry";
 	err = elkvm_load_flat(vm, &sysenter, sysenter_path, 1);
 	if(err) {
+    if(err == -ENOENT) {
+      printf("LIBELKVM: SYSCALL ENTRY shared file could not be found\n");
+    }
 		return err;
 	}
 
@@ -101,6 +107,9 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 
   err = elkvm_load_flat(vm, vm->sighandler_cleanup, sighandler_path, 0);
   if(err) {
+    if(err == -ENOENT) {
+      printf("LIBELKVM: SIGNAL HANDLER shared file could not be found\n");
+    }
     return err;
   }
 
