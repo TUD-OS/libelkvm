@@ -1,5 +1,7 @@
 PROJECT( libelkvm )
 cmake_minimum_required(VERSION 2.8)
+option(libelkvm_build_tests "Build all of libelkvm's unit tests." OFF)
+
 include_directories ("${PROJECT_SOURCE_DIR}/include/elkvm" "${PROJECT_SOURCE_DIR}/src" )
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
@@ -15,3 +17,8 @@ add_subdirectory( share )
 add_subdirectory( include )
 add_subdirectory( src )
 add_subdirectory( examples )
+
+if (libelkvm_build_tests)
+    enable_testing()
+    add_subdirectory( test )
+endif()
