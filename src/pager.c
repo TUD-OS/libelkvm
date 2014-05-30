@@ -345,6 +345,7 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
   assert(guest_physical != 0);
 
 	uint64_t *pt_entry = kvm_pager_page_table_walk(pager, guest_virtual, opts, 1);
+  assert(pt_entry != NULL && "pt entry must not be NULL after page table walk");
 
 	/* do NOT overwrite existing page table entries! */
 	if(entry_exists(pt_entry)) {

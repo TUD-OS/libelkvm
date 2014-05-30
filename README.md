@@ -36,3 +36,27 @@ index 064d0be..501e6a9 100644
 +       return 0;
  }
 
+# Building and Running the Tests
+
+ELKVM uses gmock and gtest for unit testing. By default tests are not built. If you
+want to build and run the tests you have to enable
+
+libelkvm_build_tests
+
+which you can do for example by running
+
+ccmake PATH_TO_ELKVM_TOPLEVEL_DIRECTORY
+
+inside your build directory. Additionally you have to have the gmock sources in
+test/include/gmock. You can get those from https://code.google.com/p/googlemock/
+
+If you have lcov installed, you can generate code coverage data by running
+
+make coverage
+
+This will generate some html files, givinig you coverage information in
+BUILD_DIRECTORY/cov/index.html
+You need to enable the libelkvm_generate_coverage option to enable support for this.
+
+
+Happy Hacking! :)
