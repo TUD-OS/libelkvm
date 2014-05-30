@@ -27,6 +27,7 @@ function(add_gmock_test target)
     target_link_libraries(${target} pthread)
     target_link_libraries(${target} gmock gmock_main)
     target_link_libraries(${target} gtest gtest_main)
+    target_link_libraries(${target} elkvm)
     add_test(${target} ${target})
 
     add_custom_command(TARGET ${target}
