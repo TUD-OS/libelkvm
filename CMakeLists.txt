@@ -19,6 +19,8 @@ add_subdirectory( src )
 add_subdirectory( examples )
 
 if (libelkvm_build_tests)
+    list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
     enable_testing()
+    include(gmock)
     add_subdirectory( test )
 endif()
