@@ -50,5 +50,13 @@ ccmake PATH_TO_ELKVM_TOPLEVEL_DIRECTORY
 inside your build directory. Additionally you have to have the gmock sources in
 test/include/gmock. You can get those from https://code.google.com/p/googlemock/
 
+If you have lcov installed, you can generate code coverage data by running
+
+make coverage
+
+This will generate some html files, givinig you coverage information in
+BUILD_DIRECTORY/cov/index.html
+You need to enable the libelkvm_generate_coverage option to enable support for this.
+
 
 Happy Hacking! :)
