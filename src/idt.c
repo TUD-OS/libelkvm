@@ -34,7 +34,7 @@ int elkvm_idt_setup(struct kvm_vm *vm, struct elkvm_flat *default_handler) {
 
 
 	/* create a page for the idt */
-	vm->idt_region->guest_virtual = kvm_pager_map_kernel_page(&vm->pager,
+	vm->idt_region->guest_virtual = elkvm_pager_map_kernel_page(&vm->pager,
 			vm->idt_region->host_base_p, 0, 0);
 	if(vm->idt_region->guest_virtual == 0) {
 		return -ENOMEM;
@@ -76,7 +76,7 @@ void elkvm_idt_dump_isr(struct kvm_vm *vm, int iv) {
 	uint64_t guest_isr = idt_entry_offset(entry);
 	printf("guest_isr: 0x%lx\n", guest_isr);
   assert(guest_isr != 0x0);
-	char *isr = kvm_pager_get_host_p(&vm->pager, guest_isr);
+	char *isr = elkvm_pager_get_host_p(&vm->pager, guest_isr);
 	printf("isr: %p\n", isr);
 
 	ud_set_input_buffer(&vcpu->ud_obj, isr, 9);

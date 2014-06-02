@@ -40,7 +40,7 @@ int elkvm_set_guest_debug(struct kvm_vcpu *vcpu) {
 
 void elkvm_dump_memory(struct kvm_vm *vm, uint64_t addr) {
   assert(addr != 0x0 && "cannot dump address NULL");
-  uint64_t *host_p = kvm_pager_get_host_p(&vm->pager, addr);
+  uint64_t *host_p = elkvm_pager_get_host_p(&vm->pager, addr);
   assert(host_p != NULL && "cannot dump unmapped memory");
 
   fprintf(stderr, " Host Address\tGuest Address\t\tValue\t\tValue\n");

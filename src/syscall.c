@@ -93,7 +93,7 @@ int elkvm_handle_interrupt(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
     }
 
     uint32_t err_code = elkvm_popq(vm, vcpu);
-    err = kvm_pager_handle_pagefault(&vm->pager, vcpu->sregs.cr2, err_code);
+    err = elkvm_pager_handle_pagefault(&vm->pager, vcpu->sregs.cr2, err_code);
 
 		return err;
 	}
@@ -234,10 +234,10 @@ long elkvm_do_read(struct kvm_vm *vm) {
 	}
 
   assert(buf_p != 0x0);
-	buf = kvm_pager_get_host_p(&vm->pager, buf_p);
+	buf = elkvm_pager_get_host_p(&vm->pager, buf_p);
 
   uint64_t bend_p = buf_p + count - 1;
-  void *bend = kvm_pager_get_host_p(&vm->pager, bend_p);
+  void *bend = elkvm_pager_get_host_p(&vm->pager, bend_p);
   long result = 0;
 
   struct region_mapping *mapping = elkvm_mapping_find(vm, buf);
@@ -248,7 +248,7 @@ long elkvm_do_read(struct kvm_vm *vm) {
     uint64_t mark_p = buf_p;
     size_t current_count = count;
     do {
-      host_begin_mark = kvm_pager_get_host_p(&vm->pager, mark_p);
+      host_begin_mark = elkvm_pager_get_host_p(&vm->pager, mark_p);
       struct elkvm_memory_region *region = NULL;
       region = elkvm_region_find(vm, host_begin_mark);
       assert(region != NULL);
@@ -320,7 +320,7 @@ long elkvm_do_write(struct kvm_vm *vm) {
   }
 
   assert(buf_p != 0x0);
-  buf = kvm_pager_get_host_p(&vm->pager, buf_p);
+  buf = elkvm_pager_get_host_p(&vm->pager, buf_p);
   if(vm->debug) {
     printf("WRITE to fd: %i from %p (guest: 0x%lx) with %zd bytes\n",
       (int)fd, buf, buf_p, (size_t)count);
@@ -352,7 +352,7 @@ long elkvm_do_open(struct kvm_vm *vm) {
 		return -EIO;
 	}
   assert(pathname_p != 0x0);
-	pathname = kvm_pager_get_host_p(&vm->pager, pathname_p);
+	pathname = elkvm_pager_get_host_p(&vm->pager, pathname_p);
 
   if(vm->debug) {
   }
@@ -410,9 +410,9 @@ long elkvm_do_stat(struct kvm_vm *vm) {
     return -EIO;
   }
   assert(path_p != 0x0);
-  path = kvm_pager_get_host_p(&vm->pager, path_p);
+  path = elkvm_pager_get_host_p(&vm->pager, path_p);
   assert(buf_p != 0x0);
-  buf  = kvm_pager_get_host_p(&vm->pager, buf_p);
+  buf  = elkvm_pager_get_host_p(&vm->pager, buf_p);
 
   long result = vm->syscall_handlers->stat(path, buf);
   if(vm->debug) {
@@ -441,7 +441,7 @@ long elkvm_do_fstat(struct kvm_vm *vm) {
     return -EIO;
   }
   assert(buf_p != 0x0);
-	buf = kvm_pager_get_host_p(&vm->pager, buf_p);
+	buf = elkvm_pager_get_host_p(&vm->pager, buf_p);
 
   if(vm->debug) {
     printf("FSTAT file with fd %li buf at 0x%lx (%p)\n", fd, buf_p, buf);
@@ -471,9 +471,9 @@ long elkvm_do_lstat(struct kvm_vm *vm) {
     return -EIO;
   }
   assert(path_p != 0x0);
-  path = kvm_pager_get_host_p(&vm->pager, path_p);
+  path = elkvm_pager_get_host_p(&vm->pager, path_p);
   assert(buf_p != 0x0);
-  buf  = kvm_pager_get_host_p(&vm->pager, buf_p);
+  buf  = elkvm_pager_get_host_p(&vm->pager, buf_p);
 
   long result = vm->syscall_handlers->lstat(path, buf);
   if(vm->debug) {
@@ -540,7 +540,7 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     return -EIO;
   }
   if(addr_p != 0x0) {
-    addr = kvm_pager_get_host_p(&vm->pager, addr_p);
+    addr = elkvm_pager_get_host_p(&vm->pager, addr_p);
   }
 
   struct region_mapping *mapping = elkvm_mapping_alloc();
@@ -557,7 +557,7 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   mapping->guest_virt = addr;
 
   if(addr && (flags & MAP_FIXED)) {
-    void *h = kvm_pager_get_host_p(&vm->pager, mapping->guest_virt);
+    void *h = elkvm_pager_get_host_p(&vm->pager, mapping->guest_virt);
     if(h) {
       printf("MAP_FIXED: %i\n", flags & MAP_FIXED);
       printf("existing mapping from guest 0x%lx to host %p found\n",
@@ -599,7 +599,7 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   if(prot & PROT_EXEC) {
     opts |= PT_OPT_EXEC;
   }
-  err = kvm_pager_map_region(&vm->pager, mapping->host_p, mapping->guest_virt,
+  err = elkvm_pager_map_region(&vm->pager, mapping->host_p, mapping->guest_virt,
       mapping->mapped_pages, opts);
   assert(err == 0);
 
@@ -621,7 +621,7 @@ long elkvm_do_mprotect(struct kvm_vm *vm) {
 
   assert(page_aligned(addr_p) && "mprotect address must be page aligned");
   if(addr_p != 0x0) {
-    addr = kvm_pager_get_host_p(&vm->pager, addr_p);
+    addr = elkvm_pager_get_host_p(&vm->pager, addr_p);
   }
 
   ptopt_t opts = 0;
@@ -631,7 +631,7 @@ long elkvm_do_mprotect(struct kvm_vm *vm) {
   if(prot & PROT_EXEC) {
     opts |= PT_OPT_EXEC;
   }
-  err = kvm_pager_map_region(&vm->pager, addr, addr_p,
+  err = elkvm_pager_map_region(&vm->pager, addr, addr_p,
       pages_from_size(len), opts);
   assert(err == 0 && "mprotect mapping failed");
 
@@ -661,20 +661,20 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
   }
 
   if(addr_p != 0x0) {
-    addr = kvm_pager_get_host_p(&vm->pager, addr_p);
+    addr = elkvm_pager_get_host_p(&vm->pager, addr_p);
   }
 
   struct kvm_userspace_memory_region *chunk =
-    kvm_pager_find_region_for_host_p(&vm->pager, addr);
+    elkvm_pager_find_region_for_host_p(&vm->pager, addr);
   assert(chunk != NULL);
 
   struct region_mapping *mapping = elkvm_mapping_find(vm, addr);
 
   unsigned pages = pages_from_size(length);
-  //TODO use kvm_pager_unmap_region here again!
+  //TODO use elkvm_pager_unmap_region here again!
   uint64_t cur_addr_p = addr_p;
   while(pages) {
-    err = kvm_pager_destroy_mapping(&vm->pager, cur_addr_p);
+    err = elkvm_pager_destroy_mapping(&vm->pager, cur_addr_p);
     assert(err == 0);
     cur_addr_p+=ELKVM_PAGESIZE;
     pages--;
@@ -780,10 +780,10 @@ long elkvm_do_sigaction(struct kvm_vm *vm) {
   struct sigaction *act = NULL;
   struct sigaction *oldact = NULL;
   if(act_p != 0x0) {
-    act = kvm_pager_get_host_p(&vm->pager, act_p);
+    act = elkvm_pager_get_host_p(&vm->pager, act_p);
   }
   if(oldact_p != 0x0) {
-    oldact = kvm_pager_get_host_p(&vm->pager, oldact_p);
+    oldact = elkvm_pager_get_host_p(&vm->pager, oldact_p);
   }
 
   if(vm->debug) {
@@ -824,10 +824,10 @@ long elkvm_do_sigprocmask(struct kvm_vm *vm) {
   sigset_t *set = NULL;
   sigset_t *oldset = NULL;
   if(set_p != 0x0) {
-    set = kvm_pager_get_host_p(&vm->pager, set_p);
+    set = elkvm_pager_get_host_p(&vm->pager, set_p);
   }
   if(oldset_p != 0x0) {
-    oldset = kvm_pager_get_host_p(&vm->pager, oldset_p);
+    oldset = elkvm_pager_get_host_p(&vm->pager, oldset_p);
   }
 
   long result = vm->syscall_handlers->sigprocmask(how, set, oldset);
@@ -865,11 +865,11 @@ void elkvm_get_host_iov(struct kvm_vm *vm, uint64_t iov_p, uint64_t iovcnt,
     struct iovec *host_iov) {
   struct iovec *guest_iov = NULL;
   assert(iov_p != 0x0);
-  guest_iov = kvm_pager_get_host_p(&vm->pager, iov_p);
+  guest_iov = elkvm_pager_get_host_p(&vm->pager, iov_p);
 
   for(int i = 0; i < iovcnt; i++) {
     assert(guest_iov[i].iov_base != NULL);
-    host_iov[i].iov_base = kvm_pager_get_host_p(&vm->pager,
+    host_iov[i].iov_base = elkvm_pager_get_host_p(&vm->pager,
         (uint64_t)guest_iov[i].iov_base);
     host_iov[i].iov_len  = guest_iov[i].iov_len;
   }
@@ -956,7 +956,7 @@ long elkvm_do_access(struct kvm_vm *vm) {
   }
 
   assert(path_p != 0x0);
-  char *pathname = kvm_pager_get_host_p(&vm->pager, path_p);
+  char *pathname = elkvm_pager_get_host_p(&vm->pager, path_p);
   if(pathname == NULL) {
     return -EFAULT;
   }
@@ -993,7 +993,7 @@ long elkvm_do_pipe(struct kvm_vm *vm) {
     return err;
   }
 
-  pipefd = kvm_pager_get_host_p(&vm->pager, pipefd_p);
+  pipefd = elkvm_pager_get_host_p(&vm->pager, pipefd_p);
   assert(pipefd != NULL);
 
   long result = vm->syscall_handlers->pipe(pipefd);
@@ -1101,10 +1101,10 @@ long elkvm_do_nanosleep(struct kvm_vm *vm) {
   struct timespec *rem = NULL;
 
   if(req_p != 0x0) {
-    req = kvm_pager_get_host_p(&vm->pager, req_p);
+    req = elkvm_pager_get_host_p(&vm->pager, req_p);
   }
   if(rem_p != 0x0) {
-    rem = kvm_pager_get_host_p(&vm->pager, rem_p);
+    rem = elkvm_pager_get_host_p(&vm->pager, rem_p);
   }
 
   long result = vm->syscall_handlers->nanosleep(req, rem);
@@ -1252,7 +1252,7 @@ long elkvm_do_uname(struct kvm_vm *vm) {
 	}
 
   assert(bufp != 0x0);
-	buf = (struct utsname *)kvm_pager_get_host_p(&vm->pager, bufp);
+	buf = (struct utsname *)elkvm_pager_get_host_p(&vm->pager, bufp);
   assert(buf != NULL && "host buffer address cannot be NULL in uname");
 
 	long result = vm->syscall_handlers->uname(buf);
@@ -1328,7 +1328,7 @@ long elkvm_do_fcntl(struct kvm_vm *vm) {
     case F_SETLK:
     case F_SETLKW:
       /* NULL statement */;
-      void *arg = kvm_pager_get_host_p(&vm->pager, arg_p);
+      void *arg = elkvm_pager_get_host_p(&vm->pager, arg_p);
       result = vm->syscall_handlers->fcntl(fd, cmd, arg);
       break;
     default:
@@ -1379,7 +1379,7 @@ long elkvm_do_truncate(struct kvm_vm *vm) {
     return err;
   }
 
-  path = kvm_pager_get_host_p(&vm->pager, path_p);
+  path = elkvm_pager_get_host_p(&vm->pager, path_p);
   long result = vm->syscall_handlers->truncate(path, length);
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
@@ -1445,7 +1445,7 @@ long elkvm_do_getcwd(struct kvm_vm *vm) {
     return err;
   }
 
-  buf = kvm_pager_get_host_p(&vm->pager, buf_p);
+  buf = elkvm_pager_get_host_p(&vm->pager, buf_p);
 
   char *result = vm->syscall_handlers->getcwd(buf, size);
   if(vm->debug) {
@@ -1495,7 +1495,7 @@ long elkvm_do_mkdir(struct kvm_vm *vm) {
   }
 
   assert(pathname_p != 0x0);
-  pathname = kvm_pager_get_host_p(&vm->pager, pathname_p);
+  pathname = elkvm_pager_get_host_p(&vm->pager, pathname_p);
   long result = vm->syscall_handlers->mkdir(pathname, mode);
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
@@ -1539,7 +1539,7 @@ long elkvm_do_unlink(struct kvm_vm *vm) {
   }
 
   assert(pathname_p != 0x0);
-  pathname = kvm_pager_get_host_p(&vm->pager, pathname_p);
+  pathname = elkvm_pager_get_host_p(&vm->pager, pathname_p);
   long result = vm->syscall_handlers->unlink(pathname);
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
@@ -1577,8 +1577,8 @@ long elkvm_do_readlink(struct kvm_vm *vm) {
     return err;
   }
 
-  path = kvm_pager_get_host_p(&vm->pager, path_p);
-  buf = kvm_pager_get_host_p(&vm->pager, buf_p);
+  path = elkvm_pager_get_host_p(&vm->pager, path_p);
+  buf = elkvm_pager_get_host_p(&vm->pager, buf_p);
   long result = vm->syscall_handlers->readlink(path, buf, bufsiz);
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
@@ -1634,10 +1634,10 @@ long elkvm_do_gettimeofday(struct kvm_vm *vm) {
   struct timezone *tz = NULL;
 
   if(tv_p != 0x0) {
-    tv = kvm_pager_get_host_p(&vm->pager, tv_p);
+    tv = elkvm_pager_get_host_p(&vm->pager, tv_p);
   }
   if(tz_p != 0x0) {
-    tz = kvm_pager_get_host_p(&vm->pager, tz_p);
+    tz = elkvm_pager_get_host_p(&vm->pager, tz_p);
   }
 
   long result = vm->syscall_handlers->gettimeofday(tv, tz);
@@ -1675,7 +1675,7 @@ long elkvm_do_getrlimit(struct kvm_vm *vm) {
   }
 
   assert(rlim_p != 0x0);
-  rlim = kvm_pager_get_host_p(&vm->pager, rlim_p);
+  rlim = elkvm_pager_get_host_p(&vm->pager, rlim_p);
 
   memcpy(rlim, &vm->rlimits[resource], sizeof(struct rlimit));
   if(vm->debug) {
@@ -1708,7 +1708,7 @@ long elkvm_do_getrusage(struct kvm_vm *vm) {
   assert(usage_p != 0x0);
   assert(who == RUSAGE_SELF);
 
-  usage = kvm_pager_get_host_p(&vm->pager, usage_p);
+  usage = elkvm_pager_get_host_p(&vm->pager, usage_p);
 
   long result = vm->syscall_handlers->getrusage(who, usage);
   if(vm->debug) {
@@ -1740,7 +1740,7 @@ long elkvm_do_times(struct kvm_vm *vm) {
   }
   assert(buf_p != 0x0);
 
-  buf = kvm_pager_get_host_p(&vm->pager, buf_p);
+  buf = elkvm_pager_get_host_p(&vm->pager, buf_p);
   assert(buf != NULL);
 
   long result = vm->syscall_handlers->times(buf);
@@ -2050,7 +2050,7 @@ long elkvm_do_arch_prctl(struct kvm_vm *vm) {
     return err;
   }
   assert(user_addr != 0x0);
-  uint64_t *host_addr = kvm_pager_get_host_p(&vm->pager, user_addr);
+  uint64_t *host_addr = elkvm_pager_get_host_p(&vm->pager, user_addr);
   if(host_addr == NULL) {
     return EFAULT;
   }
@@ -2278,7 +2278,7 @@ long elkvm_do_time(struct kvm_vm *vm) {
 
   time_t *time = NULL;
   if(time_p != 0x0) {
-    time = kvm_pager_get_host_p(&vm->pager, time_p);
+    time = elkvm_pager_get_host_p(&vm->pager, time_p);
   }
 
   long result = vm->syscall_handlers->time(time);
@@ -2315,13 +2315,13 @@ long elkvm_do_futex(struct kvm_vm *vm) {
   }
 
   if(uaddr_p != 0x0) {
-    uaddr = kvm_pager_get_host_p(&vm->pager, uaddr_p);
+    uaddr = elkvm_pager_get_host_p(&vm->pager, uaddr_p);
   }
   if(timeout_p != 0x0) {
-    timeout = kvm_pager_get_host_p(&vm->pager, timeout_p);
+    timeout = elkvm_pager_get_host_p(&vm->pager, timeout_p);
   }
   if(uaddr2_p != 0x0) {
-    uaddr2 = kvm_pager_get_host_p(&vm->pager, uaddr2_p);
+    uaddr2 = elkvm_pager_get_host_p(&vm->pager, uaddr2_p);
   }
 
   printf("FUTEX with uaddr %p (0x%lx) op %lu val %lu timeout %p (0x%lx)"
@@ -2460,7 +2460,7 @@ long elkvm_do_clock_gettime(struct kvm_vm *vm) {
   int err = elkvm_syscall2(vm, vcpu, &clk_id, &tp_p);
   assert(tp_p != 0x0);
 
-  tp = kvm_pager_get_host_p(&vm->pager, tp_p);
+  tp = elkvm_pager_get_host_p(&vm->pager, tp_p);
   assert(tp != NULL);
 
   long result = vm->syscall_handlers->clock_gettime(clk_id, tp);

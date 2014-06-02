@@ -7,7 +7,7 @@
 #include <stack.h>
 #include <vcpu.h>
 
-int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
+int elkvm_pager_initialize(struct kvm_vm *vm, int mode) {
 	if(vm->fd < 1) {
 		return -EIO;
 	}
@@ -25,7 +25,7 @@ int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
 			pts_region->host_base_p);
 	vm->pager.guest_next_free = KERNEL_SPACE_BOTTOM;
 
-	int err = kvm_pager_create_page_tables(&vm->pager, mode);
+	int err = elkvm_pager_create_page_tables(&vm->pager, mode);
 	if(err) {
 		return err;
 	}
@@ -45,7 +45,7 @@ int kvm_pager_initialize(struct kvm_vm *vm, int mode) {
 	return 0;
 }
 
-struct kvm_userspace_memory_region *kvm_pager_alloc_chunk(struct kvm_pager *pager,
+struct kvm_userspace_memory_region *elkvm_pager_alloc_chunk(struct kvm_pager *pager,
     void *addr, uint64_t chunk_size, int flags) {
   struct kvm_userspace_memory_region *chunk;
   chunk = malloc(sizeof(struct kvm_userspace_memory_region));
@@ -59,7 +59,7 @@ struct kvm_userspace_memory_region *kvm_pager_alloc_chunk(struct kvm_pager *page
 	chunk->flags = flags;
   pager->total_memsz = pager->total_memsz + chunk_size;
 
-	int chunk_count = kvm_pager_append_mem_chunk(pager, chunk);
+	int chunk_count = elkvm_pager_append_mem_chunk(pager, chunk);
 	if(chunk_count < 0) {
     free(chunk);
     return NULL;
@@ -75,7 +75,7 @@ struct kvm_userspace_memory_region *kvm_pager_alloc_chunk(struct kvm_pager *page
   return chunk;
 }
 
-int kvm_pager_create_mem_chunk(struct kvm_pager *pager, void **chunk_host_p,
+int elkvm_pager_create_mem_chunk(struct kvm_pager *pager, void **chunk_host_p,
     int chunk_size) {
 
 	if(pager == NULL) {
@@ -93,7 +93,7 @@ int kvm_pager_create_mem_chunk(struct kvm_pager *pager, void **chunk_host_p,
 		return err;
 	}
   struct kvm_userspace_memory_region *chunk =
-    kvm_pager_alloc_chunk(pager, *chunk_host_p, chunk_size, 0);
+    elkvm_pager_alloc_chunk(pager, *chunk_host_p, chunk_size, 0);
   if(chunk == NULL) {
     free(*chunk_host_p);
     *chunk_host_p = NULL;
@@ -132,7 +132,7 @@ int elkvm_pager_map_chunk(struct kvm_vm *vm, struct kvm_userspace_memory_region 
 //	return 0;
 }
 
-int kvm_pager_append_mem_chunk(struct kvm_pager *pager,
+int elkvm_pager_append_mem_chunk(struct kvm_pager *pager,
 		struct kvm_userspace_memory_region *chunk) {
   list_push(pager->other_chunks, chunk);
   return list_length(pager->other_chunks);
@@ -170,7 +170,7 @@ elkvm_pager_get_chunk(struct kvm_pager *pager, int c) {
   return NULL;
 }
 
-int kvm_pager_create_page_tables(struct kvm_pager *pager, int mode) {
+int elkvm_pager_create_page_tables(struct kvm_pager *pager, int mode) {
 	if(pager == NULL ||  pager->host_pml4_p == NULL) {
 		return -EINVAL;
 	}
@@ -188,31 +188,8 @@ int kvm_pager_create_page_tables(struct kvm_pager *pager, int mode) {
 	return 0;
 }
 
-int kvm_pager_is_invalid_guest_base(struct kvm_pager *pager, uint64_t guest_base) {
-
-	/* keep base addresses page aligned */
-	if((guest_base & ~0xFFF) != guest_base) {
-		return 1;
-	}
-
-	if(pager->system_chunk.guest_phys_addr <= guest_base &&
-			guest_base < pager->system_chunk.guest_phys_addr +
-				pager->system_chunk.memory_size) {
-		return 1;
-	}
-
-  list_each(pager->other_chunks, chunk) {
-		if(chunk->guest_phys_addr <= guest_base &&
-				guest_base < chunk->guest_phys_addr + chunk->memory_size) {
-			return 1;
-		}
-	}
-
-	return 0;
-}
-
 struct kvm_userspace_memory_region *
-	kvm_pager_find_region_for_host_p(struct kvm_pager *pager, void *host_mem_p) {
+	elkvm_pager_find_region_for_host_p(struct kvm_pager *pager, void *host_mem_p) {
     if(address_in_region(&pager->system_chunk, host_mem_p)) {
 			return &pager->system_chunk;
 		}
@@ -228,7 +205,7 @@ struct kvm_userspace_memory_region *
 		return NULL;
 }
 
-uint64_t kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p,
+uint64_t elkvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p,
 		int writeable, int executable) {
 
 	uint64_t guest_physical = host_to_guest_physical(pager, host_mem_p);
@@ -243,7 +220,7 @@ uint64_t kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p,
     opts |= PT_OPT_EXEC;
   }
 
-	uint64_t *pt_entry = kvm_pager_page_table_walk(pager, guest_virtual, opts, 1);
+	uint64_t *pt_entry = elkvm_pager_page_table_walk(pager, guest_virtual, opts, 1);
 	if(pt_entry == NULL) {
 		return -EIO;
 	}
@@ -255,7 +232,7 @@ uint64_t kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p,
 			/*this page table seems to be completely full, try the next one */
 			guest_virtual = guest_virtual + 0x100000;
       assert(guest_virtual != 0);
-			pt_entry = kvm_pager_page_table_walk(pager, guest_virtual, opts, 1);
+			pt_entry = elkvm_pager_page_table_walk(pager, guest_virtual, opts, 1);
 		}
 	}
 
@@ -263,7 +240,7 @@ uint64_t kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p,
    * TODO setting this page up for user makes interrupts work,
    * fix this!
    */
-	int err = kvm_pager_create_entry(pager, pt_entry, guest_physical, opts);
+	int err = elkvm_pager_create_entry(pager, pt_entry, guest_physical, opts);
   if(err) {
     return err;
   }
@@ -275,7 +252,7 @@ uint64_t kvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p,
  * XXX this will fail for mappings that are larger than what fits
  * into offset in pd * 512 pages
  */
-int kvm_pager_unmap_region(struct kvm_pager *pager, uint64_t guest_start_addr,
+int elkvm_pager_unmap_region(struct kvm_pager *pager, uint64_t guest_start_addr,
     unsigned pages) {
 
   uint64_t guest_addr = guest_start_addr;
@@ -288,7 +265,7 @@ int kvm_pager_unmap_region(struct kvm_pager *pager, uint64_t guest_start_addr,
   unsigned pages_remaining = 512 - offset;
 
   while(pages) {
-    uint64_t *pt_entry = kvm_pager_page_table_walk(pager, guest_addr, 0, 0);
+    uint64_t *pt_entry = elkvm_pager_page_table_walk(pager, guest_addr, 0, 0);
 
     /* map those pages */
     while(pages && pages_remaining) {
@@ -312,7 +289,7 @@ int kvm_pager_unmap_region(struct kvm_pager *pager, uint64_t guest_start_addr,
  * XXX this will fail for mappings that are larger than what fits
  * into offset in pd * 512 pages
  */
-int kvm_pager_map_region(struct kvm_pager *pager, void *host_start_p,
+int elkvm_pager_map_region(struct kvm_pager *pager, void *host_start_p,
     uint64_t guest_start_addr, unsigned pages, ptopt_t opts) {
 
   uint64_t guest_addr = guest_start_addr;
@@ -328,12 +305,12 @@ int kvm_pager_map_region(struct kvm_pager *pager, void *host_start_p,
 
   assert(pages < (512*512));
   while(pages) {
-    uint64_t *pt_base = kvm_pager_page_table_walk(pager, guest_pt_base_addr, opts, 1);
+    uint64_t *pt_base = elkvm_pager_page_table_walk(pager, guest_pt_base_addr, opts, 1);
     uint64_t *pt_entry = pt_base + offset;
 
     /* map those pages */
     while(pages && pages_remaining) {
-      int err = kvm_pager_create_entry(pager, pt_entry, guest_physical, opts);
+      int err = elkvm_pager_create_entry(pager, pt_entry, guest_physical, opts);
       assert(err == 0);
 
       pt_entry++;
@@ -351,7 +328,7 @@ int kvm_pager_map_region(struct kvm_pager *pager, void *host_start_p,
   return 0;
 }
 
-int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
+int elkvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 		uint64_t guest_virtual, ptopt_t opts) {
 	int err;
   assert(guest_virtual != 0);
@@ -373,7 +350,7 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 	uint64_t guest_physical = host_to_guest_physical(pager, host_mem_p);
   assert(guest_physical != 0);
 
-	uint64_t *pt_entry = kvm_pager_page_table_walk(pager, guest_virtual, opts, 1);
+	uint64_t *pt_entry = elkvm_pager_page_table_walk(pager, guest_virtual, opts, 1);
   assert(pt_entry != NULL && "pt entry must not be NULL after page table walk");
 
 	/* do NOT overwrite existing page table entries! */
@@ -385,13 +362,13 @@ int kvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 		return 0;
 	}
 
-	err = kvm_pager_create_entry(pager, pt_entry, guest_physical, opts);
+	err = elkvm_pager_create_entry(pager, pt_entry, guest_physical, opts);
 
 	return err;
 }
 
-int kvm_pager_destroy_mapping(struct kvm_pager *pager, uint64_t guest_virtual) {
-	uint64_t *pt_entry = kvm_pager_page_table_walk(pager, guest_virtual,
+int elkvm_pager_destroy_mapping(struct kvm_pager *pager, uint64_t guest_virtual) {
+	uint64_t *pt_entry = elkvm_pager_page_table_walk(pager, guest_virtual,
 			0, 0);
 
   if(pt_entry == NULL) {
@@ -402,9 +379,9 @@ int kvm_pager_destroy_mapping(struct kvm_pager *pager, uint64_t guest_virtual) {
   return 0;
 }
 
-void *kvm_pager_get_host_p(struct kvm_pager *pager, uint64_t guest_virtual) {
+void *elkvm_pager_get_host_p(struct kvm_pager *pager, uint64_t guest_virtual) {
   assert(guest_virtual != 0);
-	uint64_t *entry = kvm_pager_page_table_walk(pager, guest_virtual, 0, 0);
+	uint64_t *entry = elkvm_pager_page_table_walk(pager, guest_virtual, 0, 0);
 	if(entry == NULL) {
 		return NULL;
 	}
@@ -423,7 +400,7 @@ void *kvm_pager_get_host_p(struct kvm_pager *pager, uint64_t guest_virtual) {
 	return (void *)((guest_physical - chunk->guest_phys_addr) + chunk->userspace_addr);
 }
 
-uint64_t *kvm_pager_page_table_walk(struct kvm_pager *pager, uint64_t guest_virtual,
+uint64_t *elkvm_pager_page_table_walk(struct kvm_pager *pager, uint64_t guest_virtual,
 		ptopt_t opts, int create) {
   assert(guest_virtual != 0);
 
@@ -436,13 +413,13 @@ uint64_t *kvm_pager_page_table_walk(struct kvm_pager *pager, uint64_t guest_virt
 	int addr_high = 47;
 
 	for(int i = 0; i < 3; i++) {
-		entry = kvm_pager_find_table_entry(pager, table_base,
+		entry = elkvm_pager_find_table_entry(pager, table_base,
 				guest_virtual, addr_low, addr_high);
 		addr_low -= 9;
 		addr_high -= 9;
     if(create) {
       if(!entry_exists(entry)) {
-				int err = kvm_pager_create_table(pager, entry, opts);
+				int err = elkvm_pager_create_table(pager, entry, opts);
 				if(err) {
 					return NULL;
 				}
@@ -457,10 +434,10 @@ uint64_t *kvm_pager_page_table_walk(struct kvm_pager *pager, uint64_t guest_virt
     if(!entry_exists(entry)) {
       return NULL;
     }
-		table_base = kvm_pager_find_next_table(pager, entry);
+		table_base = elkvm_pager_find_next_table(pager, entry);
 	}
 
-	entry = kvm_pager_find_table_entry(pager, table_base,
+	entry = elkvm_pager_find_table_entry(pager, table_base,
 			guest_virtual, addr_low, addr_high);
 	addr_low -= 9;
 	addr_high -= 9;
@@ -471,7 +448,7 @@ uint64_t *kvm_pager_page_table_walk(struct kvm_pager *pager, uint64_t guest_virt
 	return entry;
 }
 
-uint64_t *kvm_pager_find_next_table(struct kvm_pager *pager,
+uint64_t *elkvm_pager_find_next_table(struct kvm_pager *pager,
 		uint64_t *host_tbl_entry_p) {
 	if(!entry_exists(host_tbl_entry_p)) {
 		return NULL;
@@ -482,7 +459,7 @@ uint64_t *kvm_pager_find_next_table(struct kvm_pager *pager,
 	return (uint64_t *)(pager->system_chunk.userspace_addr + guest_next_tbl);
 }
 
-uint64_t *kvm_pager_find_table_entry(struct kvm_pager *pager,
+uint64_t *elkvm_pager_find_table_entry(struct kvm_pager *pager,
 		uint64_t *host_tbl_base_p, uint64_t guest_virtual, int off_low, int off_high) {
 	uint64_t off = (guest_virtual << (63 - off_high)) >> ((63 - off_high) + off_low);
 
@@ -490,7 +467,7 @@ uint64_t *kvm_pager_find_table_entry(struct kvm_pager *pager,
 	return entry;
 }
 
-int kvm_pager_create_table(struct kvm_pager *pager, uint64_t *host_entry_p,
+int elkvm_pager_create_table(struct kvm_pager *pager, uint64_t *host_entry_p,
     ptopt_t opts) {
 
 	uint64_t guest_next_tbl = host_to_guest_physical(pager, pager->host_next_free_tbl_p);
@@ -500,10 +477,10 @@ int kvm_pager_create_table(struct kvm_pager *pager, uint64_t *host_entry_p,
 	memset(pager->host_next_free_tbl_p, 0, HOST_PAGESIZE);
 	pager->host_next_free_tbl_p += HOST_PAGESIZE;
 
-	return kvm_pager_create_entry(pager, host_entry_p, guest_next_tbl, opts);
+	return elkvm_pager_create_entry(pager, host_entry_p, guest_next_tbl, opts);
 }
 
-int kvm_pager_create_entry(struct kvm_pager *pager, uint64_t *host_entry_p,
+int elkvm_pager_create_entry(struct kvm_pager *pager, uint64_t *host_entry_p,
 		uint64_t guest_next, ptopt_t opts) {
 	/* save base address of next tbl in entry */
 	*host_entry_p = page_begin(guest_next);
@@ -524,16 +501,16 @@ int kvm_pager_create_entry(struct kvm_pager *pager, uint64_t *host_entry_p,
 	return 0;
 }
 
-int kvm_pager_set_brk(struct kvm_pager *pager, uint64_t guest_addr) {
+int elkvm_pager_set_brk(struct kvm_pager *pager, uint64_t guest_addr) {
   pager->brk_addr = guest_addr;
   return 0;
 }
 
-int kvm_pager_handle_pagefault(struct kvm_pager *pager, uint64_t pfla,
+int elkvm_pager_handle_pagefault(struct kvm_pager *pager, uint64_t pfla,
     uint32_t err_code) {
 
     struct kvm_vcpu *vcpu = elkvm_vcpu_get(pager->vm, 0);
-		void *host_p = kvm_pager_get_host_p(pager, pfla);
+		void *host_p = elkvm_pager_get_host_p(pager, pfla);
 
     if(pager->vm->debug) {
       printf("PFLA: 0x%lx\nCURRENT STACK TOP:0x%lx\n",
@@ -542,23 +519,23 @@ int kvm_pager_handle_pagefault(struct kvm_pager *pager, uint64_t pfla,
     if(is_stack_expansion(pager->vm, vcpu, pfla)) {
       int err = expand_stack(pager->vm, vcpu);
       if(pager->vm->debug) {
-        kvm_pager_dump_page_fault_info(pager, pfla, err_code, host_p);
+        elkvm_pager_dump_page_fault_info(pager, pfla, err_code, host_p);
       }
       if(err) {
-        kvm_pager_dump_page_tables(pager);
+        elkvm_pager_dump_page_tables(pager);
         return err;
       }
       return 0;
     }
-    kvm_pager_dump_page_fault_info(pager, pfla, err_code, host_p);
+    elkvm_pager_dump_page_fault_info(pager, pfla, err_code, host_p);
 		if(host_p != NULL) {
-			kvm_pager_dump_page_tables(pager);
+			elkvm_pager_dump_page_tables(pager);
 		}
 
     return 1;
 }
 
-void kvm_pager_dump_page_fault_info(struct kvm_pager *pager, uint64_t pfla,
+void elkvm_pager_dump_page_fault_info(struct kvm_pager *pager, uint64_t pfla,
     uint32_t err_code, void *host_p) {
 		printf(" Page Fault:\n");
 		printf(" -------------------\n");
@@ -584,16 +561,16 @@ void kvm_pager_dump_page_fault_info(struct kvm_pager *pager, uint64_t pfla,
     }
 }
 
-void kvm_pager_dump_page_tables(struct kvm_pager *pager) {
+void elkvm_pager_dump_page_tables(struct kvm_pager *pager) {
 	printf(" Page Tables:\n");
 	printf(" ------------\n");
 
-	kvm_pager_dump_table(pager, pager->host_pml4_p, 4);
+	elkvm_pager_dump_table(pager, pager->host_pml4_p, 4);
 	printf(" ------------\n");
 	return;
 }
 
-void kvm_pager_dump_table(struct kvm_pager *pager, void *host_p, int level) {
+void elkvm_pager_dump_table(struct kvm_pager *pager, void *host_p, int level) {
 	if(level < 1) {
 		return;
 	}
@@ -648,7 +625,7 @@ void kvm_pager_dump_table(struct kvm_pager *pager, void *host_p, int level) {
 
 	if(level > 1) {
 		for(int i = 0; i<entries; i++) {
-			kvm_pager_dump_table(pager, present[i], level-1);
+			elkvm_pager_dump_table(pager, present[i], level-1);
 		}
 	}
 	return;

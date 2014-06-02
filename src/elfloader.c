@@ -163,7 +163,7 @@ int elkvm_loader_pt_load(struct kvm_vm *vm, GElf_Phdr phdr, struct Elf_binary *b
   }
 
   int pages = pages_from_size(total_size);
-  err = kvm_pager_map_region(&vm->pager, loadable_region->host_base_p,
+  err = elkvm_pager_map_region(&vm->pager, loadable_region->host_base_p,
       loadable_region->guest_virtual, pages, opts);
 
 	if(phdr.p_flags & PF_X) {

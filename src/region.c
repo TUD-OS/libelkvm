@@ -23,7 +23,7 @@ struct elkvm_memory_region *elkvm_region_create(struct kvm_vm *vm, uint64_t req_
     /* get a new memory chunk and add that to the list of root regions */
     void *chunk_p;
     uint64_t grow_size = size > ELKVM_SYSTEM_MEMGROW ? pagesize_align(size) : ELKVM_SYSTEM_MEMGROW;
-    int err = kvm_pager_create_mem_chunk(&vm->pager, &chunk_p, grow_size);
+    int err = elkvm_pager_create_mem_chunk(&vm->pager, &chunk_p, grow_size);
     if(err) {
       return NULL;
     }
