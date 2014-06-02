@@ -30,8 +30,4 @@ int elkvm_region_list_prepend(struct kvm_vm *,
 
 bool elkvm_is_same_region(struct kvm_vm *vm, void *host_1, void *host_2);
 
-static inline bool
-elkvm_address_in_region(struct elkvm_memory_region *region, void *host_p) {
-  return (region->host_base_p <= host_p) &&
-    (host_p < (region->host_base_p + region->region_size));
-}
+bool elkvm_address_in_region(struct elkvm_memory_region *region, void *host_p);

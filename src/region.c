@@ -171,3 +171,7 @@ int elkvm_region_list_prepend(struct kvm_vm *vm, struct elkvm_memory_region *reg
   return 0;
 }
 
+bool elkvm_address_in_region(struct elkvm_memory_region *region, void *host_p) {
+  return (region->host_base_p <= host_p) &&
+    ((char *)host_p < ((char *)region->host_base_p + region->region_size));
+}
