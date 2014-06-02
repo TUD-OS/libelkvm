@@ -143,11 +143,6 @@ int elkvm_gdt_create_segment_descriptor(struct elkvm_gdt_segment_descriptor *ent
 	return 0;
 }
 
-int elkvm_calc_segment_regs(struct kvm_vcpu *vcpu, struct elkvm_gdt_segment_descriptor *entry,
-		int num_entries) {
-	return -1;
-}
-
 void elkvm_gdt_dump(struct kvm_vm *vm) {
 
 	printf("\n Global Descriptor Table:\n");
