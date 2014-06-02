@@ -828,7 +828,7 @@ void elkvm_get_host_iov(struct kvm_vm *vm, uint64_t iov_p, uint64_t iovcnt,
   assert(iov_p != 0x0);
   guest_iov = elkvm_pager_get_host_p(&vm->pager, iov_p);
 
-  for(int i = 0; i < iovcnt; i++) {
+  for(unsigned i = 0; i < iovcnt; i++) {
     assert(guest_iov[i].iov_base != NULL);
     host_iov[i].iov_base = elkvm_pager_get_host_p(&vm->pager,
         (uint64_t)guest_iov[i].iov_base);
