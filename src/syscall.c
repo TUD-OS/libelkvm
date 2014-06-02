@@ -163,14 +163,12 @@ int elkvm_handle_syscall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 
 void elkvm_syscall1(struct kvm_vcpu *vcpu, uint64_t *arg) {
 	*arg = vcpu->regs.rdi;
-	return 0;
 }
 
 void elkvm_syscall2(struct kvm_vcpu *vcpu,
 		uint64_t *arg1, uint64_t *arg2) {
 	*arg1 = vcpu->regs.rdi;
 	*arg2 = vcpu->regs.rsi;
-	return 0;
 }
 
 void elkvm_syscall3(struct kvm_vcpu *vcpu,
@@ -178,7 +176,6 @@ void elkvm_syscall3(struct kvm_vcpu *vcpu,
 	*arg1 = vcpu->regs.rdi;
 	*arg2 = vcpu->regs.rsi;
 	*arg3 = vcpu->regs.rdx;
-	return 0;
 }
 
 void elkvm_syscall4(struct kvm_vcpu *vcpu,
@@ -187,7 +184,6 @@ void elkvm_syscall4(struct kvm_vcpu *vcpu,
 	*arg2 = vcpu->regs.rsi;
 	*arg3 = vcpu->regs.rdx;
   *arg4 = vcpu->regs.r10;
-	return 0;
 }
 
 void elkvm_syscall5(struct kvm_vcpu *vcpu,
@@ -198,7 +194,6 @@ void elkvm_syscall5(struct kvm_vcpu *vcpu,
 	*arg3 = vcpu->regs.rdx;
   *arg4 = vcpu->regs.r10;
   *arg5 = vcpu->regs.r8;
-	return 0;
 }
 
 void elkvm_syscall6(struct kvm_vcpu *vcpu,
@@ -210,7 +205,6 @@ void elkvm_syscall6(struct kvm_vcpu *vcpu,
   *arg4 = vcpu->regs.r10;
   *arg5 = vcpu->regs.r8;
   *arg6 = vcpu->regs.r9;
-	return 0;
 }
 
 long elkvm_do_read(struct kvm_vm *vm) {
@@ -529,12 +523,12 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   mapping->host_p = region->host_base_p;
   mapping->length = length;
   mapping->mapped_pages = pages_from_size(length);
-  mapping->guest_virt = addr;
+  mapping->guest_virt = (guestptr_t)addr;
 
   if(addr && (flags & MAP_FIXED)) {
     void *h = elkvm_pager_get_host_p(&vm->pager, mapping->guest_virt);
     if(h) {
-      printf("MAP_FIXED: %i\n", flags & MAP_FIXED);
+      printf("MAP_FIXED: %lu\n", flags & MAP_FIXED);
       printf("existing mapping from guest 0x%lx to host %p found\n",
         mapping->guest_virt, h);
       return -EINVAL;
