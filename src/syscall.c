@@ -876,7 +876,6 @@ long elkvm_do_writev(struct kvm_vm *vm) {
 
   uint64_t fd = 0;
   uint64_t iov_p = 0;
-  struct iovec *guest_iov = NULL;
   uint64_t iovcnt = 0;
 
   elkvm_syscall3(vcpu, &fd, &iov_p, &iovcnt);
