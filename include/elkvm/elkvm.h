@@ -158,7 +158,7 @@ int elkvm_vcpu_count(struct kvm_vm *);
 /*
  * \brief Emulates (skips) the VMCALL instruction
  */
-int elkvm_emulate_vmcall(struct kvm_vm *, struct kvm_vcpu *);
+void elkvm_emulate_vmcall(struct kvm_vcpu *);
 
 /*
  * \brief Deletes (frees) the chunk with number num and hands a new chunk
