@@ -79,7 +79,7 @@ void elkvm_idt_dump_isr(struct kvm_vm *vm, int iv) {
 	char *isr = elkvm_pager_get_host_p(&vm->pager, guest_isr);
 	printf("isr: %p\n", isr);
 
-	ud_set_input_buffer(&vcpu->ud_obj, isr, 9);
+	ud_set_input_buffer(&vcpu->ud_obj, (const uint8_t *)isr, 9);
 
 	printf("\n ISR Code for Interrupt Vector %3i:\n", iv);
 	printf(  " ----------------------------------\n");
