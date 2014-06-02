@@ -1,9 +1,5 @@
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <poll.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
@@ -21,6 +17,10 @@ extern "C" {
 #include "vcpu.h"
 #include "list.h"
 #include "elkvm-signal.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define VM_MODE_X86    1
 #define VM_MODE_PAGING 2
