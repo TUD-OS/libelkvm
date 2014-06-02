@@ -36,7 +36,7 @@ int elkvm_pushq(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t val) {
 	uint64_t *host_p = elkvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
 	if(host_p == NULL) {
 		/* current stack is full, we need to expand the stack */
-		int err = expand_stack(vm, vcpu);
+		int err = elkvm_expand_stack(vm);
 		if(err) {
 			return err;
 		}
@@ -48,7 +48,7 @@ int elkvm_pushq(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t val) {
 	return 0;
 }
 
-int expand_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+int elkvm_expand_stack(struct kvm_vm *vm) {
   uint64_t oldrsp = 0;
   if(vm->current_user_stack == NULL) {
     oldrsp = page_begin(vm->env_region->guest_virtual);

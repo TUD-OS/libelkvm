@@ -23,7 +23,7 @@ uint32_t elkvm_popd(struct kvm_vm *, struct kvm_vcpu *);
 /*
  * \brief Expand the Stack by one Frame
  */
-int expand_stack(struct kvm_vm *, struct kvm_vcpu *);
+int elkvm_expand_stack(struct kvm_vm *);
 
 /*
  * Dump the stack to stdout

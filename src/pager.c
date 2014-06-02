@@ -517,7 +517,7 @@ int elkvm_pager_handle_pagefault(struct kvm_pager *pager, uint64_t pfla,
           pfla, pager->vm->current_user_stack->guest_virtual);
     }
     if(is_stack_expansion(pager->vm, vcpu, pfla)) {
-      int err = expand_stack(pager->vm, vcpu);
+      int err = elkvm_expand_stack(pager->vm);
       if(pager->vm->debug) {
         elkvm_pager_dump_page_fault_info(pager, pfla, err_code, host_p);
       }

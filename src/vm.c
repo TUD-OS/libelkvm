@@ -272,7 +272,8 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 		vm->env_region->region_size;
 
 	/* get memory for the stack, this is expanded as needed */
-  expand_stack(vm, vcpu);
+  err = elkvm_expand_stack(vm);
+  assert(err == 0 && "stack creation failed");
 
 	/* get a frame for the kernel (interrupt) stack */
   /* this is only ONE page large */
