@@ -17,6 +17,19 @@ This will build the ELKVM library and an example application that just redirects
 system calls to the host Linux kernel. You can find the source code for this
 application in the examples/ directory.
 
+# Using private versions of the tools
+
+If you have libraries (e.g. libudis86) installed in non-standard locations,
+you will have to adapt the respective CMAKE linker and compiler flags. To do
+so, call cmake as follows:
+
+cmake -DCMAKE_C_FLAGS=-I<include directory> \
+      -DCMAKE_CXX_FLAGS=-I<include directory> \
+      -DCMAKE_SHARED_LINKER_FLAGS=-L<lib directory> \
+      -DCMAKE_EXE_LINKER_FLAGS=-L<lib directory>
+
+# Adjusting the Linux kernel
+
 You also need to add the following patch to your Linux kernel for ELKVM to work:
 
 diff --git a/arch/x86/kvm/vmx.c b/arch/x86/kvm/vmx.c
