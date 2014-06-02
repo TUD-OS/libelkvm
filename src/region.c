@@ -73,7 +73,7 @@ struct elkvm_memory_region *elkvm_region_alloc(void *host_base_p, uint64_t size,
   return region;
 }
 
-int elkvm_region_free(struct kvm_vm *vm, struct elkvm_memory_region *region) {
+void elkvm_region_free(struct elkvm_memory_region *region) {
   assert(region->lc == NULL);
   assert(region->rc == NULL);
 
@@ -81,8 +81,6 @@ int elkvm_region_free(struct kvm_vm *vm, struct elkvm_memory_region *region) {
   region->used = 0;
   region->grows_downward = 0;
   memset(region->host_base_p, 0, region->region_size);
-
-  return 0;
 }
 
 struct elkvm_memory_region *
