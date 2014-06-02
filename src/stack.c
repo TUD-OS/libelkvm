@@ -73,8 +73,7 @@ int elkvm_expand_stack(struct kvm_vm *vm) {
   return 0;
 }
 
-bool is_stack_expansion(struct kvm_vm *vm, struct kvm_vcpu *vcpu,
-    guestptr_t pfla) {
+bool elkvm_is_stack_expansion(struct kvm_vm *vm, guestptr_t pfla) {
   guestptr_t stack_top = page_begin(vm->current_user_stack->guest_virtual);
   if(pfla > stack_top) {
     return 0;

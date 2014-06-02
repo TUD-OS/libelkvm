@@ -30,8 +30,7 @@ int elkvm_expand_stack(struct kvm_vm *);
  */
 void elkvm_dump_stack(struct kvm_vm *, struct kvm_vcpu *vcpu);
 
-bool is_stack_expansion(struct kvm_vm *vm, struct kvm_vcpu *vcpu,
-    guestptr_t pfla);
+bool elkvm_is_stack_expansion(struct kvm_vm *vm, guestptr_t pfla);
 
 #ifdef __cplusplus
 }
