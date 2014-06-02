@@ -153,7 +153,7 @@ uint64_t *elkvm_pager_find_next_table(struct kvm_pager *, uint64_t *);
  * \brief find an entry in a pml4, pdpt, pd or pt
  * Args: pager, host table base pointer, guest virtual address, offsets
 */
-uint64_t *elkvm_pager_find_table_entry(struct kvm_pager *, uint64_t *, uint64_t,
+uint64_t *elkvm_pager_find_table_entry(uint64_t *, guestptr_t,
 		int, int);
 
 /*

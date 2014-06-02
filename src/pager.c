@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/ioctl.h>
 
 #include <elkvm.h>
 #include <pager.h>
@@ -413,7 +414,7 @@ uint64_t *elkvm_pager_page_table_walk(struct kvm_pager *pager, uint64_t guest_vi
 	int addr_high = 47;
 
 	for(int i = 0; i < 3; i++) {
-		entry = elkvm_pager_find_table_entry(pager, table_base,
+		entry = elkvm_pager_find_table_entry(table_base,
 				guest_virtual, addr_low, addr_high);
 		addr_low -= 9;
 		addr_high -= 9;
@@ -437,7 +438,7 @@ uint64_t *elkvm_pager_page_table_walk(struct kvm_pager *pager, uint64_t guest_vi
 		table_base = elkvm_pager_find_next_table(pager, entry);
 	}
 
-	entry = elkvm_pager_find_table_entry(pager, table_base,
+	entry = elkvm_pager_find_table_entry(table_base,
 			guest_virtual, addr_low, addr_high);
 	addr_low -= 9;
 	addr_high -= 9;
@@ -459,8 +460,8 @@ uint64_t *elkvm_pager_find_next_table(struct kvm_pager *pager,
 	return (uint64_t *)(pager->system_chunk.userspace_addr + guest_next_tbl);
 }
 
-uint64_t *elkvm_pager_find_table_entry(struct kvm_pager *pager,
-		uint64_t *host_tbl_base_p, uint64_t guest_virtual, int off_low, int off_high) {
+uint64_t *elkvm_pager_find_table_entry(uint64_t *host_tbl_base_p,
+    guestptr_t guest_virtual, int off_low, int off_high) {
 	uint64_t off = (guest_virtual << (63 - off_high)) >> ((63 - off_high) + off_low);
 
 	uint64_t *entry = host_tbl_base_p + off;
