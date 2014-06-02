@@ -22,7 +22,7 @@
 #include "debug.h"
 
 int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus,
-    int memory_size, const struct elkvm_handlers *handlers, const char *binary) {
+    const struct elkvm_handlers *handlers, const char *binary) {
 	int err = 0;
 
 	if(opts->fd <= 0) {
