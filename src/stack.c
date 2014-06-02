@@ -73,6 +73,20 @@ int expand_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
   return 0;
 }
 
+bool is_stack_expansion(struct kvm_vm *vm, struct kvm_vcpu *vcpu,
+    guestptr_t pfla) {
+  guestptr_t stack_top = page_begin(vm->current_user_stack->guest_virtual);
+  if(pfla > stack_top) {
+    return 0;
+  }
+
+  guestptr_t aligned_pfla = page_begin(pfla);
+  uint64_t pages = pages_from_size(stack_top - aligned_pfla);
+
+  /* TODO right now this is an arbitrary number... */
+  return pages < 200;
+}
+
 void elkvm_dump_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
   assert(vcpu->regs.rsp != 0x0);
   elkvm_dump_memory(vm, vcpu->regs.rsp);
