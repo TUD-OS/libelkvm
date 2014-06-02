@@ -14,15 +14,15 @@
 int elkvm_handle_syscall(struct kvm_vm *, struct kvm_vcpu *);
 int elkvm_handle_interrupt(struct kvm_vm *, struct kvm_vcpu *);
 int elkvm_handle_hypercall(struct kvm_vm *, struct kvm_vcpu *);
-int elkvm_syscall1(struct kvm_vm *, struct kvm_vcpu *, uint64_t *);
-int elkvm_syscall2(struct kvm_vm *, struct kvm_vcpu *, uint64_t *, uint64_t *);
-int elkvm_syscall3(struct kvm_vm *, struct kvm_vcpu *, uint64_t *, uint64_t *,
-		uint64_t *);
-int elkvm_syscall4(struct kvm_vm *, struct kvm_vcpu *, uint64_t *, uint64_t *,
-		uint64_t *, uint64_t *);
-int elkvm_syscall5(struct kvm_vm *, struct kvm_vcpu *, uint64_t *, uint64_t *,
-		uint64_t *, uint64_t *, uint64_t *);
-int elkvm_syscall6(struct kvm_vm *, struct kvm_vcpu *, uint64_t *, uint64_t *,
+void elkvm_syscall1(struct kvm_vcpu *, uint64_t *);
+void elkvm_syscall2(struct kvm_vcpu *, uint64_t *, uint64_t *);
+void elkvm_syscall3(struct kvm_vcpu *, uint64_t *, uint64_t *,
+ uint64_t *);
+void elkvm_syscall4(struct kvm_vcpu *, uint64_t *, uint64_t *,
+ uint64_t *, uint64_t *);
+void elkvm_syscall5(struct kvm_vcpu *, uint64_t *, uint64_t *,
+ uint64_t *, uint64_t *, uint64_t *);
+void elkvm_syscall6(struct kvm_vcpu *, uint64_t *, uint64_t *,
 		uint64_t *, uint64_t *, uint64_t *, uint64_t *);
 
 
