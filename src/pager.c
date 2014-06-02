@@ -504,7 +504,6 @@ int elkvm_pager_set_brk(struct kvm_pager *pager, uint64_t guest_addr) {
 int elkvm_pager_handle_pagefault(struct kvm_pager *pager, uint64_t pfla,
     uint32_t err_code) {
 
-    struct kvm_vcpu *vcpu = elkvm_vcpu_get(pager->vm, 0);
 		void *host_p = elkvm_pager_get_host_p(pager, pfla);
 
     if(pager->vm->debug) {
@@ -514,7 +513,7 @@ int elkvm_pager_handle_pagefault(struct kvm_pager *pager, uint64_t pfla,
     if(elkvm_is_stack_expansion(pager->vm, pfla)) {
       int err = elkvm_expand_stack(pager->vm);
       if(pager->vm->debug) {
-        elkvm_pager_dump_page_fault_info(pager, pfla, err_code, host_p);
+        elkvm_pager_dump_page_fault_info(pfla, err_code, host_p);
       }
       if(err) {
         elkvm_pager_dump_page_tables(pager);
@@ -522,7 +521,7 @@ int elkvm_pager_handle_pagefault(struct kvm_pager *pager, uint64_t pfla,
       }
       return 0;
     }
-    elkvm_pager_dump_page_fault_info(pager, pfla, err_code, host_p);
+    elkvm_pager_dump_page_fault_info(pfla, err_code, host_p);
 		if(host_p != NULL) {
 			elkvm_pager_dump_page_tables(pager);
 		}
@@ -530,7 +529,7 @@ int elkvm_pager_handle_pagefault(struct kvm_pager *pager, uint64_t pfla,
     return 1;
 }
 
-void elkvm_pager_dump_page_fault_info(struct kvm_pager *pager, uint64_t pfla,
+void elkvm_pager_dump_page_fault_info(guestptr_t pfla,
     uint32_t err_code, void *host_p) {
 		printf(" Page Fault:\n");
 		printf(" -------------------\n");
@@ -543,17 +542,15 @@ void elkvm_pager_dump_page_fault_info(struct kvm_pager *pager, uint64_t pfla,
 		printf(" Offsets: PML4: %3lu PDPT: %3lu PD: %3lu PT: %3lu Page: %4lu\n",
 				pml4_off, pdpt_off, pd_off, pt_off, page_off);
 
-    if(err_code >= 0) {
-      printf("\n");
-      printf(" Page Fault Error Code:\n");
-      printf(" ----------------------\n");
-      printf(" P: %1x R/W: %1x U/S: %1x RSV: %1x I/D: %1x\n",
-          err_code & 0x1,
-          (err_code >> 1) & 0x1,
-          (err_code >> 2) & 0x1,
-          (err_code >> 3) & 0x1,
-          (err_code >> 4) & 0x1);
-    }
+    printf("\n");
+    printf(" Page Fault Error Code:\n");
+    printf(" ----------------------\n");
+    printf(" P: %1x R/W: %1x U/S: %1x RSV: %1x I/D: %1x\n",
+        err_code & 0x1,
+        (err_code >> 1) & 0x1,
+        (err_code >> 2) & 0x1,
+        (err_code >> 3) & 0x1,
+        (err_code >> 4) & 0x1);
 }
 
 void elkvm_pager_dump_page_tables(struct kvm_pager *pager) {

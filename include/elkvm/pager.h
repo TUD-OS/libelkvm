@@ -173,7 +173,7 @@ void elkvm_pager_create_entry(uint64_t *host_entry_p, guestptr_t guest_next,
 int elkvm_pager_set_brk(struct kvm_pager *, uint64_t);
 int elkvm_pager_handle_pagefault(struct kvm_pager *, uint64_t, uint32_t);
 
-void elkvm_pager_dump_page_fault_info(struct kvm_pager *, uint64_t pfla,
+void elkvm_pager_dump_page_fault_info(guestptr_t pfla,
     uint32_t err_code, void *host_p);
 void elkvm_pager_dump_page_tables(struct kvm_pager *);
 void elkvm_pager_dump_table(struct kvm_pager *, void *, int);
