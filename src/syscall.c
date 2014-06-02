@@ -484,7 +484,7 @@ long elkvm_do_lstat(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_poll(struct kvm_vm *vm) {
+long elkvm_do_poll(struct kvm_vm *vm __attribute__((unused))) {
 	return -ENOSYS;
 }
 
@@ -842,19 +842,19 @@ long elkvm_do_sigprocmask(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_sigreturn(struct kvm_vm *vm) {
+long elkvm_do_sigreturn(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_ioctl(struct kvm_vm *vm) {
+long elkvm_do_ioctl(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_pread64(struct kvm_vm *vm) {
+long elkvm_do_pread64(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_pwrite64(struct kvm_vm *vm) {
+long elkvm_do_pwrite64(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
@@ -1008,39 +1008,39 @@ long elkvm_do_pipe(struct kvm_vm *vm) {
   return 0;
 }
 
-long elkvm_do_select(struct kvm_vm *vm) {
+long elkvm_do_select(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_yield(struct kvm_vm *vm) {
+long elkvm_do_sched_yield(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mremap(struct kvm_vm *vm) {
+long elkvm_do_mremap(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_msync(struct kvm_vm *vm) {
+long elkvm_do_msync(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mincore(struct kvm_vm *vm) {
+long elkvm_do_mincore(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_madvise(struct kvm_vm *vm) {
+long elkvm_do_madvise(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_shmget(struct kvm_vm *vm) {
+long elkvm_do_shmget(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_shmat(struct kvm_vm *vm) {
+long elkvm_do_shmat(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_shmctl(struct kvm_vm *vm) {
+long elkvm_do_shmctl(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
@@ -1071,11 +1071,11 @@ long elkvm_do_dup(struct kvm_vm *vm) {
   return -errno;
 }
 
-long elkvm_do_dup2(struct kvm_vm *vm) {
+long elkvm_do_dup2(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_pause(struct kvm_vm *vm) {
+long elkvm_do_pause(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
@@ -1115,15 +1115,15 @@ long elkvm_do_nanosleep(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_getitimer(struct kvm_vm *vm) {
+long elkvm_do_getitimer(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_alarm(struct kvm_vm *vm) {
+long elkvm_do_alarm(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setitimer(struct kvm_vm *vm) {
+long elkvm_do_setitimer(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
@@ -1143,95 +1143,95 @@ long elkvm_do_getpid(struct kvm_vm *vm) {
   return pid;
 }
 
-long elkvm_do_sendfile(struct kvm_vm *vm) {
+long elkvm_do_sendfile(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_socket(struct kvm_vm *vm) {
+long elkvm_do_socket(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_connect(struct kvm_vm *vm) {
+long elkvm_do_connect(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_accept(struct kvm_vm *vm) {
+long elkvm_do_accept(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sendto(struct kvm_vm *vm) {
+long elkvm_do_sendto(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_recvfrom(struct kvm_vm *vm) {
+long elkvm_do_recvfrom(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sendmsg(struct kvm_vm *vm) {
+long elkvm_do_sendmsg(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_recvmsg(struct kvm_vm *vm) {
+long elkvm_do_recvmsg(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_shutdown(struct kvm_vm *vm) {
+long elkvm_do_shutdown(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_bind(struct kvm_vm *vm) {
+long elkvm_do_bind(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_listen(struct kvm_vm *vm) {
+long elkvm_do_listen(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getsockname(struct kvm_vm *vm) {
+long elkvm_do_getsockname(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getpeername(struct kvm_vm *vm) {
+long elkvm_do_getpeername(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_socketpair(struct kvm_vm *vm) {
+long elkvm_do_socketpair(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setsockopt(struct kvm_vm *vm) {
+long elkvm_do_setsockopt(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getsockopt(struct kvm_vm *vm) {
+long elkvm_do_getsockopt(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_clone(struct kvm_vm *vm) {
+long elkvm_do_clone(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fork(struct kvm_vm *vm) {
+long elkvm_do_fork(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_vfork(struct kvm_vm *vm) {
+long elkvm_do_vfork(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_execve(struct kvm_vm *vm) {
+long elkvm_do_execve(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_exit(struct kvm_vm *vm) {
+long elkvm_do_exit(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_wait4(struct kvm_vm *vm) {
+long elkvm_do_wait4(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_kill(struct kvm_vm *vm) {
+long elkvm_do_kill(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
@@ -1264,35 +1264,35 @@ long elkvm_do_uname(struct kvm_vm *vm) {
 	return result;
 }
 
-long elkvm_do_semget(struct kvm_vm *vm) {
+long elkvm_do_semget(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_semop(struct kvm_vm *vm) {
+long elkvm_do_semop(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_semctl(struct kvm_vm *vm) {
+long elkvm_do_semctl(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_shmdt(struct kvm_vm *vm) {
+long elkvm_do_shmdt(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_msgget(struct kvm_vm *vm) {
+long elkvm_do_msgget(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_msgsnd(struct kvm_vm *vm) {
+long elkvm_do_msgsnd(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_msgrcv(struct kvm_vm *vm) {
+long elkvm_do_msgrcv(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_msgctl(struct kvm_vm *vm) {
+long elkvm_do_msgctl(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
@@ -1347,15 +1347,15 @@ long elkvm_do_fcntl(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_flock(struct kvm_vm *vm) {
+long elkvm_do_flock(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fsync(struct kvm_vm *vm) {
+long elkvm_do_fsync(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fdatasync(struct kvm_vm *vm) {
+long elkvm_do_fdatasync(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
@@ -1421,7 +1421,7 @@ long elkvm_do_ftruncate(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_getdents(struct kvm_vm *vm) {
+long elkvm_do_getdents(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
@@ -1462,15 +1462,15 @@ long elkvm_do_getcwd(struct kvm_vm *vm) {
   }
 }
 
-long elkvm_do_chdir(struct kvm_vm *vm) {
+long elkvm_do_chdir(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fchdir(struct kvm_vm *vm) {
+long elkvm_do_fchdir(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_rename(struct kvm_vm *vm) {
+long elkvm_do_rename(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
@@ -1508,15 +1508,15 @@ long elkvm_do_mkdir(struct kvm_vm *vm) {
 
 }
 
-long elkvm_do_rmdir(struct kvm_vm *vm) {
+long elkvm_do_rmdir(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_creat(struct kvm_vm *vm) {
+long elkvm_do_creat(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_link(struct kvm_vm *vm) {
+long elkvm_do_link(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
@@ -1551,7 +1551,7 @@ long elkvm_do_unlink(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_symlink(struct kvm_vm *vm) {
+long elkvm_do_symlink(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
@@ -1590,27 +1590,27 @@ long elkvm_do_readlink(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_chmod(struct kvm_vm *vm) {
+long elkvm_do_chmod(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fchmod(struct kvm_vm *vm) {
+long elkvm_do_fchmod(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_chown(struct kvm_vm *vm) {
+long elkvm_do_chown(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fchown(struct kvm_vm *vm) {
+long elkvm_do_fchown(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_lchown(struct kvm_vm *vm) {
+long elkvm_do_lchown(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_umask(struct kvm_vm *vm) {
+long elkvm_do_umask(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
@@ -1717,7 +1717,7 @@ long elkvm_do_getrusage(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_sysinfo(struct kvm_vm *vm) {
+long elkvm_do_sysinfo(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
@@ -1760,7 +1760,7 @@ long elkvm_do_times(struct kvm_vm *vm) {
   }
 }
 
-long elkvm_do_ptrace(struct kvm_vm *vm) {
+long elkvm_do_ptrace(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
@@ -1779,7 +1779,7 @@ long elkvm_do_getuid(struct kvm_vm *vm) {
 	return result;
 }
 
-long elkvm_do_syslog(struct kvm_vm *vm) {
+long elkvm_do_syslog(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
@@ -1798,11 +1798,11 @@ long elkvm_do_getgid(struct kvm_vm *vm) {
 	return result;
 }
 
-long elkvm_do_setuid(struct kvm_vm *vm) {
+long elkvm_do_setuid(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setgid(struct kvm_vm *vm) {
+long elkvm_do_setgid(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
@@ -1836,199 +1836,199 @@ long elkvm_do_getegid(struct kvm_vm *vm) {
 	return result;
 }
 
-long elkvm_do_setpgid(struct kvm_vm *vm) {
+long elkvm_do_setpgid(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getppid(struct kvm_vm *vm) {
+long elkvm_do_getppid(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getpgrp(struct kvm_vm *vm) {
+long elkvm_do_getpgrp(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setsid(struct kvm_vm *vm) {
+long elkvm_do_setsid(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setreuid(struct kvm_vm *vm) {
+long elkvm_do_setreuid(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setregid(struct kvm_vm *vm) {
+long elkvm_do_setregid(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getgroups(struct kvm_vm *vm) {
+long elkvm_do_getgroups(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setgroups(struct kvm_vm *vm) {
+long elkvm_do_setgroups(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setresuid(struct kvm_vm *vm) {
+long elkvm_do_setresuid(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getresuid(struct kvm_vm *vm) {
+long elkvm_do_getresuid(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setresgid(struct kvm_vm *vm) {
+long elkvm_do_setresgid(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getresgid(struct kvm_vm *vm) {
+long elkvm_do_getresgid(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getpgid(struct kvm_vm *vm) {
+long elkvm_do_getpgid(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setfsuid(struct kvm_vm *vm) {
+long elkvm_do_setfsuid(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setfsgid(struct kvm_vm *vm) {
+long elkvm_do_setfsgid(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getsid(struct kvm_vm *vm) {
+long elkvm_do_getsid(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_capget(struct kvm_vm *vm) {
+long elkvm_do_capget(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_capset(struct kvm_vm *vm) {
+long elkvm_do_capset(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_rt_sigpending(struct kvm_vm *vm) {
+long elkvm_do_rt_sigpending(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_rt_sigtimedwait(struct kvm_vm *vm) {
+long elkvm_do_rt_sigtimedwait(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_rt_sigqueueinfo(struct kvm_vm *vm) {
+long elkvm_do_rt_sigqueueinfo(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_rt_sigsuspend(struct kvm_vm *vm) {
+long elkvm_do_rt_sigsuspend(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sigaltstack(struct kvm_vm *vm) {
+long elkvm_do_sigaltstack(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_utime(struct kvm_vm *vm) {
+long elkvm_do_utime(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mknod(struct kvm_vm *vm) {
+long elkvm_do_mknod(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_uselib(struct kvm_vm *vm) {
+long elkvm_do_uselib(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_personality(struct kvm_vm *vm) {
+long elkvm_do_personality(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_ustat(struct kvm_vm *vm) {
+long elkvm_do_ustat(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_statfs(struct kvm_vm *vm) {
+long elkvm_do_statfs(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fstatfs(struct kvm_vm *vm) {
+long elkvm_do_fstatfs(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sysfs(struct kvm_vm *vm) {
+long elkvm_do_sysfs(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getpriority(struct kvm_vm *vm) {
+long elkvm_do_getpriority(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setpriority(struct kvm_vm *vm) {
+long elkvm_do_setpriority(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_setparam(struct kvm_vm *vm) {
+long elkvm_do_sched_setparam(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_getparam(struct kvm_vm *vm) {
+long elkvm_do_sched_getparam(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_setscheduler(struct kvm_vm *vm) {
+long elkvm_do_sched_setscheduler(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_getscheduler(struct kvm_vm *vm) {
+long elkvm_do_sched_getscheduler(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_get_priority_max(struct kvm_vm *vm) {
+long elkvm_do_sched_get_priority_max(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_get_priority_min(struct kvm_vm *vm) {
+long elkvm_do_sched_get_priority_min(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_rr_get_interval(struct kvm_vm *vm) {
+long elkvm_do_sched_rr_get_interval(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mlock(struct kvm_vm *vm) {
+long elkvm_do_mlock(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_munlock(struct kvm_vm *vm) {
+long elkvm_do_munlock(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mlockall(struct kvm_vm *vm) {
+long elkvm_do_mlockall(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_munlockall(struct kvm_vm *vm) {
+long elkvm_do_munlockall(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_vhangup(struct kvm_vm *vm) {
+long elkvm_do_vhangup(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_modify_ldt(struct kvm_vm *vm) {
+long elkvm_do_modify_ldt(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_pivot_root(struct kvm_vm *vm) {
+long elkvm_do_pivot_root(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sysctl(struct kvm_vm *vm) {
+long elkvm_do_sysctl(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_prctl(struct kvm_vm *vm) {
+long elkvm_do_prctl(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
@@ -2080,111 +2080,111 @@ long elkvm_do_arch_prctl(struct kvm_vm *vm) {
   return 0;
 }
 
-long elkvm_do_adjtimex(struct kvm_vm *vm) {
+long elkvm_do_adjtimex(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setrlimit(struct kvm_vm *vm) {
+long elkvm_do_setrlimit(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_chroot(struct kvm_vm *vm) {
+long elkvm_do_chroot(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sync(struct kvm_vm *vm) {
+long elkvm_do_sync(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_acct(struct kvm_vm *vm) {
+long elkvm_do_acct(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_settimeofday(struct kvm_vm *vm) {
+long elkvm_do_settimeofday(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mount(struct kvm_vm *vm) {
+long elkvm_do_mount(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_umount2(struct kvm_vm *vm) {
+long elkvm_do_umount2(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_swapon(struct kvm_vm *vm) {
+long elkvm_do_swapon(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_swapoff(struct kvm_vm *vm) {
+long elkvm_do_swapoff(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_reboot(struct kvm_vm *vm) {
+long elkvm_do_reboot(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sethostname(struct kvm_vm *vm) {
+long elkvm_do_sethostname(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setdomainname(struct kvm_vm *vm) {
+long elkvm_do_setdomainname(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_iopl(struct kvm_vm *vm) {
+long elkvm_do_iopl(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_ioperm(struct kvm_vm *vm) {
+long elkvm_do_ioperm(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_create_module(struct kvm_vm *vm) {
+long elkvm_do_create_module(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_init_module(struct kvm_vm *vm) {
+long elkvm_do_init_module(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_delete_module(struct kvm_vm *vm) {
+long elkvm_do_delete_module(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_get_kernel_syms(struct kvm_vm *vm) {
+long elkvm_do_get_kernel_syms(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_query_module(struct kvm_vm *vm) {
+long elkvm_do_query_module(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_quotactl(struct kvm_vm *vm) {
+long elkvm_do_quotactl(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_nfsservctl(struct kvm_vm *vm) {
+long elkvm_do_nfsservctl(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getpmsg(struct kvm_vm *vm) {
+long elkvm_do_getpmsg(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_putpmsg(struct kvm_vm *vm) {
+long elkvm_do_putpmsg(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_afs_syscall(struct kvm_vm *vm) {
+long elkvm_do_afs_syscall(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_tuxcall(struct kvm_vm *vm) {
+long elkvm_do_tuxcall(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_security(struct kvm_vm *vm) {
+long elkvm_do_security(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
@@ -2204,59 +2204,59 @@ long elkvm_do_gettid(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_readahead(struct kvm_vm *vm) {
+long elkvm_do_readahead(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setxattr(struct kvm_vm *vm) {
+long elkvm_do_setxattr(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_lsetxattr(struct kvm_vm *vm) {
+long elkvm_do_lsetxattr(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fsetxattr(struct kvm_vm *vm) {
+long elkvm_do_fsetxattr(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getxattr(struct kvm_vm *vm) {
+long elkvm_do_getxattr(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_lgetxattr(struct kvm_vm *vm) {
+long elkvm_do_lgetxattr(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fgetxattr(struct kvm_vm *vm) {
+long elkvm_do_fgetxattr(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_listxattr(struct kvm_vm *vm) {
+long elkvm_do_listxattr(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_llistxattr(struct kvm_vm *vm) {
+long elkvm_do_llistxattr(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_flistxattr(struct kvm_vm *vm) {
+long elkvm_do_flistxattr(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_removexattr(struct kvm_vm *vm) {
+long elkvm_do_removexattr(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_lremovexattr(struct kvm_vm *vm) {
+long elkvm_do_lremovexattr(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fremovexattr(struct kvm_vm *vm) {
+long elkvm_do_fremovexattr(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_tkill(struct kvm_vm *vm) {
+long elkvm_do_tkill(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
@@ -2341,103 +2341,103 @@ long elkvm_do_futex(struct kvm_vm *vm) {
 
 }
 
-long elkvm_do_sched_setaffinity(struct kvm_vm *vm) {
+long elkvm_do_sched_setaffinity(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_getaffinity(struct kvm_vm *vm) {
+long elkvm_do_sched_getaffinity(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_set_thread_area(struct kvm_vm *vm) {
+long elkvm_do_set_thread_area(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_io_setup(struct kvm_vm *vm) {
+long elkvm_do_io_setup(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_io_destroy(struct kvm_vm *vm) {
+long elkvm_do_io_destroy(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getevents(struct kvm_vm *vm) {
+long elkvm_do_getevents(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_submit(struct kvm_vm *vm) {
+long elkvm_do_submit(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_cancel(struct kvm_vm *vm) {
+long elkvm_do_cancel(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_get_thread_area(struct kvm_vm *vm) {
+long elkvm_do_get_thread_area(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_lookup_dcookie(struct kvm_vm *vm) {
+long elkvm_do_lookup_dcookie(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_epoll_create(struct kvm_vm *vm) {
+long elkvm_do_epoll_create(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_epoll_ctl_old(struct kvm_vm *vm) {
+long elkvm_do_epoll_ctl_old(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_epoll_wait_old(struct kvm_vm *vm) {
+long elkvm_do_epoll_wait_old(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_remap_file_pages(struct kvm_vm *vm) {
+long elkvm_do_remap_file_pages(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getdents64(struct kvm_vm *vm) {
+long elkvm_do_getdents64(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_set_tid_address(struct kvm_vm *vm) {
+long elkvm_do_set_tid_address(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_restart_syscall(struct kvm_vm *vm) {
+long elkvm_do_restart_syscall(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_semtimedop(struct kvm_vm *vm) {
+long elkvm_do_semtimedop(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fadive64(struct kvm_vm *vm) {
+long elkvm_do_fadive64(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_timer_create(struct kvm_vm *vm) {
+long elkvm_do_timer_create(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_timer_settime(struct kvm_vm *vm) {
+long elkvm_do_timer_settime(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_timer_gettime(struct kvm_vm *vm) {
+long elkvm_do_timer_gettime(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_timer_getoverrun(struct kvm_vm *vm) {
+long elkvm_do_timer_getoverrun(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_timer_delete(struct kvm_vm *vm) {
+long elkvm_do_timer_delete(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_clock_settime(struct kvm_vm *vm) {
+long elkvm_do_clock_settime(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
@@ -2471,11 +2471,11 @@ long elkvm_do_clock_gettime(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_clock_getres(struct kvm_vm *vm) {
+long elkvm_do_clock_getres(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_clock_nanosleep(struct kvm_vm *vm) {
+long elkvm_do_clock_nanosleep(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
@@ -2491,11 +2491,11 @@ long elkvm_do_exit_group(struct kvm_vm *vm) {
   return -ENOSYS;
 }
 
-long elkvm_do_epoll_wait(struct kvm_vm *vm) {
+long elkvm_do_epoll_wait(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_epoll_ctl(struct kvm_vm *vm) {
+long elkvm_do_epoll_ctl(struct kvm_vm *vm __attribute__((unused))) {
   return -ENOSYS;
 }
 
