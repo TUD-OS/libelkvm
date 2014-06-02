@@ -1679,7 +1679,6 @@ long elkvm_do_getuid(struct kvm_vm *vm) {
 		printf("GETUID handler not found\n");
 		return -ENOSYS;
 	}
-  struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
 
 	long result = vm->syscall_handlers->getuid();
   if(vm->debug) {
@@ -1698,7 +1697,6 @@ long elkvm_do_getgid(struct kvm_vm *vm) {
 		printf("GETGID handler not found\n");
 		return -ENOSYS;
 	}
-  struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
 
 	long result = vm->syscall_handlers->getgid();
   if(vm->debug) {
@@ -1721,7 +1719,6 @@ long elkvm_do_geteuid(struct kvm_vm *vm) {
 		printf("GETEUID handler not found\n");
 		return -ENOSYS;
 	}
-  struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
 
 	long result = vm->syscall_handlers->geteuid();
   if(vm->debug) {
@@ -1736,7 +1733,6 @@ long elkvm_do_getegid(struct kvm_vm *vm) {
 		printf("GETEGID handler not found\n");
 		return -ENOSYS;
 	}
-  struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
 
 	long result = vm->syscall_handlers->getegid();
   if(vm->debug) {
