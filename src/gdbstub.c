@@ -239,17 +239,9 @@ static int other_thread = 0;
 #if !BX_SUPPORT_X86_64
 #define NUMREGS (16)
 #define NUMREGSBYTES (NUMREGS * 4)
-static Bit32u registers[NUMREGS];
 #endif
 
-#define MAX_BREAKPOINTS (255)
-static unsigned breakpoints[MAX_BREAKPOINTS] = {0,};
-static unsigned nr_breakpoints = 0;
-
-static int stub_trace_flag = 0;
-static int instr_count = 0;
 guestptr_t saved_eip = 0;
-static int bx_enter_gdbstub = 0;
 
 static void write_signal(char* buf, int signal)
 {
@@ -262,7 +254,6 @@ static void debug_loop(struct kvm_vm *vm) {
   char buffer[255];
   char obuf[1024];
   int ne = 0;
-  Bit8u mem[255];
   struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
 
   while (ne == 0)
