@@ -297,8 +297,6 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 		return err;
 	}
 
-	void *host_target_p = vm->env_region->host_base_p;
-
   /* TODO put the auxv pointers onto the stack in the correct order */
   /* XXX this breaks, if we do not get the original envp */
   char **auxv_p = (char **)opts->environ;
