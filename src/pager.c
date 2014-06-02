@@ -241,10 +241,7 @@ uint64_t elkvm_pager_map_kernel_page(struct kvm_pager *pager, void *host_mem_p,
    * TODO setting this page up for user makes interrupts work,
    * fix this!
    */
-	int err = elkvm_pager_create_entry(pager, pt_entry, guest_physical, opts);
-  if(err) {
-    return err;
-  }
+	elkvm_pager_create_entry(pt_entry, guest_physical, opts);
 
 	return guest_virtual;
 }
@@ -311,8 +308,7 @@ int elkvm_pager_map_region(struct kvm_pager *pager, void *host_start_p,
 
     /* map those pages */
     while(pages && pages_remaining) {
-      int err = elkvm_pager_create_entry(pager, pt_entry, guest_physical, opts);
-      assert(err == 0);
+      elkvm_pager_create_entry(pt_entry, guest_physical, opts);
 
       pt_entry++;
       guest_physical+=ELKVM_PAGESIZE;
@@ -331,7 +327,6 @@ int elkvm_pager_map_region(struct kvm_pager *pager, void *host_start_p,
 
 int elkvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 		uint64_t guest_virtual, ptopt_t opts) {
-	int err;
   assert(guest_virtual != 0);
 
 	assert(pager->system_chunk.userspace_addr != 0);
@@ -363,9 +358,9 @@ int elkvm_pager_create_mapping(struct kvm_pager *pager, void *host_mem_p,
 		return 0;
 	}
 
-	err = elkvm_pager_create_entry(pager, pt_entry, guest_physical, opts);
+	elkvm_pager_create_entry(pt_entry, guest_physical, opts);
 
-	return err;
+	return 0;
 }
 
 int elkvm_pager_destroy_mapping(struct kvm_pager *pager, uint64_t guest_virtual) {
@@ -478,11 +473,12 @@ int elkvm_pager_create_table(struct kvm_pager *pager, uint64_t *host_entry_p,
 	memset(pager->host_next_free_tbl_p, 0, HOST_PAGESIZE);
 	pager->host_next_free_tbl_p += HOST_PAGESIZE;
 
-	return elkvm_pager_create_entry(pager, host_entry_p, guest_next_tbl, opts);
+	elkvm_pager_create_entry(host_entry_p, guest_next_tbl, opts);
+  return 0;
 }
 
-int elkvm_pager_create_entry(struct kvm_pager *pager, uint64_t *host_entry_p,
-		uint64_t guest_next, ptopt_t opts) {
+void elkvm_pager_create_entry(uint64_t *host_entry_p, guestptr_t guest_next,
+    ptopt_t opts) {
 	/* save base address of next tbl in entry */
 	*host_entry_p = page_begin(guest_next);
 
@@ -498,8 +494,6 @@ int elkvm_pager_create_entry(struct kvm_pager *pager, uint64_t *host_entry_p,
 
 	/* mark the entry as present */
 	*host_entry_p |= PT_BIT_PRESENT;
-
-	return 0;
 }
 
 int elkvm_pager_set_brk(struct kvm_pager *pager, uint64_t guest_addr) {
