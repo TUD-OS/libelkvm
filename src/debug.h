@@ -3,7 +3,7 @@
 #include <elkvm.h>
 #include <vcpu.h>
 
-int elkvm_handle_debug(struct kvm_vm *, struct kvm_vcpu *);
+int elkvm_handle_debug(struct kvm_vm *);
 int elkvm_set_guest_debug(struct kvm_vcpu *vcpu);
 
 /**

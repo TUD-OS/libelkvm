@@ -6,7 +6,7 @@
 #include <elkvm.h>
 #include "debug.h"
 
-int elkvm_handle_debug(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+int elkvm_handle_debug(struct kvm_vm *vm) {
   int handled = 0;
   if(vm->syscall_handlers->bp_callback != NULL) {
     handled = vm->syscall_handlers->bp_callback(vm);
