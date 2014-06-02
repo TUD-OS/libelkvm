@@ -85,6 +85,11 @@ int kvm_pager_create_page_tables(struct kvm_pager *, int);
 int kvm_pager_is_invalid_guest_base(struct kvm_pager *, uint64_t);
 
 /*
+ * Maps a new mem chunk into the VM
+*/
+int elkvm_pager_map_chunk(struct kvm_vm *, struct kvm_userspace_memory_region *);
+
+/*
  * Append a kvm_userspace_memory_region to the end of the list of memory regions
 */
 int kvm_pager_append_mem_chunk(struct kvm_pager *, struct kvm_userspace_memory_region *);

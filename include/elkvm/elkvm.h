@@ -137,7 +137,7 @@ struct elkvm_handlers {
 	Create a new VM, with the given mode, cpu count, memory and syscall handlers
 	Return 0 on success, -1 on error
 */
-int kvm_vm_create(struct elkvm_opts *, struct kvm_vm *, int, int, int,
+int elkvm_vm_create(struct elkvm_opts *, struct kvm_vm *, int, int, int,
 		const struct elkvm_handlers *, const char *binary);
 
 /*
@@ -151,29 +151,9 @@ int elkvm_set_debug(struct kvm_vm *);
 int elkvm_region_setup(struct kvm_vm *vm);
 
 /*
-	Writes the state of the VM to a given file descriptor
-*/
-void kvm_dump_vm(struct kvm_vm *, int);
-
-/*
-	Check if a given KVM capability exists, will return the result of the ioctl
-*/
-int kvm_check_cap(struct elkvm_opts *, int);
-
-/*
 	Returns the number of VCPUs in a VM
 */
-int kvm_vm_vcpu_count(struct kvm_vm *);
-
-/*
-	Destroys a VM and all its data structures
-*/
-int kvm_vm_destroy(struct kvm_vm *);
-
-/*
- * Maps a new mem chunk into the VM
-*/
-int kvm_vm_map_chunk(struct kvm_vm *, struct kvm_userspace_memory_region *);
+int elkvm_vcpu_count(struct kvm_vm *);
 
 /*
  * \brief Emulates (skips) the VMCALL instruction

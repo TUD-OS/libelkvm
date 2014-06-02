@@ -21,7 +21,7 @@
 #include <elfloader.h>
 #include "debug.h"
 
-int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus,
+int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus,
     int memory_size, const struct elkvm_handlers *handlers, const char *binary) {
 	int err = 0;
 
@@ -66,7 +66,7 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 		return err;
 	}
 
-	err = kvm_vm_map_chunk(vm, &vm->pager.system_chunk);
+	err = elkvm_pager_map_chunk(vm, &vm->pager.system_chunk);
 	if(err) {
 		return err;
 	}
@@ -212,19 +212,7 @@ int elkvm_region_setup(struct kvm_vm *vm) {
 	return 0;
 }
 
-int kvm_check_cap(struct elkvm_opts *kvm, int cap) {
-	if(kvm->fd < 1) {
-		return -EIO;
-	}
-
-	int r = ioctl(kvm->fd, KVM_CHECK_EXTENSION, cap);
-	if(r < 0) {
-		return -errno;
-	}
-	return r;
-}
-
-int kvm_vm_vcpu_count(struct kvm_vm *vm) {
+int elkvm_vcpu_count(struct kvm_vm *vm) {
 	int count = 0;
 	struct vcpu_list *vl = vm->vcpus;
 	if(vl == NULL) {
@@ -238,10 +226,6 @@ int kvm_vm_vcpu_count(struct kvm_vm *vm) {
 		vl = vl->next;
 	}
 	return count;
-}
-
-int kvm_vm_destroy(struct kvm_vm *vm) {
-	return -1;
 }
 
 int elkvm_init(struct elkvm_opts *opts, int argc, char **argv, char **environ) {
@@ -434,34 +418,6 @@ int elkvm_copy_and_push_str_arr_p(struct kvm_vm *vm,
 	}
 
 	return bytes;
-}
-
-int kvm_vm_map_chunk(struct kvm_vm *vm, struct kvm_userspace_memory_region *chunk) {
-  if(chunk->memory_size == 0) {
-    vm->pager.free_slot_id++;
-    assert(vm->pager.free_slot_id < KVM_MEMORY_SLOTS);
-    vm->pager.free_slot[vm->pager.free_slot_id] = chunk->slot;
-  }
-
-  assert(chunk->slot < KVM_MEMORY_SLOTS);
-	int err = ioctl(vm->fd, KVM_SET_USER_MEMORY_REGION, chunk);
-  return err ? -errno : 0;
-//	if(err) {
-//		long sz = sysconf(_SC_PAGESIZE);
-//		printf("Could not set memory region\n");
-//		printf("Error No: %i Msg: %s\n", errno, strerror(errno));
-//		printf("Pagesize is: %li\n", sz);
-//		printf("Here are some sanity checks that are applied in kernel:\n");
-//		int ms = chunk->memory_size & (sz-1);
-//		int pa = chunk->guest_phys_addr & (sz-1);
-//		int ua = chunk->userspace_addr & (sz-1);
-//		printf("memory_size & (PAGE_SIZE -1): %i\n", ms);
-//		printf("guest_phys_addr & (PAGE_SIZE-1): %i\n", pa);
-//		printf("userspace_addr & (PAGE_SIZE-1): %i\n", ua);
-//		printf("TODO verify write access\n");
-//    return -errno;
-//	}
-//	return 0;
 }
 
 int elkvm_chunk_remap(struct kvm_vm *vm, int num, uint64_t newsize) {

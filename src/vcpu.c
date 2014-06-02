@@ -29,7 +29,7 @@ int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
 	memset(&vcpu->sregs, 0, sizeof(struct kvm_sregs));
 	vcpu->singlestep = 0;
 
-	int vcpu_count = kvm_vm_vcpu_count(vm);
+	int vcpu_count = elkvm_vcpu_count(vm);
 	vcpu->fd = ioctl(vm->fd, KVM_CREATE_VCPU, vcpu_count);
 	if(vcpu->fd <= 0) {
 		free(vcpu);

@@ -214,7 +214,7 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 
-	err = kvm_vm_create(&elkvm, &vm, VM_MODE_X86_64, 1, 1024*1024, &example_handlers);
+	err = elkvm_vm_create(&elkvm, &vm, VM_MODE_X86_64, 1, 1024*1024, &example_handlers);
 	if(err) {
 		printf("ERROR creating VM errno: %i Msg: %s\n", -err, strerror(-err));
 		return -1;

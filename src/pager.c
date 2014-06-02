@@ -100,8 +100,36 @@ int kvm_pager_create_mem_chunk(struct kvm_pager *pager, void **chunk_host_p,
     return -ENOMEM;
   }
 
-  err = kvm_vm_map_chunk(pager->vm, chunk);
+  err = elkvm_pager_map_chunk(pager->vm, chunk);
 	return err;
+}
+
+int elkvm_pager_map_chunk(struct kvm_vm *vm, struct kvm_userspace_memory_region *chunk) {
+  if(chunk->memory_size == 0) {
+    vm->pager.free_slot_id++;
+    assert(vm->pager.free_slot_id < KVM_MEMORY_SLOTS);
+    vm->pager.free_slot[vm->pager.free_slot_id] = chunk->slot;
+  }
+
+  assert(chunk->slot < KVM_MEMORY_SLOTS);
+	int err = ioctl(vm->fd, KVM_SET_USER_MEMORY_REGION, chunk);
+  return err ? -errno : 0;
+//	if(err) {
+//		long sz = sysconf(_SC_PAGESIZE);
+//		printf("Could not set memory region\n");
+//		printf("Error No: %i Msg: %s\n", errno, strerror(errno));
+//		printf("Pagesize is: %li\n", sz);
+//		printf("Here are some sanity checks that are applied in kernel:\n");
+//		int ms = chunk->memory_size & (sz-1);
+//		int pa = chunk->guest_phys_addr & (sz-1);
+//		int ua = chunk->userspace_addr & (sz-1);
+//		printf("memory_size & (PAGE_SIZE -1): %i\n", ms);
+//		printf("guest_phys_addr & (PAGE_SIZE-1): %i\n", pa);
+//		printf("userspace_addr & (PAGE_SIZE-1): %i\n", ua);
+//		printf("TODO verify write access\n");
+//    return -errno;
+//	}
+//	return 0;
 }
 
 int kvm_pager_append_mem_chunk(struct kvm_pager *pager,
