@@ -1381,7 +1381,7 @@ long elkvm_do_getcwd(struct kvm_vm *vm) {
     printf("GETCWD with buf at: 0x%lx (%p) size %lu\n",
         buf_p, buf, size);
     printf("RESULT: %p (%s)\n", result, result);
-    if(result < 0) {
+    if(result == NULL) {
       printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
     }
     printf("=================================\n");
