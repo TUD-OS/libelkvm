@@ -484,7 +484,7 @@ int elkvm_dump_valid_msrs(struct elkvm_opts *opts) {
 		return -errno;
 	}
 
-	for(int i = 0; i < list->nmsrs; i++) {
+	for(unsigned i = 0; i < list->nmsrs; i++) {
 		printf("MSR: 0x%x\n", list->indices[i]);
 	}
 	free(list);
