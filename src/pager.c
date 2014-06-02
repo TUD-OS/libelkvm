@@ -640,3 +640,67 @@ void elkvm_pager_slot_dump(struct kvm_pager *pager) {
   printf("\n");
 }
 
+/*
+ * \brief Translate a host address into a guest physical address
+*/
+uint64_t host_to_guest_physical(struct kvm_pager *pager, void *host_p) {
+	struct kvm_userspace_memory_region *region =
+		elkvm_pager_find_region_for_host_p(pager, host_p);
+	if(region == NULL) {
+		return 0;
+	}
+	assert(region->userspace_addr <= (uint64_t)host_p);
+	return (uint64_t)(host_p - region->userspace_addr + region->guest_phys_addr);
+}
+
+bool address_in_region(struct kvm_userspace_memory_region *r,
+    void *host_addr) {
+  return ((void *)r->userspace_addr <= host_addr) &&
+      (host_addr < ((void *)r->userspace_addr + r->memory_size));
+}
+
+bool guest_address_in_region(struct kvm_userspace_memory_region *r,
+    uint64_t guest_physical) {
+  return (r->guest_phys_addr <= guest_physical) &&
+      (guest_physical < (r->guest_phys_addr + r->memory_size));
+}
+
+/*
+ * \brief Check if an entry exists in a pml4, pdpt, pd or pt
+*/
+bool entry_exists(uint64_t *e) {
+	return *e & 0x1;
+}
+
+guestptr_t page_begin(guestptr_t addr) {
+  return (addr & ~(ELKVM_PAGESIZE-1));
+}
+
+bool page_aligned(guestptr_t addr) {
+  return ((addr & ~(ELKVM_PAGESIZE-1)) == addr);
+}
+
+guestptr_t next_page(guestptr_t addr) {
+  return (addr & ~(ELKVM_PAGESIZE-1)) + ELKVM_PAGESIZE;
+}
+
+int pages_from_size(uint64_t size) {
+  if(size % ELKVM_PAGESIZE) {
+    return (size / ELKVM_PAGESIZE) + 1;
+  } else {
+    return size / ELKVM_PAGESIZE;
+  }
+}
+
+int page_remain(guestptr_t addr) {
+  return ELKVM_PAGESIZE - (addr & (ELKVM_PAGESIZE-1));
+}
+
+unsigned int offset_in_page(guestptr_t addr) {
+  return addr & (ELKVM_PAGESIZE-1);
+}
+
+uint64_t pagesize_align(uint64_t size) {
+  return ((size & ~(ELKVM_PAGESIZE-1)) + ELKVM_PAGESIZE);
+}
+

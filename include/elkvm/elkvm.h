@@ -11,6 +11,8 @@
 #include <unistd.h>
 #include <libelf.h>
 
+typedef uint64_t guestptr_t;
+
 #include "kvm.h"
 #include "pager.h"
 #include "region.h"
@@ -31,8 +33,6 @@ extern "C" {
 #ifdef _PREFIX_
 #define RES_PATH _PREFIX_ "/share/libelkvm"
 #endif
-
-typedef uint64_t guestptr_t;
 
 struct region_mapping {
   void *host_p;

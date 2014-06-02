@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include "list.h"
 
+#include <elkvm.h>
+
 #define PAGER_MODE_X86     1
 #define PAGER_MODE_X86_E   2
 #define PAGER_MODE_X86_64  3
@@ -176,67 +178,15 @@ void elkvm_pager_dump_page_fault_info(struct kvm_pager *, uint64_t pfla,
 void elkvm_pager_dump_page_tables(struct kvm_pager *);
 void elkvm_pager_dump_table(struct kvm_pager *, void *, int);
 
-/*
- * \brief Translate a host address into a guest physical address
-*/
-static inline uint64_t host_to_guest_physical(struct kvm_pager *pager, void *host_p) {
-	struct kvm_userspace_memory_region *region =
-		elkvm_pager_find_region_for_host_p(pager, host_p);
-	if(region == NULL) {
-		return 0;
-	}
-	assert(region->userspace_addr <= (uint64_t)host_p);
-	return (uint64_t)(host_p - region->userspace_addr + region->guest_phys_addr);
-}
-
-static inline int address_in_region(struct kvm_userspace_memory_region *r,
-    void *host_addr) {
-  return ((void *)r->userspace_addr <= host_addr) &&
-      (host_addr < ((void *)r->userspace_addr + r->memory_size));
-}
-
-static inline int guest_address_in_region(struct kvm_userspace_memory_region *r,
-    uint64_t guest_physical) {
-  return (r->guest_phys_addr <= guest_physical) &&
-      (guest_physical < (r->guest_phys_addr + r->memory_size));
-}
-
-/*
- * \brief Check if an entry exists in a pml4, pdpt, pd or pt
-*/
-static inline int entry_exists(uint64_t *e) {
-	return *e & 0x1;
-}
-
-static uint64_t page_begin(uint64_t addr) {
-  return (addr & ~(ELKVM_PAGESIZE-1));
-}
-
-static bool page_aligned(uint64_t addr) {
-  return ((addr & ~(ELKVM_PAGESIZE-1)) == addr);
-}
-
-static uint64_t next_page(uint64_t addr) {
-  return (addr & ~(ELKVM_PAGESIZE-1)) + ELKVM_PAGESIZE;
-}
-
-static int pages_from_size(uint64_t size) {
-  if(size % ELKVM_PAGESIZE) {
-    return (size / ELKVM_PAGESIZE) + 1;
-  } else {
-    return size / ELKVM_PAGESIZE;
-  }
-}
-
-static int page_remain(uint64_t addr) {
-  return ELKVM_PAGESIZE - (addr & (ELKVM_PAGESIZE-1));
-}
-
-static unsigned int offset_in_page(uint64_t addr) {
-  return addr & (ELKVM_PAGESIZE-1);
-}
-
-static uint64_t pagesize_align(uint64_t size) {
-  return ((size & ~(ELKVM_PAGESIZE-1)) + ELKVM_PAGESIZE);
-}
-
+uint64_t host_to_guest_physical(struct kvm_pager *pager, void *host_p);
+bool address_in_region(struct kvm_userspace_memory_region *r, void *host_addr);
+bool guest_address_in_region(struct kvm_userspace_memory_region *r,
+    uint64_t guest_physical);
+bool entry_exists(uint64_t *e);
+guestptr_t page_begin(guestptr_t addr);
+bool page_aligned(guestptr_t addr);
+guestptr_t next_page(guestptr_t addr);
+int pages_from_size(uint64_t size);
+int page_remain(guestptr_t addr);
+unsigned int offset_in_page(guestptr_t addr);
+uint64_t pagesize_align(uint64_t size);
