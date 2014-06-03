@@ -48,11 +48,11 @@ namespace Elkvm {
   }
 
   bool Region::contains_address(const void * const p) const {
-    return (host_p <= p) && (p < (host_p + rsize));
+    return (host_p <= p) && (p < (reinterpret_cast<char *>(host_p) + rsize));
   }
 
   void *Region::last_valid_address() const {
-    return host_p + rsize;
+    return reinterpret_cast<char *>(host_p) + rsize;
   }
 
   Region Region::slice_begin(const size_t size) {
@@ -60,7 +60,7 @@ namespace Elkvm {
     assert(rsize > pagesize_align(size));
 
     Region r(host_p, pagesize_align(size));
-    host_p += r.size();
+    host_p = reinterpret_cast<char *>(host_p) + r.size();
     rsize  -= r.size();
     return r;
   }
