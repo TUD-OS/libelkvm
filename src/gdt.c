@@ -1,6 +1,5 @@
 #include <elkvm.h>
 #include <gdt.h>
-#include <syscall.h>
 #include <tss.h>
 #include <vcpu.h>
 
