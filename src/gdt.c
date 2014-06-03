@@ -9,7 +9,7 @@
 
 int elkvm_gdt_setup(struct kvm_vm *vm) {
 
-	vm->gdt_region = elkvm_region_create(vm,
+	vm->gdt_region = elkvm_region_create(
 				GDT_NUM_ENTRIES * sizeof(struct elkvm_gdt_segment_descriptor));
 
 	vm->gdt_region->guest_virtual = elkvm_pager_map_kernel_page(&vm->pager,
@@ -48,7 +48,7 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 
 	entry++;
 
-	struct elkvm_memory_region *tss_region = elkvm_region_create(vm,
+	struct elkvm_memory_region *tss_region = elkvm_region_create(
 			sizeof(struct elkvm_tss64));
 	/* setup the tss, before loading the segment descriptor */
 	int err = elkvm_tss_setup64(vm, tss_region);

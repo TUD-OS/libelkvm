@@ -29,7 +29,7 @@ int elkvm_heap_initialize(struct kvm_vm *vm, struct elkvm_memory_region *region,
 }
 
 int elkvm_heap_grow(struct kvm_vm *vm, uint64_t size) {
-  struct elkvm_memory_region *region = elkvm_region_create(vm, size);
+  struct elkvm_memory_region *region = elkvm_region_create(size);
   if(region == NULL) {
     /* guest is completely out of memory */
     return -ENOMEM;

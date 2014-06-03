@@ -17,7 +17,7 @@ int elkvm_pager_initialize(struct kvm_vm *vm, int mode) {
   int err = elkvm_init_region_manager(&vm->pager);
   assert(err == 0);
 
-	struct elkvm_memory_region *pts_region = elkvm_region_create(vm, ELKVM_PAGER_MEMSIZE);
+	struct elkvm_memory_region *pts_region = elkvm_region_create(ELKVM_PAGER_MEMSIZE);
 	if(pts_region == NULL) {
 		return -ENOMEM;
 	}

@@ -69,7 +69,7 @@ namespace Elkvm {
 }
 
 
-struct elkvm_memory_region *elkvm_region_create(struct kvm_vm *vm, uint64_t req_size) {
+struct elkvm_memory_region *elkvm_region_create(uint64_t req_size) {
   Elkvm::Region r = Elkvm::rm.allocate_region(req_size);
 	return r.c_region();
 }

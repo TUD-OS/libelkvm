@@ -57,7 +57,7 @@ int elkvm_expand_stack(struct kvm_vm *vm) {
   }
   uint64_t newrsp = oldrsp - ELKVM_STACK_GROW;
 
-	struct elkvm_memory_region *region = elkvm_region_create(vm, ELKVM_STACK_GROW);
+	struct elkvm_memory_region *region = elkvm_region_create(ELKVM_STACK_GROW);
 	if(region == NULL) {
 		return -ENOMEM;
 	}

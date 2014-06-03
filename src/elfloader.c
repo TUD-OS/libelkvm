@@ -144,7 +144,7 @@ int elkvm_loader_parse_program(struct kvm_vm *vm, struct Elf_binary *bin) {
 int elkvm_loader_pt_load(struct kvm_vm *vm, GElf_Phdr phdr, struct Elf_binary *bin) {
 	uint64_t total_size = phdr.p_memsz + offset_in_page(phdr.p_vaddr);
 	struct elkvm_memory_region *loadable_region =
-		elkvm_region_create(vm, total_size);
+		elkvm_region_create(total_size);
   loadable_region->guest_virtual = page_begin(phdr.p_vaddr);
 
 	int err = elkvm_loader_load_program_header(bin, phdr, loadable_region);
