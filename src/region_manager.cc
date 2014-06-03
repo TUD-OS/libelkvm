@@ -119,7 +119,8 @@ namespace Elkvm {
 
     assert((oldsize == old_region.size() + new_region.size())
         && "sizes of the new regions must match size of the old region");
-    assert(old_region.base_address() == (new_region.base_address() + new_region.size())
+    assert(old_region.base_address()
+        == (reinterpret_cast<char *>(new_region.base_address()) + new_region.size())
         && "new region must be right behind sliced part");
 
     return 0;
