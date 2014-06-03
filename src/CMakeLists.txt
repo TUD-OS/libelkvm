@@ -17,7 +17,6 @@ SET( libelkvm_SRCS
   vm.c
   )
 ADD_LIBRARY( elkvm SHARED ${libelkvm_SRCS} )
-target_link_libraries (elkvm check)
 target_link_libraries (elkvm udis86)
 target_link_libraries (elkvm elf)
 add_dependencies(elkvm entry)
