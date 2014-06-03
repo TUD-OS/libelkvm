@@ -6,32 +6,50 @@
 namespace Elkvm {
 
   Region RegionManager::allocate_region(size_t size) {
-    int list_idx = get_freelist_idx(size);
+    Region r = find_free_region(size);
 
-    auto rit = std::find_if(freelists[list_idx].begin(), freelists[list_idx].end(),
-        [size](const Region &a)
-        { return a.size() >= size; });
-
-    if(rit == freelists[list_idx].end()) {
-      int err = split_free_region(size);
+    if(r.base_address() == nullptr) {
+      int err = add_chunk(size);
       assert(err == 0);
-
-      rit = std::find_if(freelists[list_idx].begin(), freelists[list_idx].end(),
-          [size](const Region &a)
-          { return a.size() >= size; });
+      r = find_free_region(size);
+      assert(r.base_address() != nullptr);
     }
 
-    assert(rit != freelists[list_idx].end());
+    if(r.size() > size) {
+      Region new_region = r.slice_begin(size);
+      add_free_region(r);
+      assert(new_region.is_free());
+      new_region.set_used();
+      allocated_regions.push_back(new_region);
 
-    Region r = *rit;
-    freelists[list_idx].erase(rit);
+      assert(size <= new_region.size());
+      return new_region;
+    } else {
+      assert(r.is_free());
+      r.set_used();
+      allocated_regions.push_back(r);
 
-    assert(r.is_free());
-    r.set_used();
-    allocated_regions.push_back(r);
+      assert(size <= r.size());
+      return r;
+    }
+  }
 
-    assert(size <= r.size());
-    return r;
+  Region RegionManager::find_free_region(size_t size) {
+    int list_idx = get_freelist_idx(size);
+    assert(list_idx >= 0);
+
+    while(list_idx < freelists.size()) {
+      auto rit = std::find_if(freelists[list_idx].begin(), freelists[list_idx].end(),
+         [size](const Region &a)
+         { return a.size() >= size; });
+      if(rit != freelists[list_idx].end()) {
+        Region r = std::move(*rit);
+        freelists[list_idx].erase(rit);
+        return r;
+      }
+      list_idx++;
+    }
+    return Region(nullptr, 0x0);
   }
 
   Region &RegionManager::find_region(const void *host_p) {
@@ -64,66 +82,6 @@ namespace Elkvm {
     freelists[list_idx].emplace_back(
         reinterpret_cast<void *>(pager->system_chunk.userspace_addr),
         pager->system_chunk.memory_size);
-  }
-
-  int RegionManager::split_free_region(const size_t size) {
-    auto list_idx = get_freelist_idx(size);
-    while((list_idx < freelists.size()) && freelists[list_idx].empty()) {
-      list_idx++;
-    }
-    if(list_idx == freelists.size()) {
-      /*
-       * could not find a suitable region to split
-       * therefore we need to add a new chunk
-       */
-      int err = add_chunk(size);
-      if(err) {
-        return err;
-      }
-      list_idx--;
-    }
-
-    assert(!freelists[list_idx].empty() && "freelist cannot be empty when taking elems");
-    auto rit = std::find_if(freelists[list_idx].begin(), freelists[list_idx].end(),
-        [size](const Region &a)
-        { return a.size() >= size; });
-    while(rit == freelists[list_idx].end()) {
-      list_idx++;
-      if(list_idx == freelists.size()) {
-        /*
-         * could not find a suitable region to split
-         * therefore we need to add a new chunk
-         */
-        int err = add_chunk(size);
-        if(err) {
-          return err;
-        }
-        list_idx--;
-      }
-      assert(list_idx < freelists.size());
-      rit = std::find_if(freelists[list_idx].begin(), freelists[list_idx].end(),
-          [size](const Region &a)
-          { return a.size() >= size; });
-    }
-
-    assert(rit != freelists[list_idx].end());
-    assert(rit->size() >= size);
-
-    size_t oldsize = rit->size();
-    Region old_region = *rit;
-    freelists[list_idx].erase(rit);
-    Region new_region = old_region.slice_begin(size);
-
-    add_free_region(old_region);
-    add_free_region(new_region);
-
-    assert((oldsize == old_region.size() + new_region.size())
-        && "sizes of the new regions must match size of the old region");
-    assert(old_region.base_address()
-        == (reinterpret_cast<char *>(new_region.base_address()) + new_region.size())
-        && "new region must be right behind sliced part");
-
-    return 0;
   }
 
   void RegionManager::add_free_region(const Region &r) {

@@ -42,7 +42,6 @@ namespace Elkvm {
       struct kvm_pager * pager;
       std::array<std::vector<Region>, 16> freelists;
       int add_chunk(const size_t size);
-      int split_free_region(const size_t size);
       std::vector<Region> allocated_regions;
 
     public:
@@ -50,6 +49,7 @@ namespace Elkvm {
       void add_system_chunk();
       bool address_valid(const void *host_p) const;
       Region allocate_region(size_t size);
+      Region find_free_region(size_t size);
       Region &find_region(const void *host_p);
       Region &find_region(const guestptr_t addr);
       void free_region(Region &r);

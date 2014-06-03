@@ -62,7 +62,7 @@ namespace Elkvm {
     Region r(host_p, pagesize_align(size));
     host_p = reinterpret_cast<char *>(host_p) + r.size();
     rsize  -= r.size();
-    return r;
+    return std::move(r);
   }
 
 //namespace Elkvm
@@ -71,6 +71,7 @@ namespace Elkvm {
 
 struct elkvm_memory_region *elkvm_region_create(uint64_t req_size) {
   Elkvm::Region r = Elkvm::rm.allocate_region(req_size);
+  assert(r.size() >= req_size && "allocated region must be suitable in size!");
 	return r.c_region();
 }
 
