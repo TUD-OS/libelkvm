@@ -74,9 +74,6 @@ int elkvm_loader_check_elf(Elf *e) {
 		return -1;
 	}
 
-  /* TODO check out if the call to elf_kind is needed for initialization */
-	int ek = elf_kind(e);
-
 	if(gelf_getehdr(e, &ehdr) == NULL) {
 		return -1;
 	}
