@@ -23,4 +23,15 @@ namespace testing {
     ASSERT_TRUE(rm.host_address_mapped(reinterpret_cast<void *>(0xC0FFEE)));
   }
 
+  TEST_F(RegionManagerTest, test_free_region) {
+    Elkvm::Region r(reinterpret_cast<void *>(0xC0F000), 0x12000);
+    rm.add_free_region(r);
+    Elkvm::Region r2 = rm.allocate_region(0x2000);
+    ASSERT_TRUE(rm.host_address_mapped(reinterpret_cast<void *>(0xC0FFEE)));
+    ASSERT_FALSE(r2.is_free());
+    rm.free_region(reinterpret_cast<void *>(0xC0F000), 0x2000);
+    ASSERT_EQ(0x0, r.guest_address());
+  }
+
+//namespace testing
 }

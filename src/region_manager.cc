@@ -149,6 +149,8 @@ namespace Elkvm {
     assert(rit->size() == sz);
 
     auto list_idx = get_freelist_idx(sz);
+    /* emplace a new region in the appropriate freelist, which is then automatically
+     * marked as free */
     freelists[list_idx].emplace_back(host_p, sz);
     allocated_regions.erase(rit);
   }

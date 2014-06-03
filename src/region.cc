@@ -76,6 +76,7 @@ struct elkvm_memory_region *elkvm_region_create(uint64_t req_size) {
 
 int elkvm_region_free(struct elkvm_memory_region *region) {
   Elkvm::rm.free_region(region->host_base_p, region->region_size);
+  delete(region);
   return 0;
 }
 
