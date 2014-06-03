@@ -21,8 +21,8 @@
 #include <elfloader.h>
 #include "debug.h"
 
-int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus,
-    int memory_size, const struct elkvm_handlers *handlers, const char *binary) {
+int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus,
+    const struct elkvm_handlers *handlers, const char *binary) {
 	int err = 0;
 
 	if(opts->fd <= 0) {
@@ -51,7 +51,7 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 		return err;
 	}
 
-	err = kvm_pager_initialize(vm, mode);
+	err = elkvm_pager_initialize(vm, mode);
 	if(err) {
 		return err;
 	}
@@ -66,7 +66,7 @@ int kvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus
 		return err;
 	}
 
-	err = kvm_vm_map_chunk(vm, &vm->pager.system_chunk);
+	err = elkvm_pager_map_chunk(vm, &vm->pager.system_chunk);
 	if(err) {
 		return err;
 	}
@@ -159,7 +159,7 @@ int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * pat
 	flat->region->guest_virtual = 0x0;
 
   if(kernel) {
-    flat->region->guest_virtual = kvm_pager_map_kernel_page(&vm->pager,
+    flat->region->guest_virtual = elkvm_pager_map_kernel_page(&vm->pager,
         flat->region->host_base_p, 0, 1);
     if(flat->region->guest_virtual == 0) {
       close(fd);
@@ -168,7 +168,7 @@ int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * pat
   } else {
     /* XXX this will break! */
     flat->region->guest_virtual = 0x1000;
-    err = kvm_pager_create_mapping(&vm->pager, flat->region->host_base_p,
+    err = elkvm_pager_create_mapping(&vm->pager, flat->region->host_base_p,
         flat->region->guest_virtual, PT_OPT_EXEC);
     assert(err == 0);
   }
@@ -207,19 +207,7 @@ int elkvm_region_setup(struct kvm_vm *vm) {
 	return 0;
 }
 
-int kvm_check_cap(struct elkvm_opts *kvm, int cap) {
-	if(kvm->fd < 1) {
-		return -EIO;
-	}
-
-	int r = ioctl(kvm->fd, KVM_CHECK_EXTENSION, cap);
-	if(r < 0) {
-		return -errno;
-	}
-	return r;
-}
-
-int kvm_vm_vcpu_count(struct kvm_vm *vm) {
+int elkvm_vcpu_count(struct kvm_vm *vm) {
 	int count = 0;
 	struct vcpu_list *vl = vm->vcpus;
 	if(vl == NULL) {
@@ -233,10 +221,6 @@ int kvm_vm_vcpu_count(struct kvm_vm *vm) {
 		vl = vl->next;
 	}
 	return count;
-}
-
-int kvm_vm_destroy(struct kvm_vm *vm) {
-	return -1;
 }
 
 int elkvm_init(struct elkvm_opts *opts, int argc, char **argv, char **environ) {
@@ -283,7 +267,8 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 		vm->env_region->region_size;
 
 	/* get memory for the stack, this is expanded as needed */
-  expand_stack(vm, vcpu);
+  err = elkvm_expand_stack(vm);
+  assert(err == 0 && "stack creation failed");
 
 	/* get a frame for the kernel (interrupt) stack */
   /* this is only ONE page large */
@@ -291,7 +276,7 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 	vm->kernel_stack->grows_downward = 1;
 
 	/* create a mapping for the kernel (interrupt) stack */
-	vm->kernel_stack->guest_virtual = kvm_pager_map_kernel_page(&vm->pager,
+	vm->kernel_stack->guest_virtual = elkvm_pager_map_kernel_page(&vm->pager,
 			vm->kernel_stack->host_base_p, 1, 0);
 	if(vm->kernel_stack->guest_virtual == 0) {
 		return -ENOMEM;
@@ -301,14 +286,12 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 
 	vcpu->regs.rsp = vm->env_region->guest_virtual;
 
-	err = kvm_pager_create_mapping(&vm->pager,
+	err = elkvm_pager_create_mapping(&vm->pager,
 			vm->env_region->host_base_p,
 			vcpu->regs.rsp, PT_OPT_WRITE);
 	if(err) {
 		return err;
 	}
-
-	void *host_target_p = vm->env_region->host_base_p;
 
   /* TODO put the auxv pointers onto the stack in the correct order */
   /* XXX this breaks, if we do not get the original envp */
@@ -431,34 +414,6 @@ int elkvm_copy_and_push_str_arr_p(struct kvm_vm *vm,
 	return bytes;
 }
 
-int kvm_vm_map_chunk(struct kvm_vm *vm, struct kvm_userspace_memory_region *chunk) {
-  if(chunk->memory_size == 0) {
-    vm->pager.free_slot_id++;
-    assert(vm->pager.free_slot_id < KVM_MEMORY_SLOTS);
-    vm->pager.free_slot[vm->pager.free_slot_id] = chunk->slot;
-  }
-
-  assert(chunk->slot < KVM_MEMORY_SLOTS);
-	int err = ioctl(vm->fd, KVM_SET_USER_MEMORY_REGION, chunk);
-  return err ? -errno : 0;
-//	if(err) {
-//		long sz = sysconf(_SC_PAGESIZE);
-//		printf("Could not set memory region\n");
-//		printf("Error No: %i Msg: %s\n", errno, strerror(errno));
-//		printf("Pagesize is: %li\n", sz);
-//		printf("Here are some sanity checks that are applied in kernel:\n");
-//		int ms = chunk->memory_size & (sz-1);
-//		int pa = chunk->guest_phys_addr & (sz-1);
-//		int ua = chunk->userspace_addr & (sz-1);
-//		printf("memory_size & (PAGE_SIZE -1): %i\n", ms);
-//		printf("guest_phys_addr & (PAGE_SIZE-1): %i\n", pa);
-//		printf("userspace_addr & (PAGE_SIZE-1): %i\n", ua);
-//		printf("TODO verify write access\n");
-//    return -errno;
-//	}
-//	return 0;
-}
-
 int elkvm_chunk_remap(struct kvm_vm *vm, int num, uint64_t newsize) {
   struct kvm_userspace_memory_region *chunk = NULL;
   if(num == 0) {
@@ -506,10 +461,9 @@ struct kvm_userspace_memory_region elkvm_get_chunk(struct kvm_vm *vm, int chunk)
   }
 }
 
-int elkvm_emulate_vmcall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+void elkvm_emulate_vmcall(struct kvm_vcpu *vcpu) {
   /* INTEL VMCALL instruction is three bytes long */
   vcpu->regs.rip +=3;
-  return 0;
 }
 
 int elkvm_dump_valid_msrs(struct elkvm_opts *opts) {
@@ -523,7 +477,7 @@ int elkvm_dump_valid_msrs(struct elkvm_opts *opts) {
 		return -errno;
 	}
 
-	for(int i = 0; i < list->nmsrs; i++) {
+	for(unsigned i = 0; i < list->nmsrs; i++) {
 		printf("MSR: 0x%x\n", list->indices[i]);
 	}
 	free(list);

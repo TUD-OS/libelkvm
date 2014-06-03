@@ -8,7 +8,6 @@ struct region_mapping *elkvm_mapping_alloc() {
     return NULL;
   }
 
-  memset(mapping, 0, sizeof(mapping));
   return mapping;
 }
 

@@ -1,6 +1,5 @@
 #include <elkvm.h>
 #include <gdt.h>
-#include <syscall.h>
 #include <tss.h>
 #include <vcpu.h>
 
@@ -13,7 +12,7 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 	vm->gdt_region = elkvm_region_create(vm,
 				GDT_NUM_ENTRIES * sizeof(struct elkvm_gdt_segment_descriptor));
 
-	vm->gdt_region->guest_virtual = kvm_pager_map_kernel_page(&vm->pager,
+	vm->gdt_region->guest_virtual = elkvm_pager_map_kernel_page(&vm->pager,
 			vm->gdt_region->host_base_p, 0, 0);
 	if(vm->gdt_region->guest_virtual == 0) {
 		return -ENOMEM;
@@ -141,11 +140,6 @@ int elkvm_gdt_create_segment_descriptor(struct elkvm_gdt_segment_descriptor *ent
 	entry->access       = access;
 
 	return 0;
-}
-
-int elkvm_calc_segment_regs(struct kvm_vcpu *vcpu, struct elkvm_gdt_segment_descriptor *entry,
-		int num_entries) {
-	return -1;
 }
 
 void elkvm_gdt_dump(struct kvm_vm *vm) {

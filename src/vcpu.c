@@ -29,7 +29,7 @@ int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
 	memset(&vcpu->sregs, 0, sizeof(struct kvm_sregs));
 	vcpu->singlestep = 0;
 
-	int vcpu_count = kvm_vm_vcpu_count(vm);
+	int vcpu_count = elkvm_vcpu_count(vm);
 	vcpu->fd = ioctl(vm->fd, KVM_CREATE_VCPU, vcpu_count);
 	if(vcpu->fd <= 0) {
 		free(vcpu);
@@ -491,12 +491,11 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
         is_running = 0;
 				break;
 			case KVM_EXIT_DEBUG:
-        //fprintf(stderr, "KVM_EXIT_DEBUG\n");
-        ; int debug_handled = elkvm_handle_debug(vcpu->vm, vcpu);
+        /* NO-OP */
+        ;
+        int debug_handled = elkvm_handle_debug(vcpu->vm);
         if(debug_handled == 0) {
           is_running = 0;
-        //  fprintf(stderr, "ELKVM: Could not handle debug exit!\n");
-        //  fprintf(stderr, "\tTransfer control to gdbstub\n");
         }
 				break;
       case KVM_EXIT_MMIO:
@@ -676,10 +675,10 @@ void kvm_vcpu_dump_code(struct kvm_vcpu *vcpu) {
 
 int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *vcpu, uint64_t guest_addr) {
   assert(guest_addr != 0x0);
-	void *host_p = kvm_pager_get_host_p(&vcpu->vm->pager, guest_addr);
+	void *host_p = elkvm_pager_get_host_p(&vcpu->vm->pager, guest_addr);
   assert(host_p != NULL);
 	size_t disassembly_size = 40;
-	ud_set_input_buffer(&vcpu->ud_obj, (char *)host_p, disassembly_size);
+	ud_set_input_buffer(&vcpu->ud_obj, (const uint8_t *)host_p, disassembly_size);
 
 	return 0;
 }

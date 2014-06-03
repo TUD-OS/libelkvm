@@ -88,7 +88,9 @@ long pass_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t off
   return 0;
 }
 
-long allow_sigaction(int signum, const struct sigaction *act, struct sigaction *oldact) {
+long allow_sigaction(int signum __attribute__((unused)),
+    const struct sigaction *act __attribute__((unused)),
+    struct sigaction *oldact __attribute__((unused))) {
   return 1;
 }
 
@@ -279,7 +281,7 @@ struct elkvm_handlers example_handlers = {
   .bp_callback = NULL,
 };
 
-void print_usage(int argc, char **argv) {
+void print_usage(char **argv) {
   printf("Usage: %s [-d] [-s] binary [binaryopts]\n", argv[0]);
   exit(EXIT_FAILURE);
 }
@@ -312,7 +314,7 @@ int main(int argc, char **argv) {
   }
 
   if(optind >= argc) {
-    print_usage(argc, argv);
+    print_usage(argv);
   }
 
   char *binary = argv[myopts];
@@ -331,7 +333,7 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 
-	err = kvm_vm_create(&elkvm, &vm, VM_MODE_X86_64, 1, 1024*1024, &example_handlers, binary);
+	err = elkvm_vm_create(&elkvm, &vm, VM_MODE_X86_64, 1, &example_handlers, binary);
 	if(err) {
 		printf("ERROR creating VM errno: %i Msg: %s\n", -err, strerror(-err));
 		return -1;

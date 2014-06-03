@@ -12,7 +12,7 @@ int elkvm_heap_initialize(struct kvm_vm *vm, struct elkvm_memory_region *region,
   list_push_front(vm->heap, region);
   assert(list_length(vm->heap) ==  1);
 
-  int err = kvm_pager_set_brk(&vm->pager, data_end);
+  int err = elkvm_pager_set_brk(&vm->pager, data_end);
   if(err) {
     return err;
   }
@@ -106,7 +106,7 @@ int elkvm_brk_shrink(struct kvm_vm *vm, uint64_t newbrk) {
   struct elkvm_memory_region *heap_top = *list_elem_front(vm->heap);
   while(newbrk < heap_top->guest_virtual) {
     list_pop_front(vm->heap);
-    elkvm_region_free(vm, heap_top);
+    elkvm_region_free(heap_top);
     heap_top = *list_elem_front(vm->heap);
   }
 
@@ -117,7 +117,7 @@ int elkvm_brk_shrink(struct kvm_vm *vm, uint64_t newbrk) {
   for(uint64_t guest_addr = unmap_addr;
       guest_addr >= unmap_end;
       guest_addr -= ELKVM_PAGESIZE) {
-    int err = kvm_pager_destroy_mapping(&vm->pager, guest_addr);
+    int err = elkvm_pager_destroy_mapping(&vm->pager, guest_addr);
     if(err) {
       return err;
     }
@@ -142,7 +142,7 @@ int elkvm_brk_map(struct kvm_vm *vm, uint64_t newbrk, uint64_t off) {
   }
   while(map_addr < newbrk) {
     assert(host_p < (heap_top->host_base_p + heap_top->region_size));
-    int err = kvm_pager_create_mapping(&vm->pager, host_p, map_addr, PT_OPT_WRITE);
+    int err = elkvm_pager_create_mapping(&vm->pager, host_p, map_addr, PT_OPT_WRITE);
     if(err) {
       return err;
     }

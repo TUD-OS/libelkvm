@@ -74,8 +74,6 @@ int elkvm_loader_check_elf(Elf *e) {
 		return -1;
 	}
 
-	int ek = elf_kind(e);
-
 	if(gelf_getehdr(e, &ehdr) == NULL) {
 		return -1;
 	}
@@ -101,7 +99,7 @@ int elkvm_loader_parse_program(struct kvm_vm *vm, struct Elf_binary *bin) {
 	bool pt_interp_forbidden = false;
 	bool pt_phdr_forbidden = false;
 
-	for(int i = 0; i < bin->phdr_num; i++) {
+	for(unsigned i = 0; i < bin->phdr_num; i++) {
 		GElf_Phdr phdr;
 		gelf_getphdr(bin->e, i, &phdr);
 
@@ -149,7 +147,7 @@ int elkvm_loader_pt_load(struct kvm_vm *vm, GElf_Phdr phdr, struct Elf_binary *b
 		elkvm_region_create(vm, total_size);
   loadable_region->guest_virtual = page_begin(phdr.p_vaddr);
 
-	int err = elkvm_loader_load_program_header(vm, bin, phdr, loadable_region);
+	int err = elkvm_loader_load_program_header(bin, phdr, loadable_region);
 	if(err) {
 		return err;
 	}
@@ -163,7 +161,7 @@ int elkvm_loader_pt_load(struct kvm_vm *vm, GElf_Phdr phdr, struct Elf_binary *b
   }
 
   int pages = pages_from_size(total_size);
-  err = kvm_pager_map_region(&vm->pager, loadable_region->host_base_p,
+  err = elkvm_pager_map_region(&vm->pager, loadable_region->host_base_p,
       loadable_region->guest_virtual, pages, opts);
 
 	if(phdr.p_flags & PF_X) {
@@ -179,7 +177,7 @@ int elkvm_loader_pt_load(struct kvm_vm *vm, GElf_Phdr phdr, struct Elf_binary *b
   return 0;
 }
 
-int elkvm_loader_load_program_header(struct kvm_vm *vm, struct Elf_binary *bin,
+int elkvm_loader_load_program_header(struct Elf_binary *bin,
 		GElf_Phdr phdr, struct elkvm_memory_region *region) {
 
 		/*
@@ -200,21 +198,21 @@ int elkvm_loader_load_program_header(struct kvm_vm *vm, struct Elf_binary *bin,
     return -EIO;
   }
 
-  elkvm_loader_pad_begin(vm, region, bin, phdr);
-  elkvm_loader_read_segment(vm, region, bin, phdr);
-  elkvm_loader_pad_end(vm, region, bin, phdr);
+  elkvm_loader_pad_begin(region, bin, phdr);
+  elkvm_loader_read_segment(region, bin, phdr);
+  elkvm_loader_pad_end(region, bin, phdr);
 
   return 0;
 }
 
-int elkvm_loader_pad_end(struct kvm_vm *vm, struct elkvm_memory_region *region,
+int elkvm_loader_pad_end(struct elkvm_memory_region *region,
     struct Elf_binary *bin, GElf_Phdr phdr) {
   void *host_p = region->host_base_p + offset_in_page(phdr.p_vaddr) + phdr.p_filesz;
   size_t padsize = page_remain((uint64_t)host_p);
 
   if(phdr.p_flags & PF_X) {
     /* executable segment should be text */
-    return elkvm_loader_pad_text_end(vm, region, bin, host_p, padsize);
+    return elkvm_loader_pad_text_end(bin, host_p, padsize);
   }
   if(phdr.p_flags & PF_W) {
     padsize += (phdr.p_memsz - phdr.p_filesz);
@@ -231,8 +229,8 @@ int elkvm_loader_pad_end(struct kvm_vm *vm, struct elkvm_memory_region *region,
 
 }
 
-int elkvm_loader_read_segment(struct kvm_vm *vm,
-    struct elkvm_memory_region *region, struct Elf_binary *bin, GElf_Phdr phdr) {
+int elkvm_loader_read_segment(struct elkvm_memory_region *region,
+    struct Elf_binary *bin, GElf_Phdr phdr) {
   char *buf = region->host_base_p + offset_in_page(phdr.p_vaddr);
 
 	/*
@@ -260,17 +258,17 @@ int elkvm_loader_read_segment(struct kvm_vm *vm,
 
 }
 
-int elkvm_loader_pad_begin(struct kvm_vm *vm, struct elkvm_memory_region *region,
+int elkvm_loader_pad_begin(struct elkvm_memory_region *region,
     struct Elf_binary *bin, GElf_Phdr phdr) {
 
   size_t padsize = offset_in_page(phdr.p_vaddr);
 
   if(phdr.p_flags & PF_X) {
     /* executable segment should be text */
-    return elkvm_loader_pad_text_begin(vm, region, bin, padsize);
+    return elkvm_loader_pad_text_begin(region, bin, padsize);
   }
   if(phdr.p_flags & PF_W) {
-    return elkvm_loader_pad_data_begin(vm, region, bin, padsize);
+    return elkvm_loader_pad_data_begin(region, bin, padsize);
   }
 
   /* this should never happen */
@@ -278,16 +276,13 @@ int elkvm_loader_pad_begin(struct kvm_vm *vm, struct elkvm_memory_region *region
   return -1;
 }
 
-int elkvm_loader_pad_text_end(struct kvm_vm *vm,
-    struct elkvm_memory_region *region, struct Elf_binary *bin,
-    void *host_p, size_t padsize) {
+int elkvm_loader_pad_text_end(struct Elf_binary *bin, void *host_p, size_t padsize) {
   /*
    * find the first page of the data segment and pad the remainder of the
    * last page of text with its contents
    */
 
   GElf_Phdr data_header = elkvm_loader_find_data_header(bin);
-  uint64_t data_end = data_header.p_offset + data_header.p_memsz;
 
 	int off = lseek(bin->fd, data_header.p_offset, SEEK_SET);
 	if(off < 0) {
@@ -300,10 +295,9 @@ int elkvm_loader_pad_text_end(struct kvm_vm *vm,
   return 0;
 }
 
-int elkvm_loader_pad_text_begin(struct kvm_vm *vm,
-    struct elkvm_memory_region *region, struct Elf_binary *bin,
-    size_t padsize) {
-  assert(bin->e > 0);
+int elkvm_loader_pad_text_begin(struct elkvm_memory_region *region,
+    struct Elf_binary *bin, size_t padsize) {
+  assert(bin->e > (Elf *)NULL);
 
   GElf_Ehdr ehdr;
   gelf_getehdr(bin->e, &ehdr);
@@ -313,9 +307,8 @@ int elkvm_loader_pad_text_begin(struct kvm_vm *vm,
   return 0;
 }
 
-int elkvm_loader_pad_data_begin(struct kvm_vm *vm,
-    struct elkvm_memory_region *region, struct Elf_binary *bin,
-    size_t padsize) {
+int elkvm_loader_pad_data_begin(struct elkvm_memory_region *region,
+    struct Elf_binary *bin, size_t padsize) {
   GElf_Phdr text_header = elkvm_loader_find_text_header(bin);
 
   uint64_t text_end = text_header.p_offset + text_header.p_filesz;
@@ -333,7 +326,7 @@ int elkvm_loader_pad_data_begin(struct kvm_vm *vm,
 
 GElf_Phdr elkvm_loader_find_data_header(struct Elf_binary *bin) {
   GElf_Phdr phdr;
-	for(int i = 0; i < bin->phdr_num; i++) {
+	for(unsigned i = 0; i < bin->phdr_num; i++) {
 		gelf_getphdr(bin->e, i, &phdr);
 
     if(phdr.p_type == PT_LOAD &&
@@ -349,7 +342,7 @@ GElf_Phdr elkvm_loader_find_data_header(struct Elf_binary *bin) {
 
 GElf_Phdr elkvm_loader_find_text_header(struct Elf_binary *bin) {
   GElf_Phdr phdr;
-	for(int i = 0; i < bin->phdr_num; i++) {
+	for(unsigned i = 0; i < bin->phdr_num; i++) {
 		gelf_getphdr(bin->e, i, &phdr);
 
     if(phdr.p_type == PT_LOAD &&

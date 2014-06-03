@@ -28,7 +28,7 @@ int elkvm_loader_parse_program(struct kvm_vm *, struct Elf_binary *);
 /*
  * Load a single program header from the ELF binary into the specified buffer
 */
-int elkvm_loader_load_program_header(struct kvm_vm *, struct Elf_binary *, GElf_Phdr,
+int elkvm_loader_load_program_header(struct Elf_binary *, GElf_Phdr,
 		struct elkvm_memory_region *);
 
 /*
@@ -40,26 +40,22 @@ int elkvm_loader_pt_load(struct kvm_vm *vm, GElf_Phdr phdr, struct Elf_binary *b
 GElf_Phdr elkvm_loader_find_data_header(struct Elf_binary *bin);
 GElf_Phdr elkvm_loader_find_text_header(struct Elf_binary *bin);
 
-int elkvm_loader_pad_begin(struct kvm_vm *vm, struct elkvm_memory_region *region,
+int elkvm_loader_pad_begin(struct elkvm_memory_region *region,
     struct Elf_binary *bin, GElf_Phdr phdr);
 
-int elkvm_loader_read_segment(struct kvm_vm *vm,
-    struct elkvm_memory_region *region, struct Elf_binary *bin, GElf_Phdr phdr);
-
-int elkvm_loader_pad_end(struct kvm_vm *vm, struct elkvm_memory_region *region,
+int elkvm_loader_read_segment(struct elkvm_memory_region *region,
     struct Elf_binary *bin, GElf_Phdr phdr);
 
-int elkvm_loader_pad_text_end(struct kvm_vm *vm,
-    struct elkvm_memory_region *region, struct Elf_binary *bin,
-    void *host_p, size_t padsize);
+int elkvm_loader_pad_end(struct elkvm_memory_region *region,
+    struct Elf_binary *bin, GElf_Phdr phdr);
 
-int elkvm_loader_pad_text_begin(struct kvm_vm *vm,
-    struct elkvm_memory_region *region, struct Elf_binary *bin,
-    size_t padsize);
+int elkvm_loader_pad_text_end(struct Elf_binary *bin, void *host_p, size_t padsize);
 
-int elkvm_loader_pad_data_begin(struct kvm_vm *vm,
-    struct elkvm_memory_region *region, struct Elf_binary *bin,
-    size_t padsize);
+int elkvm_loader_pad_text_begin(struct elkvm_memory_region *region,
+    struct Elf_binary *bin, size_t padsize);
+
+int elkvm_loader_pad_data_begin(struct elkvm_memory_region *region,
+    struct Elf_binary *bin, size_t padsize);
 
 #ifdef __cplusplus
 }

@@ -9,7 +9,7 @@
 
 uint64_t elkvm_popq(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
   assert(vcpu->regs.rsp != 0x0);
-	uint64_t *host_p = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
+	uint64_t *host_p = elkvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
   assert(host_p != NULL);
 
 	//vm->region[MEMORY_REGION_STACK].region_size -= 0x8;
@@ -20,7 +20,7 @@ uint64_t elkvm_popq(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 
 uint32_t elkvm_popd(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
   assert(vcpu->regs.rsp != 0x0);
-  uint32_t *host_p = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
+  uint32_t *host_p = elkvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
   assert(host_p != NULL);
 
   vcpu->regs.rsp += 0x4;
@@ -33,14 +33,14 @@ int elkvm_pushq(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t val) {
 	vcpu->regs.rsp -= 0x8;
 
   assert(vcpu->regs.rsp != 0x0);
-	uint64_t *host_p = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
+	uint64_t *host_p = elkvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
 	if(host_p == NULL) {
 		/* current stack is full, we need to expand the stack */
-		int err = expand_stack(vm, vcpu);
+		int err = elkvm_expand_stack(vm);
 		if(err) {
 			return err;
 		}
-		host_p = kvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
+		host_p = elkvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
 		assert(host_p != NULL);
 	}
 	*host_p = val;
@@ -48,7 +48,7 @@ int elkvm_pushq(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t val) {
 	return 0;
 }
 
-int expand_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+int elkvm_expand_stack(struct kvm_vm *vm) {
   uint64_t oldrsp = 0;
   if(vm->current_user_stack == NULL) {
     oldrsp = page_begin(vm->env_region->guest_virtual);
@@ -62,7 +62,7 @@ int expand_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 		return -ENOMEM;
 	}
 
-  int err = kvm_pager_map_region(&vm->pager, region->host_base_p, newrsp,
+  int err = elkvm_pager_map_region(&vm->pager, region->host_base_p, newrsp,
       ELKVM_STACK_GROW / ELKVM_PAGESIZE, PT_OPT_WRITE);
   if(err) {
     return err;
@@ -71,6 +71,19 @@ int expand_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
   region->guest_virtual = newrsp;
   vm->current_user_stack = region;
   return 0;
+}
+
+bool elkvm_is_stack_expansion(struct kvm_vm *vm, guestptr_t pfla) {
+  guestptr_t stack_top = page_begin(vm->current_user_stack->guest_virtual);
+  if(pfla > stack_top) {
+    return 0;
+  }
+
+  guestptr_t aligned_pfla = page_begin(pfla);
+  uint64_t pages = pages_from_size(stack_top - aligned_pfla);
+
+  /* TODO right now this is an arbitrary number... */
+  return pages < 200;
 }
 
 void elkvm_dump_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {

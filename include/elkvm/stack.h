@@ -23,26 +23,14 @@ uint32_t elkvm_popd(struct kvm_vm *, struct kvm_vcpu *);
 /*
  * \brief Expand the Stack by one Frame
  */
-int expand_stack(struct kvm_vm *, struct kvm_vcpu *);
+int elkvm_expand_stack(struct kvm_vm *);
 
 /*
  * Dump the stack to stdout
  */
 void elkvm_dump_stack(struct kvm_vm *, struct kvm_vcpu *vcpu);
 
-static int is_stack_expansion(struct kvm_vm *vm, struct kvm_vcpu *vcpu,
-    uint64_t pfla) {
-  uint64_t stack_top = page_begin(vm->current_user_stack->guest_virtual);
-  if(pfla > stack_top) {
-    return 0;
-  }
-
-  uint64_t aligned_pfla = page_begin(pfla);
-  uint64_t pages = pages_from_size(stack_top - aligned_pfla);
-
-  /* TODO right now this is an arbitrary number... */
-  return pages < 200;
-}
+bool elkvm_is_stack_expansion(struct kvm_vm *vm, guestptr_t pfla);
 
 #ifdef __cplusplus
 }

@@ -47,7 +47,7 @@ namespace Elkvm {
     const size_t grow_size = size > ELKVM_SYSTEM_MEMGROW ?
       pagesize_align(size) : ELKVM_SYSTEM_MEMGROW;
 
-    int err = kvm_pager_create_mem_chunk(pager, &chunk_p, grow_size);
+    int err = elkvm_pager_create_mem_chunk(pager, &chunk_p, grow_size);
     if(err) {
       printf("LIBELKVM: Could not create memory chunk!\n");
       printf("Errno: %i Msg: %s\n", -err, strerror(-err));

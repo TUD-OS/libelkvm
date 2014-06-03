@@ -1,9 +1,5 @@
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <poll.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
@@ -15,12 +11,18 @@ extern "C" {
 #include <unistd.h>
 #include <libelf.h>
 
+typedef uint64_t guestptr_t;
+
 #include "kvm.h"
 #include "pager.h"
 #include "region-c.h"
 #include "vcpu.h"
 #include "list.h"
 #include "elkvm-signal.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define VM_MODE_X86    1
 #define VM_MODE_PAGING 2
@@ -31,8 +33,6 @@ extern "C" {
 #ifdef _PREFIX_
 #define RES_PATH _PREFIX_ "/share/libelkvm"
 #endif
-
-typedef uint64_t guestptr_t;
 
 struct region_mapping {
   void *host_p;
@@ -137,7 +137,7 @@ struct elkvm_handlers {
 	Create a new VM, with the given mode, cpu count, memory and syscall handlers
 	Return 0 on success, -1 on error
 */
-int kvm_vm_create(struct elkvm_opts *, struct kvm_vm *, int, int, int,
+int elkvm_vm_create(struct elkvm_opts *, struct kvm_vm *, int mode, int cpus,
 		const struct elkvm_handlers *, const char *binary);
 
 /*
@@ -151,34 +151,14 @@ int elkvm_set_debug(struct kvm_vm *);
 int elkvm_region_setup(struct kvm_vm *vm);
 
 /*
-	Writes the state of the VM to a given file descriptor
-*/
-void kvm_dump_vm(struct kvm_vm *, int);
-
-/*
-	Check if a given KVM capability exists, will return the result of the ioctl
-*/
-int kvm_check_cap(struct elkvm_opts *, int);
-
-/*
 	Returns the number of VCPUs in a VM
 */
-int kvm_vm_vcpu_count(struct kvm_vm *);
-
-/*
-	Destroys a VM and all its data structures
-*/
-int kvm_vm_destroy(struct kvm_vm *);
-
-/*
- * Maps a new mem chunk into the VM
-*/
-int kvm_vm_map_chunk(struct kvm_vm *, struct kvm_userspace_memory_region *);
+int elkvm_vcpu_count(struct kvm_vm *);
 
 /*
  * \brief Emulates (skips) the VMCALL instruction
  */
-int elkvm_emulate_vmcall(struct kvm_vm *, struct kvm_vcpu *);
+void elkvm_emulate_vmcall(struct kvm_vcpu *);
 
 /*
  * \brief Deletes (frees) the chunk with number num and hands a new chunk
