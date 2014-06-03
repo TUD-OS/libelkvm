@@ -7,8 +7,6 @@
 #include <stdlib.h>
 #include "list.h"
 
-#include <elkvm.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
