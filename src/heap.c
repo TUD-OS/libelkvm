@@ -84,9 +84,6 @@ int elkvm_brk_nogrow(struct kvm_vm *vm, guestptr_t newbrk) {
 
 int elkvm_brk_grow(struct kvm_vm *vm, guestptr_t newbrk) {
   uint64_t size = newbrk - vm->pager.brk_addr;
-  if(page_aligned(newbrk) && page_aligned(vm->pager.brk_addr)) {
-    size += ELKVM_PAGESIZE;
-  }
   int err = elkvm_heap_grow(vm, pagesize_align(size));
   if(err) {
     return err;
