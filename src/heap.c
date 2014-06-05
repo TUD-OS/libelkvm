@@ -42,7 +42,7 @@ int elkvm_heap_grow(struct kvm_vm *vm, uint64_t size) {
   return 0;
 }
 
-int elkvm_brk(struct kvm_vm *vm, uint64_t newbrk) {
+int elkvm_brk(struct kvm_vm *vm, guestptr_t newbrk) {
   int err;
 
   if(elkvm_within_current_heap_region(vm, newbrk-1)) {
@@ -63,7 +63,7 @@ int elkvm_brk(struct kvm_vm *vm, uint64_t newbrk) {
   return 0;
 }
 
-int elkvm_brk_nogrow(struct kvm_vm *vm, uint64_t newbrk) {
+int elkvm_brk_nogrow(struct kvm_vm *vm, guestptr_t newbrk) {
   struct elkvm_memory_region **heap = list_elem_front(vm->heap);
   uint64_t oldbrk_region_base = (*heap)->guest_virtual;
   assert(vm->pager.brk_addr >= oldbrk_region_base);
@@ -82,7 +82,7 @@ int elkvm_brk_nogrow(struct kvm_vm *vm, uint64_t newbrk) {
   return 0;
 }
 
-int elkvm_brk_grow(struct kvm_vm *vm, uint64_t newbrk) {
+int elkvm_brk_grow(struct kvm_vm *vm, guestptr_t newbrk) {
   uint64_t size = newbrk - vm->pager.brk_addr;
   if(page_aligned(newbrk) && page_aligned(vm->pager.brk_addr)) {
     size += ELKVM_PAGESIZE;
@@ -100,7 +100,7 @@ int elkvm_brk_grow(struct kvm_vm *vm, uint64_t newbrk) {
   return 0;
 }
 
-int elkvm_brk_shrink(struct kvm_vm *vm, uint64_t newbrk) {
+int elkvm_brk_shrink(struct kvm_vm *vm, guestptr_t newbrk) {
   struct elkvm_memory_region *heap_top = *list_elem_front(vm->heap);
   while(newbrk < heap_top->guest_virtual) {
     list_pop_front(vm->heap);
@@ -125,8 +125,8 @@ int elkvm_brk_shrink(struct kvm_vm *vm, uint64_t newbrk) {
   return 0;
 }
 
-int elkvm_brk_map(struct kvm_vm *vm, uint64_t newbrk, uint64_t off) {
-  uint64_t map_addr = 0x0;
+int elkvm_brk_map(struct kvm_vm *vm, guestptr_t newbrk, uint64_t off) {
+  guestptr_t map_addr = 0x0;
   if(page_aligned(vm->pager.brk_addr)) {
     map_addr = vm->pager.brk_addr;
   } else {
