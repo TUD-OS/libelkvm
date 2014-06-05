@@ -150,3 +150,15 @@ int elkvm_brk_map(struct kvm_vm *vm, guestptr_t newbrk, uint64_t off) {
 
   return 0;
 }
+
+bool elkvm_within_current_heap_region(struct kvm_vm *vm, guestptr_t guest_addr) {
+  struct elkvm_memory_region *heap = *list_elem_front(vm->heap);
+  return guest_addr < (heap->guest_virtual + heap->region_size);
+}
+
+guestptr_t elkvm_last_heap_address(struct kvm_vm *vm) {
+  struct elkvm_memory_region *heap = *(list_elem_front(vm->heap));
+  return heap->guest_virtual + heap->region_size - 1;
+}
+
+
