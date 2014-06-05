@@ -93,6 +93,7 @@ namespace Elkvm {
     assert(rit != allocated_regions.end());
     allocated_regions.erase(rit);
 
+    r->set_free();
     auto list_idx = get_freelist_idx(r->size());
     freelists[list_idx].push_back(r);
   }
@@ -107,8 +108,8 @@ namespace Elkvm {
     assert((*rit)->size() == sz);
 
     auto list_idx = get_freelist_idx(sz);
-    /* emplace a new region in the appropriate freelist, which is then automatically
-     * marked as free */
+
+    (*rit)->set_free();
     freelists[list_idx].push_back(*rit);
     allocated_regions.erase(rit);
   }
