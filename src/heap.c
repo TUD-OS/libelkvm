@@ -45,15 +45,13 @@ int elkvm_heap_grow(struct kvm_vm *vm, uint64_t size) {
 int elkvm_brk(struct kvm_vm *vm, uint64_t newbrk) {
   int err;
 
-  if(elkvm_within_current_heap_region(vm, newbrk)) {
+  if(elkvm_within_current_heap_region(vm, newbrk-1)) {
     err = elkvm_brk_nogrow(vm, newbrk);
   } else {
-    uint64_t tmpbrk = elkvm_last_heap_address(vm);
-    if(!page_aligned(tmpbrk + 1)) {
-      err = elkvm_brk_nogrow(vm, tmpbrk);
-      vm->pager.brk_addr = tmpbrk;
-      assert(err == 0);
-    }
+    guestptr_t tmpbrk = elkvm_last_heap_address(vm) + 1;
+    err = elkvm_brk_nogrow(vm, tmpbrk);
+    vm->pager.brk_addr = tmpbrk;
+    assert(err == 0);
     err = elkvm_brk_grow(vm, newbrk);
   }
 
