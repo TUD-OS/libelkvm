@@ -1,59 +1,57 @@
 #include "region.h"
 
 #include <algorithm>
+#include <memory>
 #include <iostream>
 
 namespace Elkvm {
 
-  Region RegionManager::allocate_region(size_t size) {
-    Region r = find_free_region(size);
+  std::shared_ptr<Region> RegionManager::allocate_region(size_t size) {
+    auto r = find_free_region(size);
 
-    if(r.base_address() == nullptr) {
+    if(r == nullptr) {
       int err = add_chunk(size);
-      assert(err == 0);
+      assert(err == 0 && "could not allocate memory for new region");
+
       r = find_free_region(size);
-      assert(r.base_address() != nullptr);
+      assert(r != nullptr && "should have free region after allocation");
     }
 
-    if(r.size() > size) {
-      Region new_region = r.slice_begin(size);
+    if(r->size() > size) {
+      auto new_region = r->slice_begin(size);
       add_free_region(r);
-      assert(new_region.is_free());
-      new_region.set_used();
-      allocated_regions.push_back(new_region);
-
-      assert(size <= new_region.size());
-      return new_region;
-    } else {
-      assert(r.is_free());
-      r.set_used();
-      allocated_regions.push_back(r);
-
-      assert(size <= r.size());
-      return r;
+      r = new_region;
     }
+
+    assert(r->is_free());
+    r->set_used();
+    allocated_regions.push_back(r);
+
+    assert(size <= r->size());
+    return r;
   }
 
-  Region RegionManager::find_free_region(size_t size) {
-    int list_idx = get_freelist_idx(size);
-    assert(list_idx >= 0);
+  std::shared_ptr<Region> RegionManager::find_free_region(size_t size) {
+    auto list_idx = get_freelist_idx(size);
 
     while(list_idx < freelists.size()) {
       auto rit = std::find_if(freelists[list_idx].begin(), freelists[list_idx].end(),
-         [size](const Region &a)
-         { return a.size() >= size; });
+         [size](std::shared_ptr<Region> a)
+         { return a->size() >= size; });
       if(rit != freelists[list_idx].end()) {
-        Region r = std::move(*rit);
+        auto r = *rit;
         freelists[list_idx].erase(rit);
         return r;
       }
       list_idx++;
     }
-    return Region(nullptr, 0x0);
+    return nullptr;
   }
 
-  Region &RegionManager::find_region(const void *host_p) {
-    auto r = std::find(allocated_regions.begin(), allocated_regions.end(), host_p);
+  std::shared_ptr<Region> RegionManager::find_region(const void *host_p) {
+    auto r = std::find_if(allocated_regions.begin(), allocated_regions.end(),
+         [host_p](std::shared_ptr<Region> a)
+         { return a->contains_address(host_p); });
     assert(r != allocated_regions.end() && "no region found for given host pointer");
     return *r;
   }
@@ -73,49 +71,51 @@ namespace Elkvm {
     }
 
     assert(grow_size <= 0x8000000 && grow_size > 0x400000);
-    freelists[15].push_back(Region(chunk_p, grow_size));
+    freelists[15].push_back(std::make_shared<Region>(chunk_p, grow_size));
     return 0;
   }
 
   void RegionManager::add_system_chunk() {
     auto list_idx = get_freelist_idx(pager->system_chunk.memory_size);
-    freelists[list_idx].emplace_back(
+    freelists[list_idx].push_back(
+        std::make_shared<Region>(
         reinterpret_cast<void *>(pager->system_chunk.userspace_addr),
-        pager->system_chunk.memory_size);
+        pager->system_chunk.memory_size));
   }
 
-  void RegionManager::add_free_region(const Region &r) {
-    auto list_idx = get_freelist_idx(r.size());
+  void RegionManager::add_free_region(std::shared_ptr<Region> r) {
+    auto list_idx = get_freelist_idx(r->size());
     freelists[list_idx].push_back(r);
   }
 
-  void RegionManager::free_region(Region &r) {
-    /* TODO find a way not to destruct, construct the element here */
+  void RegionManager::free_region(std::shared_ptr<Region> r) {
     auto rit = std::find(allocated_regions.begin(), allocated_regions.end(), r);
     assert(rit != allocated_regions.end());
-    auto list_idx = get_freelist_idx(r.size());
-    freelists[list_idx].emplace_back(r.base_address(), r.size());
-
     allocated_regions.erase(rit);
+
+    auto list_idx = get_freelist_idx(r->size());
+    freelists[list_idx].push_back(r);
   }
 
   void RegionManager::free_region(void *host_p, const size_t sz) {
-    auto rit = std::find(allocated_regions.begin(), allocated_regions.end(), host_p);
+    auto rit = std::find_if(allocated_regions.begin(), allocated_regions.end(),
+        [host_p](std::shared_ptr<Region> a)
+        { return a->contains_address(host_p); });
 
     assert(rit != allocated_regions.end());
-    assert(rit->contains_address(host_p));
-    assert(rit->size() == sz);
+    assert((*rit)->contains_address(host_p));
+    assert((*rit)->size() == sz);
 
     auto list_idx = get_freelist_idx(sz);
     /* emplace a new region in the appropriate freelist, which is then automatically
      * marked as free */
-    freelists[list_idx].emplace_back(host_p, sz);
+    freelists[list_idx].push_back(*rit);
     allocated_regions.erase(rit);
   }
 
   bool RegionManager::host_address_mapped(const void *const p) const {
     for(const auto &r : allocated_regions) {
-      if(r.contains_address(p)) {
+      if(r->contains_address(p)) {
         return true;
       }
     }
@@ -124,7 +124,7 @@ namespace Elkvm {
 
   std::array<std::vector<Region>, 16>::size_type
   get_freelist_idx(const size_t size) {
-    int list_idx = 0;
+    auto list_idx = 0;
     if(size <= 0x1000) {
       return list_idx = 0;
     } else if(size <= 0x2000) {
@@ -158,8 +158,9 @@ namespace Elkvm {
     } else if(size <= 0x8000000) {
       return list_idx = 15;
     }
+
+    assert(false && "request larger than ELKVM_GROW_SIZE");
     /* TODO requests larger than ELKVM_GROW_SIZE */
-    return -1;
   }
 
 //namespace Elkvm

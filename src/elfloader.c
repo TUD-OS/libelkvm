@@ -9,7 +9,6 @@
 
 #include "elfloader.h"
 #include <elkvm.h>
-#include <heap.h>
 #include <kvm.h>
 #include <pager.h>
 #include <region-c.h>

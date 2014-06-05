@@ -7,6 +7,7 @@
 #include <pager.h>
 #include <stack.h>
 #include <vcpu.h>
+#include <region-c.h>
 
 int elkvm_pager_initialize(struct kvm_vm *vm, int mode) {
 	if(vm->fd < 1) {
@@ -16,6 +17,7 @@ int elkvm_pager_initialize(struct kvm_vm *vm, int mode) {
   vm->pager.vm = vm;
   int err = elkvm_init_region_manager(&vm->pager);
   assert(err == 0);
+  elkvm_init_heap_manager(&vm->pager);
 
 	struct elkvm_memory_region *pts_region = elkvm_region_create(ELKVM_PAGER_MEMSIZE);
 	if(pts_region == NULL) {
@@ -493,11 +495,6 @@ void elkvm_pager_create_entry(uint64_t *host_entry_p, guestptr_t guest_next,
 
 	/* mark the entry as present */
 	*host_entry_p |= PT_BIT_PRESENT;
-}
-
-int elkvm_pager_set_brk(struct kvm_pager *pager, uint64_t guest_addr) {
-  pager->brk_addr = guest_addr;
-  return 0;
 }
 
 int elkvm_pager_handle_pagefault(struct kvm_pager *pager, uint64_t pfla,

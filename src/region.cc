@@ -1,4 +1,5 @@
 #include <iostream>
+#include <memory>
 
 #include <inttypes.h>
 #include <stdio.h>
@@ -21,8 +22,8 @@ namespace Elkvm {
   }
 
   bool same_region(const void *p1, const void *p2) {
-    const Region &r = Elkvm::rm.find_region(p1);
-    return r.contains_address(p2);
+    std::shared_ptr<Region> r = Elkvm::rm.find_region(p1);
+    return r->contains_address(p2);
   }
 
   bool operator==(const Region &r, const void *const p) {
@@ -51,18 +52,34 @@ namespace Elkvm {
     return (host_p <= p) && (p < (reinterpret_cast<char *>(host_p) + rsize));
   }
 
+  bool Region::contains_address(guestptr_t guest_addr) const {
+    return (addr <= guest_addr) && (guest_addr < (addr + rsize));
+  }
+
+  off64_t Region::offset_in_region(guestptr_t guest_addr) const {
+    assert(contains_address(addr) && "address must be in region to calc offset");
+    return guest_addr - addr;
+  }
+
   void *Region::last_valid_address() const {
     return reinterpret_cast<char *>(host_p) + rsize;
   }
 
-  Region Region::slice_begin(const size_t size) {
+  guestptr_t Region::last_valid_guest_address() const {
+    return addr + rsize - 1;
+  }
+
+  std::shared_ptr<Region> Region::slice_begin(const size_t size) {
     assert(free);
+    assert(size > 0x0);
     assert(rsize > pagesize_align(size));
 
-    Region r(host_p, pagesize_align(size));
-    host_p = reinterpret_cast<char *>(host_p) + r.size();
-    rsize  -= r.size();
-    return std::move(r);
+    std::shared_ptr<Region> r = std::make_shared<Region>(host_p, pagesize_align(size));
+    host_p = reinterpret_cast<char *>(host_p) + r->size();
+    rsize  -= r->size();
+    assert(rsize > 0x0);
+    assert(r->size() > 0x0);
+    return r;
   }
 
 //namespace Elkvm
@@ -70,9 +87,9 @@ namespace Elkvm {
 
 
 struct elkvm_memory_region *elkvm_region_create(uint64_t req_size) {
-  Elkvm::Region r = Elkvm::rm.allocate_region(req_size);
-  assert(r.size() >= req_size && "allocated region must be suitable in size!");
-	return r.c_region();
+  std::shared_ptr<Elkvm::Region> r = Elkvm::rm.allocate_region(req_size);
+  assert(r->size() >= req_size && "allocated region must be suitable in size!");
+	return r->c_region();
 }
 
 int elkvm_region_free(struct elkvm_memory_region *region) {

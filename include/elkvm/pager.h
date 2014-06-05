@@ -58,7 +58,6 @@ struct kvm_pager {
 	void *host_pml4_p;
 	void *host_next_free_tbl_p;
 	uint64_t guest_next_free;
-  uint64_t brk_addr;
   uint64_t total_memsz;
   uint32_t free_slot[KVM_MEMORY_SLOTS];
   int free_slot_id;
@@ -172,7 +171,6 @@ int elkvm_pager_create_table(struct kvm_pager *, uint64_t *, ptopt_t opts);
 void elkvm_pager_create_entry(uint64_t *host_entry_p, guestptr_t guest_next,
     ptopt_t opts);
 
-int elkvm_pager_set_brk(struct kvm_pager *, uint64_t);
 int elkvm_pager_handle_pagefault(struct kvm_pager *, uint64_t, uint32_t);
 
 void elkvm_pager_dump_page_fault_info(guestptr_t pfla,

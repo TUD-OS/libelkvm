@@ -25,8 +25,6 @@ namespace testing {
   }
 
   TEST_F(RegionTest, test_equality) {
-    ASSERT_TRUE(r == reinterpret_cast<void *>(0xc10000));
-    ASSERT_FALSE(r == reinterpret_cast<void *>(0xc21000));
 
     Elkvm::Region r2 = r;
     ASSERT_TRUE(r2 == r);
@@ -39,12 +37,12 @@ namespace testing {
   }
 
   TEST_F(RegionTest, test_slicing) {
-    Elkvm::Region r2 = r.slice_begin(0x1000);
+    std::shared_ptr<Elkvm::Region> r2 = r.slice_begin(0x1000);
     ASSERT_FALSE(r.contains_address(reinterpret_cast<void *>(0xC0F000)));
     ASSERT_TRUE(r.contains_address(reinterpret_cast<void *>(0xC10000)));
-    ASSERT_TRUE(r2.contains_address(reinterpret_cast<void *>(0xC0F000)));
-    ASSERT_TRUE(r2.contains_address(reinterpret_cast<void *>(0xC0FFFF)));
-    ASSERT_FALSE(r2.contains_address(reinterpret_cast<void *>(0xC10000)));
+    ASSERT_TRUE(r2->contains_address(reinterpret_cast<void *>(0xC0F000)));
+    ASSERT_TRUE(r2->contains_address(reinterpret_cast<void *>(0xC0FFFF)));
+    ASSERT_FALSE(r2->contains_address(reinterpret_cast<void *>(0xC10000)));
     ASSERT_TRUE(r.contains_address(reinterpret_cast<void *>(0xc20fff)));
   }
 

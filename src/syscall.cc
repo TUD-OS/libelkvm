@@ -22,6 +22,7 @@
 
 namespace Elkvm {
   extern RegionManager rm;
+  extern HeapManager heap_m;
 }
 
 int elkvm_handle_hypercall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
@@ -244,12 +245,12 @@ long elkvm_do_read(struct kvm_vm *vm) {
     do {
       host_begin_mark = reinterpret_cast<char *>(elkvm_pager_get_host_p(&vm->pager,
             mark_p));
-      Elkvm::Region &region = Elkvm::rm.find_region(host_begin_mark);
+      std::shared_ptr<Elkvm::Region> region = Elkvm::rm.find_region(host_begin_mark);
       if(mark_p != buf_p) {
-        assert(host_begin_mark == region.base_address());
+        assert(host_begin_mark == region->base_address());
       }
 
-      host_end_mark = reinterpret_cast<char *>(region.last_valid_address());
+      host_end_mark = reinterpret_cast<char *>(region->last_valid_address());
       assert(host_end_mark > host_begin_mark);
 
       size_t newcount = host_end_mark - host_begin_mark;
@@ -518,13 +519,13 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   struct region_mapping *mapping = elkvm_mapping_alloc();
   assert(mapping != NULL);
 
-  Elkvm::Region region = Elkvm::rm.allocate_region(length);
+  std::shared_ptr<Elkvm::Region> region = Elkvm::rm.allocate_region(length);
 
-  mapping->host_p = region.base_address();
+  mapping->host_p = region->base_address();
   mapping->length = length;
   mapping->mapped_pages = pages_from_size(length);
   mapping->guest_virt = reinterpret_cast<guestptr_t>(addr);
-  region.set_guest_addr(mapping->guest_virt);
+  region->set_guest_addr(mapping->guest_virt);
 
   if(addr && (flags & MAP_FIXED)) {
     void *h = elkvm_pager_get_host_p(&vm->pager, mapping->guest_virt);
@@ -549,7 +550,7 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
 
     printf("RESULT: %li\n", result);
     if(result >= 0) {
-      print(std::cout, region);
+      print(std::cout, *region);
       printf("MAPPING: %p host_p: %p guest_virt: 0x%lx length %zd (0x%lx) mapped pages %i (%i)\n",
           mapping, mapping->host_p, mapping->guest_virt, mapping->length,
           mapping->length, mapping->mapped_pages, pages_from_size(length));
@@ -648,7 +649,7 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
   }
 
   if(mapping->mapped_pages == 0) {
-    Elkvm::Region &region = Elkvm::rm.find_region(addr);
+    std::shared_ptr<Elkvm::Region> region = Elkvm::rm.find_region(addr);
     Elkvm::rm.free_region(region);
     list_remove(vm->mappings, mapping);
     free(mapping);
@@ -670,14 +671,14 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
 }
 
 long elkvm_do_brk(struct kvm_vm *vm) {
-  uint64_t user_brk_req = 0;
-  struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
+  guestptr_t user_brk_req = 0;
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
   elkvm_syscall1(vcpu, &user_brk_req);
 
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
     printf("BRK reguested with address: 0x%lx current brk address: 0x%lx\n",
-        user_brk_req, vm->pager.brk_addr);
+        user_brk_req, Elkvm::heap_m.get_brk());
   }
 
   /* if the requested brk address is 0 just return the current brk address */
@@ -685,38 +686,19 @@ long elkvm_do_brk(struct kvm_vm *vm) {
     if(vm->debug) {
       printf("=================================\n");
     }
-    return vm->pager.brk_addr;
+    return Elkvm::heap_m.get_brk();
   }
 
-  /*
-   * if the requested brk address is smaller than the current brk,
-   * adjust the new brk, free mapped pages
-   * TODO mark used regions as free, merge regions
-   */
-  if(user_brk_req < vm->pager.brk_addr) {
-    int err = elkvm_brk_shrink(vm, user_brk_req);
-    assert(err == 0);
-    if(vm->debug) {
-      printf("BRK done: err: %i (%s) newbrk: 0x%lx\n",
-          err, strerror(err), vm->pager.brk_addr);
-      printf("=================================\n");
-    }
-    return user_brk_req;
-  }
-
-  /* if the requested brk address is still within the current data region,
-   * just push the brk */
-  int err = elkvm_brk(vm, user_brk_req);
+  int err = Elkvm::heap_m.brk(user_brk_req);
   if(vm->debug) {
     printf("BRK done: err: %i (%s) newbrk: 0x%lx\n",
-        err, strerror(err), vm->pager.brk_addr);
+        err, strerror(err), Elkvm::heap_m.get_brk());
     printf("=================================\n");
   }
   if(err) {
     return err;
   }
-
-  return vm->pager.brk_addr;
+  return Elkvm::heap_m.get_brk();
 }
 
 long elkvm_do_sigaction(struct kvm_vm *vm) {

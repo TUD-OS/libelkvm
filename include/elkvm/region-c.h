@@ -18,6 +18,8 @@ struct elkvm_memory_region *elkvm_region_create(uint64_t req_size);
 int elkvm_region_free(struct elkvm_memory_region *region);
 int elkvm_init_region_manager(struct kvm_pager *const pager);
 
+void elkvm_init_heap_manager(struct kvm_pager *const pager);
+
 #ifdef __cplusplus
 }
 #endif
