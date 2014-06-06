@@ -29,7 +29,6 @@ struct kvm_idt_entry {
 int elkvm_idt_setup(struct kvm_vm *, struct elkvm_flat *);
 
 void elkvm_idt_dump(struct kvm_vm *);
-void elkvm_idt_dump_isr(struct kvm_vm *, int);
 
 static inline
 uint64_t idt_entry_offset(struct kvm_idt_entry *entry) {
