@@ -643,7 +643,12 @@ void kvm_vcpu_dump_regs(struct kvm_vcpu *vcpu) {
 	return;
 }
 
-void kvm_vcpu_dump_code_common(struct kvm_vcpu *vcpu) {
+void kvm_vcpu_dump_code_at(struct kvm_vcpu *vcpu, uint64_t guest_addr) {
+	int err = kvm_vcpu_get_next_code_byte(vcpu, guest_addr);
+	if(err) {
+		return;
+	}
+
 	fprintf(stderr, "\n Code:\n");
 	fprintf(stderr,   " -----\n");
 	while(ud_disassemble(&vcpu->ud_obj)) {
@@ -652,20 +657,8 @@ void kvm_vcpu_dump_code_common(struct kvm_vcpu *vcpu) {
 	fprintf(stderr, "\n");
 }
 
-void kvm_vcpu_dump_code_at(struct kvm_vcpu *vcpu, uint64_t guest_addr) {
-	int err = kvm_vcpu_get_next_code_byte(vcpu, guest_addr);
-	if(err) {
-		return;
-	}
-  kvm_vcpu_dump_code_common(vcpu);
-}
-
 void kvm_vcpu_dump_code(struct kvm_vcpu *vcpu) {
-	int err = kvm_vcpu_get_next_code_byte(vcpu, vcpu->regs.rip);
-	if(err) {
-		return;
-	}
-  kvm_vcpu_dump_code_common(vcpu);
+  kvm_vcpu_dump_code_at(vcpu, vcpu->regs.rip);
 }
 
 int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *vcpu, uint64_t guest_addr) {
