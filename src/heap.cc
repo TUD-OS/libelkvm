@@ -19,7 +19,7 @@ namespace Elkvm {
     }
 
     auto heap_top = heap_regions.back();
-    void *host_p = heap_top->base_address() + off;
+    void *host_p = reinterpret_cast<char *>(heap_top->base_address()) + off;
     if(heap_top->guest_address() == 0x0) {
       heap_top->set_guest_addr(map_addr);
     }
@@ -31,7 +31,7 @@ namespace Elkvm {
       }
 
       map_addr = map_addr + ELKVM_PAGESIZE;
-      host_p = host_p + ELKVM_PAGESIZE;
+      host_p = reinterpret_cast<char *>(host_p) + ELKVM_PAGESIZE;
     }
 
     return 0;
@@ -40,8 +40,6 @@ namespace Elkvm {
   int HeapManager::shrink(guestptr_t newbrk) {
     auto heap_top = heap_regions.back();
     while(newbrk <= heap_top->guest_address()) {
-
-
       rm.free_region(heap_top);
       heap_regions.pop_back();
       heap_top = heap_regions.back();
