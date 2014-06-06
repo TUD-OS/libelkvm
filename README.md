@@ -3,7 +3,7 @@
 You need to install the following additional packages in your distribution:
 * check
 * cmake
-* libudis86
+* libudis86 (built with the -fPIC compiler option)
 
 ELKVM uses cmake as a build system, you can build it in any directory you like to.
 In that directory you need to run the following:
