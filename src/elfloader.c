@@ -167,7 +167,7 @@ int elkvm_loader_pt_load(struct kvm_vm *vm, GElf_Phdr phdr, struct Elf_binary *b
 		/* executable region should be text */
 		vm->text = loadable_region;
 	} else if(phdr.p_flags & PF_W) {
-    err = elkvm_heap_initialize(vm, loadable_region, total_size);
+    err = elkvm_heap_initialize(loadable_region, total_size);
     if(err) {
       return err;
     }

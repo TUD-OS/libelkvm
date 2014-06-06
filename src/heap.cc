@@ -136,8 +136,7 @@ namespace Elkvm {
   //namespace Elkvm
 }
 
-int elkvm_heap_initialize(struct kvm_vm *vm, struct elkvm_memory_region *region,
-    uint64_t size) {
+int elkvm_heap_initialize(struct elkvm_memory_region *region, uint64_t size) {
   assert(region != NULL);
 
   auto r = Elkvm::rm.find_region(region->host_base_p);
