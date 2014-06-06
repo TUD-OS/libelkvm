@@ -83,10 +83,6 @@ int elkvm_signal_deliver(struct kvm_vm *vm) {
   elkvm_pushq(vm, vcpu, (uint64_t) vm->sigs.signals[signum].sa_handler);
   vcpu->regs.rdi = signum;
 
-//  kvm_vcpu_dump_regs(vcpu);
-//  kvm_vcpu_dump_code(vcpu);
-//  elkvm_dump_stack(vm, vcpu);
-
   return 0;
 }
 
