@@ -68,24 +68,3 @@ void elkvm_idt_dump(struct kvm_vm *vm) {
 	}
 }
 
-void elkvm_idt_dump_isr(struct kvm_vm *vm, int iv) {
-	struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
-	struct kvm_idt_entry *entry = vm->idt_region->host_base_p +
-		iv * sizeof(struct kvm_idt_entry);
-	uint64_t guest_isr = idt_entry_offset(entry);
-	printf("guest_isr: 0x%lx\n", guest_isr);
-  assert(guest_isr != 0x0);
-	char *isr = elkvm_pager_get_host_p(&vm->pager, guest_isr);
-	printf("isr: %p\n", isr);
-
-	ud_set_input_buffer(&vcpu->ud_obj, (const uint8_t *)isr, 9);
-
-	printf("\n ISR Code for Interrupt Vector %3i:\n", iv);
-	printf(  " ----------------------------------\n");
-	while(ud_disassemble(&vcpu->ud_obj)) {
-		printf(" %s\n", ud_insn_asm(&vcpu->ud_obj));
-	}
-	printf("\n");
-
-	return;
-}
