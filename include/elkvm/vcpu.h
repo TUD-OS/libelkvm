@@ -1,4 +1,5 @@
 #pragma once
+#include "config.h"
 
 #include <linux/kvm.h>
 #include <stdbool.h>

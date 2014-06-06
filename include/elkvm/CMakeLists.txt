@@ -1,4 +1,5 @@
 SET( libelkvm_MOC_HEADERS
+  config.h
   elkvm-signal.h
   elkvm.h
   gdt.h
