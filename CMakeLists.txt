@@ -24,7 +24,13 @@ endif()
 
 SET( CMAKE_BUILD_TYPE Debug )
 find_package(libelf REQUIRED)
-find_package(libudis86 REQUIRED)
+find_package(libudis86)
+if(LIBUDIS86_FOUND)
+  set(HAVE_LIBUDIS86 ON)
+endif(LIBUDIS86_FOUND)
+
+configure_file(${CMAKE_SOURCE_DIR}/include/elkvm/config.h.cmake ${CMAKE_SOURCE_DIR}/include/elkvm/config.h)
+
 add_subdirectory( share )
 add_subdirectory( include )
 add_subdirectory( src )

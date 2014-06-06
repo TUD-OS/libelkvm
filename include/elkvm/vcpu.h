@@ -1,8 +1,12 @@
 #pragma once
+#include "config.h"
 
 #include <linux/kvm.h>
 #include <stdbool.h>
+#include <stdio.h>
+#ifdef HAVE_LIBUDIS86
 #include <udis86.h>
+#endif
 
 #include "list.h"
 
@@ -36,7 +40,9 @@ struct kvm_vm;
 
 struct kvm_vcpu {
 	int fd;
+#ifdef HAVE_LIBUDIS86
 	ud_t ud_obj;
+#endif
 	struct kvm_regs regs;
 	struct kvm_sregs sregs;
 	struct kvm_run *run_struct;
@@ -130,11 +136,16 @@ void kvm_vcpu_dump_regs(struct kvm_vcpu *);
 void kvm_vcpu_dump_code(struct kvm_vcpu *);
 void kvm_vcpu_dump_code_at(struct kvm_vcpu *vcpu, uint64_t guest_addr);
 
+#ifdef HAVE_LIBUDIS86
 /*
  * \brief Get the next byte of code to be executed.
  * This is mainly here for libudis86 disassembly
  */
 int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *, uint64_t guest_addr);
+
+void elkvm_idt_dump_isr(struct kvm_vm *, int);
+void elkvm_init_udis86(struct kvm_vcpu *, int mode);
+#endif
 
 static inline
 void print_dtable(const char *name, struct kvm_dtable dtable)
