@@ -241,7 +241,7 @@ long elkvm_do_read(struct kvm_vm *vm) {
     char *host_begin_mark = NULL;
     char *host_end_mark = buf;
     uint64_t mark_p = buf_p;
-    size_t current_count = count;
+    ssize_t current_count = count;
     do {
       host_begin_mark = reinterpret_cast<char *>(elkvm_pager_get_host_p(&vm->pager,
             mark_p));
@@ -253,7 +253,7 @@ long elkvm_do_read(struct kvm_vm *vm) {
       host_end_mark = reinterpret_cast<char *>(region->last_valid_address());
       assert(host_end_mark > host_begin_mark);
 
-      size_t newcount = host_end_mark - host_begin_mark;
+      ssize_t newcount = host_end_mark - host_begin_mark;
       if(newcount > current_count) {
         newcount = current_count;
       }
