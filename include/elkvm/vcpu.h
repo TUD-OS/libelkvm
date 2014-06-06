@@ -137,6 +137,7 @@ void kvm_vcpu_dump_code_at(struct kvm_vcpu *vcpu, uint64_t guest_addr);
 int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *, uint64_t guest_addr);
 
 void elkvm_idt_dump_isr(struct kvm_vm *, int);
+void elkvm_init_udis86(struct kvm_vcpu *, int mode);
 
 static inline
 void print_dtable(const char *name, struct kvm_dtable dtable)

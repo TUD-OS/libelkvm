@@ -55,12 +55,7 @@ int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
 		return err;
 	}
 
-	ud_init(&vcpu->ud_obj);
-	switch(mode) {
-		case VM_MODE_X86_64:
-			ud_set_mode(&vcpu->ud_obj, 64);
-	}
-	ud_set_syntax(&vcpu->ud_obj, UD_SYN_INTEL);
+  elkvm_init_udis86(vcpu, mode);
 
 	vcpu->vm = vm;
 	return 0;
