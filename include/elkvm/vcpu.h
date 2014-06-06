@@ -1,14 +1,14 @@
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <linux/kvm.h>
 #include <stdbool.h>
 #include <udis86.h>
 
 #include "list.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define VCPU_CR0_FLAG_PAGING            0x80000000
 #define VCPU_CR0_FLAG_CACHE_DISABLE     0x40000000

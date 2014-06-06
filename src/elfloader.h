@@ -1,13 +1,13 @@
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <gelf.h>
 #include <libelf.h>
 
 #include "elkvm.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct Elf_binary {
 	int fd;
