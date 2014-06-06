@@ -55,7 +55,9 @@ int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
 		return err;
 	}
 
+#ifdef HAVE_LIBUDIS86
   elkvm_init_udis86(vcpu, mode);
+#endif
 
 	vcpu->vm = vm;
 	return 0;
@@ -644,6 +646,7 @@ void kvm_vcpu_dump_regs(struct kvm_vcpu *vcpu) {
 }
 
 void kvm_vcpu_dump_code_at(struct kvm_vcpu *vcpu, uint64_t guest_addr) {
+#ifdef HAVE_LIBUDIS86
 	int err = kvm_vcpu_get_next_code_byte(vcpu, guest_addr);
 	if(err) {
 		return;
@@ -655,12 +658,16 @@ void kvm_vcpu_dump_code_at(struct kvm_vcpu *vcpu, uint64_t guest_addr) {
 		fprintf(stderr, " %s\n", ud_insn_asm(&vcpu->ud_obj));
 	}
 	fprintf(stderr, "\n");
+#else
+  return;
+#endif
 }
 
 void kvm_vcpu_dump_code(struct kvm_vcpu *vcpu) {
   kvm_vcpu_dump_code_at(vcpu, vcpu->regs.rip);
 }
 
+#ifdef HAVE_LIBUDIS86
 int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *vcpu, uint64_t guest_addr) {
   assert(guest_addr != 0x0);
 	void *host_p = elkvm_pager_get_host_p(&vcpu->vm->pager, guest_addr);
