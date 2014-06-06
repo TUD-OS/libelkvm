@@ -7,7 +7,9 @@
 #include <stdlib.h>
 #include "list.h"
 
-#include <elkvm.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define PAGER_MODE_X86     1
 #define PAGER_MODE_X86_E   2
@@ -15,7 +17,7 @@
 
 #define ELKVM_PAGER_MEMSIZE 16*1024*1024
 #define ELKVM_SYSTEM_MEMSIZE 16*1024*1024
-#define ELKVM_SYSTEM_MEMGROW 256*1024*1024
+#define ELKVM_SYSTEM_MEMGROW 128*1024*1024
 #define KERNEL_SPACE_BOTTOM 0xFFFF800000000000
 #define ADDRESS_SPACE_TOP 0xFFFFFFFFFFFFFFFF
 
@@ -56,7 +58,6 @@ struct kvm_pager {
 	void *host_pml4_p;
 	void *host_next_free_tbl_p;
 	uint64_t guest_next_free;
-  uint64_t brk_addr;
   uint64_t total_memsz;
   uint32_t free_slot[KVM_MEMORY_SLOTS];
   int free_slot_id;
@@ -68,13 +69,13 @@ struct kvm_pager {
 int elkvm_pager_initialize(struct kvm_vm *, int);
 
 struct kvm_userspace_memory_region *
-elkvm_pager_alloc_chunk(struct kvm_pager *pager, void *addr,
+elkvm_pager_alloc_chunk(struct kvm_pager *const pager, void *addr,
     uint64_t chunk_size, int flags);
 /*
 	Let Pager create a mem chunk of the given size. The mem_chunk will be added
   to the end of the other_chunks list
 */
-int elkvm_pager_create_mem_chunk(struct kvm_pager *, void **, int);
+int elkvm_pager_create_mem_chunk(struct kvm_pager *const, void **, int);
 
 /*
 	Create Page Tables according to given mode
@@ -89,7 +90,7 @@ int elkvm_pager_map_chunk(struct kvm_vm *, struct kvm_userspace_memory_region *)
 /*
  * Append a kvm_userspace_memory_region to the end of the list of memory regions
 */
-int elkvm_pager_append_mem_chunk(struct kvm_pager *, struct kvm_userspace_memory_region *);
+int elkvm_pager_append_mem_chunk(struct kvm_pager *const, struct kvm_userspace_memory_region *);
 
 int elkvm_pager_chunk_count(struct kvm_pager *pager);
 
@@ -170,7 +171,6 @@ int elkvm_pager_create_table(struct kvm_pager *, uint64_t *, ptopt_t opts);
 void elkvm_pager_create_entry(uint64_t *host_entry_p, guestptr_t guest_next,
     ptopt_t opts);
 
-int elkvm_pager_set_brk(struct kvm_pager *, uint64_t);
 int elkvm_pager_handle_pagefault(struct kvm_pager *, uint64_t, uint32_t);
 
 void elkvm_pager_dump_page_fault_info(guestptr_t pfla,
@@ -190,3 +190,7 @@ int pages_from_size(uint64_t size);
 int page_remain(guestptr_t addr);
 unsigned int offset_in_page(guestptr_t addr);
 uint64_t pagesize_align(uint64_t size);
+
+#ifdef __cplusplus
+}
+#endif

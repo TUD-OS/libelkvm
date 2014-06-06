@@ -1,26 +1,38 @@
 #pragma once
 
 #include <stdbool.h>
+#include <memory>
 
 #include "elkvm.h"
 #include "region.h"
 
-int elkvm_heap_initialize(struct kvm_vm *, struct elkvm_memory_region *, uint64_t);
-int elkvm_heap_grow(struct kvm_vm *, uint64_t size);
+namespace Elkvm {
+  class HeapManager {
+    private:
+      struct kvm_pager * pager;
+      std::vector<std::shared_ptr<Region>> heap_regions;
+      guestptr_t curbrk;
 
-int elkvm_brk(struct kvm_vm *, uint64_t);
-int elkvm_brk_nogrow(struct kvm_vm *, uint64_t);
-int elkvm_brk_shrink(struct kvm_vm *, uint64_t newbrk);
-int elkvm_brk_grow(struct kvm_vm *, uint64_t);
+      int grow(size_t sz);
+      int grow_in_region(guestptr_t newbrk);
+      int shrink(guestptr_t newbrk);
+      int map_heap(guestptr_t newbrk, off64_t off);
 
-int elkvm_brk_map(struct kvm_vm *, uint64_t, uint64_t);
+    public:
+      int init(std::shared_ptr<Region> data, size_t sz);
+      int brk(guestptr_t newbrk);
+      guestptr_t get_brk() const { return curbrk; };
+      bool address_in_heap_region(guestptr_t guest_addr) const {
+        std::cout << "AIHR: " << std::hex << "0x" << guest_addr
+          << " LV: " << heap_regions.back()->last_valid_guest_address() << std::endl;
+        print(std::cout, *heap_regions.back());
+        return guest_addr <= heap_regions.back()->last_valid_guest_address();
+      }
+      guestptr_t last_heap_address() const {
+        return heap_regions.back()->last_valid_guest_address();
+      }
+      void set_pager(struct kvm_pager *const p) { pager = p; }
+  };
 
-static inline bool elkvm_within_current_heap_region(struct kvm_vm *vm, uint64_t guest_addr) {
-  struct elkvm_memory_region **heap = list_elem_front(vm->heap);
-  return guest_addr < ((*heap)->guest_virtual + (*heap)->region_size);
-}
-
-static inline uint64_t elkvm_last_heap_address(struct kvm_vm *vm) {
-  struct elkvm_memory_region *heap = *(list_elem_front(vm->heap));
-  return heap->guest_virtual + heap->region_size - 1;
+  //namespace Elkvm
 }

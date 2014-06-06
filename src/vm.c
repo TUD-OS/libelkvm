@@ -14,7 +14,7 @@
 #include <idt.h>
 #include <kvm.h>
 #include <pager.h>
-#include <region.h>
+#include <region-c.h>
 #include <stack.h>
 #include <vcpu.h>
 #include <elkvm.h>
@@ -155,7 +155,7 @@ int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * pat
 	}
 
 	flat->size = stbuf.st_size;
-	flat->region = elkvm_region_create(vm, stbuf.st_size);
+	flat->region = elkvm_region_create(stbuf.st_size);
 	flat->region->guest_virtual = 0x0;
 
   if(kernel) {
@@ -195,11 +195,6 @@ int elkvm_region_setup(struct kvm_vm *vm) {
 	if(err) {
 		return err;
 	}
-
-  struct elkvm_memory_region *region = elkvm_region_alloc(system_chunk_p,
-      ELKVM_SYSTEM_MEMSIZE, 0);
-  err = elkvm_region_list_prepend(vm, region);
-  assert(err == 0);
 
 	vm->pager.system_chunk.userspace_addr = (__u64)system_chunk_p;
 	vm->pager.system_chunk.guest_phys_addr = 0x0;
@@ -266,7 +261,7 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 	}
 
 	/* for now the region to hold env etc. will be 12 pages large */
-	vm->env_region = elkvm_region_create(vm, 0x12000);
+	vm->env_region = elkvm_region_create(0x12000);
   assert(vm->env_region != NULL);
 	vm->env_region->guest_virtual = LINUX_64_STACK_BASE -
 		vm->env_region->region_size;
@@ -277,7 +272,7 @@ int elkvm_initialize_stack(struct elkvm_opts *opts, struct kvm_vm *vm) {
 
 	/* get a frame for the kernel (interrupt) stack */
   /* this is only ONE page large */
-	vm->kernel_stack = elkvm_region_create(vm, ELKVM_PAGESIZE);
+	vm->kernel_stack = elkvm_region_create(ELKVM_PAGESIZE);
 	vm->kernel_stack->grows_downward = 1;
 
 	/* create a mapping for the kernel (interrupt) stack */

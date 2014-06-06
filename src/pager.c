@@ -7,13 +7,19 @@
 #include <pager.h>
 #include <stack.h>
 #include <vcpu.h>
+#include <region-c.h>
 
 int elkvm_pager_initialize(struct kvm_vm *vm, int mode) {
 	if(vm->fd < 1) {
 		return -EIO;
 	}
 
-	struct elkvm_memory_region *pts_region = elkvm_region_create(vm, ELKVM_PAGER_MEMSIZE);
+  vm->pager.vm = vm;
+  int err = elkvm_init_region_manager(&vm->pager);
+  assert(err == 0);
+  elkvm_init_heap_manager(&vm->pager);
+
+	struct elkvm_memory_region *pts_region = elkvm_region_create(ELKVM_PAGER_MEMSIZE);
 	if(pts_region == NULL) {
 		return -ENOMEM;
 	}
@@ -26,7 +32,7 @@ int elkvm_pager_initialize(struct kvm_vm *vm, int mode) {
 			pts_region->host_base_p);
 	vm->pager.guest_next_free = KERNEL_SPACE_BOTTOM;
 
-	int err = elkvm_pager_create_page_tables(&vm->pager, mode);
+	err = elkvm_pager_create_page_tables(&vm->pager, mode);
 	if(err) {
 		return err;
 	}
@@ -41,13 +47,11 @@ int elkvm_pager_initialize(struct kvm_vm *vm, int mode) {
     vm->pager.free_slot[i] = 0;
   }
 
-  vm->pager.vm = vm;
-
 	return 0;
 }
 
-struct kvm_userspace_memory_region *elkvm_pager_alloc_chunk(struct kvm_pager *pager,
-    void *addr, uint64_t chunk_size, int flags) {
+struct kvm_userspace_memory_region *elkvm_pager_alloc_chunk(
+    struct kvm_pager *const pager, void *addr, uint64_t chunk_size, int flags) {
   struct kvm_userspace_memory_region *chunk;
   chunk = malloc(sizeof(struct kvm_userspace_memory_region));
   if(chunk == NULL) {
@@ -76,13 +80,9 @@ struct kvm_userspace_memory_region *elkvm_pager_alloc_chunk(struct kvm_pager *pa
   return chunk;
 }
 
-int elkvm_pager_create_mem_chunk(struct kvm_pager *pager, void **chunk_host_p,
-    int chunk_size) {
-
-	if(pager == NULL) {
-    *chunk_host_p = NULL;
-		return -EIO;
-	}
+int elkvm_pager_create_mem_chunk(struct kvm_pager *const pager,
+    void **chunk_host_p, int chunk_size) {
+  assert(pager != NULL && "must have pager to create mem_chunk");
 
 	/* keep sizes page aligned */
 	if((chunk_size & ~0xFFF) != chunk_size) {
@@ -304,6 +304,7 @@ int elkvm_pager_map_region(struct kvm_pager *pager, void *host_start_p,
   assert(pages < (512*512));
   while(pages) {
     uint64_t *pt_base = elkvm_pager_page_table_walk(pager, guest_pt_base_addr, opts, 1);
+    assert(pt_base != NULL && "page table walk failed in map_region");
     uint64_t *pt_entry = pt_base + offset;
 
     /* map those pages */
@@ -494,11 +495,6 @@ void elkvm_pager_create_entry(uint64_t *host_entry_p, guestptr_t guest_next,
 
 	/* mark the entry as present */
 	*host_entry_p |= PT_BIT_PRESENT;
-}
-
-int elkvm_pager_set_brk(struct kvm_pager *pager, uint64_t guest_addr) {
-  pager->brk_addr = guest_addr;
-  return 0;
 }
 
 int elkvm_pager_handle_pagefault(struct kvm_pager *pager, uint64_t pfla,
@@ -693,6 +689,10 @@ unsigned int offset_in_page(guestptr_t addr) {
 }
 
 uint64_t pagesize_align(uint64_t size) {
-  return ((size & ~(ELKVM_PAGESIZE-1)) + ELKVM_PAGESIZE);
+  if(size % ELKVM_PAGESIZE) {
+    return ((size & ~(ELKVM_PAGESIZE-1)) + ELKVM_PAGESIZE);
+  } else {
+    return size;
+  }
 }
 

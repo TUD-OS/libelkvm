@@ -57,6 +57,8 @@ int elkvm_loader_pad_text_begin(struct elkvm_memory_region *region,
 int elkvm_loader_pad_data_begin(struct elkvm_memory_region *region,
     struct Elf_binary *bin, size_t padsize);
 
+int elkvm_heap_initialize(struct kvm_vm *, struct elkvm_memory_region *, uint64_t);
+
 #ifdef __cplusplus
 }
 #endif

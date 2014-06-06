@@ -3,15 +3,16 @@ SET( libelkvm_SRCS
   elfloader.c
   gdbstub.c
   gdt.c
-  heap.c
+  heap.cc
   idt.c
   list/list.c
   mapping.c
   pager.c
-  region.c
+  region.cc
+  region_manager.cc
   signal.c
   stack.c
-  syscall.c
+  syscall.cc
   tss.c
   vcpu.c
   vm.c

@@ -15,7 +15,7 @@ typedef uint64_t guestptr_t;
 
 #include "kvm.h"
 #include "pager.h"
-#include "region.h"
+#include "region-c.h"
 #include "vcpu.h"
 #include "list.h"
 #include "elkvm-signal.h"
@@ -36,7 +36,7 @@ extern "C" {
 
 struct region_mapping {
   void *host_p;
-  uint64_t guest_virt;
+  guestptr_t guest_virt;
   size_t length;
   unsigned mapped_pages;
 };

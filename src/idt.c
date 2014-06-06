@@ -13,7 +13,6 @@
 int elkvm_idt_setup(struct kvm_vm *vm, struct elkvm_flat *default_handler) {
 
 	vm->idt_region = elkvm_region_create(
-			vm,
 			256 * sizeof(struct kvm_idt_entry));
 
   /* default handler defines 48 entries, that push the iv to the stack */

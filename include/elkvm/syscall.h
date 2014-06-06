@@ -7,6 +7,13 @@
 #define ELKVM_HYPERCALL_INTERRUPT 2
 
 #define ELKVM_HYPERCALL_EXIT      0x42
+#define NUM_SYSCALLS 313
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * \brief check what kind of syscall has been made by the guest
  * and call the appropriate handler func in the userspace binary
@@ -25,8 +32,6 @@ void elkvm_syscall5(struct kvm_vcpu *, uint64_t *, uint64_t *,
 void elkvm_syscall6(struct kvm_vcpu *, uint64_t *, uint64_t *,
 		uint64_t *, uint64_t *, uint64_t *, uint64_t *);
 
-
-#define NUM_SYSCALLS 313
 
 long elkvm_do_read(struct kvm_vm *);
 long elkvm_do_write(struct kvm_vm *);
@@ -505,4 +510,8 @@ static struct {
   [__NR_tgkill]          = { elkvm_do_tgkill, "TGKILL" },
 
 };
+
+#ifdef __cplusplus
+}
+#endif
 
