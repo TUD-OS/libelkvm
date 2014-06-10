@@ -13,6 +13,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 if(libelkvm_build_tests)
     enable_testing()
+    include(gmock)
 endif()
 
 if(libelkvm_generate_coverage)
@@ -37,6 +38,5 @@ add_subdirectory( src )
 add_subdirectory( examples )
 
 if (libelkvm_build_tests)
-    include(gmock)
     add_subdirectory( test )
 endif()
