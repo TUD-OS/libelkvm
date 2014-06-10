@@ -7,10 +7,8 @@ ExternalProject_Add(project_gmock
 )
 ExternalProject_Get_Property(project_gmock install_dir)
 ExternalProject_Get_Property(project_gmock binary_dir)
-ExternalProject_Get_Property(project_gmock source_dir)
-
 set(GMOCK_DIR ${source_dir})
-set(GMOCK_INSTALL_DIR ${install_dir})
+set(GMOCK_INSTALL_DIR ${binary_dir})
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     # force this option to ON so that Google Test will use /MD instead of /MT
