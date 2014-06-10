@@ -52,9 +52,9 @@ include_directories(SYSTEM ${GMOCK_DIR}/gtest/include
 function(add_gmock_test target)
     include_directories("${PROJECT_SOURCE_DIR}/include")
     add_executable(${target} ${ARGN})
-    target_link_libraries(${target} pthread)
     target_link_libraries(${target} gmock gmock_main)
     target_link_libraries(${target} gtest gtest_main)
+    target_link_libraries(${target} pthread)
     target_link_libraries(${target} elkvm)
     add_test(${target} ${target})
 
