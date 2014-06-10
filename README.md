@@ -69,7 +69,8 @@ make coverage
 
 This will generate some html files, givinig you coverage information in
 BUILD_DIRECTORY/cov/index.html
-You need to enable the libelkvm_generate_coverage option to enable support for this.
+You need to enable the libelkvm_generate_coverage option to enable the generation
+of coverage data. Additionally this currently *only works with gcc*.
 
 
 Happy Hacking! :)
