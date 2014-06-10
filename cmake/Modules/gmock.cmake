@@ -5,7 +5,7 @@ ExternalProject_Add(project_gmock
   PREFIX ${CMAKE_CURRENT_BINARY_DIR}/gmock-1.7.0
   INSTALL_COMMAND ""
 )
-ExternalProject_Get_Property(project_gmock install_dir)
+ExternalProject_Get_Property(project_gmock source_dir)
 ExternalProject_Get_Property(project_gmock binary_dir)
 set(GMOCK_DIR ${source_dir})
 set(GMOCK_INSTALL_DIR ${binary_dir})
