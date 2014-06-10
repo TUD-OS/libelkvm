@@ -27,6 +27,7 @@ find_package(libelf REQUIRED)
 find_package(libudis86)
 if(LIBUDIS86_FOUND)
   set(HAVE_LIBUDIS86 ON)
+  include_directories("${LIBUDIS86_INCLUDE_DIRS}")
 endif(LIBUDIS86_FOUND)
 
 configure_file(${CMAKE_SOURCE_DIR}/include/elkvm/config.h.cmake ${CMAKE_SOURCE_DIR}/include/elkvm/config.h)

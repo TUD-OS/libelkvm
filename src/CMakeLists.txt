@@ -20,7 +20,13 @@ SET( libelkvm_SRCS
 ADD_LIBRARY( elkvm SHARED ${libelkvm_SRCS} )
 
 if(LIBUDIS86_FOUND)
-  target_link_libraries (elkvm udis86)
+  # BD: Weird. According to the documentation, passing an absolute library
+  #     path, such as ${LIBUDIS86_LIBRARIES} should instruct CMake to write
+  #     -l<absolute path name>. However, in my case it only generated -ludis86
+  #     and forgot about the search path. Therefore, we extract the path here
+  #     separately and pass it as an explicit argument for udis86 dir.
+  get_filename_component(LIBUDIS86_DIR "${LIBUDIS86_LIBRARIES}" PATH)
+  target_link_libraries (elkvm -L${LIBUDIS86_DIR} ${LIBUDIS86_LIBRARIES})
 endif(LIBUDIS86_FOUND)
 
 target_link_libraries (elkvm elf)
