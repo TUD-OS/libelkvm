@@ -60,8 +60,8 @@ which you can do for example by running
 
 ccmake PATH_TO_ELKVM_TOPLEVEL_DIRECTORY
 
-inside your build directory. Additionally you have to have the gmock sources in
-test/include/gmock. You can get those from https://code.google.com/p/googlemock/
+inside your build directory. cmake will download and build gmock for you in order
+to run the tests.
 
 If you have lcov installed, you can generate code coverage data by running
 

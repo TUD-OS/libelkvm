@@ -13,6 +13,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 if(libelkvm_build_tests)
     enable_testing()
+    include(gmock)
 endif()
 
 if(libelkvm_generate_coverage)
@@ -29,7 +30,8 @@ if(LIBUDIS86_FOUND)
   set(HAVE_LIBUDIS86 ON)
 endif(LIBUDIS86_FOUND)
 
-configure_file(${CMAKE_SOURCE_DIR}/include/elkvm/config.h.cmake ${CMAKE_SOURCE_DIR}/include/elkvm/config.h)
+configure_file(${CMAKE_SOURCE_DIR}/include/elkvm/config.h.cmake
+               ${CMAKE_SOURCE_DIR}/include/elkvm/config.h)
 
 add_subdirectory( share )
 add_subdirectory( include )
@@ -37,6 +39,5 @@ add_subdirectory( src )
 add_subdirectory( examples )
 
 if (libelkvm_build_tests)
-    include(gmock)
     add_subdirectory( test )
 endif()

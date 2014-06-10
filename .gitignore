@@ -7,4 +7,3 @@
 *.dirstamp
 
 include/elkvm/config.h
-test/include/gmock

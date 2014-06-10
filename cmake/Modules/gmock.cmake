@@ -1,5 +1,14 @@
-set(GMOCK_DIR "./test/include/gmock"
-    CACHE PATH "The path to the GoogleMock test framework.")
+include(ExternalProject)
+
+ExternalProject_Add(project_gmock
+  URL https://googlemock.googlecode.com/files/gmock-1.7.0.zip
+  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/gmock-1.7.0
+  INSTALL_COMMAND ""
+)
+ExternalProject_Get_Property(project_gmock source_dir)
+ExternalProject_Get_Property(project_gmock binary_dir)
+set(GMOCK_DIR ${source_dir})
+set(GMOCK_INSTALL_DIR ${binary_dir})
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     # force this option to ON so that Google Test will use /MD instead of /MT
@@ -9,7 +18,25 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
            ON)
 endif()
 
-add_subdirectory(${GMOCK_DIR} ${CMAKE_BINARY_DIR}/gmock)
+add_library(gmock STATIC IMPORTED)
+add_library(gmock_main STATIC IMPORTED)
+add_library(gtest STATIC IMPORTED)
+add_library(gtest_main STATIC IMPORTED)
+
+set_property(TARGET gmock
+  PROPERTY IMPORTED_LOCATION ${GMOCK_INSTALL_DIR}/libgmock.a)
+set_property(TARGET gmock_main
+  PROPERTY IMPORTED_LOCATION ${GMOCK_INSTALL_DIR}/libgmock_main.a)
+set_property(TARGET gtest
+  PROPERTY IMPORTED_LOCATION ${GMOCK_INSTALL_DIR}/gtest/libgtest.a)
+set_property(TARGET gtest_main
+  PROPERTY IMPORTED_LOCATION ${GMOCK_INSTALL_DIR}/gtest/libgtest_main.a)
+
+add_dependencies(gmock project_gmock)
+add_dependencies(gmock_main project_gmock)
+add_dependencies(gtest project_gtest)
+add_dependencies(gtest_main project_gtest)
+
 set_property(TARGET gtest APPEND_STRING PROPERTY COMPILE_FLAGS " -w")
 
 include_directories(SYSTEM ${GMOCK_DIR}/gtest/include
@@ -25,9 +52,9 @@ include_directories(SYSTEM ${GMOCK_DIR}/gtest/include
 function(add_gmock_test target)
     include_directories("${PROJECT_SOURCE_DIR}/include")
     add_executable(${target} ${ARGN})
-    target_link_libraries(${target} pthread)
     target_link_libraries(${target} gmock gmock_main)
     target_link_libraries(${target} gtest gtest_main)
+    target_link_libraries(${target} pthread)
     target_link_libraries(${target} elkvm)
     add_test(${target} ${target})
 
