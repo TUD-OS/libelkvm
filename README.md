@@ -20,13 +20,10 @@ application in the examples/ directory.
 # Using private versions of the tools
 
 If you have libraries (e.g. libudis86) installed in non-standard locations,
-you will have to adapt the respective CMAKE linker and compiler flags. To do
-so, call cmake as follows:
+you can tell cmake to search these dirs using the CPATH and LIBRARY_PATH
+environment variable. For example:
 
-cmake -DCMAKE_C_FLAGS=-I<include directory> \
-      -DCMAKE_CXX_FLAGS=-I<include directory> \
-      -DCMAKE_SHARED_LINKER_FLAGS=-L<lib directory> \
-      -DCMAKE_EXE_LINKER_FLAGS=-L<lib directory>
+CPATH=<udis86 include dir> LIBRARY_PATH=<udis86 library dir> cmake
 
 # Adjusting the Linux kernel
 
