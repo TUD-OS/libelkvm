@@ -6,7 +6,8 @@
 extern "C" {
 #endif
 
-int elkvm_initialize_env(struct elkvm_opts *opts, struct kvm_vm *vm);
+int elkvm_initialize_env();
+int elkvm_fill_env(struct elkvm_opts *opts, struct kvm_vm *vm);
 guestptr_t elkvm_env_get_guest_address();
 void *elkvm_env_get_host_p();
 

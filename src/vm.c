@@ -62,15 +62,17 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
     return err;
   }
 
-  err = elkvm_initialize_env(opts, vm);
-  if(err) {
-    return err;
-  }
+  elkvm_initialize_env();
 
 	err = elkvm_initialize_stack(vm);
 	if(err) {
 		return err;
 	}
+
+  err = elkvm_fill_env(opts, vm);
+  if(err) {
+    return err;
+  }
 
 	err = elkvm_pager_map_chunk(vm, &vm->pager.system_chunk);
 	if(err) {

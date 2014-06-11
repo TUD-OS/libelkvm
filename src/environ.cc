@@ -129,12 +129,15 @@ namespace Elkvm {
 extern "C" {
 #endif
 
-int elkvm_initialize_env(struct elkvm_opts *opts, struct kvm_vm *vm) {
+void elkvm_initialize_env() {
+  Elkvm::env.init();
+}
+
+int elkvm_fill_env(struct elkvm_opts *opts, struct kvm_vm *vm) {
   struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
   int err = kvm_vcpu_get_regs(vcpu);
   assert(err == 0 && "error getting vcpu");
 
-  Elkvm::env.init();
   off64_t bytes = Elkvm::env.push_auxv(vm, opts->environ);
   off64_t bytes_total = bytes;
 

@@ -93,8 +93,12 @@ void elkvm_dump_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 }
 
 int elkvm_initialize_stack(struct kvm_vm *vm) {
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  int err = kvm_vcpu_get_regs(vcpu);
+  assert(err == 0 && "error getting vcpu");
+
 	/* get memory for the stack, this is expanded as needed */
-  int err = elkvm_expand_stack(vm);
+  err = elkvm_expand_stack(vm);
   assert(err == 0 && "stack creation failed");
 
 	/* get a frame for the kernel (interrupt) stack */
@@ -114,11 +118,12 @@ int elkvm_initialize_stack(struct kvm_vm *vm) {
 
   /* as the stack grows downward we can initialize its address at the base address
    * of the env region */
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
   vcpu->regs.rsp = elkvm_env_get_guest_address();
   err = elkvm_pager_create_mapping(&vm->pager,
       elkvm_env_get_host_p(),
       vcpu->regs.rsp, PT_OPT_WRITE);
+  assert(err == 0 && "could not map stack address");
 
-  return 0;
+  err = kvm_vcpu_set_regs(vcpu);
+  return err;
 }
