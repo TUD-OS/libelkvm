@@ -2,6 +2,7 @@
 #include <errno.h>
 
 #include <elkvm.h>
+#include <environ-c.h>
 #include <pager.h>
 #include <stack.h>
 #include <vcpu.h>
@@ -51,7 +52,7 @@ int elkvm_pushq(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t val) {
 int elkvm_expand_stack(struct kvm_vm *vm) {
   uint64_t oldrsp = 0;
   if(vm->current_user_stack == NULL) {
-    oldrsp = page_begin(vm->env_region->guest_virtual);
+    oldrsp = page_begin(elkvm_env_get_guest_address());
   } else {
     oldrsp = page_begin(vm->current_user_stack->guest_virtual);
   }
