@@ -90,3 +90,25 @@ void elkvm_dump_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
   assert(vcpu->regs.rsp != 0x0);
   elkvm_dump_memory(vm, vcpu->regs.rsp);
 }
+
+int elkvm_initialize_stack(struct kvm_vm *vm) {
+	/* get memory for the stack, this is expanded as needed */
+  int err = elkvm_expand_stack(vm);
+  assert(err == 0 && "stack creation failed");
+
+	/* get a frame for the kernel (interrupt) stack */
+  /* this is only ONE page large */
+	vm->kernel_stack = elkvm_region_create(ELKVM_PAGESIZE);
+	vm->kernel_stack->grows_downward = 1;
+
+	/* create a mapping for the kernel (interrupt) stack */
+	vm->kernel_stack->guest_virtual = elkvm_pager_map_kernel_page(&vm->pager,
+			vm->kernel_stack->host_base_p, 1, 0);
+	if(vm->kernel_stack->guest_virtual == 0) {
+		return -ENOMEM;
+	}
+
+  /* as stack grows downward we save it's virtual address at the page afterwards */
+  vm->kernel_stack->guest_virtual += ELKVM_PAGESIZE;
+  return 0;
+}
