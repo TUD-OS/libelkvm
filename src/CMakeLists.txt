@@ -1,6 +1,6 @@
 SET( libelkvm_SRCS
   debug.c
-  elfloader.c
+  elfloader.cc
   environ.cc
   gdbstub.c
   gdt.c
