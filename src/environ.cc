@@ -39,7 +39,50 @@ namespace Elkvm {
 
     off64_t offset = 0;
 
+    short all_set = 0;
     for(unsigned i= 0 ; i < count; auxv--, i++) {
+      /*
+       * if the binary is dynamically linked, we need to reset these types
+       * so the dynamic linker loads the correct values
+       */
+      if(vm->auxv.valid) {
+        switch(auxv->a_type) {
+          case AT_PHDR:
+            auxv->a_un.a_val = vm->auxv.at_phdr;
+            all_set |= 0x1;
+            break;
+          case AT_PHENT:
+            auxv->a_un.a_val = vm->auxv.at_phent;
+            all_set |= 0x2;
+            break;
+          case AT_PHNUM:
+            auxv->a_un.a_val = vm->auxv.at_phnum;
+            all_set |= 0x4;
+            break;
+          case AT_EXECFD:
+            /* TODO maybe this needs to be removed? */
+            break;
+          case AT_ENTRY:
+            auxv->a_un.a_val = vm->auxv.at_entry;
+            all_set |= 0x8;
+            break;
+          case AT_BASE:
+            auxv->a_un.a_val = vm->auxv.at_base;
+            all_set |= 0x10;
+            break;
+        }
+      }
+    }
+    if(vm->auxv.valid) {
+      assert(all_set == 0x1F && "elf auxv is complete");
+    }
+    for(i = 0 ; auxv->a_type != AT_NULL; auxv++, i++) {
+
+      case AT_BASE:
+        /*
+         * AT_BASE points to the base address of the dynamic linker
+         * this may be nonsense for statically linked binaries
+         */
       switch(auxv->a_type) {
         case AT_NULL:
         case AT_IGNORE:
