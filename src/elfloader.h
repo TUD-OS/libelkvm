@@ -4,68 +4,59 @@
 #include <libelf.h>
 
 #include "elkvm.h"
+#include "region.h"
+
+#include <memory>
 
 #define LD_LINUX_SO_BASE 0x7FFFF0000000
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace Elkvm {
 
-struct Elf_binary {
-	int fd;
-	Elf *e;
-	size_t phdr_num;
-  bool static_linkage;
-  bool shared_obj;
-  int elfclass;
-  char *loader;
-  uint64_t entry;
+struct Elf_auxv {
+  uint64_t at_phdr;
+  uint64_t at_phent;
+  uint64_t at_phnum;
+  uint64_t at_entry;
+  uint64_t at_base;
+  bool valid;
 };
 
-/*
- * Loads an ELF binary into the VM's system_chunk
-*/
-int elkvm_load_binary(struct kvm_vm *vm, const char *binary);
+class ElfBinary {
+  private:
+    struct kvm_pager * pager;
+    int fd;
+    Elf *e;
+    size_t num_phdrs;
+    bool statically_linked;
+    bool shared_object;
+    int elfclass;
+    std::string loader;
+    guestptr_t entry_point;
+    struct Elf_auxv auxv;
 
-/*
- * Load the Program headers of an ELF binary
-*/
-int elkvm_loader_parse_program(struct kvm_vm *, struct Elf_binary *);
+    int check_elf();
+    int parse_program();
+    int set_entry_point();
+    void get_dynamic_loader(GElf_Phdr phdr);
+    void load_phdr(GElf_Phdr phdr);
+    int load_program_header(GElf_Phdr phdr, std::shared_ptr<Region> region);
+    void pad_begin(GElf_Phdr phdr, std::shared_ptr<Region> region);
+    void read_segment(GElf_Phdr phdr, std::shared_ptr<Region> region);
+    void pad_end(GElf_Phdr phdr, std::shared_ptr<Region> region);
+    void pad_text_begin(std::shared_ptr<Region> region, size_t padsize);
+    void pad_text_end(void *host_p, size_t padsize);
+    void pad_data_begin(std::shared_ptr<Region> region, size_t padsize);
+    int load_dynamic();
+    GElf_Phdr text_header;
+    GElf_Phdr find_data_header();
+    GElf_Phdr find_text_header();
 
-/*
- * Load a single program header from the ELF binary into the specified buffer
-*/
-int elkvm_loader_load_program_header(struct Elf_binary *, GElf_Phdr,
-		struct elkvm_memory_region *);
+  public:
+    ElfBinary() { auxv.valid = false; }
+    int load_binary(std::string pathname);
+    guestptr_t get_entry_point();
+};
 
-/*
- * Check for correct ELF headers
-*/
-int elkvm_loader_check_elf(struct kvm_vm *, struct Elf_binary *);
-
-int elkvm_loader_pt_load(struct kvm_vm *vm, GElf_Phdr phdr, struct Elf_binary *bin);
-GElf_Phdr elkvm_loader_find_data_header(struct Elf_binary *bin);
-GElf_Phdr elkvm_loader_find_text_header(struct Elf_binary *bin);
-
-int elkvm_loader_pad_begin(struct elkvm_memory_region *region,
-    struct Elf_binary *bin, GElf_Phdr phdr);
-
-int elkvm_loader_read_segment(struct elkvm_memory_region *region,
-    struct Elf_binary *bin, GElf_Phdr phdr);
-
-int elkvm_loader_pad_end(struct elkvm_memory_region *region,
-    struct Elf_binary *bin, GElf_Phdr phdr);
-
-int elkvm_loader_pad_text_end(struct Elf_binary *bin, void *host_p, size_t padsize);
-
-int elkvm_loader_pad_text_begin(struct elkvm_memory_region *region,
-    struct Elf_binary *bin, size_t padsize);
-
-int elkvm_loader_pad_data_begin(struct elkvm_memory_region *region,
-    struct Elf_binary *bin, size_t padsize);
-
-int elkvm_heap_initialize(struct elkvm_memory_region *, uint64_t);
-
-#ifdef __cplusplus
+//namespace Elkvm
 }
-#endif
+

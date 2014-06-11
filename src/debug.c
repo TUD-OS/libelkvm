@@ -54,5 +54,3 @@ void elkvm_dump_memory(struct kvm_vm *vm, uint64_t addr) {
     host_p+=2;
   }
 }
-  }
-}

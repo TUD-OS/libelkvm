@@ -45,16 +45,6 @@ struct region_mapping {
   off_t offset;
 };
 
-/* TODO move this to elfloader.h */
-struct elkvm_elf_auxv {
-  uint64_t at_phdr;
-  uint64_t at_phent;
-  uint64_t at_phnum;
-  uint64_t at_entry;
-  uint64_t at_base;
-  bool valid;
-};
-
 struct kvm_vm {
 	int fd;
 	struct vcpu_list *vcpus;
@@ -64,7 +54,6 @@ struct kvm_vm {
 	const struct elkvm_handlers *syscall_handlers;
   list(struct region_mapping *, mappings);
 
-	struct elkvm_memory_region *text;
   list(struct elkvm_memory_region *, heap);
 	struct elkvm_memory_region *gdt_region;
 	struct elkvm_memory_region *idt_region;
@@ -74,7 +63,6 @@ struct kvm_vm {
   struct elkvm_flat *sighandler_cleanup;
   struct rlimit rlimits[RLIMIT_NLIMITS];
 
-  struct elkvm_elf_auxv auxv;
   int debug;
 };
 

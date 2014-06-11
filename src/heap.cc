@@ -73,15 +73,6 @@ namespace Elkvm {
   //namespace Elkvm
 }
 
-int elkvm_heap_initialize(struct elkvm_memory_region *region, uint64_t size) {
-  assert(region != NULL);
-
-  auto r = Elkvm::rm.find_region(region->host_base_p);
-  r->set_guest_addr(region->guest_virtual);
-  return Elkvm::heap_m.init(r, size);
-
-}
-
 void elkvm_init_heap_manager(struct kvm_pager *const pager) {
   Elkvm::heap_m.set_pager(pager);
 }

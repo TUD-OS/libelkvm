@@ -10,6 +10,7 @@
 
 #include <elkvm.h>
 #include <environ-c.h>
+#include <elfloader-c.h>
 #include <flats.h>
 #include <gdt.h>
 #include <idt.h>
@@ -18,8 +19,6 @@
 #include <region-c.h>
 #include <stack-c.h>
 #include <vcpu.h>
-#include <elkvm.h>
-#include <elfloader.h>
 #include "debug.h"
 
 int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus,
@@ -57,11 +56,14 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
 		return err;
 	}
 
-  vm->auxv.valid = false;
-  err = elkvm_load_binary(vm, binary);
+  err = elkvm_load_binary(binary);
   if(err) {
     return err;
   }
+
+  guestptr_t entry = elkvm_loader_get_entry_point();
+	err = kvm_vcpu_set_rip(elkvm_vcpu_get(vm, 0), entry);
+  assert(err == 0);
 
   elkvm_initialize_env();
 

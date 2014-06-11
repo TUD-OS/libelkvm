@@ -1,6 +1,8 @@
 #pragma once
 
 #include <stdbool.h>
+
+#include <iostream>
 #include <memory>
 
 #include "elkvm.h"
