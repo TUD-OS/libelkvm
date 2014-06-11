@@ -10,13 +10,12 @@
 
 uint64_t elkvm_popq(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
   assert(vcpu->regs.rsp != 0x0);
-	uint64_t *host_p = elkvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
+  uint64_t *host_p = elkvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
   assert(host_p != NULL);
 
-	//vm->region[MEMORY_REGION_STACK].region_size -= 0x8;
-	vcpu->regs.rsp += 0x8;
+  vcpu->regs.rsp += 0x8;
 
-	return *host_p;
+  return *host_p;
 }
 
 uint32_t elkvm_popd(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
@@ -30,23 +29,22 @@ uint32_t elkvm_popd(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 }
 
 int elkvm_pushq(struct kvm_vm *vm, struct kvm_vcpu *vcpu, uint64_t val) {
-	//vm->region[MEMORY_REGION_STACK].region_size += 0x8;
-	vcpu->regs.rsp -= 0x8;
+  vcpu->regs.rsp -= 0x8;
 
   assert(vcpu->regs.rsp != 0x0);
-	uint64_t *host_p = elkvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
-	if(host_p == NULL) {
-		/* current stack is full, we need to expand the stack */
-		int err = elkvm_expand_stack(vm);
-		if(err) {
-			return err;
-		}
-		host_p = elkvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
-		assert(host_p != NULL);
-	}
-	*host_p = val;
+  uint64_t *host_p = elkvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
+  if(host_p == NULL) {
+    /* current stack is full, we need to expand the stack */
+    int err = elkvm_expand_stack(vm);
+    if(err) {
+      return err;
+    }
+    host_p = elkvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
+    assert(host_p != NULL);
+  }
+  *host_p = val;
 
-	return 0;
+  return 0;
 }
 
 int elkvm_expand_stack(struct kvm_vm *vm) {
@@ -58,10 +56,10 @@ int elkvm_expand_stack(struct kvm_vm *vm) {
   }
   uint64_t newrsp = oldrsp - ELKVM_STACK_GROW;
 
-	struct elkvm_memory_region *region = elkvm_region_create(ELKVM_STACK_GROW);
-	if(region == NULL) {
-		return -ENOMEM;
-	}
+  struct elkvm_memory_region *region = elkvm_region_create(ELKVM_STACK_GROW);
+  if(region == NULL) {
+    return -ENOMEM;
+  }
 
   int err = elkvm_pager_map_region(&vm->pager, region->host_base_p, newrsp,
       ELKVM_STACK_GROW / ELKVM_PAGESIZE, PT_OPT_WRITE);
@@ -97,21 +95,21 @@ int elkvm_initialize_stack(struct kvm_vm *vm) {
   int err = kvm_vcpu_get_regs(vcpu);
   assert(err == 0 && "error getting vcpu");
 
-	/* get memory for the stack, this is expanded as needed */
+  /* get memory for the stack, this is expanded as needed */
   err = elkvm_expand_stack(vm);
   assert(err == 0 && "stack creation failed");
 
-	/* get a frame for the kernel (interrupt) stack */
+  /* get a frame for the kernel (interrupt) stack */
   /* this is only ONE page large */
-	vm->kernel_stack = elkvm_region_create(ELKVM_PAGESIZE);
-	vm->kernel_stack->grows_downward = 1;
+  vm->kernel_stack = elkvm_region_create(ELKVM_PAGESIZE);
+  vm->kernel_stack->grows_downward = 1;
 
-	/* create a mapping for the kernel (interrupt) stack */
-	vm->kernel_stack->guest_virtual = elkvm_pager_map_kernel_page(&vm->pager,
-			vm->kernel_stack->host_base_p, 1, 0);
-	if(vm->kernel_stack->guest_virtual == 0) {
-		return -ENOMEM;
-	}
+  /* create a mapping for the kernel (interrupt) stack */
+  vm->kernel_stack->guest_virtual = elkvm_pager_map_kernel_page(&vm->pager,
+      vm->kernel_stack->host_base_p, 1, 0);
+  if(vm->kernel_stack->guest_virtual == 0) {
+    return -ENOMEM;
+  }
 
   /* as stack grows downward we save it's virtual address at the page afterwards */
   vm->kernel_stack->guest_virtual += ELKVM_PAGESIZE;
