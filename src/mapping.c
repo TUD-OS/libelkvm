@@ -4,10 +4,6 @@
 
 struct region_mapping *elkvm_mapping_alloc() {
   struct region_mapping *mapping = malloc(sizeof(struct region_mapping));
-  if(mapping == NULL) {
-    return NULL;
-  }
-
   return mapping;
 }
 

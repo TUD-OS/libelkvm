@@ -523,22 +523,23 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     return -ENOSYS;
   }
 
-  uint64_t addr_p = 0;
+  guestptr_t addr_p = 0;
   void *addr = NULL;
   uint64_t length = 0;
   uint64_t prot = 0;
   uint64_t flags = 0;
   uint64_t fd = 0;
   uint64_t offset = 0;
-  elkvm_syscall6(vm->vcpus->vcpu, &addr_p, &length, &prot, &flags,
-      &fd, &offset);
+
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  elkvm_syscall6(vcpu, &addr_p, &length, &prot, &flags, &fd, &offset);
 
   if(addr_p != 0x0) {
     addr = elkvm_pager_get_host_p(&vm->pager, addr_p);
   }
 
   struct region_mapping *mapping = elkvm_mapping_alloc();
-  assert(mapping != NULL);
+  assert(mapping != NULL && "could not allocate mapping");
 
   std::shared_ptr<Elkvm::Region> region = Elkvm::rm.allocate_region(length);
 
