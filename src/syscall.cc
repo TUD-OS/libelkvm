@@ -538,27 +538,24 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     addr = elkvm_pager_get_host_p(&vm->pager, addr_p);
   }
 
+  /* obtain a region_mapping and fill this with a proposal
+   * on how to do the mapping */
   struct region_mapping *mapping = elkvm_mapping_alloc();
   assert(mapping != NULL && "could not allocate mapping");
 
-  std::shared_ptr<Elkvm::Region> region = Elkvm::rm.allocate_region(length);
-
-  mapping->host_p = region->base_address();
+  mapping->host_p = NULL;
   mapping->length = length;
   mapping->mapped_pages = pages_from_size(length);
   mapping->guest_virt = reinterpret_cast<guestptr_t>(addr);
-  region->set_guest_addr(mapping->guest_virt);
-
-  if(addr && (flags & MAP_FIXED)) {
-    void *h = elkvm_pager_get_host_p(&vm->pager, mapping->guest_virt);
-    if(h) {
-      printf("MAP_FIXED: %lu\n", flags & MAP_FIXED);
-      printf("existing mapping from guest 0x%lx to host %p found\n",
-        mapping->guest_virt, h);
-      return -EINVAL;
-    }
+  mapping->opts = 0;
+  if(prot & PROT_WRITE) {
+    mapping->opts |= PT_OPT_WRITE;
+  }
+  if(prot & PROT_EXEC) {
+    mapping->opts |= PT_OPT_EXEC;
   }
 
+  /* call the monitor for corrections etc. */
   long result = vm->syscall_handlers->mmap((void *)addr_p, length, prot,
       flags, fd, offset, mapping);
   if(vm->debug) {
@@ -571,27 +568,45 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     printf("\n");
 
     printf("RESULT: %li\n", result);
-    if(result >= 0) {
-      print(std::cout, *region);
-      printf("MAPPING: %p host_p: %p guest_virt: 0x%lx length %zd (0x%lx) mapped pages %i (%i)\n",
-          mapping, mapping->host_p, mapping->guest_virt, mapping->length,
-          mapping->length, mapping->mapped_pages, pages_from_size(length));
-    }
     printf("=================================\n");
   }
   if(result < 0) {
     return -errno;
   }
 
-  ptopt_t opts = 0;
-  if(prot & PROT_WRITE) {
-    opts |= PT_OPT_WRITE;
+  /* if the monitor gave its permission, allocate a region with the size
+   * determined by the monitor */
+  std::shared_ptr<Elkvm::Region> region = Elkvm::rm.allocate_region(mapping->length);
+
+  mapping->host_p = region->base_address();
+  if(mapping->guest_virt == 0x0) {
+    mapping->guest_virt = reinterpret_cast<guestptr_t>(mapping->host_p);
   }
-  if(prot & PROT_EXEC) {
-    opts |= PT_OPT_EXEC;
+  region->set_guest_addr(mapping->guest_virt);
+
+  if(vm->debug) {
+    print(std::cout, region);
+    printf("MAPPING: %p host_p: %p guest_virt: 0x%lx length %zd (0x%lx) mapped pages %i (%i)\n",
+        mapping, mapping->host_p, mapping->guest_virt, mapping->length,
+        mapping->length, mapping->mapped_pages, pages_from_size(length));
   }
+
+
+  if(addr && (flags & MAP_FIXED)) {
+    /* for fixed mappings we need to determine if we need to split
+     * existing mappings */
+    void *h = elkvm_pager_get_host_p(&vm->pager, mapping->guest_virt);
+    if(h) {
+      printf("MAP_FIXED: %lu\n", flags & MAP_FIXED);
+      printf("existing mapping from guest 0x%lx to host %p found\n",
+        mapping->guest_virt, h);
+      return -EINVAL;
+    }
+  }
+
+  /* add page table entries according to the options specified by the monitor */
   int err = elkvm_pager_map_region(&vm->pager, mapping->host_p, mapping->guest_virt,
-      mapping->mapped_pages, opts);
+      mapping->mapped_pages, mapping->opts);
   assert(err == 0);
   region->set_guest_addr(mapping->guest_virt);
 
