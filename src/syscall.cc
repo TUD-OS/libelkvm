@@ -518,46 +518,23 @@ long elkvm_do_lseek(struct kvm_vm *vm) {
 }
 
 long elkvm_do_mmap(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->mmap == NULL) {
-    printf("MMAP handler not found\n");
-    return -ENOSYS;
-  }
-
-  guestptr_t addr_p = 0;
-  void *addr = NULL;
-  uint64_t length = 0;
-  uint64_t prot = 0;
-  uint64_t flags = 0;
-  uint64_t fd = 0;
-  uint64_t offset = 0;
-
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
-  elkvm_syscall6(vcpu, &addr_p, &length, &prot, &flags, &fd, &offset);
-
-  if(addr_p != 0x0) {
-    addr = elkvm_pager_get_host_p(&vm->pager, addr_p);
-  }
-
   /* obtain a region_mapping and fill this with a proposal
    * on how to do the mapping */
   struct region_mapping *mapping = elkvm_mapping_alloc();
   assert(mapping != NULL && "could not allocate mapping");
 
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  elkvm_syscall6(vcpu, &mapping->guest_virt, &mapping->length, &mapping->prot,
+      &mapping->flags, &mapping->fd, &mapping->offset);
+
   mapping->host_p = NULL;
-  mapping->length = length;
   mapping->mapped_pages = pages_from_size(length);
-  mapping->guest_virt = reinterpret_cast<guestptr_t>(addr);
-  mapping->opts = 0;
-  if(prot & PROT_WRITE) {
-    mapping->opts |= PT_OPT_WRITE;
-  }
-  if(prot & PROT_EXEC) {
-    mapping->opts |= PT_OPT_EXEC;
+
+  /* if a handler is specified, call the monitor for corrections etc. */
+  if(vm->syscall_handlers->mmap_before != NULL) {
+    long result = vm->syscall_handlers->mmap_before(mapping);
   }
 
-  /* call the monitor for corrections etc. */
-  long result = vm->syscall_handlers->mmap((void *)addr_p, length, prot,
-      flags, fd, offset, mapping);
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
     printf("MMAP addr_p %p length %lu prot %lu flags %lu",
@@ -578,6 +555,44 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
    * determined by the monitor */
   std::shared_ptr<Elkvm::Region> region = Elkvm::rm.allocate_region(mapping->length);
 
+
+  /* now do the standard actions not handled by the monitor
+   * i.e. copy data for file-based mappings, split existing mappings for
+   * MAP_FIXED if necessary etc. */
+  if(mapping->guest_virt != 0x0) {
+    mapping->host_p = elkvm_pager_get_host_p(&vm->pager, mapping->guest_virt);
+    if(mapping->host_p != NULL) {
+      /* this mapping needs to be split! */
+    }
+  }
+
+  if(!(mapping->flags & MAP_ANONYMOUS)) {
+    off_t pos = lseek(mapping->fd, 0, SEEK_CUR);
+    assert(pos >= 0 && "could not get current file position");
+
+    int err = lseek(mapping->fd, mapping->offset, SEEK_SET);
+    assert(err >= 0 && "seek set in pass_mmap failed");
+
+    char *buf = (char *)mapping->host_p;
+    ssize_t bytes = 0;
+    size_t total = 0;
+    errno = 0;
+    while((total <= length)
+        && (bytes = read(mapping->fd, buf, mapping->length)) > 0) {
+      buf += bytes;
+      total += bytes;
+    }
+
+    ssize_t rem = length - total;
+    if(rem > 0) {
+//      printf("read %zd bytes of %zd bytes\n", total, length);
+//      printf("\nzeroing out %zd bytes at %p\n", rem, buf);
+      memset(buf, 0, rem);
+    }
+    err = lseek(mapping->fd, pos, SEEK_SET);
+    assert(err >= 0 && "could not restore file position");
+  }
+
   mapping->host_p = region->base_address();
   if(mapping->guest_virt == 0x0) {
     mapping->guest_virt = reinterpret_cast<guestptr_t>(mapping->host_p);
@@ -592,16 +607,9 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   }
 
 
-  if(addr && (flags & MAP_FIXED)) {
-    /* for fixed mappings we need to determine if we need to split
-     * existing mappings */
-    void *h = elkvm_pager_get_host_p(&vm->pager, mapping->guest_virt);
-    if(h) {
-      printf("MAP_FIXED: %lu\n", flags & MAP_FIXED);
-      printf("existing mapping from guest 0x%lx to host %p found\n",
-        mapping->guest_virt, h);
-      return -EINVAL;
-    }
+  /* call the monitor again, so it can do what has been left */
+  if(vm->syscall_handlers->mmap_after != NULL) {
+    long result = vm->syscall_handlers->mmap_after(mapping);
   }
 
   /* add page table entries according to the options specified by the monitor */
