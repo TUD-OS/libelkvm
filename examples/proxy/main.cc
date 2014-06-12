@@ -55,39 +55,6 @@ long pass_lseek(int fd, off_t offset, int whence) {
   return lseek(fd, offset, whence);
 }
 
-long pass_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset,
-    struct region_mapping *mapping) {
-  if(!(flags & MAP_ANONYMOUS)) {
-    off_t pos = lseek(fd, 0, SEEK_CUR);
-    assert(pos >= 0 && "could not get current file position");
-    int err = lseek(fd, offset, SEEK_SET);
-    assert(err >= 0 && "seek set in pass_mmap failed");
-    char *buf = (char *)mapping->host_p;
-    printf("writing to %p\n", buf);
-    ssize_t bytes = 0;
-    size_t total = 0;
-    errno = 0;
-    while((total <= length) && (bytes = read(fd, buf, length)) > 0) {
-      buf += bytes;
-      total += bytes;
-    }
-
-    ssize_t rem = length - total;
-    if(rem > 0) {
-      printf("read %zd bytes of %zd bytes\n", total, length);
-      printf("\nzeroing out %zd bytes at %p\n", rem, buf);
-      memset(buf, 0, rem);
-    }
-    err = lseek(fd, pos, SEEK_SET);
-    assert(err >= 0 && "could not restore file position");
-  }
-
-  if(mapping->guest_virt == 0x0) {
-    mapping->guest_virt = (uint64_t)mapping->host_p;
-  }
-  return 0;
-}
-
 long allow_sigaction(int signum __attribute__((unused)),
     const struct sigaction *act __attribute__((unused)),
     struct sigaction *oldact __attribute__((unused))) {
@@ -235,7 +202,8 @@ struct elkvm_handlers example_handlers = {
 	.lstat = pass_lstat,
 	.poll = NULL,
 	.lseek = pass_lseek,
-	.mmap = pass_mmap,
+	.mmap_before = NULL,
+	.mmap_after = NULL,
   .mprotect = NULL,
   .munmap = pass_munmap,
   /* ... */
