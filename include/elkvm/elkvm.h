@@ -39,6 +39,7 @@ struct region_mapping {
   guestptr_t guest_virt;
   size_t length;
   unsigned mapped_pages;
+  ptopt_t opts;
 };
 
 struct kvm_vm {
