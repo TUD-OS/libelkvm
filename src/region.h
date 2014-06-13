@@ -34,6 +34,7 @@ namespace Elkvm {
       void set_used() { free = false; }
       size_t size() const { return rsize; }
       std::shared_ptr<Region> slice_begin(const size_t size);
+      void slice_center(off_t off, size_t len);
   };
 
   std::ostream &print(std::ostream &, const Region &);
