@@ -23,9 +23,7 @@ namespace Elkvm {
       r = new_region;
     }
 
-    assert(r->is_free());
-    r->set_used();
-    allocated_regions.push_back(r);
+    use_region(r);
 
     assert(size <= r->size());
     return r;
@@ -133,6 +131,12 @@ namespace Elkvm {
       }
     }
     return false;
+  }
+
+  void RegionManager::use_region(std::shared_ptr<Region> r) {
+    assert(r->is_free());
+    r->set_used();
+    allocated_regions.push_back(r);
   }
 
   std::array<std::vector<Region>, 16>::size_type
