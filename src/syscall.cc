@@ -572,7 +572,24 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   if(mapping->guest_virt != 0x0) {
     void *host_p = elkvm_pager_get_host_p(&vm->pager, mapping->guest_virt);
     if(host_p != NULL) {
+      assert(flags & MAP_FIXED);
       /* this mapping needs to be split! */
+
+      //TODO get the region for this address
+      std::shared_ptr<Elkvm::Region> r = Elkvm::rm.find_region(host_p);
+      //split the region
+      r->slice_center(
+          reinterpret_cast<char *>(r->base_address()) - reinterpret_cast<char *>(host_p),
+          mapping->length);
+      //get a suitable free region
+      region = Elkvm::rm.allocate_region(mapping->length);
+      //unmap the old stuff
+      for(guestptr_t addr = mapping->guest_virt;
+          addr < mapping->guest_virt + mapping->length;
+          addr += ELKVM_PAGESIZE) {
+        int err = elkvm_pager_destroy_mapping(&vm->pager, addr);
+        assert(err == 0);
+      }
     }
   } else {
     mapping->guest_virt = reinterpret_cast<guestptr_t>(mapping->host_p);
