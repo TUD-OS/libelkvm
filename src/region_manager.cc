@@ -52,7 +52,19 @@ namespace Elkvm {
     auto r = std::find_if(allocated_regions.begin(), allocated_regions.end(),
          [host_p](std::shared_ptr<Region> a)
          { return a->contains_address(host_p); });
-    assert(r != allocated_regions.end() && "no region found for given host pointer");
+    if(r == allocated_regions.end()) {
+      return nullptr;
+    }
+    return *r;
+  }
+
+  std::shared_ptr<Region> RegionManager::find_region(guestptr_t addr) {
+    auto r = std::find_if(allocated_regions.begin(), allocated_regions.end(),
+         [addr](std::shared_ptr<Region> a)
+         { return a->contains_address(addr); });
+    if(r == allocated_regions.end()) {
+      return nullptr;
+    }
     return *r;
   }
 
