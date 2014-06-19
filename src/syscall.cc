@@ -574,7 +574,15 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     if(host_p != NULL) {
       assert(flags & MAP_FIXED);
       /* this mapping needs to be split! */
-      //TODO split the old mapping object as well!
+
+      /* get the old mapping and split that as well */
+      struct region_mapping *old_mapping = elkvm_mapping_find(vm, host_p);
+      assert(old_mapping != NULL);
+      old_mapping->length = reinterpret_cast<char *>(host_p)
+        - reinterpret_cast<char *>(old_mapping->host_p);
+      old_mapping->mapped_pages = pages_from_size(old_mapping->length);
+
+      /* TODO if we slice the center, we need another new mapping */
 
       /* split the region object that this mapping belongs to */
       std::shared_ptr<Elkvm::Region> r = Elkvm::rm.find_region(host_p);
