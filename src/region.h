@@ -25,6 +25,7 @@ namespace Elkvm {
       bool contains_address(const void *addr) const;
       bool contains_address(guestptr_t addr) const;
       off64_t offset_in_region(guestptr_t addr) const;
+      size_t space_after_address(const void * const) const;
       guestptr_t guest_address() const { return addr; }
       bool is_free() const { return free; }
       void *last_valid_address() const;

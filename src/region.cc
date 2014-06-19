@@ -61,6 +61,12 @@ namespace Elkvm {
     return guest_addr - addr;
   }
 
+  size_t Region::space_after_address(const void * const p) const {
+    assert(contains_address(p));
+    return reinterpret_cast<char *>(host_p)
+      + rsize - reinterpret_cast<const char * const>(p);
+  }
+
   void *Region::last_valid_address() const {
     return reinterpret_cast<char *>(host_p) + rsize;
   }
