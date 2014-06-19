@@ -23,9 +23,6 @@ namespace Elkvm {
       int brk(guestptr_t newbrk);
       guestptr_t get_brk() const { return curbrk; };
       bool address_in_heap_region(guestptr_t guest_addr) const {
-        std::cout << "AIHR: " << std::hex << "0x" << guest_addr
-          << " LV: " << heap_regions.back()->last_valid_guest_address() << std::endl;
-        print(std::cout, *heap_regions.back());
         return guest_addr <= heap_regions.back()->last_valid_guest_address();
       }
       guestptr_t last_heap_address() const {
