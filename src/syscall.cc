@@ -316,7 +316,7 @@ long elkvm_do_write(struct kvm_vm *vm) {
 
   char *current_buf = reinterpret_cast<char *>(buf);
   size_t remaining_count = count;
-  while(!r->contains_address(current_buf + remaining_count)) {
+  while(!r->contains_address(current_buf + remaining_count - 1)) {
     long result = vm->syscall_handlers->write(static_cast<int>(fd),
         current_buf, remaining_count);
     if(vm->debug) {
@@ -330,7 +330,7 @@ long elkvm_do_write(struct kvm_vm *vm) {
     remaining_count -= result;
     r = Elkvm::rm.find_region(current_buf);
   }
-  assert(r->contains_address(reinterpret_cast<char *>(buf) + count));
+  assert(r->contains_address(reinterpret_cast<char *>(buf) + count - 1));
 
   long result = vm->syscall_handlers->write(static_cast<int>(fd),
       current_buf, remaining_count);
