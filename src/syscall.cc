@@ -316,9 +316,13 @@ long elkvm_do_write(struct kvm_vm *vm) {
 
   char *current_buf = reinterpret_cast<char *>(buf);
   size_t remaining_count = count;
+  ssize_t total = 0;
   while(!r->contains_address(current_buf + remaining_count - 1)) {
     long result = vm->syscall_handlers->write(static_cast<int>(fd),
         current_buf, r->space_after_address(current_buf));
+    assert(result >= 0);
+    total += result;
+    /* TODO error handling! */
     if(vm->debug) {
       printf("\n============ LIBELKVM ===========\n");
       printf("SPLIT WRITE to fd: %i with size 0x%lx buf 0x%lx (%p)\n",
@@ -336,6 +340,9 @@ long elkvm_do_write(struct kvm_vm *vm) {
 
   long result = vm->syscall_handlers->write(static_cast<int>(fd),
       current_buf, remaining_count);
+  assert(result >= 0);
+  total += result;
+  /* TODO error handling! */
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
     printf("WRITE to fd: %i with size 0x%lx buf 0x%lx (%p)\n",
@@ -344,7 +351,7 @@ long elkvm_do_write(struct kvm_vm *vm) {
     printf("=================================\n");
   }
 
-  return result;
+  return total;
 }
 
 long elkvm_do_open(struct kvm_vm *vm) {
