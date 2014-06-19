@@ -310,21 +310,36 @@ long elkvm_do_write(struct kvm_vm *vm) {
 
   assert(buf_p != 0x0);
   buf = elkvm_pager_get_host_p(&vm->pager, buf_p);
+
+  std::shared_ptr<Elkvm::Region> r = Elkvm::rm.find_region(buf_p);
+  assert(r != nullptr);
+
+  char *current_buf = reinterpret_cast<char *>(buf);
+  size_t remaining_count = count;
+  while(!r->contains_address(current_buf + remaining_count)) {
+    long result = vm->syscall_handlers->write(static_cast<int>(fd),
+        current_buf, remaining_count);
+    if(vm->debug) {
+      printf("\n============ LIBELKVM ===========\n");
+      printf("WRITE to fd: %i with size 0x%lx buf 0x%lx (%p)\n",
+          (int)fd, count, buf_p, buf);
+      printf("RESULT %li\n", result);
+      printf("=================================\n");
+    }
+    current_buf += result;
+    remaining_count -= result;
+    r = Elkvm::rm.find_region(current_buf);
+  }
+  assert(r->contains_address(buf_p + count));
+
+  long result = vm->syscall_handlers->write(static_cast<int>(fd),
+      current_buf, remaining_count);
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
     printf("WRITE to fd: %i with size 0x%lx buf 0x%lx (%p)\n",
         (int)fd, count, buf_p, buf);
-    //printf("RESULT %li\n", result);
+    printf("RESULT %li\n", result);
     printf("=================================\n");
-  }
-
-  std::shared_ptr<Elkvm::Region> r = Elkvm::rm.find_region(buf_p);
-  assert(r != nullptr);
-  assert(r->contains_address(buf_p + count));
-
-  long result = vm->syscall_handlers->write((int)fd, buf, (size_t)count);
-  if(vm->debug) {
-    printf("RESULT: %li\n", result);
   }
 
   return result;
