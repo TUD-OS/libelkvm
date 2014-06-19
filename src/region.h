@@ -25,6 +25,7 @@ namespace Elkvm {
       bool contains_address(const void *addr) const;
       bool contains_address(guestptr_t addr) const;
       off64_t offset_in_region(guestptr_t addr) const;
+      size_t space_after_address(const void * const) const;
       guestptr_t guest_address() const { return addr; }
       bool is_free() const { return free; }
       void *last_valid_address() const;
@@ -34,6 +35,7 @@ namespace Elkvm {
       void set_used() { free = false; }
       size_t size() const { return rsize; }
       std::shared_ptr<Region> slice_begin(const size_t size);
+      void slice_center(off_t off, size_t len);
   };
 
   std::ostream &print(std::ostream &, const Region &);
@@ -59,6 +61,7 @@ namespace Elkvm {
       void free_region(void *host_p, size_t sz);
       bool host_address_mapped(const void * const) const;
       void set_pager(struct kvm_pager *const p) { pager = p; }
+      void use_region(std::shared_ptr<Region> r);
   };
 
   std::array<std::vector<Region>, 16>::size_type get_freelist_idx(const size_t size);

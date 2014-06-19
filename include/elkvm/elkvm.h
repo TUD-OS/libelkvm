@@ -39,6 +39,10 @@ struct region_mapping {
   guestptr_t guest_virt;
   size_t length;
   unsigned mapped_pages;
+  int prot;
+  int flags;
+  int fd;
+  off_t offset;
 };
 
 struct kvm_vm {
@@ -75,8 +79,9 @@ struct elkvm_handlers {
 	long (*lstat) (const char *path, struct stat *buf);
 	long (*poll) (struct pollfd *fds, nfds_t nfds, int timeout);
 	long (*lseek) (int fd, off_t offset, int whence);
-	long (*mmap) (void *addr, size_t length, int prot, int flags, int fd,
-      off_t offset, struct region_mapping *);
+  /* TODO mmap should be well documented! */
+  long (*mmap_before) (struct region_mapping *);
+  long (*mmap_after) (struct region_mapping *);
 	long (*mprotect) (void *addr, size_t len, int prot);
 	long (*munmap) (struct region_mapping *mapping);
   /* ... */

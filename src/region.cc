@@ -61,6 +61,12 @@ namespace Elkvm {
     return guest_addr - addr;
   }
 
+  size_t Region::space_after_address(const void * const p) const {
+    assert(contains_address(p));
+    return reinterpret_cast<char *>(host_p)
+      + rsize - reinterpret_cast<const char * const>(p);
+  }
+
   void *Region::last_valid_address() const {
     return reinterpret_cast<char *>(host_p) + rsize;
   }
@@ -80,6 +86,23 @@ namespace Elkvm {
     assert(rsize > 0x0);
     assert(r->size() > 0x0);
     return r;
+  }
+
+  void Region::slice_center(off_t off, size_t len) {
+    assert(contains_address(reinterpret_cast<char *>(host_p) + off + len));
+    assert(0 < off <= rsize);
+
+    std::shared_ptr<Region> r = std::make_shared<Region>(
+        reinterpret_cast<char *>(host_p) + off + len,
+        rsize - off - len);
+    r->set_guest_addr(addr + off);
+
+    rsize = off;
+
+    Elkvm::rm.use_region(r);
+    Elkvm::rm.add_free_region(std::make_shared<Region>(
+          reinterpret_cast<char *>(host_p) + off, len));
+    //TODO maybe return ptr to free region?
   }
 
 //namespace Elkvm
