@@ -661,7 +661,6 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   int err = elkvm_pager_map_region(&vm->pager, mapping->host_p, mapping->guest_virt,
       mapping->mapped_pages, opts);
   assert(err == 0);
-  region->set_guest_addr(mapping->guest_virt);
 
   list_push(vm->mappings, mapping);
   return (long)mapping->guest_virt;
