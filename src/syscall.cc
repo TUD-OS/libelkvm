@@ -311,7 +311,7 @@ long elkvm_do_write(struct kvm_vm *vm) {
   assert(buf_p != 0x0);
   buf = elkvm_pager_get_host_p(&vm->pager, buf_p);
 
-  std::shared_ptr<Elkvm::Region> r = Elkvm::rm.find_region(buf_p);
+  std::shared_ptr<Elkvm::Region> r = Elkvm::rm.find_region(buf);
   assert(r != nullptr);
 
   char *current_buf = reinterpret_cast<char *>(buf);
@@ -330,7 +330,7 @@ long elkvm_do_write(struct kvm_vm *vm) {
     remaining_count -= result;
     r = Elkvm::rm.find_region(current_buf);
   }
-  assert(r->contains_address(buf_p + count));
+  assert(r->contains_address(reinterpret_cast<char *>(buf) + count));
 
   long result = vm->syscall_handlers->write(static_cast<int>(fd),
       current_buf, remaining_count);
