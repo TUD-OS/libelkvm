@@ -299,10 +299,10 @@ long elkvm_do_write(struct kvm_vm *vm) {
     printf("WRITE handler not found\n");
     return -ENOSYS;
   }
-  struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
 
   uint64_t fd = 0x0;
-  uint64_t buf_p = 0x0;
+  guestptr_t buf_p = 0x0;
   void *buf;
   uint64_t count = 0x0;
 
@@ -311,10 +311,16 @@ long elkvm_do_write(struct kvm_vm *vm) {
   assert(buf_p != 0x0);
   buf = elkvm_pager_get_host_p(&vm->pager, buf_p);
   if(vm->debug) {
-    printf("WRITE to fd: %i from %p (guest: 0x%lx) with %zd bytes\n",
-      (int)fd, buf, buf_p, (size_t)count);
-    printf("\tDATA: %.*s\n", (int)count, (char *)buf);
+    printf("\n============ LIBELKVM ===========\n");
+    printf("WRITE to fd: %i with size 0x%lx buf 0x%lx (%p)\n",
+        (int)fd, count, buf_p, buf);
+    //printf("RESULT %li\n", result);
+    printf("=================================\n");
   }
+
+  std::shared_ptr<Elkvm::Region> r = Elkvm::rm.find_region(buf_p);
+  assert(r != nullptr);
+  assert(r->contains_address(buf_p + count));
 
   long result = vm->syscall_handlers->write((int)fd, buf, (size_t)count);
   if(vm->debug) {
