@@ -620,7 +620,7 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     size_t total = 0;
     errno = 0;
     while((total <= mapping->length)
-        && (bytes = read(mapping->fd, buf, mapping->length)) > 0) {
+        && (bytes = read(mapping->fd, buf, mapping->length - total)) > 0) {
       buf += bytes;
       total += bytes;
     }
