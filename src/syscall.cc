@@ -586,8 +586,9 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
 
       /* split the region object that this mapping belongs to */
       std::shared_ptr<Elkvm::Region> r = Elkvm::rm.find_region(host_p);
+      assert(host_p >= r->base_address());
       r->slice_center(
-          reinterpret_cast<char *>(r->base_address()) - reinterpret_cast<char *>(host_p),
+          reinterpret_cast<char *>(host_p) - reinterpret_cast<char *>(r->base_address()),
           mapping->length);
       region = Elkvm::rm.allocate_region(mapping->length);
 
