@@ -333,11 +333,15 @@ out_close:
 
     uint64_t text_end = text_header.p_offset + text_header.p_filesz;
 
-    int off = lseek(fd, text_end - padsize - 1, SEEK_SET);
-    assert(off >= 0 && "seek on binary failed");
+    if(text_end > padsize) {
+      int off = lseek(fd, text_end - padsize - 1, SEEK_SET);
+      assert(off >= 0 && "seek on binary failed");
 
-    size_t bytes = read(fd, region->base_address(), padsize);
-    assert(bytes == padsize && "short read on file");
+      size_t bytes = read(fd, region->base_address(), padsize);
+      assert(bytes == padsize && "short read on file");
+    } else {
+      memset(region->base_address(), 0, padsize);
+    }
   }
 
   void ElfBinary::pad_text_end(void *host_p, size_t padsize) {
