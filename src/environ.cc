@@ -128,6 +128,21 @@ namespace Elkvm {
   }
 
   int Environment::copy_and_push_str_arr_p(off64_t offset, char **str) const {
+    struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+
+    char *target = reinterpret_cast<char *>(region->base_address()) + offset;
+    guestptr_t guest_virtual = region->guest_address() + offset;
+    off64_t bytes = str.length() + 1;
+
+    strcpy(target, str.c_str());
+
+    int err = elkvm_pushq(vm, vcpu, guest_virtual);
+    if(err) {
+      return err;
+    }
+    return bytes;
+  }
+
     if(str == NULL) {
       return 0;
     }
