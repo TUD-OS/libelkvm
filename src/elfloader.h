@@ -56,7 +56,8 @@ class ElfBinary {
     int load_binary(std::string pathname);
     guestptr_t get_entry_point();
     const struct Elf_auxv &get_auxv();
-    bool is_dynamically_linked() { return !statically_linked; }
+    bool is_dynamically_linked() const { return !statically_linked; }
+    std::string get_loader() const { return loader; }
 };
 
 //namespace Elkvm
