@@ -209,6 +209,12 @@ int elkvm_fill_env(struct elkvm_opts *opts, struct kvm_vm *vm) {
   bytes_total = bytes_total + bytes;
   assert(bytes > 0);
 
+  /* if the binary is dynamically linked we need to ajdust some stuff */
+  if(Elkvm::binary.is_dynamically_linked()) {
+    Elkvm::env.push_str_copy(vm, bytes_total, Elkvm::binary.get_loader());
+    opts->argc++;
+  }
+
   /* at last push argc on the stack */
   Elkvm::stack.pushq(opts->argc);
 
