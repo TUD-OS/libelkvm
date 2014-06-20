@@ -56,7 +56,7 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
 		return err;
 	}
 
-  err = elkvm_load_binary(binary);
+  err = elkvm_load_binary(binary, &vm->pager);
   if(err) {
     return err;
   }

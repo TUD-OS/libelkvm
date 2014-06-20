@@ -5,7 +5,7 @@ extern "C" {
 /*
  * Loads an ELF binary into the VM's system_chunk
 */
-int elkvm_load_binary(const char *b);
+int elkvm_load_binary(const char *b, struct kvm_pager *pager);
 
 guestptr_t elkvm_loader_get_entry_point();
 

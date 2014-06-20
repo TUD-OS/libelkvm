@@ -53,6 +53,7 @@ class ElfBinary {
 
   public:
     ElfBinary() { auxv.valid = false; }
+    void init(struct kvm_pager * p) { pager = p; }
     int load_binary(std::string pathname);
     guestptr_t get_entry_point();
 };

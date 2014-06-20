@@ -396,11 +396,21 @@ out_close:
     return binary.load_binary(loader);
   }
 
+  const struct Elf_auxv &ElfBinary::get_auxv() {
+    return auxv;
+  }
+
 //namespace Elkvm
 }
 
 
-int elkvm_load_binary(const char *b) {
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int elkvm_load_binary(const char *b, struct kvm_pager *pager) {
+  assert(pager != nullptr);
+  Elkvm::binary.init(pager);
   //moved to ElfBinary constructor
   return Elkvm::binary.load_binary(b);
 }
@@ -408,4 +418,8 @@ int elkvm_load_binary(const char *b) {
 guestptr_t elkvm_loader_get_entry_point() {
   return Elkvm::binary.get_entry_point();
 }
+
+#ifdef __cplusplus
+}
+#endif
 
