@@ -122,6 +122,9 @@ namespace Elkvm {
       stack.pushq(auxv->a_type);
     }
 
+    elkvm_pushq(vm, vcpu, 0x0);
+    elkvm_pushq(vm, vcpu, AT_NULL);
+
     return offset;
   }
 
