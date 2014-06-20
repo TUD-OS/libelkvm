@@ -99,13 +99,12 @@ namespace Elkvm {
         case AT_HWCAP:
         case AT_CLKTCK:
         case AT_SECURE:
-          stack.pushq(auxv->a_un.a_val);
-          break;
         case AT_BASE:
         /*
          * AT_BASE points to the base address of the dynamic linker
-         * this may be nonsense for statically linked binaries
          */
+          stack.pushq(auxv->a_un.a_val);
+          break;
         case AT_PLATFORM:
         case 25:
         case 31:
