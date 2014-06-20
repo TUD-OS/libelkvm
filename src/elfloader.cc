@@ -262,12 +262,10 @@ out_close:
     if(padsize) {
       if(phdr.p_flags & PF_X) {
         /* executable segment should be text */
-        printf("PADDING text with %zd bytes\n", padsize);
         pad_text_begin(region, padsize);
         return;
       } else if(phdr.p_flags & PF_W) {
         /* writeable segment should be data */
-        printf("PADDING data with %zd bytes\n", padsize);
         pad_data_begin(region, padsize);
         return;
       }
