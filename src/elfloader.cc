@@ -53,8 +53,9 @@ namespace Elkvm {
       goto out_close;
     }
 
-    err = parse_program();
-    if(!statically_linked) {
+    if(statically_linked) {
+      err = parse_program();
+    } else {
       err = load_dynamic();
       /* we need to mark the binary as dynamic again, because this is overwritten
        * by the dynamic loader, which is always statically linked */
