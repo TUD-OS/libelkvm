@@ -54,9 +54,7 @@ namespace Elkvm {
     }
 
     err = parse_program();
-    if(statically_linked) {
-      err = set_entry_point();
-    } else {
+    if(!statically_linked) {
       err = load_dynamic();
     }
 

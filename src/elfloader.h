@@ -36,7 +36,6 @@ class ElfBinary {
 
     int check_elf();
     int parse_program();
-    int set_entry_point();
     void get_dynamic_loader(GElf_Phdr phdr);
     void load_phdr(GElf_Phdr phdr);
     int load_program_header(GElf_Phdr phdr, std::shared_ptr<Region> region);
