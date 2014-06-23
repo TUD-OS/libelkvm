@@ -28,24 +28,30 @@ namespace Elkvm {
           struct kvm_pager * pa);
       Mapping(std::shared_ptr<Region> r, guestptr_t guest_addr, size_t l, int pr, int f,
           int fdes, off_t off, struct kvm_pager * pa);
+
+      bool anonymous() const { return flags & MAP_ANONYMOUS; }
       bool contains_address(void *p);
-      struct region_mapping *c_mapping();
-      Mapping slice_center(off_t off, size_t len, int new_fd, off_t new_offset);
-      size_t get_length() const { return length; }
-      int get_fd() const { return fd; }
-      off_t get_offset() const { return offset; }
-      unsigned get_pages() const { return mapped_pages; }
-      void set_host_p(void *p) { host_p = p; }
+      bool executable() const { return flags & PROT_EXEC; }
+      bool writeable() const { return flags & PROT_WRITE; }
+
       void *base_address() const { return host_p; }
       guestptr_t guest_address() const { return addr; }
-      bool anonymous() const { return flags & MAP_ANONYMOUS; }
-      bool writeable() const { return flags & PROT_WRITE; }
-      bool executable() const { return flags & PROT_EXEC; }
-      void unmap_pages(unsigned pages) { mapped_pages -= pages; }
+      int get_fd() const { return fd; }
+      size_t get_length() const { return length; }
+      off_t get_offset() const { return offset; }
+      unsigned get_pages() const { return mapped_pages; }
+
       bool all_unmapped() { return mapped_pages == 0; }
-      int fill();
+
+      struct region_mapping *c_mapping();
       void sync_back(struct region_mapping *mapping);
+
+      Mapping slice_center(off_t off, size_t len, int new_fd, off_t new_offset);
+
+      int fill();
+
       int map_self();
+      void unmap_pages(unsigned pages) { mapped_pages -= pages; }
   };
 
   std::ostream &print(std::ostream &, const Mapping &);
