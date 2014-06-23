@@ -1,15 +1,18 @@
 #pragma once
 
 #include <iostream>
+#include <memory>
 
 #include <elkvm.h>
 
 #include <sys/mman.h>
 
 namespace Elkvm {
+  class Region;
 
   class Mapping {
     private:
+      struct kvm_pager * pager;
       void *host_p;
       guestptr_t addr;
       size_t length;
@@ -18,14 +21,19 @@ namespace Elkvm {
       int flags;
       int fd;
       off_t offset;
+      std::shared_ptr<Region> region;
+
+      int map_self();
+
     public:
-      Mapping(void *p, guestptr_t guest_addr, size_t l, int pr, int f, int fdes, off_t off)
-        : host_p(p), addr(guest_addr), length(l), prot(pr), flags(f), fd(fdes), offset(off)
-      { mapped_pages = pages_from_size(length); }
+      Mapping(guestptr_t guest_addr, size_t l, int pr, int f, int fdes, off_t off,
+          struct kvm_pager * pa);
+      Mapping(std::shared_ptr<Region> r, guestptr_t guest_addr, size_t l, int pr, int f,
+          int fdes, off_t off, struct kvm_pager * pa);
       bool contains_address(void *p)
         { return (host_p <= p) && (p < (reinterpret_cast<char *>(host_p) + length)); }
       struct region_mapping *c_mapping();
-      void slice_center();
+      Mapping slice_center(off_t off, size_t len, int new_fd, off_t new_offset);
       size_t get_length() const { return length; }
       int get_fd() const { return fd; }
       off_t get_offset() const { return offset; }
@@ -33,12 +41,14 @@ namespace Elkvm {
       void set_host_p(void *p) { host_p = p; }
       void *base_address() const { return host_p; }
       guestptr_t guest_address() const { return addr; }
-      void sync_guest_to_host_addr() { addr = reinterpret_cast<guestptr_t>(host_p); }
+      void sync_guest_to_host_addr();
       bool anonymous() const { return flags & MAP_ANONYMOUS; }
       bool writeable() const { return flags & PROT_WRITE; }
       bool executable() const { return flags & PROT_EXEC; }
       void unmap_pages(unsigned pages) { mapped_pages -= pages; }
       bool all_unmapped() { return mapped_pages == 0; }
+      int fill();
+      void sync_back(struct region_mapping *mapping);
   };
 
   std::ostream &print(std::ostream &, const Mapping &);
