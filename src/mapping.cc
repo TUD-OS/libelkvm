@@ -61,6 +61,10 @@ namespace Elkvm {
     return (host_p <= p) && (p < (reinterpret_cast<char *>(host_p) + length));
   }
 
+  bool Mapping::contains_address(guestptr_t a) {
+    return (addr <= a) && (a < (addr + length));
+  }
+
   Mapping Mapping::slice_center(off_t off, size_t len, int new_fd, off_t new_offset) {
     assert(contains_address(reinterpret_cast<char *>(host_p) + off + len));
     assert(0 <= off < length);
