@@ -17,6 +17,7 @@ namespace Elkvm {
 
     region = Elkvm::rm.allocate_region(length);
     region->set_guest_addr(addr);
+    assert(!region->is_free());
 
     host_p = region->base_address();
     if(addr == 0x0) {
@@ -24,7 +25,6 @@ namespace Elkvm {
     }
 
     mapped_pages = pages_from_size(length);
-    map_self();
   }
 
   Mapping::Mapping(std::shared_ptr<Region> r, guestptr_t guest_addr, size_t l, int pr, int f,
@@ -39,8 +39,8 @@ namespace Elkvm {
     pager(pa) {
       host_p = region->base_address();
       region->set_guest_addr(addr);
+      assert(!region->is_free());
       mapped_pages = pages_from_size(length);
-      map_self();
   }
 
   int Mapping::map_self() {
@@ -55,6 +55,10 @@ namespace Elkvm {
     /* add page table entries according to the options specified by the monitor */
     int err = elkvm_pager_map_region(pager, host_p, addr, mapped_pages, opts);
     return err;
+  }
+
+  bool Mapping::contains_address(void *p) {
+    return (host_p <= p) && (p < (reinterpret_cast<char *>(host_p) + length));
   }
 
   Mapping Mapping::slice_center(off_t off, size_t len, int new_fd, off_t new_offset) {
@@ -76,7 +80,6 @@ namespace Elkvm {
     if(!mid.anonymous()) {
       mid.fill();
     }
-
     if(length > off + len) {
       size_t rem = length - off - len;
       r = rm.find_region(reinterpret_cast<char *>(host_p) + off + len);
@@ -110,6 +113,7 @@ namespace Elkvm {
     errno = 0;
     while((total <= length)
         && (bytes = read(fd, buf, length - total)) > 0) {
+      assert(bytes >= 0);
       buf += bytes;
       total += bytes;
     }
@@ -122,6 +126,7 @@ namespace Elkvm {
     }
     err = lseek(fd, pos, SEEK_SET);
     assert(err >= 0 && "could not restore file position");
+    return err;
   }
 
   void Mapping::sync_back(struct region_mapping *mapping) {
@@ -141,8 +146,8 @@ namespace Elkvm {
 
   std::ostream &print(std::ostream &os, const Mapping &mapping) {
     os << "MAPPING: 0x" << std::hex << mapping.guest_address()
-      << "(" << mapping.base_address() << ") length: 0x" << mapping.get_length()
-      << "pages mapped: 0x" << mapping.get_pages() << std::endl;
+      << " (" << mapping.base_address() << ") length: 0x" << mapping.get_length()
+      << " pages mapped: 0x" << mapping.get_pages() << std::endl;
     return os;
   }
 

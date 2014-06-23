@@ -556,6 +556,8 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
       mapping = Elkvm::rm.find_mapping(host_p);
       split = true;
     }
+  } else {
+    mapping.map_self();
   }
 
   /* if a handler is specified, call the monitor for corrections etc. */
@@ -584,13 +586,20 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     return -errno;
   }
 
+  long return_addr = mapping.guest_address();
   /* now do the standard actions not handled by the monitor
    * i.e. copy data for file-based mappings, split existing mappings for
    * MAP_FIXED if necessary etc. */
   if(split) {
-      /* this mapping needs to be split! */
-      off64_t map_off = addr - mapping.guest_address();
-      mapping.slice_center(map_off, length, fd, off);
+    /* this mapping needs to be split! */
+    off64_t map_off = addr - mapping.guest_address();
+    Elkvm::Mapping sliced = mapping.slice_center(map_off, length, fd, off);
+    return_addr = sliced.guest_address();
+    if(!sliced.anonymous()) {
+      sliced.fill();
+    }
+    sliced.map_self();
+    Elkvm::rm.add_mapping(sliced);
   } else {
     mapping.sync_guest_to_host_addr();
   }
@@ -603,14 +612,13 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     print(std::cout, mapping);
   }
 
-
   /* call the monitor again, so it can do what has been left */
   if(vm->syscall_handlers->mmap_after != NULL) {
     result = vm->syscall_handlers->mmap_after(mapping.c_mapping());
   }
 
   Elkvm::rm.add_mapping(mapping);
-  return (long)mapping.guest_address();
+  return return_addr;
 }
 
 long elkvm_do_mprotect(struct kvm_vm *vm) {
