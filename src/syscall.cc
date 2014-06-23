@@ -235,8 +235,9 @@ long elkvm_do_read(struct kvm_vm *vm) {
   void *bend = elkvm_pager_get_host_p(&vm->pager, bend_p);
   long result = 0;
 
-  struct region_mapping *mapping = elkvm_mapping_find(vm, buf);
-  if(mapping == NULL && !Elkvm::same_region(buf, bend)) {
+  //Elkvm::Mapping mapping = Elkvm::rm.find_mapping(buf);
+  //if(mapping == NULL && !Elkvm::same_region(buf, bend)) {
+  if(!Elkvm::same_region(buf, bend)) {
     assert(Elkvm::rm.host_address_mapped(bend));
     char *host_begin_mark = NULL;
     char *host_end_mark = buf;
@@ -533,38 +534,32 @@ long elkvm_do_lseek(struct kvm_vm *vm) {
 long elkvm_do_mmap(struct kvm_vm *vm) {
   /* obtain a region_mapping and fill this with a proposal
    * on how to do the mapping */
-  struct region_mapping *mapping = elkvm_mapping_alloc();
-  assert(mapping != NULL && "could not allocate mapping");
-
   struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  guestptr_t addr = 0x0;
+  uint64_t length = 0x0;
   uint64_t prot   = 0x0;
   uint64_t flags  = 0x0;
   uint64_t fd     = 0;
   uint64_t off    = 0;
 
-  elkvm_syscall6(vcpu, &mapping->guest_virt, &mapping->length,
-      &prot, &flags, &fd, &off);
+  elkvm_syscall6(vcpu, &addr, &length, &prot, &flags, &fd, &off);
 
-  mapping->host_p = NULL;
-  mapping->prot = prot;
-  mapping->flags = flags;
-  mapping->fd = fd;
-  mapping->offset = off;
-  mapping->mapped_pages = pages_from_size(mapping->length);
+  Elkvm::Mapping mapping(nullptr, addr, length, prot, flags, fd, off);
 
   /* if a handler is specified, call the monitor for corrections etc. */
   long result = 0;
   if(vm->syscall_handlers->mmap_before != NULL) {
-    result = vm->syscall_handlers->mmap_before(mapping);
+    result = vm->syscall_handlers->mmap_before(mapping.c_mapping());
+    /* TODO write changes back to mapping obj */
   }
 
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
-    printf("MMAP addr 0x%lx length %lu prot %u flags %u",
-        mapping->guest_virt, mapping->length, mapping->prot, mapping->flags);
-    if(!(mapping->flags & MAP_ANONYMOUS)) {
-      printf(" fd %u offset %li", mapping->fd, mapping->offset);
-    }
+//    printf("MMAP addr 0x%lx length %lu prot %u flags %u",
+//        mapping->guest_virt, mapping->length, mapping->prot, mapping->flags);
+//    if(!(mapping->flags & MAP_ANONYMOUS)) {
+//      printf(" fd %u offset %li", mapping->fd, mapping->offset);
+//    }
     printf("\n");
 
     printf("RESULT: %li\n", result);
@@ -576,107 +571,106 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
 
   /* if the monitor gave its permission, allocate a region with the size
    * determined by the monitor */
-  std::shared_ptr<Elkvm::Region> region = Elkvm::rm.allocate_region(mapping->length);
-  mapping->host_p = region->base_address();
+  std::shared_ptr<Elkvm::Region> region = Elkvm::rm.allocate_region(mapping.get_length());
+  mapping.set_host_p(region->base_address());
 
   /* now do the standard actions not handled by the monitor
    * i.e. copy data for file-based mappings, split existing mappings for
    * MAP_FIXED if necessary etc. */
-  if(mapping->guest_virt != 0x0) {
-    void *host_p = elkvm_pager_get_host_p(&vm->pager, mapping->guest_virt);
+  if(mapping.guest_address() != 0x0) {
+    void *host_p = elkvm_pager_get_host_p(&vm->pager, mapping.guest_address());
     if(host_p != NULL) {
       assert(flags & MAP_FIXED);
       /* this mapping needs to be split! */
 
       /* get the old mapping and split that as well */
-      struct region_mapping *old_mapping = elkvm_mapping_find(vm, host_p);
-      assert(old_mapping != NULL);
-      old_mapping->length = reinterpret_cast<char *>(host_p)
-        - reinterpret_cast<char *>(old_mapping->host_p);
-      old_mapping->mapped_pages = pages_from_size(old_mapping->length);
+      //Elkvm::Mapping old_mapping = Elkvm::rm.find_mapping(host_p);
+      ////assert(old_mapping != NULL);
+      //old_mapping->length = reinterpret_cast<char *>(host_p)
+      //  - reinterpret_cast<char *>(old_mapping->host_p);
+      //old_mapping->mapped_pages = pages_from_size(old_mapping->length);
 
       /* TODO if we slice the center, we need another new mapping */
+      mapping.slice_center();
 
       /* split the region object that this mapping belongs to */
       std::shared_ptr<Elkvm::Region> r = Elkvm::rm.find_region(host_p);
       assert(host_p >= r->base_address());
       r->slice_center(
           reinterpret_cast<char *>(host_p) - reinterpret_cast<char *>(r->base_address()),
-          mapping->length);
-      region = Elkvm::rm.allocate_region(mapping->length);
+          mapping.get_length());
+      region = Elkvm::rm.allocate_region(mapping.get_length());
 
       /* unmap the old stuff */
-      for(guestptr_t addr = mapping->guest_virt;
-          addr < mapping->guest_virt + mapping->length;
+      for(guestptr_t addr = mapping.guest_address();
+          addr < mapping.guest_address() + mapping.get_length();
           addr += ELKVM_PAGESIZE) {
         int err = elkvm_pager_destroy_mapping(&vm->pager, addr);
         assert(err == 0);
       }
 
       /* fix the current mapping object */
-      mapping->host_p = region->base_address();
+      mapping.set_host_p(region->base_address());
 
     }
   } else {
-    mapping->guest_virt = reinterpret_cast<guestptr_t>(mapping->host_p);
+    mapping.sync_guest_to_host_addr();
   }
-  region->set_guest_addr(mapping->guest_virt);
+  region->set_guest_addr(mapping.guest_address());
 
-  if(!(mapping->flags & MAP_ANONYMOUS)) {
-    off_t pos = lseek(mapping->fd, 0, SEEK_CUR);
+  if(!mapping.anonymous()) {
+    off_t pos = lseek(mapping.get_fd(), 0, SEEK_CUR);
     assert(pos >= 0 && "could not get current file position");
 
-    int err = lseek(mapping->fd, mapping->offset, SEEK_SET);
+    int err = lseek(mapping.get_fd(), mapping.get_offset(), SEEK_SET);
     assert(err >= 0 && "seek set in pass_mmap failed");
 
-    char *buf = (char *)mapping->host_p;
+    char *buf = (char *)mapping.base_address();
     ssize_t bytes = 0;
     size_t total = 0;
     errno = 0;
-    while((total <= mapping->length)
-        && (bytes = read(mapping->fd, buf, mapping->length - total)) > 0) {
+    while((total <= mapping.get_length())
+        && (bytes = read(mapping.get_fd(), buf, mapping.get_length() - total)) > 0) {
       buf += bytes;
       total += bytes;
     }
 
-    ssize_t rem = mapping->length - total;
+    ssize_t rem = mapping.get_length() - total;
     if(rem > 0) {
 //      printf("read %zd bytes of %zd bytes\n", total, length);
 //      printf("\nzeroing out %zd bytes at %p\n", rem, buf);
       memset(buf, 0, rem);
     }
-    err = lseek(mapping->fd, pos, SEEK_SET);
+    err = lseek(mapping.get_fd(), pos, SEEK_SET);
     assert(err >= 0 && "could not restore file position");
   }
 
   if(vm->debug) {
     print(std::cout, *region);
-    printf("MAPPING: %p host_p: %p guest_virt: 0x%lx length %zd (0x%lx) mapped pages %i (%i)\n",
-        mapping, mapping->host_p, mapping->guest_virt, mapping->length,
-        mapping->length, mapping->mapped_pages, pages_from_size(mapping->length));
+    print(std::cout, mapping);
   }
 
 
   /* call the monitor again, so it can do what has been left */
   if(vm->syscall_handlers->mmap_after != NULL) {
-    result = vm->syscall_handlers->mmap_after(mapping);
+    result = vm->syscall_handlers->mmap_after(mapping.c_mapping());
   }
 
   ptopt_t opts = 0;
-  if(mapping->flags & PROT_WRITE) {
+  if(mapping.writeable()) {
     opts |= PT_OPT_WRITE;
   }
-  if(mapping->flags & PROT_EXEC) {
+  if(mapping.executable()) {
     opts |= PT_OPT_EXEC;
   }
 
   /* add page table entries according to the options specified by the monitor */
-  int err = elkvm_pager_map_region(&vm->pager, mapping->host_p, mapping->guest_virt,
-      mapping->mapped_pages, opts);
+  int err = elkvm_pager_map_region(&vm->pager, mapping.base_address(),
+      mapping.guest_address(), mapping.get_pages(), opts);
   assert(err == 0);
 
-  list_push(vm->mappings, mapping);
-  return (long)mapping->guest_virt;
+  Elkvm::rm.add_mapping(mapping);
+  return (long)mapping.guest_address();
 }
 
 long elkvm_do_mprotect(struct kvm_vm *vm) {
@@ -705,13 +699,13 @@ long elkvm_do_mprotect(struct kvm_vm *vm) {
   assert(err == 0 && "mprotect mapping failed");
 
   if(vm->debug) {
-    struct region_mapping *mapping = elkvm_mapping_find(vm, addr);
-    assert(mapping != NULL);
+    Elkvm::Mapping mapping = Elkvm::rm.find_mapping(addr);
+    //assert(mapping != NULL);
 
     printf("\n============ LIBELKVM ===========\n");
     printf("MPROTECT reguested with address: 0x%lx (%p) len: 0x%lx W: %i E: %i prot: %i\n",
         addr_p, addr, len, opts & PT_OPT_WRITE, opts & PT_OPT_EXEC, (int)prot);
-    printf("MAPPING %p pages mapped: %u\n", mapping, mapping->mapped_pages);
+    print(std::cout, mapping);
     printf("RESULT: %i\n", err);
     printf("=================================\n");
   }
@@ -734,7 +728,7 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
     elkvm_pager_find_region_for_host_p(&vm->pager, addr);
   assert(chunk != NULL);
 
-  struct region_mapping *mapping = elkvm_mapping_find(vm, addr);
+  Elkvm::Mapping mapping = Elkvm::rm.find_mapping(addr);
 
   unsigned pages = pages_from_size(length);
   //TODO use elkvm_pager_unmap_region here again!
@@ -745,26 +739,24 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
     cur_addr_p+=ELKVM_PAGESIZE;
     pages--;
   }
-  mapping->mapped_pages -= pages;
+  mapping.unmap_pages(pages);
   if(chunk == &vm->pager.system_chunk) {
     printf("WARNING munmap on chunk in system_chunk called!\n");
     return 0;
   }
 
-  if(mapping->mapped_pages == 0) {
+  if(mapping.all_unmapped()) {
     std::shared_ptr<Elkvm::Region> region = Elkvm::rm.find_region(addr);
     Elkvm::rm.free_region(region);
-    list_remove(vm->mappings, mapping);
-    free(mapping);
-    mapping = NULL;
+    Elkvm::rm.free_mapping(mapping);
   }
 
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
     printf("MUNMAP reguested with address: 0x%lx (%p) length: 0x%lx\n",
         addr_p, addr, length);
-    if(mapping != NULL) {
-      printf("MAPPING %p pages mapped: %u\n", mapping, mapping->mapped_pages);
+    if(!mapping.all_unmapped()) {
+      print(std::cout, mapping);
     }
     printf("=================================\n");
   }
