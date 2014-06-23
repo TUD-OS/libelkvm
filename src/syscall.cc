@@ -664,7 +664,7 @@ long elkvm_do_mprotect(struct kvm_vm *vm) {
 long elkvm_do_munmap(struct kvm_vm *vm) {
   struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
 
-  uint64_t addr_p = 0;
+  guestptr_t addr_p = 0;
   void *addr = NULL;
   uint64_t length = 0;
   elkvm_syscall2(vcpu, &addr_p, &length);
@@ -678,26 +678,11 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
   assert(chunk != NULL);
 
   Elkvm::Mapping mapping = Elkvm::rm.find_mapping(addr);
+  mapping.unmap(addr_p, pages_from_size(length));
 
-  unsigned pages = pages_from_size(length);
-  //TODO use elkvm_pager_unmap_region here again!
-  uint64_t cur_addr_p = addr_p;
-  while(pages) {
-    int err = elkvm_pager_destroy_mapping(&vm->pager, cur_addr_p);
-    assert(err == 0);
-    cur_addr_p+=ELKVM_PAGESIZE;
-    pages--;
-  }
-  mapping.unmap_pages(pages);
   if(chunk == &vm->pager.system_chunk) {
     printf("WARNING munmap on chunk in system_chunk called!\n");
     return 0;
-  }
-
-  if(mapping.all_unmapped()) {
-    std::shared_ptr<Elkvm::Region> region = Elkvm::rm.find_region(addr);
-    Elkvm::rm.free_region(region);
-    Elkvm::rm.free_mapping(mapping);
   }
 
   if(vm->debug) {
