@@ -559,7 +559,8 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
       mapping = Elkvm::rm.find_mapping(host_p);
       split = true;
     }
-  } else {
+  }
+  if(!split) {
     mapping.map_self();
   }
 
