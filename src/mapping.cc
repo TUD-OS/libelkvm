@@ -57,6 +57,28 @@ namespace Elkvm {
     return err;
   }
 
+  int Mapping::unmap(guestptr_t unmap_addr, unsigned pages) {
+    assert(contains_address(unmap_addr));
+    assert(pages <= mapped_pages);
+
+    //TODO use elkvm_pager_unmap_region here again!
+    guestptr_t cur_addr_p = unmap_addr;
+    while(pages) {
+      int err = elkvm_pager_destroy_mapping(pager, cur_addr_p);
+      assert(err == 0);
+      cur_addr_p += ELKVM_PAGESIZE;
+      pages--;
+    }
+    mapped_pages -= pages;
+
+    if(mapped_pages == 0) {
+      Elkvm::rm.free_region(region);
+      Elkvm::rm.free_mapping(*this);
+    }
+
+    return 0;
+  }
+
   bool Mapping::contains_address(void *p) {
     return (host_p <= p) && (p < (reinterpret_cast<char *>(host_p) + length));
   }

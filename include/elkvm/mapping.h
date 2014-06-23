@@ -52,7 +52,7 @@ namespace Elkvm {
       int fill();
 
       int map_self();
-      void unmap_pages(unsigned pages) { mapped_pages -= pages; }
+      int unmap(guestptr_t unmap_addr, unsigned pages);
   };
 
   std::ostream &print(std::ostream &, const Mapping &);
