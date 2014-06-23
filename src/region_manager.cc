@@ -139,6 +139,25 @@ namespace Elkvm {
     allocated_regions.push_back(r);
   }
 
+  Mapping &RegionManager::find_mapping(void *host_p) {
+    auto iter = std::find_if(mappings.begin(), mappings.end(),
+        [host_p](Mapping m) { return m.contains_address(host_p); });
+    assert(iter != mappings.end());
+
+    return *iter;
+  }
+
+  void RegionManager::add_mapping(Mapping &mapping) {
+    mappings.push_back(mapping);
+  }
+
+  void RegionManager::free_mapping(Mapping &mapping) {
+    auto it = std::find(mappings.begin(), mappings.end(), mapping);
+    assert(it != mappings.end());
+    mappings.erase(it);
+  }
+
+
   std::array<std::vector<Region>, 16>::size_type
   get_freelist_idx(const size_t size) {
     auto list_idx = 0;

@@ -7,7 +7,7 @@ SET( libelkvm_SRCS
   heap.cc
   idt.c
   list/list.c
-  mapping.c
+  mapping.cc
   pager.c
   region.cc
   region_manager.cc

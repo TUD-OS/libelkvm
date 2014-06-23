@@ -1,16 +1,61 @@
 #pragma once
 
+#include <iostream>
+#include <memory>
+
 #include <elkvm.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <sys/mman.h>
 
-struct region_mapping *elkvm_mapping_alloc();
-struct region_mapping *elkvm_mapping_find(struct kvm_vm *vm, void *host_p);
-bool address_in_mapping(struct region_mapping *mapping, void *host_p);
+namespace Elkvm {
+  class Region;
 
-#ifdef __cplusplus
+  class Mapping {
+    private:
+      struct kvm_pager * pager;
+      void *host_p;
+      guestptr_t addr;
+      size_t length;
+      unsigned mapped_pages;
+      int prot;
+      int flags;
+      int fd;
+      off_t offset;
+      std::shared_ptr<Region> region;
+
+    public:
+      Mapping(guestptr_t guest_addr, size_t l, int pr, int f, int fdes, off_t off,
+          struct kvm_pager * pa);
+      Mapping(std::shared_ptr<Region> r, guestptr_t guest_addr, size_t l, int pr, int f,
+          int fdes, off_t off, struct kvm_pager * pa);
+
+      bool anonymous() const { return flags & MAP_ANONYMOUS; }
+      bool contains_address(void *p);
+      bool contains_address(guestptr_t a);
+      bool executable() const { return flags & PROT_EXEC; }
+      bool writeable() const { return flags & PROT_WRITE; }
+
+      void *base_address() const { return host_p; }
+      guestptr_t guest_address() const { return addr; }
+      int get_fd() const { return fd; }
+      size_t get_length() const { return length; }
+      off_t get_offset() const { return offset; }
+      unsigned get_pages() const { return mapped_pages; }
+
+      bool all_unmapped() { return mapped_pages == 0; }
+
+      struct region_mapping *c_mapping();
+      void sync_back(struct region_mapping *mapping);
+
+      Mapping slice_center(off_t off, size_t len, int new_fd, off_t new_offset);
+
+      int fill();
+
+      int map_self();
+      int unmap(guestptr_t unmap_addr, unsigned pages);
+  };
+
+  std::ostream &print(std::ostream &, const Mapping &);
+  bool operator==(const Mapping &, const Mapping &);
+
 }
-#endif
-
