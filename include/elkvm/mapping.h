@@ -38,7 +38,6 @@ namespace Elkvm {
       void set_host_p(void *p) { host_p = p; }
       void *base_address() const { return host_p; }
       guestptr_t guest_address() const { return addr; }
-      void sync_guest_to_host_addr();
       bool anonymous() const { return flags & MAP_ANONYMOUS; }
       bool writeable() const { return flags & PROT_WRITE; }
       bool executable() const { return flags & PROT_EXEC; }

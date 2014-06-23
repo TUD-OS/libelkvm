@@ -544,10 +544,13 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
 
   elkvm_syscall6(vcpu, &addr, &length, &prot, &flags, &fd, &off);
 
-  /* if the monitor gave its permission, allocate a region with the size
-   * determined by the monitor */
+  /* create a mapping object with the data from the user, this will
+   * also allocate the memory for this mapping */
   Elkvm::Mapping mapping(addr, length, prot, flags, fd, off, &vm->pager);
 
+  /* check if we already have a mapping for that address,
+   * if we do, we need to split the old mapping, and replace the contents
+   * with whatever the user requested */
   bool split = false;
   if(addr != 0x0) {
     void *host_p = elkvm_pager_get_host_p(&vm->pager, addr);
@@ -600,8 +603,6 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     }
     sliced.map_self();
     Elkvm::rm.add_mapping(sliced);
-  } else {
-    mapping.sync_guest_to_host_addr();
   }
 
   if(!mapping.anonymous()) {

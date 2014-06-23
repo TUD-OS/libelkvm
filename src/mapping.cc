@@ -16,13 +16,13 @@ namespace Elkvm {
       pager(pa) {
 
     region = Elkvm::rm.allocate_region(length);
-    region->set_guest_addr(addr);
     assert(!region->is_free());
 
     host_p = region->base_address();
     if(addr == 0x0) {
       addr = reinterpret_cast<guestptr_t>(host_p);
     }
+    region->set_guest_addr(addr);
 
     mapped_pages = pages_from_size(length);
   }
@@ -93,11 +93,6 @@ namespace Elkvm {
     mapped_pages = pages_from_size(length);
 
     return mid;
-  }
-
-  void Mapping::sync_guest_to_host_addr() {
-    addr = reinterpret_cast<guestptr_t>(host_p);
-    region->set_guest_addr(addr);
   }
 
   int Mapping::fill() {
