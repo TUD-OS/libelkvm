@@ -5,6 +5,7 @@
 #include <vector>
 
 #include <elkvm.h>
+#include <mapping.h>
 
 namespace Elkvm {
 
@@ -48,6 +49,7 @@ namespace Elkvm {
       std::array<std::vector<std::shared_ptr<Region>>, 16> freelists;
       int add_chunk(size_t size);
       std::vector<std::shared_ptr<Region>> allocated_regions;
+      std::vector<Mapping> mappings;
 
     public:
       void add_free_region(std::shared_ptr<Region> region);
@@ -62,6 +64,9 @@ namespace Elkvm {
       bool host_address_mapped(const void * const) const;
       void set_pager(struct kvm_pager *const p) { pager = p; }
       void use_region(std::shared_ptr<Region> r);
+      Mapping &find_mapping(void *host_p);
+      void add_mapping(Mapping &mapping);
+      void free_mapping(Mapping &mapping);
   };
 
   std::array<std::vector<Region>, 16>::size_type get_freelist_idx(const size_t size);
