@@ -14,6 +14,7 @@
 #include <heap.h>
 #include <mapping.h>
 #include <stack.h>
+#include <stack-c.h>
 #include <syscall.h>
 #include <vcpu.h>
 
@@ -64,7 +65,7 @@ int elkvm_handle_interrupt(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
   if(vm->debug) {
     printf(" INTERRUPT with vector 0x%lx detected\n", interrupt_vector);
     kvm_vcpu_dump_regs(vcpu);
-    //elkvm_dump_stack(vm, vcpu);
+    elkvm_dump_stack(vm, vcpu);
   }
 
   /* Stack Segment */
@@ -557,13 +558,15 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     void *host_p = elkvm_pager_get_host_p(&vm->pager, addr);
     if(host_p != NULL) {
       assert(flags & MAP_FIXED);
-      mapping = Elkvm::rm.find_mapping(host_p);
       split = true;
+
+      /* TODO this should be done after we get back to the user! */
+      /* this mapping needs to be split! */
+      Elkvm::Mapping old_mapping = Elkvm::rm.find_mapping(host_p);
+      old_mapping.slice(addr, length);
     }
   }
-  if(!split) {
-    mapping.map_self();
-  }
+  mapping.map_self();
 
   /* if a handler is specified, call the monitor for corrections etc. */
   long result = 0;
@@ -577,10 +580,13 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
 
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
-    printf("MMAP addr 0x%lx length %lu prot %lu flags %lu",
-        addr, length, prot, flags);
+    printf("MMAP addr 0x%lx length %lu (0x%lx) prot %lu flags %lu",
+        addr, length, length, prot, flags);
     if(!(flags & MAP_ANONYMOUS)) {
       printf(" fd %lu offset %li", fd, off);
+    }
+    if(flags & MAP_FIXED) {
+      printf(" MAP_FIXED");
     }
     printf("\n");
 
@@ -591,16 +597,10 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     return -errno;
   }
 
-  long return_addr = mapping.guest_address();
   /* now do the standard actions not handled by the monitor
    * i.e. copy data for file-based mappings, split existing mappings for
    * MAP_FIXED if necessary etc. */
   if(split) {
-    /* this mapping needs to be split! */
-    Elkvm::Mapping sliced = mapping.slice(addr, length, prot, flags, fd, off);
-    return_addr = sliced.guest_address();
-    sliced.map_self();
-    Elkvm::rm.add_mapping(sliced);
   }
 
   if(!mapping.anonymous()) {
@@ -617,7 +617,7 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   }
 
   Elkvm::rm.add_mapping(mapping);
-  return return_addr;
+  return mapping.guest_address();
 }
 
 long elkvm_do_mprotect(struct kvm_vm *vm) {

@@ -87,8 +87,7 @@ namespace Elkvm {
     return (addr <= a) && (a < (addr + length));
   }
 
-  Mapping Mapping::slice(guestptr_t slice_base, size_t len, int new_prot,
-      int new_flags, int new_fd, off_t new_offset) {
+  void Mapping::slice(guestptr_t slice_base, size_t len) {
     assert(contains_address(slice_base)
         && "slice address must be contained in mapping");
 
@@ -102,17 +101,15 @@ namespace Elkvm {
     if(contains_address(slice_base + len)) {
       /* slice_center also includes the case that the end of the sliced region
        * is the end of this region */
-      return slice_center(off, len, new_prot, new_flags, new_fd, new_offset);
+      slice_center(off, len);
+    } else {
+      /* slice_end is only needed, when we want to expand the new region beyond
+       * the end of this region */
+      slice_end(slice_base, len);
     }
-
-    /* slice_end is only needed, when we want to expand the new region beyond
-     * the end of this region */
-    return slice_end(slice_base, len, new_prot, new_flags, new_fd, new_offset);
-
   }
 
-  Mapping Mapping::slice_center(off_t off, size_t len, int new_prot,
-      int new_flags, int new_fd, off_t new_offset) {
+  void Mapping::slice_center(off_t off, size_t len) {
 
     assert(contains_address(reinterpret_cast<char *>(host_p) + off + len));
     assert(0 <= off < length);
@@ -126,32 +123,24 @@ namespace Elkvm {
     }
 
     region->slice_center(off, len);
-    std::shared_ptr<Region> r = Elkvm::rm.allocate_region(len);
 
-    Mapping mid(r, addr + off, len, new_prot, new_flags, new_fd, new_offset, pager);
-    if(!mid.anonymous()) {
-      mid.fill();
-    }
     if(length > off + len) {
       size_t rem = length - off - len;
-      r = rm.find_region(reinterpret_cast<char *>(host_p) + off + len);
+      auto r = rm.find_region(reinterpret_cast<char *>(host_p) + off + len);
+
+      /* There should be no need to process this mapping any further, because we
+       * feed it the split memory region, with the old data inside */
       Mapping end(r, addr + off + len,
-          rem, new_prot, new_flags, fd, offset, pager);
-      if(!end.anonymous()) {
-        end.fill();
-      }
+          rem, prot, flags, fd, offset + off + len, pager);
       Elkvm::rm.add_mapping(end);
     }
 
     length = off;
     /* XXX only if the mapping is still fully mapped! */
     mapped_pages = pages_from_size(length);
-
-    return mid;
   }
 
-  Mapping Mapping::slice_end(guestptr_t slice_base, size_t len, int new_prot,
-      int new_flags, int new_fd, off_t new_offset) {
+  void Mapping::slice_end(guestptr_t slice_base, size_t len) {
     /* unmap the old stuff */
     for(guestptr_t current_addr = slice_base;
         current_addr < addr + length;
@@ -165,14 +154,6 @@ namespace Elkvm {
 
     /* TODO free part of the attached memory region */
 
-    std::shared_ptr<Region> r = rm.allocate_region(len);
-    Mapping mid(r, slice_base, len, new_prot, new_flags, new_fd, new_offset, pager);
-    if(!mid.anonymous()) {
-      print(std::cout, mid);
-      mid.fill();
-    }
-
-    return mid;
   }
 
   int Mapping::fill() {
@@ -223,7 +204,7 @@ namespace Elkvm {
 
   std::ostream &print(std::ostream &os, const Mapping &mapping) {
     if(mapping.anonymous()) {
-      os << "ANONYMOUS";
+      os << "ANONYMOUS ";
     }
     os << "MAPPING: 0x" << std::hex << mapping.guest_address()
       << " (" << mapping.base_address() << ") length: 0x" << mapping.get_length()

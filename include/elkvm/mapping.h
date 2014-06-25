@@ -47,12 +47,9 @@ namespace Elkvm {
       struct region_mapping *c_mapping();
       void sync_back(struct region_mapping *mapping);
 
-      Mapping slice(guestptr_t slice_base, size_t len, int new_prot,
-          int new_flags, int new_fd, off_t new_offset);
-      Mapping slice_center(off_t off, size_t len, int new_prot,
-          int new_flags, int new_fd, off_t new_offset);
-      Mapping slice_end(guestptr_t slice_base, size_t len, int new_prot,
-          int new_flags, int new_fd, off_t new_offset);
+      void slice(guestptr_t slice_base, size_t len);
+      void slice_center(off_t off, size_t len);
+      void slice_end(guestptr_t slice_base, size_t len);
 
       int fill();
 
