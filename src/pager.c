@@ -5,7 +5,7 @@
 
 #include <elkvm.h>
 #include <pager.h>
-#include <stack.h>
+#include <stack-c.h>
 #include <vcpu.h>
 #include <region-c.h>
 
@@ -502,18 +502,13 @@ int elkvm_pager_handle_pagefault(struct kvm_pager *pager, uint64_t pfla,
 
 		void *host_p = elkvm_pager_get_host_p(pager, pfla);
 
-    if(pager->vm->debug) {
-      printf("PFLA: 0x%lx\nCURRENT STACK TOP:0x%lx\n",
-          pfla, pager->vm->current_user_stack->guest_virtual);
-    }
-    if(elkvm_is_stack_expansion(pager->vm, pfla)) {
-      int err = elkvm_expand_stack(pager->vm);
+//    if(pager->vm->debug) {
+//      printf("PFLA: 0x%lx\nCURRENT STACK TOP:0x%lx\n",
+//          pfla, pager->vm->current_user_stack->guest_virtual);
+//    }
+    if(elkvm_check_stack_grow(pfla)) {
       if(pager->vm->debug) {
         elkvm_pager_dump_page_fault_info(pfla, err_code, host_p);
-      }
-      if(err) {
-        elkvm_pager_dump_page_tables(pager);
-        return err;
       }
       return 0;
     }

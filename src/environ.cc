@@ -8,6 +8,7 @@
 
 namespace Elkvm {
   Environment env;
+  extern Stack stack;
   extern RegionManager rm;
 
   void Environment::init() {
@@ -33,10 +34,8 @@ namespace Elkvm {
     return i;
   }
 
-  off64_t Environment::push_auxv(struct kvm_vm *vm, char **env_p) {
+  off64_t Environment::push_auxv(char **env_p) {
     unsigned count = calc_auxv_num_and_set_auxv(env_p);
-
-    struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
 
     off64_t offset = 0;
 
@@ -60,7 +59,7 @@ namespace Elkvm {
         case AT_HWCAP:
         case AT_CLKTCK:
         case AT_SECURE:
-          elkvm_pushq(vm, vcpu, auxv->a_un.a_val);
+          stack.pushq(auxv->a_un.a_val);
           break;
         case AT_BASE:
         case AT_PLATFORM:
@@ -73,22 +72,19 @@ namespace Elkvm {
           int len = strlen((char *)auxv->a_un.a_val) + 1;
           strcpy(target, (char *)auxv->a_un.a_val);
           offset = offset + len;
-          elkvm_pushq(vm, vcpu, guest_virtual);
+          stack.pushq(guest_virtual);
           break;
       }
-      elkvm_pushq(vm, vcpu, auxv->a_type);
+      stack.pushq(auxv->a_type);
     }
 
     return offset;
   }
 
-  int Environment::copy_and_push_str_arr_p(struct kvm_vm *vm, off64_t offset,
-      char **str) const {
+  int Environment::copy_and_push_str_arr_p(off64_t offset, char **str) const {
     if(str == NULL) {
       return 0;
     }
-
-    struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
 
     char *target = reinterpret_cast<char *>(region->base_address()) + offset;
     guestptr_t guest_virtual = region->guest_address() + offset;
@@ -107,7 +103,7 @@ namespace Elkvm {
       strcpy(target, str[i]);
 
       //and push the pointer for the vm
-      int err = elkvm_pushq(vm, vcpu, guest_virtual);
+      int err = stack.pushq(guest_virtual);
       if(err) {
         return err;
       }
@@ -138,22 +134,22 @@ int elkvm_fill_env(struct elkvm_opts *opts, struct kvm_vm *vm) {
   int err = kvm_vcpu_get_regs(vcpu);
   assert(err == 0 && "error getting vcpu");
 
-  off64_t bytes = Elkvm::env.push_auxv(vm, opts->environ);
+  off64_t bytes = Elkvm::env.push_auxv(opts->environ);
   off64_t bytes_total = bytes;
 
-  elkvm_pushq(vm, vcpu, 0);
-  bytes = Elkvm::env.copy_and_push_str_arr_p(vm, bytes, opts->environ);
+  Elkvm::stack.pushq(0);
+  bytes = Elkvm::env.copy_and_push_str_arr_p(bytes, opts->environ);
   bytes_total = bytes_total + bytes;
-  elkvm_pushq(vm, vcpu, 0);
+  Elkvm::stack.pushq(0);
   assert(bytes > 0);
 
   /* followed by argv pointers */
-  bytes = Elkvm::env.copy_and_push_str_arr_p(vm, bytes, opts->argv);
+  bytes = Elkvm::env.copy_and_push_str_arr_p(bytes, opts->argv);
   bytes_total = bytes_total + bytes;
   assert(bytes > 0);
 
   /* at last push argc on the stack */
-  elkvm_pushq(vm, vcpu, opts->argc);
+  Elkvm::stack.pushq(opts->argc);
 
   err = kvm_vcpu_set_regs(vcpu);
   return err;

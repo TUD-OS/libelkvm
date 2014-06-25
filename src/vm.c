@@ -16,7 +16,7 @@
 #include <kvm.h>
 #include <pager.h>
 #include <region-c.h>
-#include <stack.h>
+#include <stack-c.h>
 #include <vcpu.h>
 #include <elkvm.h>
 #include <elfloader.h>

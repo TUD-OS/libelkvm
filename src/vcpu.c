@@ -12,7 +12,7 @@
 #include <elkvm.h>
 #include <gdt.h>
 #include <idt.h>
-#include <stack.h>
+#include <stack-c.h>
 #include <syscall.h>
 #include <vcpu.h>
 
@@ -253,7 +253,7 @@ int kvm_vcpu_set_msr(struct kvm_vcpu *vcpu, uint32_t index, uint64_t data) {
 int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
 
 	memset(&vcpu->regs, 0, sizeof(struct kvm_regs));
-	vcpu->regs.rsp = LINUX_64_STACK_BASE;
+	//vcpu->regs.rsp = LINUX_64_STACK_BASE;
 	/* for some reason this needs to be set */
 	vcpu->regs.rflags = 0x00000002;
 
