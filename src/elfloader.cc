@@ -1,4 +1,5 @@
 #include <cstring>
+#include <memory>
 
 #include <errno.h>
 #include <fcntl.h>
@@ -19,55 +20,58 @@
 #include <vcpu.h>
 
 namespace Elkvm {
-  ElfBinary binary;
   extern RegionManager rm;
   extern HeapManager heap_m;
 
-  int ElfBinary::load_binary(std::string pathname) {
+  ElfBinary::ElfBinary(std::string pathname, struct kvm_pager *p) :
+    pager(p)
+  {
+    auxv.valid = false;
+
     if(pathname.empty()) {
-      return -EIO;
+      throw;
     }
 
     if(pager->system_chunk.userspace_addr == 0) {
-      return -EIO;
+      throw;
     }
 
     auxv.at_base = 0x0;
 
     fd = open(pathname.c_str(), O_RDONLY);
     if(fd < 1) {
-      return -errno;
+      throw;
     }
 
     if(elf_version(EV_CURRENT) == EV_NONE) {
-      return -EIO;
+      throw;
     }
 
     e = elf_begin(fd, ELF_C_READ, NULL);
     if(e == NULL) {
-      return -ENOMEM;
+      throw;
     }
 
     int err = check_elf();
     if(err) {
-      goto out_close;
+      close(fd);
+      throw;
     }
 
     if(statically_linked) {
       err = parse_program();
     } else {
-      err = load_dynamic();
+      load_dynamic();
       /* we need to mark the binary as dynamic again, because this is overwritten
        * by the dynamic loader, which is always statically linked */
       statically_linked = false;
     }
 
-out_close:
     elf_end(e);
     close(fd);
-
-    return err;
-
+    if(err) {
+      throw;
+    }
   }
 
   guestptr_t ElfBinary::get_entry_point() {
@@ -395,11 +399,11 @@ out_close:
     return phdr;
   }
 
-  int ElfBinary::load_dynamic() {
-    return binary.load_binary(loader);
+  void ElfBinary::load_dynamic() {
+    ldr = std::unique_ptr<ElfBinary>(new ElfBinary(loader, pager));
   }
 
-  const struct Elf_auxv &ElfBinary::get_auxv() {
+  const struct Elf_auxv &ElfBinary::get_auxv() const {
     return auxv;
   }
 

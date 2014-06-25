@@ -10,7 +10,7 @@
 #include <unistd.h>
 
 #include <elkvm.h>
-#include <environ-c.h>
+#include <environ.h>
 #include <elfloader.h>
 #include <flats.h>
 #include <kvm.h>
@@ -59,24 +59,20 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
 		return err;
 	}
 
-  Elkvm::binary.init(&vm->pager);
-  err = Elkvm::binary.load_binary(binary);
-  if(err) {
-    return err;
-  }
+  Elkvm::ElfBinary bin(binary, &vm->pager);
 
-  guestptr_t entry = Elkvm::binary.get_entry_point();
+  guestptr_t entry = bin.get_entry_point();
 	err = kvm_vcpu_set_rip(elkvm_vcpu_get(vm, 0), entry);
   assert(err == 0);
 
-  elkvm_initialize_env();
+  Elkvm::Environment env(bin);
 
 	err = elkvm_initialize_stack(vm);
 	if(err) {
 		return err;
 	}
 
-  err = elkvm_fill_env(opts, vm);
+  err = env.fill(opts, vm);
   if(err) {
     return err;
   }

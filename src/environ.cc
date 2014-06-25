@@ -9,12 +9,12 @@
 #include <stack.h>
 
 namespace Elkvm {
-  Environment env;
   extern Stack stack;
   extern RegionManager rm;
-  extern ElfBinary binary;
 
-  void Environment::init() {
+  Environment::Environment(const ElfBinary &bin) :
+    binary(bin)
+  {
     /* for now the region to hold env etc. will be 12 pages large */
     region = rm.allocate_region(12 * ELKVM_PAGESIZE);
     assert(region != nullptr && "error getting memory for env");
@@ -42,7 +42,7 @@ namespace Elkvm {
 
     off64_t offset = 0;
 
-    if(Elkvm::binary.get_auxv().valid) {
+    if(binary.get_auxv().valid) {
       short all_set = 0;
       for(unsigned i= 0 ; i < count; auxv--, i++) {
         /*
@@ -51,26 +51,26 @@ namespace Elkvm {
          */
           switch(auxv->a_type) {
             case AT_PHDR:
-              auxv->a_un.a_val = Elkvm::binary.get_auxv().at_phdr;
+              auxv->a_un.a_val = binary.get_auxv().at_phdr;
               all_set |= 0x1;
               break;
             case AT_PHENT:
-              auxv->a_un.a_val = Elkvm::binary.get_auxv().at_phent;
+              auxv->a_un.a_val = binary.get_auxv().at_phent;
               all_set |= 0x2;
               break;
             case AT_PHNUM:
-              auxv->a_un.a_val = Elkvm::binary.get_auxv().at_phnum;
+              auxv->a_un.a_val = binary.get_auxv().at_phnum;
               all_set |= 0x4;
               break;
             case AT_EXECFD:
               /* TODO maybe this needs to be removed? */
               break;
             case AT_ENTRY:
-              auxv->a_un.a_val = Elkvm::binary.get_auxv().at_entry;
+              auxv->a_un.a_val = binary.get_auxv().at_entry;
               all_set |= 0x8;
               break;
             case AT_BASE:
-              auxv->a_un.a_val = Elkvm::binary.get_auxv().at_base;
+              auxv->a_un.a_val = binary.get_auxv().at_base;
               all_set |= 0x10;
               break;
           }
@@ -179,19 +179,7 @@ namespace Elkvm {
   }
 
 
-//namespace Elkvm
-}
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void elkvm_initialize_env() {
-  Elkvm::env.init();
-}
-
-int elkvm_fill_env(struct elkvm_opts *opts, struct kvm_vm *vm) {
+int Environment::fill(struct elkvm_opts *opts, struct kvm_vm *vm) {
   struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
   int err = kvm_vcpu_get_regs(vcpu);
   assert(err == 0 && "error getting vcpu");
@@ -200,19 +188,19 @@ int elkvm_fill_env(struct elkvm_opts *opts, struct kvm_vm *vm) {
   off64_t bytes_total = bytes;
 
   Elkvm::stack.pushq(0);
-  bytes = Elkvm::env.copy_and_push_str_arr_p(bytes, opts->environ);
+  bytes = Elkvm::env.copy_and_push_str_arr_p(bytes_total, opts->environ);
   bytes_total = bytes_total + bytes;
   Elkvm::stack.pushq(0);
   assert(bytes > 0);
 
   /* followed by argv pointers */
-  bytes = Elkvm::env.copy_and_push_str_arr_p(bytes, opts->argv);
+  bytes = Elkvm::env.copy_and_push_str_arr_p(bytes_total, opts->argv);
   bytes_total = bytes_total + bytes;
   assert(bytes > 0);
 
   /* if the binary is dynamically linked we need to ajdust some stuff */
-  if(Elkvm::binary.is_dynamically_linked()) {
-    Elkvm::env.push_str_copy(vm, bytes_total, Elkvm::binary.get_loader());
+  if(binary.is_dynamically_linked()) {
+    push_str_copy(vm, bytes_total, binary.get_loader());
     opts->argc++;
   }
 
@@ -222,6 +210,14 @@ int elkvm_fill_env(struct elkvm_opts *opts, struct kvm_vm *vm) {
   err = kvm_vcpu_set_regs(vcpu);
   return err;
 }
+
+//namespace Elkvm
+}
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 guestptr_t elkvm_env_get_guest_address() {
   return Elkvm::env.get_guest_address();

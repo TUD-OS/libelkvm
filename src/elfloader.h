@@ -24,6 +24,8 @@ struct Elf_auxv {
 class ElfBinary {
   private:
     struct kvm_pager * pager;
+    std::unique_ptr<ElfBinary> ldr;
+
     int fd;
     Elf *e;
     size_t num_phdrs;
@@ -45,17 +47,16 @@ class ElfBinary {
     void pad_text_begin(std::shared_ptr<Region> region, size_t padsize);
     void pad_text_end(void *host_p, size_t padsize);
     void pad_data_begin(std::shared_ptr<Region> region, size_t padsize);
-    int load_dynamic();
+    void load_dynamic();
     GElf_Phdr text_header;
     GElf_Phdr find_data_header();
     GElf_Phdr find_text_header();
 
   public:
-    ElfBinary() { auxv.valid = false; }
-    void init(struct kvm_pager * p) { pager = p; }
+    ElfBinary(std::string pathname, struct kvm_pager * p);
     int load_binary(std::string pathname);
     guestptr_t get_entry_point();
-    const struct Elf_auxv &get_auxv();
+    const struct Elf_auxv &get_auxv() const;
     bool is_dynamically_linked() const { return !statically_linked; }
     std::string get_loader() const { return loader; }
 };
