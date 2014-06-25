@@ -87,7 +87,33 @@ namespace Elkvm {
     return (addr <= a) && (a < (addr + length));
   }
 
-  Mapping Mapping::slice_center(off_t off, size_t len, int new_fd, off_t new_offset) {
+  Mapping Mapping::slice(guestptr_t slice_base, size_t len, int new_prot,
+      int new_flags, int new_fd, off_t new_offset) {
+    assert(contains_address(slice_base)
+        && "slice address must be contained in mapping");
+
+    if(slice_base == addr) {
+      assert(false && "slice begin not implemented!");
+    }
+
+    /* slice_base is now always larger than host_p */
+    off_t off = slice_base - addr;
+
+    if(contains_address(slice_base + len)) {
+      /* slice_center also includes the case that the end of the sliced region
+       * is the end of this region */
+      return slice_center(off, len, new_prot, new_flags, new_fd, new_offset);
+    }
+
+    /* slice_end is only needed, when we want to expand the new region beyond
+     * the end of this region */
+    return slice_end(slice_base, len, new_prot, new_flags, new_fd, new_offset);
+
+  }
+
+  Mapping Mapping::slice_center(off_t off, size_t len, int new_prot,
+      int new_flags, int new_fd, off_t new_offset) {
+
     assert(contains_address(reinterpret_cast<char *>(host_p) + off + len));
     assert(0 <= off < length);
 
@@ -102,7 +128,7 @@ namespace Elkvm {
     region->slice_center(off, len);
     std::shared_ptr<Region> r = Elkvm::rm.allocate_region(len);
 
-    Mapping mid(r, addr + off, len, prot, flags, new_fd, new_offset, pager);
+    Mapping mid(r, addr + off, len, new_prot, new_flags, new_fd, new_offset, pager);
     if(!mid.anonymous()) {
       mid.fill();
     }
@@ -110,7 +136,10 @@ namespace Elkvm {
       size_t rem = length - off - len;
       r = rm.find_region(reinterpret_cast<char *>(host_p) + off + len);
       Mapping end(r, addr + off + len,
-          rem, prot, flags, fd, offset, pager);
+          rem, new_prot, new_flags, fd, offset, pager);
+      if(!end.anonymous()) {
+        end.fill();
+      }
       Elkvm::rm.add_mapping(end);
     }
 
@@ -121,7 +150,34 @@ namespace Elkvm {
     return mid;
   }
 
+  Mapping Mapping::slice_end(guestptr_t slice_base, size_t len, int new_prot,
+      int new_flags, int new_fd, off_t new_offset) {
+    /* unmap the old stuff */
+    for(guestptr_t current_addr = slice_base;
+        current_addr < addr + length;
+        current_addr += ELKVM_PAGESIZE) {
+      int err = elkvm_pager_destroy_mapping(pager, current_addr);
+      assert(err == 0);
+      mapped_pages--;
+    }
+
+    length = length - ((addr + length) - slice_base);
+
+    /* TODO free part of the attached memory region */
+
+    std::shared_ptr<Region> r = rm.allocate_region(len);
+    Mapping mid(r, slice_base, len, new_prot, new_flags, new_fd, new_offset, pager);
+    if(!mid.anonymous()) {
+      print(std::cout, mid);
+      mid.fill();
+    }
+
+    return mid;
+  }
+
   int Mapping::fill() {
+    assert(fd > 0 && "cannot fill mapping without file descriptor");
+
     off_t pos = lseek(fd, 0, SEEK_CUR);
     assert(pos >= 0 && "could not get current file position");
 
