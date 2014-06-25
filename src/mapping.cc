@@ -222,9 +222,16 @@ namespace Elkvm {
   }
 
   std::ostream &print(std::ostream &os, const Mapping &mapping) {
+    if(mapping.anonymous()) {
+      os << "ANONYMOUS";
+    }
     os << "MAPPING: 0x" << std::hex << mapping.guest_address()
       << " (" << mapping.base_address() << ") length: 0x" << mapping.get_length()
-      << " pages mapped: 0x" << mapping.get_pages() << std::endl;
+      << " pages mapped: 0x" << mapping.get_pages();
+    if(!mapping.anonymous()) {
+      os << " fd: " << mapping.get_fd();
+    }
+    os << std::endl;
     return os;
   }
 
