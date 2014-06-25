@@ -396,7 +396,6 @@ out_close:
   }
 
   int ElfBinary::load_dynamic() {
-    //TODO add ld.so to arguments on stack!
     return binary.load_binary(loader);
   }
 
