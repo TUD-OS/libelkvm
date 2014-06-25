@@ -120,6 +120,7 @@ namespace Elkvm {
         current_addr += ELKVM_PAGESIZE) {
       int err = elkvm_pager_destroy_mapping(pager, current_addr);
       assert(err == 0);
+      mapped_pages--;
     }
 
     region->slice_center(off, len);
