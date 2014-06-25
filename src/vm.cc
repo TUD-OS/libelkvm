@@ -11,7 +11,7 @@
 
 #include <elkvm.h>
 #include <environ-c.h>
-#include <elfloader-c.h>
+#include <elfloader.h>
 #include <flats.h>
 #include <kvm.h>
 #include <pager.h>
@@ -19,6 +19,10 @@
 #include <stack-c.h>
 #include <vcpu.h>
 #include "debug.h"
+
+namespace Elkvm {
+  extern ElfBinary binary;
+}
 
 int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus,
     const struct elkvm_handlers *handlers, const char *binary) {
@@ -55,12 +59,13 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
 		return err;
 	}
 
-  err = elkvm_load_binary(binary, &vm->pager);
+  Elkvm::binary.init(&vm->pager);
+  err = Elkvm::binary.load_binary(binary);
   if(err) {
     return err;
   }
 
-  guestptr_t entry = elkvm_loader_get_entry_point();
+  guestptr_t entry = Elkvm::binary.get_entry_point();
 	err = kvm_vcpu_set_rip(elkvm_vcpu_get(vm, 0), entry);
   assert(err == 0);
 
