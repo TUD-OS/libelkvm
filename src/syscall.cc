@@ -579,7 +579,7 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     printf("\n============ LIBELKVM ===========\n");
     printf("MMAP addr 0x%lx length %lu prot %lu flags %lu",
         addr, length, prot, flags);
-    if(!mapping.anonymous()) {
+    if(!(flags & MAP_ANONYMOUS)) {
       printf(" fd %lu offset %li", fd, off);
     }
     printf("\n");
