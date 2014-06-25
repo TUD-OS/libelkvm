@@ -72,7 +72,11 @@ namespace Elkvm {
   }
 
   guestptr_t ElfBinary::get_entry_point() {
-    return shared_object ? auxv.at_base + entry_point : entry_point;
+    if(statically_linked) {
+      return shared_object ? auxv.at_base + entry_point : entry_point;
+    } else {
+      return ldr->get_entry_point();
+    }
   }
 
   int ElfBinary::check_elf() {
