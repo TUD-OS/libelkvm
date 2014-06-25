@@ -62,9 +62,6 @@ namespace Elkvm {
       err = parse_program();
     } else {
       load_dynamic();
-      /* we need to mark the binary as dynamic again, because this is overwritten
-       * by the dynamic loader, which is always statically linked */
-      statically_linked = false;
     }
 
     elf_end(e);
