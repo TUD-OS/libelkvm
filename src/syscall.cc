@@ -562,7 +562,7 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
 
       /* TODO this should be done after we get back to the user! */
       /* this mapping needs to be split! */
-      Elkvm::Mapping old_mapping = Elkvm::rm.find_mapping(host_p);
+      Elkvm::Mapping &old_mapping = Elkvm::rm.find_mapping(addr);
       old_mapping.slice(addr, length);
     }
   }

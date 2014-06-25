@@ -139,6 +139,14 @@ namespace Elkvm {
     allocated_regions.push_back(r);
   }
 
+  Mapping &RegionManager::find_mapping(guestptr_t addr) {
+    auto iter = std::find_if(mappings.begin(), mappings.end(),
+        [addr](Mapping m) { return m.contains_address(addr); });
+    assert(iter != mappings.end());
+
+    return *iter;
+  }
+
   Mapping &RegionManager::find_mapping(void *host_p) {
     auto iter = std::find_if(mappings.begin(), mappings.end(),
         [host_p](Mapping m) { return m.contains_address(host_p); });

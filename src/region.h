@@ -65,6 +65,7 @@ namespace Elkvm {
       void set_pager(struct kvm_pager *const p) { pager = p; }
       void use_region(std::shared_ptr<Region> r);
       Mapping &find_mapping(void *host_p);
+      Mapping &find_mapping(guestptr_t addr);
       void add_mapping(Mapping &mapping);
       void free_mapping(Mapping &mapping);
   };
