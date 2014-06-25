@@ -3,7 +3,7 @@
 #include <elkvm.h>
 
 #include "flats.h"
-#include "stack.h"
+#include "stack-c.h"
 #include "elkvm-signal.h"
 
 static int pending_signals[32];

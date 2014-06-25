@@ -1,4 +1,5 @@
 #include <elkvm.h>
+#include <stack-c.h>
 #include <tss.h>
 
 #include <string.h>
@@ -10,7 +11,7 @@ int elkvm_tss_setup64(struct kvm_vm *vm, struct elkvm_memory_region *tss_region)
 	struct elkvm_tss64 *tss = (struct elkvm_tss64 *)tss_region->host_base_p;
 	memset(tss, 0, sizeof(struct elkvm_tss64));
 
-	tss->ist1 = vm->kernel_stack->guest_virtual;
+	tss->ist1 = elkvm_get_kernel_stack_base();
 	tss->rsp0 = 0xFFFFFFFFFFFFFFFF;
 	tss->rsp2 = 0x00007FFFFFFFFFFF;
 	return 0;
@@ -27,11 +28,11 @@ int elkvm_tss_setup32(struct elkvm_tss32 *tss,
 //	/*
 //	It's a quirk in the Intel implementation of hardware virtualization
 //	extensions. You cannot enter guest mode in vmx with the guest cr0.pe
-//	cleared (i.e. real mode), so kvm enters the guest in vm86 mode which 
-//	is fairly similar and tries to massage things so it looks to the guest 
-//	as if it is running in real mode. Unfortunately, vm86 mode requires a 
-//	task state segment in the address space, and there is no way for us to 
-//	hide it. kvm doesn't know anything about the guest physical memory map, 
+//	cleared (i.e. real mode), so kvm enters the guest in vm86 mode which
+//	is fairly similar and tries to massage things so it looks to the guest
+//	as if it is running in real mode. Unfortunately, vm86 mode requires a
+//	task state segment in the address space, and there is no way for us to
+//	hide it. kvm doesn't know anything about the guest physical memory map,
 //	so it has to rely on userspace to supply an unused region.
 //	*/
 //	int intel_workaround = ioctl(kvm_fd, KVM_CHECK_EXTENSION, KVM_CAP_SET_TSS_ADDR);
@@ -41,6 +42,6 @@ int elkvm_tss_setup32(struct elkvm_tss32 *tss,
 //			return -errno;
 //		}
 //	}
-	
+
 	return 0;
 }

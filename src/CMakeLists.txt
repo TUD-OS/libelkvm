@@ -12,7 +12,7 @@ SET( libelkvm_SRCS
   region.cc
   region_manager.cc
   signal.c
-  stack.c
+  stack.cc
   syscall.cc
   tss.c
   vcpu.c
