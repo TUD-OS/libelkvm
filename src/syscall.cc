@@ -597,12 +597,8 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
    * MAP_FIXED if necessary etc. */
   if(split) {
     /* this mapping needs to be split! */
-    off64_t map_off = addr - mapping.guest_address();
-    Elkvm::Mapping sliced = mapping.slice_center(map_off, length, fd, off);
+    Elkvm::Mapping sliced = mapping.slice(addr, length, prot, flags, fd, off);
     return_addr = sliced.guest_address();
-    if(!sliced.anonymous()) {
-      sliced.fill();
-    }
     sliced.map_self();
     Elkvm::rm.add_mapping(sliced);
   }
