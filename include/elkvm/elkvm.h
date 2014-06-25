@@ -10,10 +10,10 @@
 #include <sys/utsname.h>
 #include <unistd.h>
 #include <libelf.h>
+#include <linux/kvm.h>
 
 typedef uint64_t guestptr_t;
 
-#include "kvm.h"
 #include "pager.h"
 #include "region-c.h"
 #include "vcpu.h"
@@ -33,6 +33,8 @@ extern "C" {
 #ifdef _PREFIX_
 #define RES_PATH _PREFIX_ "/share/libelkvm"
 #endif
+
+struct elkvm_opts;
 
 struct region_mapping {
   void *host_p;

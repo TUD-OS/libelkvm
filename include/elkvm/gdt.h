@@ -30,7 +30,6 @@ struct elkvm_gdt_segment_descriptor {
  */
 #define GDT_NUM_ENTRIES 8
 
-int elkvm_gdt_setup(struct kvm_vm *);
 int elkvm_gdt_create_segment_descriptor(struct elkvm_gdt_segment_descriptor *,
 		uint32_t, uint32_t, uint8_t, uint8_t);
 

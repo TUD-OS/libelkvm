@@ -26,7 +26,6 @@ struct kvm_idt_entry {
 
 #define INTERRUPT_ENTRY_PRESENT 128
 
-int elkvm_idt_setup(struct kvm_vm *, struct elkvm_flat *);
 
 void elkvm_idt_dump(struct kvm_vm *);
 

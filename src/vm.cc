@@ -1,8 +1,9 @@
-#include <linux/kvm.h>
+#include <cstring>
+#include <string>
 
 #include <errno.h>
 #include <fcntl.h>
-#include <string.h>
+#include <linux/kvm.h>
 #include <stropts.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -12,8 +13,6 @@
 #include <environ-c.h>
 #include <elfloader-c.h>
 #include <flats.h>
-#include <gdt.h>
-#include <idt.h>
 #include <kvm.h>
 #include <pager.h>
 #include <region-c.h>
@@ -88,8 +87,8 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
 	}
 
 	struct elkvm_flat idth;
-	char *isr_path = RES_PATH "/isr";
-	err = elkvm_load_flat(vm, &idth, isr_path, 1);
+  std::string isr_path(RES_PATH "/isr");
+	err = elkvm_load_flat(vm, &idth, isr_path.c_str(), 1);
 	if(err) {
     if(err == -ENOENT) {
       printf("LIBELKVM: ISR shared file could not be found\n");
@@ -103,8 +102,8 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
 	}
 
 	struct elkvm_flat sysenter;
-	char *sysenter_path = RES_PATH "/entry";
-	err = elkvm_load_flat(vm, &sysenter, sysenter_path, 1);
+  std::string sysenter_path(RES_PATH "/entry");
+	err = elkvm_load_flat(vm, &sysenter, sysenter_path.c_str(), 1);
 	if(err) {
     if(err == -ENOENT) {
       printf("LIBELKVM: SYSCALL ENTRY shared file could not be found\n");
@@ -112,11 +111,11 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
 		return err;
 	}
 
-  char *sighandler_path = RES_PATH "/signal";
-  vm->sighandler_cleanup = malloc(sizeof(struct elkvm_flat));
+  std::string sighandler_path(RES_PATH "/signal");
+  vm->sighandler_cleanup = new(struct elkvm_flat);
   assert(vm->sighandler_cleanup != NULL);
 
-  err = elkvm_load_flat(vm, vm->sighandler_cleanup, sighandler_path, 0);
+  err = elkvm_load_flat(vm, vm->sighandler_cleanup, sighandler_path.c_str(), 0);
   if(err) {
     if(err == -ENOENT) {
       printf("LIBELKVM: SIGNAL HANDLER shared file could not be found\n");
@@ -184,7 +183,7 @@ int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * pat
     assert(err == 0);
   }
 
-	char *buf = flat->region->host_base_p;
+	char *buf = reinterpret_cast<char *>(flat->region->host_base_p);
 	int bufsize = ELKVM_PAGESIZE;
 	int bytes = 0;
 	while((bytes = read(fd, buf, bufsize)) > 0) {
@@ -317,8 +316,8 @@ void elkvm_emulate_vmcall(struct kvm_vcpu *vcpu) {
 }
 
 int elkvm_dump_valid_msrs(struct elkvm_opts *opts) {
-	struct kvm_msr_list *list = malloc(
-			sizeof(struct kvm_msr_list) + 255 * sizeof(uint32_t));
+	struct kvm_msr_list *list = reinterpret_cast<struct kvm_msr_list *>(
+      malloc( sizeof(struct kvm_msr_list) + 255 * sizeof(uint32_t)));
 	list->nmsrs = 255;
 
 	int err = ioctl(opts->fd, KVM_GET_MSR_INDEX_LIST, list);

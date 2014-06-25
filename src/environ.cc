@@ -4,6 +4,7 @@
 
 #include <elfloader.h>
 #include <environ.h>
+#include <kvm.h>
 #include <region.h>
 #include <stack.h>
 

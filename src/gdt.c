@@ -1,4 +1,5 @@
 #include <elkvm.h>
+#include <kvm.h>
 #include <gdt.h>
 #include <tss.h>
 #include <vcpu.h>
