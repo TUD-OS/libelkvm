@@ -212,20 +212,3 @@ int Environment::fill(struct elkvm_opts *opts, struct kvm_vm *vm) {
 
 //namespace Elkvm
 }
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-guestptr_t elkvm_env_get_guest_address() {
-  return Elkvm::env.get_guest_address();
-}
-
-void *elkvm_env_get_host_p() {
-  return Elkvm::env.get_base_address();
-}
-
-#ifdef __cplusplus
-}
-#endif

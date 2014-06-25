@@ -16,12 +16,13 @@
 #include <kvm.h>
 #include <pager.h>
 #include <region-c.h>
-#include <stack-c.h>
+#include <stack.h>
 #include <vcpu.h>
 #include "debug.h"
 
 namespace Elkvm {
   extern ElfBinary binary;
+  extern Stack stack;
 }
 
 int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus,
@@ -67,10 +68,8 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
 
   Elkvm::Environment env(bin);
 
-	err = elkvm_initialize_stack(vm);
-	if(err) {
-		return err;
-	}
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  Elkvm::stack.init(vcpu, &vm->pager, env);
 
   err = env.fill(opts, vm);
   if(err) {

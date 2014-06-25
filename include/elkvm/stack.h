@@ -1,5 +1,6 @@
 #pragma once
 
+#include <environ.h>
 #include <region.h>
 
 /* 64bit Linux puts the Stack at 47bits */
@@ -15,9 +16,10 @@ namespace Elkvm {
       struct kvm_vcpu *vcpu;
       struct kvm_pager *pager;
       int expand();
+      guestptr_t base;
 
     public:
-      void init(struct kvm_vcpu *v, struct kvm_pager *p);
+      void init(struct kvm_vcpu *v, struct kvm_pager *p, const Environment &e);
       int pushq(uint64_t val);
       uint64_t popq();
       bool is_stack_expansion(guestptr_t pfla);

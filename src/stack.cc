@@ -2,7 +2,7 @@
 #include <errno.h>
 
 #include <elkvm.h>
-#include <environ-c.h>
+#include <environ.h>
 #include <pager.h>
 #include <stack.h>
 #include <stack-c.h>
@@ -13,7 +13,7 @@ namespace Elkvm {
   extern RegionManager rm;
   Stack stack;
 
-  void Stack::init(struct kvm_vcpu *v, struct kvm_pager *p) {
+  void Stack::init(struct kvm_vcpu *v, struct kvm_pager *p, const Environment &env) {
     vcpu = v;
     pager = p;
 
@@ -38,11 +38,13 @@ namespace Elkvm {
 
     /* as the stack grows downward we can initialize its address at the base address
      * of the env region */
-    vcpu->regs.rsp = elkvm_env_get_guest_address();
+    vcpu->regs.rsp = env.get_guest_address();
     err = elkvm_pager_create_mapping(pager,
-        elkvm_env_get_host_p(),
+        env.get_base_address(),
         vcpu->regs.rsp, PT_OPT_WRITE);
     assert(err == 0 && "could not map stack address");
+
+    base = env.get_guest_address();
 
     err = kvm_vcpu_set_regs(vcpu);
     assert(err == 0 && "could not set registers");
@@ -80,26 +82,20 @@ namespace Elkvm {
   }
 
   int Stack::expand() {
-    guestptr_t oldrsp = 0;
-    if(stack_regions.empty()) {
-      oldrsp = page_begin(elkvm_env_get_guest_address());
-    } else {
-      oldrsp = page_begin(stack_regions.back()->guest_address());
-    }
-    guestptr_t newrsp = oldrsp - ELKVM_STACK_GROW;
+    base -= ELKVM_STACK_GROW;
 
     std::shared_ptr<Region> region = rm.allocate_region(ELKVM_STACK_GROW);
     if(region == nullptr) {
       return -ENOMEM;
     }
 
-    int err = elkvm_pager_map_region(pager, region->base_address(), newrsp,
+    int err = elkvm_pager_map_region(pager, region->base_address(), base,
         ELKVM_STACK_GROW / ELKVM_PAGESIZE, PT_OPT_WRITE);
     if(err) {
       return err;
     }
 
-    region->set_guest_addr(newrsp);
+    region->set_guest_addr(base);
     stack_regions.push_back(region);
 
     return 0;
@@ -142,12 +138,6 @@ extern "C" {
 void elkvm_dump_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
   assert(vcpu->regs.rsp != 0x0);
   elkvm_dump_memory(vm, vcpu->regs.rsp);
-}
-
-int elkvm_initialize_stack(struct kvm_vm *vm) {
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
-  Elkvm::stack.init(vcpu, &vm->pager);
-  return 0;
 }
 
 int elkvm_pushq(struct kvm_vm *vm __attribute__((unused)),
