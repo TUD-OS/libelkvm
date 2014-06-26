@@ -60,6 +60,7 @@ namespace Elkvm {
   int Mapping::unmap(guestptr_t unmap_addr, unsigned pages) {
     assert(contains_address(unmap_addr));
     assert(pages <= mapped_pages);
+    assert(contains_address(unmap_addr + ((pages-1) * ELKVM_PAGESIZE)));
 
     //TODO use elkvm_pager_unmap_region here again!
     guestptr_t cur_addr_p = unmap_addr;
@@ -92,7 +93,8 @@ namespace Elkvm {
         && "slice address must be contained in mapping");
 
     if(slice_base == addr) {
-      assert(false && "slice begin not implemented!");
+      slice_begin(len);
+      return;
     }
 
     /* slice_base is now always larger than host_p */
@@ -115,13 +117,8 @@ namespace Elkvm {
     assert(0 <= off < length);
 
     /* unmap the old stuff */
-    for(guestptr_t current_addr = addr + off;
-        current_addr < addr + off + len;
-        current_addr += ELKVM_PAGESIZE) {
-      int err = elkvm_pager_destroy_mapping(pager, current_addr);
-      assert(err == 0);
-      mapped_pages--;
-    }
+    unsigned pages = pages_from_size(len);
+    unmap(addr + off, pages);
 
     region->slice_center(off, len);
 
@@ -141,15 +138,20 @@ namespace Elkvm {
     mapped_pages = pages_from_size(length);
   }
 
+  void Mapping::slice_begin(size_t len) {
+    unsigned pages = pages_from_size(len);
+    unmap(addr, pages);
+
+    addr += len;
+    length -= len;
+    host_p = reinterpret_cast<char *>(host_p) + len;
+
+  }
+
   void Mapping::slice_end(guestptr_t slice_base, size_t len) {
     /* unmap the old stuff */
-    for(guestptr_t current_addr = slice_base;
-        current_addr < addr + length;
-        current_addr += ELKVM_PAGESIZE) {
-      int err = elkvm_pager_destroy_mapping(pager, current_addr);
-      assert(err == 0);
-      mapped_pages--;
-    }
+    unsigned pages = pages_from_size((addr + length) - slice_base);
+    unmap(slice_base, pages);
 
     length = length - ((addr + length) - slice_base);
 
