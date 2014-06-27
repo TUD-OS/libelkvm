@@ -42,6 +42,8 @@ namespace Elkvm {
       size_t get_length() const { return length; }
       off_t get_offset() const { return offset; }
       unsigned get_pages() const { return mapped_pages; }
+      int get_prot() const { return prot; }
+      int get_flags() const { return flags; }
 
       bool all_unmapped() { return mapped_pages == 0; }
 
