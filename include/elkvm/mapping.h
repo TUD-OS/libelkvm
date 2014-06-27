@@ -30,8 +30,8 @@ namespace Elkvm {
           int fdes, off_t off, struct kvm_pager * pa);
 
       bool anonymous() const { return flags & MAP_ANONYMOUS; }
-      bool contains_address(void *p);
-      bool contains_address(guestptr_t a);
+      bool contains_address(void *p) const;
+      bool contains_address(guestptr_t a) const;
       bool readable() const { return prot & PROT_READ; }
       bool executable() const { return prot & PROT_EXEC; }
       bool writeable() const { return prot & PROT_WRITE; }

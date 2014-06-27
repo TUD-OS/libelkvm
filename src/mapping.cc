@@ -80,18 +80,17 @@ namespace Elkvm {
     return 0;
   }
 
-  bool Mapping::contains_address(void *p) {
+  bool Mapping::contains_address(void *p) const {
     return (host_p <= p) && (p < (reinterpret_cast<char *>(host_p) + length));
   }
 
-  bool Mapping::contains_address(guestptr_t a) {
+  bool Mapping::contains_address(guestptr_t a) const {
     return (addr <= a) && (a < (addr + length));
   }
 
   void Mapping::slice(guestptr_t slice_base, size_t len) {
     assert(contains_address(slice_base)
         && "slice address must be contained in mapping");
-
     if(slice_base == addr) {
       slice_begin(len);
       return;
