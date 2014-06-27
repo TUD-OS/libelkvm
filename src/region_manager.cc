@@ -6,6 +6,26 @@
 
 namespace Elkvm {
 
+  void RegionManager::dump_mappings() {
+    std::cout << "DUMPING ALL MAPPINGS:\n";
+    std::cout << "====================\n";
+    for(const auto &reg : mappings) {
+      print(std::cout, reg);
+    }
+
+    std::cout << std::endl << std::endl;
+  }
+
+  void RegionManager::dump_regions() {
+    std::cout << "DUMPING ALL REGIONS:\n";
+    std::cout << "====================\n";
+    for(const auto &reg : allocated_regions) {
+      print(std::cout, *reg);
+    }
+
+    std::cout << std::endl << std::endl;
+  }
+
   std::shared_ptr<Region> RegionManager::allocate_region(size_t size) {
     auto r = find_free_region(size);
 
