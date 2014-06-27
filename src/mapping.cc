@@ -23,7 +23,6 @@ namespace Elkvm {
       addr = reinterpret_cast<guestptr_t>(host_p);
     }
     region->set_guest_addr(addr);
-
     mapped_pages = pages_from_size(length);
   }
 
@@ -166,7 +165,6 @@ namespace Elkvm {
   }
 
   void Mapping::slice_center(off_t off, size_t len) {
-
     assert(contains_address(reinterpret_cast<char *>(host_p) + off + len));
     assert(0 <= off < length);
 
@@ -179,7 +177,6 @@ namespace Elkvm {
     if(length > off + len) {
       size_t rem = length - off - len;
       auto r = rm.find_region(reinterpret_cast<char *>(host_p) + off + len);
-
       /* There should be no need to process this mapping any further, because we
        * feed it the split memory region, with the old data inside */
       Mapping end(r, addr + off + len,
@@ -207,6 +204,7 @@ namespace Elkvm {
     unsigned pages = pages_from_size((addr + length) - slice_base);
     unmap(slice_base, pages);
 
+    assert(((addr + length) - slice_base) < length);
     length = length - ((addr + length) - slice_base);
 
     /* TODO free part of the attached memory region */
