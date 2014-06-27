@@ -128,7 +128,7 @@ namespace Elkvm {
     return offset;
   }
 
-  off64_t Environment::push_str_copy(struct kvm_vm *vm, off64_t offset, std::string str) const {
+  off64_t Environment::push_str_copy(off64_t offset, std::string str) const {
     char *target = reinterpret_cast<char *>(region->base_address()) + offset;
     guestptr_t guest_virtual = region->guest_address() + offset;
     off64_t bytes = str.length() + 1;
@@ -199,7 +199,7 @@ int Environment::fill(struct elkvm_opts *opts, struct kvm_vm *vm) {
 
   /* if the binary is dynamically linked we need to ajdust some stuff */
   if(binary.is_dynamically_linked()) {
-    push_str_copy(vm, bytes_total, binary.get_loader());
+    push_str_copy(bytes_total, binary.get_loader());
     opts->argc++;
   }
 
