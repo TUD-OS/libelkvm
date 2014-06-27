@@ -23,6 +23,7 @@ namespace Elkvm {
       int brk(guestptr_t newbrk);
       guestptr_t get_brk() const { return curbrk; };
       void set_pager(struct kvm_pager *const p) { pager = p; }
+      Mapping &find_mapping(guestptr_t addr);
   };
 
   //namespace Elkvm

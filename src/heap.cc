@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <algorithm>
 #include <iostream>
 
 #include <elkvm.h>
@@ -56,6 +57,14 @@ namespace Elkvm {
 
     curbrk = newbrk;
     return 0;
+  }
+
+  Mapping &HeapManager::find_mapping(guestptr_t addr) {
+    auto it = std::find_if(mappings.begin(), mappings.end(),
+        [addr](const Mapping &m) { return m.contains_address(addr); });
+    assert(it != mappings.end());
+
+    return *it;
   }
 
   int HeapManager::init(std::shared_ptr<Region> data, size_t sz) {
