@@ -23,6 +23,8 @@ namespace Elkvm {
       int brk(guestptr_t newbrk);
       guestptr_t get_brk() const { return curbrk; };
       void set_pager(struct kvm_pager *const p) { pager = p; }
+      bool contains_address(guestptr_t addr) const
+      { return (mappings.front().guest_address() <= addr) && (addr < curbrk); }
       Mapping &find_mapping(guestptr_t addr);
   };
 
