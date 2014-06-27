@@ -66,7 +66,7 @@ namespace Elkvm {
       void use_region(std::shared_ptr<Region> r);
       Mapping &find_mapping(void *host_p);
       Mapping &find_mapping(guestptr_t addr);
-      void add_mapping(Mapping &mapping);
+      void add_mapping(const Mapping &mapping);
       void free_mapping(Mapping &mapping);
   };
 

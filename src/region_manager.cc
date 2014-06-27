@@ -155,7 +155,7 @@ namespace Elkvm {
     return *iter;
   }
 
-  void RegionManager::add_mapping(Mapping &mapping) {
+  void RegionManager::add_mapping(const Mapping &mapping) {
     mappings.push_back(mapping);
   }
 
