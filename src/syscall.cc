@@ -600,39 +600,42 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
 long elkvm_do_mprotect(struct kvm_vm *vm) {
   struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
 
-  uint64_t addr_p = 0;
-  void *addr = NULL;
+  guestptr_t addr = 0;
   uint64_t len = 0;
   uint64_t prot = 0;
-  elkvm_syscall3(vcpu, &addr_p, &len, &prot);
+  elkvm_syscall3(vcpu, &addr, &len, &prot);
 
-  assert(page_aligned(addr_p) && "mprotect address must be page aligned");
-  if(addr_p != 0x0) {
-    addr = elkvm_pager_get_host_p(&vm->pager, addr_p);
+  assert(page_aligned(addr) && "mprotect address must be page aligned");
+  if(!Elkvm::rm.address_mapped(addr)) {
+    Elkvm::rm.dump_regions();
+    std::cout << "mprotect with invalid address: 0x" << std::hex
+      << addr << std::endl;
+    return -EINVAL;
   }
 
-  ptopt_t opts = 0;
-  if(prot & PROT_WRITE) {
-    opts |= PT_OPT_WRITE;
+  Elkvm::Mapping &mapping = Elkvm::rm.find_mapping(addr);
+  int err = 0;
+  if(mapping.get_length() != len) {
+    /* we need to split this mapping */
+    mapping.slice(addr, len);
+    Elkvm::Mapping new_mapping(addr, len, prot, mapping.get_flags(),
+        mapping.get_fd(), mapping.get_offset(), &vm->pager);
+    new_mapping.map_self();
+    Elkvm::rm.add_mapping(new_mapping);
+  } else {
+    /* only modify this mapping */
+    err = mapping.mprotect(prot);
   }
-  if(prot & PROT_EXEC) {
-    opts |= PT_OPT_EXEC;
-  }
-  int err = elkvm_pager_map_region(&vm->pager, addr, addr_p,
-      pages_from_size(len), opts);
-  assert(err == 0 && "mprotect mapping failed");
 
   if(vm->debug) {
-    Elkvm::Mapping mapping = Elkvm::rm.find_mapping(addr);
-    //assert(mapping != NULL);
-
     printf("\n============ LIBELKVM ===========\n");
-    printf("MPROTECT reguested with address: 0x%lx (%p) len: 0x%lx W: %i E: %i prot: %i\n",
-        addr_p, addr, len, opts & PT_OPT_WRITE, opts & PT_OPT_EXEC, (int)prot);
+    printf("MPROTECT reguested with address: 0x%lx len: 0x%lx prot: %i\n",
+        addr, len, (int)prot);
     print(std::cout, mapping);
     printf("RESULT: %i\n", err);
     printf("=================================\n");
   }
+
 	return err;
 }
 
