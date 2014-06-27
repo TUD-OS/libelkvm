@@ -61,18 +61,9 @@ int elkvm_signal_deliver(struct kvm_vm *vm) {
   struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
   assert(vcpu != NULL);
 
-  /* save the vcpu regs */
-  memcpy(&vm->sigs.saved_vcpu.regs, &vcpu->regs,
-      sizeof(struct kvm_regs) + sizeof(struct kvm_sregs));
-  /* set signal handler flag in vm */
-  vm->sigs.handler_active = true;
-
   num_pending_signals--;
   int signum = pending_signals[num_pending_signals];
 
-  printf("sighandler_cleanup: 0x%lx (%p)\n",
-      vm->sighandler_cleanup->region->guest_virtual,
-      vm->sighandler_cleanup->region->host_base_p);
   /* push rax onto stack */
   elkvm_pushq(vm, vcpu, vcpu->regs.rax);
 
@@ -85,20 +76,3 @@ int elkvm_signal_deliver(struct kvm_vm *vm) {
 
   return 0;
 }
-
-int elkvm_signal_cleanup(struct kvm_vm *vm) {
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
-  assert(vcpu != NULL);
-
-  /* clear signal handler flag */
-  vm->sigs.handler_active = false;
-
-  /* restore the vcpu regs */
-  memcpy(&vcpu->regs, &vm->sigs.saved_vcpu.regs,
-      sizeof(struct kvm_regs) + sizeof(struct kvm_sregs));
-
-  /* TODO check for more pending signals */
-
-  return 0;
-}
-
