@@ -1,3 +1,4 @@
+#include "heap.h"
 #include "region.h"
 
 #include <algorithm>
@@ -5,6 +6,7 @@
 #include <iostream>
 
 namespace Elkvm {
+  extern HeapManager heap_m;
 
   void RegionManager::dump_mappings() const {
     std::cout << "DUMPING ALL MAPPINGS:\n";
@@ -162,6 +164,12 @@ namespace Elkvm {
   Mapping &RegionManager::find_mapping(guestptr_t addr) {
     auto iter = std::find_if(mappings.begin(), mappings.end(),
         [addr](const Mapping &m) { return m.contains_address(addr); });
+
+    if(iter == mappings.end()) {
+      if(heap_m.contains_address(addr)) {
+        return heap_m.find_mapping(addr);
+      }
+    }
     assert(iter != mappings.end());
 
     return *iter;
@@ -178,7 +186,10 @@ namespace Elkvm {
   bool RegionManager::address_mapped(guestptr_t addr) const {
     auto iter = std::find_if(mappings.begin(), mappings.end(),
         [addr](const Mapping &m) { return m.contains_address(addr); });
-    return iter != mappings.end();
+    if(iter == mappings.end()) {
+      return heap_m.contains_address(addr);
+    }
+    return true;
   }
 
   Mapping &RegionManager::get_mapping(guestptr_t addr, size_t length, int prot,
