@@ -160,7 +160,7 @@ namespace Elkvm {
     } else {
       /* slice_end is only needed, when we want to expand the new region beyond
        * the end of this region */
-      slice_end(slice_base, len);
+      slice_end(slice_base);
     }
   }
 
@@ -199,10 +199,11 @@ namespace Elkvm {
 
   }
 
-  void Mapping::slice_end(guestptr_t slice_base, size_t len) {
+  void Mapping::slice_end(guestptr_t slice_base) {
+    assert(contains_address(slice_base));
+
     /* unmap the old stuff */
-    unsigned pages = pages_from_size((addr + length) - slice_base);
-    unmap(slice_base, pages);
+    unmap(slice_base, pages_from_size((addr + length) - slice_base));
 
     assert(((addr + length) - slice_base) < length);
     length = length - ((addr + length) - slice_base);

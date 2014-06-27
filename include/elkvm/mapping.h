@@ -23,6 +23,10 @@ namespace Elkvm {
       off_t offset;
       std::shared_ptr<Region> region;
 
+      void slice_begin(size_t len);
+      void slice_center(off_t off, size_t len);
+      void slice_end(guestptr_t slice_base);
+
     public:
       Mapping(guestptr_t guest_addr, size_t l, int pr, int f, int fdes, off_t off,
           struct kvm_pager * pa);
@@ -51,10 +55,6 @@ namespace Elkvm {
       void sync_back(struct region_mapping *mapping);
 
       void slice(guestptr_t slice_base, size_t len);
-      void slice_begin(size_t len);
-      void slice_center(off_t off, size_t len);
-      void slice_end(guestptr_t slice_base, size_t len);
-
       int fill();
 
       int map_self();
