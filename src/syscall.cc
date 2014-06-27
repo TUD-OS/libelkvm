@@ -548,25 +548,9 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
 
   /* create a mapping object with the data from the user, this will
    * also allocate the memory for this mapping */
-  Elkvm::Mapping mapping(addr, length, prot, flags, fd, off, &vm->pager);
+  Elkvm::Mapping &mapping =
+    Elkvm::rm.get_mapping(addr, length, prot, flags, fd, off);
 
-  /* check if we already have a mapping for that address,
-   * if we do, we need to split the old mapping, and replace the contents
-   * with whatever the user requested */
-  bool split = false;
-  if(addr != 0x0) {
-    void *host_p = elkvm_pager_get_host_p(&vm->pager, addr);
-    if(host_p != NULL) {
-      assert(flags & MAP_FIXED);
-      split = true;
-
-      /* TODO this should be done after we get back to the user! */
-      /* this mapping needs to be split! */
-      Elkvm::Mapping &old_mapping = Elkvm::rm.find_mapping(addr);
-      old_mapping.slice(addr, length);
-    }
-  }
-  mapping.map_self();
 
   /* if a handler is specified, call the monitor for corrections etc. */
   long result = 0;
@@ -576,6 +560,19 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     /* write changes back to mapping obj */
     mapping.sync_back(cm);
     free(cm);
+  }
+
+  /* now do the standard actions not handled by the monitor
+   * i.e. copy data for file-based mappings, split existing mappings for
+   * MAP_FIXED if necessary etc. */
+
+  if(!mapping.anonymous()) {
+    mapping.fill();
+  }
+
+  /* call the monitor again, so it can do what has been left */
+  if(vm->syscall_handlers->mmap_after != NULL) {
+    result = vm->syscall_handlers->mmap_after(mapping.c_mapping());
   }
 
   if(vm->debug) {
@@ -597,26 +594,6 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     return -errno;
   }
 
-  /* now do the standard actions not handled by the monitor
-   * i.e. copy data for file-based mappings, split existing mappings for
-   * MAP_FIXED if necessary etc. */
-  if(split) {
-  }
-
-  if(!mapping.anonymous()) {
-    mapping.fill();
-  }
-
-  if(vm->debug) {
-    print(std::cout, mapping);
-  }
-
-  /* call the monitor again, so it can do what has been left */
-  if(vm->syscall_handlers->mmap_after != NULL) {
-    result = vm->syscall_handlers->mmap_after(mapping.c_mapping());
-  }
-
-  Elkvm::rm.add_mapping(mapping);
   return mapping.guest_address();
 }
 
