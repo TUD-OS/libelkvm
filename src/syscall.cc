@@ -237,8 +237,6 @@ long elkvm_do_read(struct kvm_vm *vm) {
   void *bend = elkvm_pager_get_host_p(&vm->pager, bend_p);
   long result = 0;
 
-  //Elkvm::Mapping mapping = Elkvm::rm.find_mapping(buf);
-  //if(mapping == NULL && !Elkvm::same_region(buf, bend)) {
   if(!Elkvm::same_region(buf, bend)) {
     assert(Elkvm::rm.host_address_mapped(bend));
     char *host_begin_mark = NULL;
@@ -378,8 +376,6 @@ long elkvm_do_open(struct kvm_vm *vm) {
   assert(pathname_p != 0x0);
 	pathname = reinterpret_cast<char *>(elkvm_pager_get_host_p(&vm->pager, pathname_p));
 
-  if(vm->debug) {
-  }
 	long result = vm->syscall_handlers->open(pathname, (int)flags, (mode_t)mode);
 
   if(vm->debug) {
