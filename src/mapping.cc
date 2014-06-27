@@ -89,6 +89,14 @@ namespace Elkvm {
     }
   }
 
+  int Mapping::mprotect(int pr) {
+    if(pr != prot) {
+      prot = pr;
+      return map_self();
+    }
+    return 0;
+  }
+
   int Mapping::unmap(guestptr_t unmap_addr, unsigned pages) {
     assert(contains_address(unmap_addr));
     assert(pages <= mapped_pages);

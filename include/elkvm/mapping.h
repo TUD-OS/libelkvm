@@ -59,6 +59,7 @@ namespace Elkvm {
 
       int map_self();
       void modify(int pr, int fl, int filedes, off_t o);
+      int mprotect(int pr);
       int unmap(guestptr_t unmap_addr, unsigned pages);
   };
 
