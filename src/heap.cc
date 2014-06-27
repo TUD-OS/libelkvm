@@ -19,7 +19,12 @@ namespace Elkvm {
     if(!page_aligned(newbrk)) {
       slice_base = next_page(slice_base);
     }
+
     Mapping &m = mappings.back();
+    if(m.guest_address() + m.get_length() == slice_base) {
+      return 0;
+    }
+
     assert(m.guest_address() + m.get_length() > slice_base);
     size_t len = m.guest_address() + m.get_length() - slice_base;
     m.slice(slice_base, len);
