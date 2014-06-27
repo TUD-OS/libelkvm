@@ -54,7 +54,39 @@ namespace Elkvm {
 
     /* add page table entries according to the options specified by the monitor */
     int err = elkvm_pager_map_region(pager, host_p, addr, mapped_pages, opts);
+    assert(err == 0);
     return err;
+  }
+
+  void Mapping::modify(int pr, int fl, int filedes, off_t o) {
+    mapped_pages = pages_from_size(length);
+
+    if(pr != prot) {
+      prot = pr;
+      map_self();
+    }
+    if(flags != fl) {
+      if(anonymous() && !(fl & MAP_ANONYMOUS)) {
+        flags = fl;
+        fd = filedes;
+        offset = o;
+        fill();
+      }
+      flags = fl;
+    }
+    if(fd != filedes) {
+      offset = o;
+      fd = filedes;
+      if(!anonymous()) {
+        fill();
+      }
+    }
+    if(offset != o) {
+      offset = o;
+      if(!anonymous()) {
+        fill();
+      }
+    }
   }
 
   int Mapping::unmap(guestptr_t unmap_addr, unsigned pages) {
