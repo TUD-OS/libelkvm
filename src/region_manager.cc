@@ -6,7 +6,7 @@
 
 namespace Elkvm {
 
-  void RegionManager::dump_mappings() {
+  void RegionManager::dump_mappings() const {
     std::cout << "DUMPING ALL MAPPINGS:\n";
     std::cout << "====================\n";
     for(const auto &reg : mappings) {
@@ -16,7 +16,7 @@ namespace Elkvm {
     std::cout << std::endl << std::endl;
   }
 
-  void RegionManager::dump_regions() {
+  void RegionManager::dump_regions() const {
     std::cout << "DUMPING ALL REGIONS:\n";
     std::cout << "====================\n";
     for(const auto &reg : allocated_regions) {
@@ -175,7 +175,7 @@ namespace Elkvm {
     return *iter;
   }
 
-  bool RegionManager::address_mapped(guestptr_t addr) {
+  bool RegionManager::address_mapped(guestptr_t addr) const {
     auto iter = std::find_if(mappings.begin(), mappings.end(),
         [addr](const Mapping &m) { return m.contains_address(addr); });
     return iter != mappings.end();

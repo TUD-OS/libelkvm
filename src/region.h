@@ -70,7 +70,7 @@ namespace Elkvm {
       Mapping &find_mapping(guestptr_t addr);
       bool address_mapped(guestptr_t addr) const;
       Mapping &get_mapping(guestptr_t addr, size_t length, int prot, int flags,
-          int fd, off_t off) const;
+          int fd, off_t off);
       void add_mapping(const Mapping &mapping);
       void free_mapping(Mapping &mapping);
   };
