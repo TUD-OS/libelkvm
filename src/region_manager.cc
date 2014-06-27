@@ -6,6 +6,26 @@
 
 namespace Elkvm {
 
+  void RegionManager::dump_mappings() const {
+    std::cout << "DUMPING ALL MAPPINGS:\n";
+    std::cout << "====================\n";
+    for(const auto &reg : mappings) {
+      print(std::cout, reg);
+    }
+
+    std::cout << std::endl << std::endl;
+  }
+
+  void RegionManager::dump_regions() const {
+    std::cout << "DUMPING ALL REGIONS:\n";
+    std::cout << "====================\n";
+    for(const auto &reg : allocated_regions) {
+      print(std::cout, *reg);
+    }
+
+    std::cout << std::endl << std::endl;
+  }
+
   std::shared_ptr<Region> RegionManager::allocate_region(size_t size) {
     auto r = find_free_region(size);
 
@@ -139,15 +159,60 @@ namespace Elkvm {
     allocated_regions.push_back(r);
   }
 
-  Mapping &RegionManager::find_mapping(void *host_p) {
+  Mapping &RegionManager::find_mapping(guestptr_t addr) {
     auto iter = std::find_if(mappings.begin(), mappings.end(),
-        [host_p](Mapping m) { return m.contains_address(host_p); });
+        [addr](const Mapping &m) { return m.contains_address(addr); });
     assert(iter != mappings.end());
 
     return *iter;
   }
 
-  void RegionManager::add_mapping(Mapping &mapping) {
+  Mapping &RegionManager::find_mapping(void *host_p) {
+    auto iter = std::find_if(mappings.begin(), mappings.end(),
+        [host_p](const Mapping &m) { return m.contains_address(host_p); });
+    assert(iter != mappings.end());
+
+    return *iter;
+  }
+
+  bool RegionManager::address_mapped(guestptr_t addr) const {
+    auto iter = std::find_if(mappings.begin(), mappings.end(),
+        [addr](const Mapping &m) { return m.contains_address(addr); });
+    return iter != mappings.end();
+  }
+
+  Mapping &RegionManager::get_mapping(guestptr_t addr, size_t length, int prot,
+      int flags, int fd, off_t off) {
+    /* check if we already have a mapping for that address,
+     * if we do, we need to split the old mapping, and replace the contents
+     * with whatever the user requested,
+     * however if we have an exact match, we need to return that */
+    auto it = std::find_if(mappings.begin(), mappings.end(),
+        [addr, length, prot, flags, fd, off](const Mapping &m)
+        { return m.guest_address() == addr
+              && m.get_length() == length; });
+    if(it == mappings.end()) {
+      it = std::find_if(mappings.begin(), mappings.end(),
+          [addr](const Mapping &m) { return m.contains_address(addr); });
+      if(it != mappings.end()) {
+        /* TODO this should be done after we get back to the user! */
+        /* this mapping needs to be split! */
+        it->slice(addr, length);
+      }
+      mappings.emplace_back(addr, length, prot, flags, fd, off, pager);
+      Mapping &mapping = mappings.back();
+      mapping.map_self();
+
+      return mapping;
+    }
+
+    /* if we have an exact match, we only need to update this mapping's protection
+     * and flags etc. and return the mapping object */
+    it->modify(prot, flags, fd, off);
+    return *it;
+  }
+
+  void RegionManager::add_mapping(const Mapping &mapping) {
     mappings.push_back(mapping);
   }
 

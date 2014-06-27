@@ -53,6 +53,8 @@ namespace Elkvm {
 
     public:
       void add_free_region(std::shared_ptr<Region> region);
+      void dump_regions() const;
+      void dump_mappings() const;
       void add_system_chunk();
       bool address_valid(const void *host_p) const;
       std::shared_ptr<Region> allocate_region(size_t size);
@@ -65,7 +67,11 @@ namespace Elkvm {
       void set_pager(struct kvm_pager *const p) { pager = p; }
       void use_region(std::shared_ptr<Region> r);
       Mapping &find_mapping(void *host_p);
-      void add_mapping(Mapping &mapping);
+      Mapping &find_mapping(guestptr_t addr);
+      bool address_mapped(guestptr_t addr) const;
+      Mapping &get_mapping(guestptr_t addr, size_t length, int prot, int flags,
+          int fd, off_t off);
+      void add_mapping(const Mapping &mapping);
       void free_mapping(Mapping &mapping);
   };
 

@@ -14,6 +14,7 @@
 #include <heap.h>
 #include <mapping.h>
 #include <stack.h>
+#include <stack-c.h>
 #include <syscall.h>
 #include <vcpu.h>
 
@@ -64,7 +65,7 @@ int elkvm_handle_interrupt(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
   if(vm->debug) {
     printf(" INTERRUPT with vector 0x%lx detected\n", interrupt_vector);
     kvm_vcpu_dump_regs(vcpu);
-    //elkvm_dump_stack(vm, vcpu);
+    elkvm_dump_stack(vm, vcpu);
   }
 
   /* Stack Segment */
@@ -547,23 +548,9 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
 
   /* create a mapping object with the data from the user, this will
    * also allocate the memory for this mapping */
-  Elkvm::Mapping mapping(addr, length, prot, flags, fd, off, &vm->pager);
+  Elkvm::Mapping &mapping =
+    Elkvm::rm.get_mapping(addr, length, prot, flags, fd, off);
 
-  /* check if we already have a mapping for that address,
-   * if we do, we need to split the old mapping, and replace the contents
-   * with whatever the user requested */
-  bool split = false;
-  if(addr != 0x0) {
-    void *host_p = elkvm_pager_get_host_p(&vm->pager, addr);
-    if(host_p != NULL) {
-      assert(flags & MAP_FIXED);
-      mapping = Elkvm::rm.find_mapping(host_p);
-      split = true;
-    }
-  }
-  if(!split) {
-    mapping.map_self();
-  }
 
   /* if a handler is specified, call the monitor for corrections etc. */
   long result = 0;
@@ -575,12 +562,28 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     free(cm);
   }
 
+  /* now do the standard actions not handled by the monitor
+   * i.e. copy data for file-based mappings, split existing mappings for
+   * MAP_FIXED if necessary etc. */
+
+  if(!mapping.anonymous()) {
+    mapping.fill();
+  }
+
+  /* call the monitor again, so it can do what has been left */
+  if(vm->syscall_handlers->mmap_after != NULL) {
+    result = vm->syscall_handlers->mmap_after(mapping.c_mapping());
+  }
+
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
-    printf("MMAP addr 0x%lx length %lu prot %lu flags %lu",
-        addr, length, prot, flags);
-    if(!mapping.anonymous()) {
+    printf("MMAP addr 0x%lx length %lu (0x%lx) prot %lu flags %lu",
+        addr, length, length, prot, flags);
+    if(!(flags & MAP_ANONYMOUS)) {
       printf(" fd %lu offset %li", fd, off);
+    }
+    if(flags & MAP_FIXED) {
+      printf(" MAP_FIXED");
     }
     printf("\n");
 
@@ -591,75 +594,48 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
     return -errno;
   }
 
-  long return_addr = mapping.guest_address();
-  /* now do the standard actions not handled by the monitor
-   * i.e. copy data for file-based mappings, split existing mappings for
-   * MAP_FIXED if necessary etc. */
-  if(split) {
-    /* this mapping needs to be split! */
-    off64_t map_off = addr - mapping.guest_address();
-    Elkvm::Mapping sliced = mapping.slice_center(map_off, length, fd, off);
-    return_addr = sliced.guest_address();
-    if(!sliced.anonymous()) {
-      sliced.fill();
-    }
-    sliced.map_self();
-    Elkvm::rm.add_mapping(sliced);
-  }
-
-  if(!mapping.anonymous()) {
-    mapping.fill();
-  }
-
-  if(vm->debug) {
-    print(std::cout, mapping);
-  }
-
-  /* call the monitor again, so it can do what has been left */
-  if(vm->syscall_handlers->mmap_after != NULL) {
-    result = vm->syscall_handlers->mmap_after(mapping.c_mapping());
-  }
-
-  Elkvm::rm.add_mapping(mapping);
-  return return_addr;
+  return mapping.guest_address();
 }
 
 long elkvm_do_mprotect(struct kvm_vm *vm) {
   struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
 
-  uint64_t addr_p = 0;
-  void *addr = NULL;
+  guestptr_t addr = 0;
   uint64_t len = 0;
   uint64_t prot = 0;
-  elkvm_syscall3(vcpu, &addr_p, &len, &prot);
+  elkvm_syscall3(vcpu, &addr, &len, &prot);
 
-  assert(page_aligned(addr_p) && "mprotect address must be page aligned");
-  if(addr_p != 0x0) {
-    addr = elkvm_pager_get_host_p(&vm->pager, addr_p);
+  assert(page_aligned(addr) && "mprotect address must be page aligned");
+  if(!Elkvm::rm.address_mapped(addr)) {
+    Elkvm::rm.dump_regions();
+    std::cout << "mprotect with invalid address: 0x" << std::hex
+      << addr << std::endl;
+    return -EINVAL;
   }
 
-  ptopt_t opts = 0;
-  if(prot & PROT_WRITE) {
-    opts |= PT_OPT_WRITE;
+  Elkvm::Mapping &mapping = Elkvm::rm.find_mapping(addr);
+  int err = 0;
+  if(mapping.get_length() != len) {
+    /* we need to split this mapping */
+    mapping.slice(addr, len);
+    Elkvm::Mapping new_mapping(addr, len, prot, mapping.get_flags(),
+        mapping.get_fd(), mapping.get_offset(), &vm->pager);
+    new_mapping.map_self();
+    Elkvm::rm.add_mapping(new_mapping);
+  } else {
+    /* only modify this mapping */
+    err = mapping.mprotect(prot);
   }
-  if(prot & PROT_EXEC) {
-    opts |= PT_OPT_EXEC;
-  }
-  int err = elkvm_pager_map_region(&vm->pager, addr, addr_p,
-      pages_from_size(len), opts);
-  assert(err == 0 && "mprotect mapping failed");
 
   if(vm->debug) {
-    Elkvm::Mapping mapping = Elkvm::rm.find_mapping(addr);
-    //assert(mapping != NULL);
-
     printf("\n============ LIBELKVM ===========\n");
-    printf("MPROTECT reguested with address: 0x%lx (%p) len: 0x%lx W: %i E: %i prot: %i\n",
-        addr_p, addr, len, opts & PT_OPT_WRITE, opts & PT_OPT_EXEC, (int)prot);
+    printf("MPROTECT reguested with address: 0x%lx len: 0x%lx prot: %i\n",
+        addr, len, (int)prot);
     print(std::cout, mapping);
     printf("RESULT: %i\n", err);
     printf("=================================\n");
   }
+
 	return err;
 }
 

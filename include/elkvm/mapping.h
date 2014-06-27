@@ -30,10 +30,11 @@ namespace Elkvm {
           int fdes, off_t off, struct kvm_pager * pa);
 
       bool anonymous() const { return flags & MAP_ANONYMOUS; }
-      bool contains_address(void *p);
-      bool contains_address(guestptr_t a);
-      bool executable() const { return flags & PROT_EXEC; }
-      bool writeable() const { return flags & PROT_WRITE; }
+      bool contains_address(void *p) const;
+      bool contains_address(guestptr_t a) const;
+      bool readable() const { return prot & PROT_READ; }
+      bool executable() const { return prot & PROT_EXEC; }
+      bool writeable() const { return prot & PROT_WRITE; }
 
       void *base_address() const { return host_p; }
       guestptr_t guest_address() const { return addr; }
@@ -41,17 +42,24 @@ namespace Elkvm {
       size_t get_length() const { return length; }
       off_t get_offset() const { return offset; }
       unsigned get_pages() const { return mapped_pages; }
+      int get_prot() const { return prot; }
+      int get_flags() const { return flags; }
 
       bool all_unmapped() { return mapped_pages == 0; }
 
       struct region_mapping *c_mapping();
       void sync_back(struct region_mapping *mapping);
 
-      Mapping slice_center(off_t off, size_t len, int new_fd, off_t new_offset);
+      void slice(guestptr_t slice_base, size_t len);
+      void slice_begin(size_t len);
+      void slice_center(off_t off, size_t len);
+      void slice_end(guestptr_t slice_base, size_t len);
 
       int fill();
 
       int map_self();
+      void modify(int pr, int fl, int filedes, off_t o);
+      int mprotect(int pr);
       int unmap(guestptr_t unmap_addr, unsigned pages);
   };
 

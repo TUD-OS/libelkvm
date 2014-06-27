@@ -23,7 +23,6 @@ namespace Elkvm {
       addr = reinterpret_cast<guestptr_t>(host_p);
     }
     region->set_guest_addr(addr);
-
     mapped_pages = pages_from_size(length);
   }
 
@@ -44,6 +43,21 @@ namespace Elkvm {
   }
 
   int Mapping::map_self() {
+    if(!readable() && !writeable() && !executable()) {
+      guestptr_t current_addr = addr;
+      for(unsigned i = 0; i < mapped_pages; i++) {
+        void *host_p = elkvm_pager_get_host_p(pager, current_addr);
+        if(host_p != NULL) {
+          int err = elkvm_pager_destroy_mapping(pager, current_addr);
+          assert(err == 0 && "Could not unmap address");
+        }
+        current_addr += ELKVM_PAGESIZE;
+        i++;
+      }
+      mapped_pages = 0;
+      return 0;
+    }
+
     ptopt_t opts = 0;
     if(writeable()) {
       opts |= PT_OPT_WRITE;
@@ -54,12 +68,53 @@ namespace Elkvm {
 
     /* add page table entries according to the options specified by the monitor */
     int err = elkvm_pager_map_region(pager, host_p, addr, mapped_pages, opts);
+    assert(err == 0);
     return err;
+  }
+
+  void Mapping::modify(int pr, int fl, int filedes, off_t o) {
+    mapped_pages = pages_from_size(length);
+
+    if(pr != prot) {
+      prot = pr;
+      map_self();
+    }
+    if(flags != fl) {
+      if(anonymous() && !(fl & MAP_ANONYMOUS)) {
+        flags = fl;
+        fd = filedes;
+        offset = o;
+        fill();
+      }
+      flags = fl;
+    }
+    if(fd != filedes) {
+      offset = o;
+      fd = filedes;
+      if(!anonymous()) {
+        fill();
+      }
+    }
+    if(offset != o) {
+      offset = o;
+      if(!anonymous()) {
+        fill();
+      }
+    }
+  }
+
+  int Mapping::mprotect(int pr) {
+    if(pr != prot) {
+      prot = pr;
+      return map_self();
+    }
+    return 0;
   }
 
   int Mapping::unmap(guestptr_t unmap_addr, unsigned pages) {
     assert(contains_address(unmap_addr));
     assert(pages <= mapped_pages);
+    assert(contains_address(unmap_addr + ((pages-1) * ELKVM_PAGESIZE)));
 
     //TODO use elkvm_pager_unmap_region here again!
     guestptr_t cur_addr_p = unmap_addr;
@@ -79,49 +134,86 @@ namespace Elkvm {
     return 0;
   }
 
-  bool Mapping::contains_address(void *p) {
+  bool Mapping::contains_address(void *p) const {
     return (host_p <= p) && (p < (reinterpret_cast<char *>(host_p) + length));
   }
 
-  bool Mapping::contains_address(guestptr_t a) {
+  bool Mapping::contains_address(guestptr_t a) const {
     return (addr <= a) && (a < (addr + length));
   }
 
-  Mapping Mapping::slice_center(off_t off, size_t len, int new_fd, off_t new_offset) {
+  void Mapping::slice(guestptr_t slice_base, size_t len) {
+    assert(contains_address(slice_base)
+        && "slice address must be contained in mapping");
+    if(slice_base == addr) {
+      slice_begin(len);
+      return;
+    }
+
+    /* slice_base is now always larger than host_p */
+    off_t off = slice_base - addr;
+
+    if(contains_address(slice_base + len)) {
+      /* slice_center also includes the case that the end of the sliced region
+       * is the end of this region */
+      slice_center(off, len);
+    } else {
+      /* slice_end is only needed, when we want to expand the new region beyond
+       * the end of this region */
+      slice_end(slice_base, len);
+    }
+  }
+
+  void Mapping::slice_center(off_t off, size_t len) {
     assert(contains_address(reinterpret_cast<char *>(host_p) + off + len));
     assert(0 <= off < length);
 
     /* unmap the old stuff */
-    for(guestptr_t current_addr = addr + off;
-        current_addr < addr + off + len;
-        current_addr += ELKVM_PAGESIZE) {
-      int err = elkvm_pager_destroy_mapping(pager, current_addr);
-      assert(err == 0);
-    }
+    unsigned pages = pages_from_size(len);
+    unmap(addr + off, pages);
 
     region->slice_center(off, len);
-    std::shared_ptr<Region> r = Elkvm::rm.allocate_region(len);
 
-    Mapping mid(r, addr + off, len, prot, flags, new_fd, new_offset, pager);
-    if(!mid.anonymous()) {
-      mid.fill();
-    }
     if(length > off + len) {
       size_t rem = length - off - len;
-      r = rm.find_region(reinterpret_cast<char *>(host_p) + off + len);
+      auto r = rm.find_region(reinterpret_cast<char *>(host_p) + off + len);
+      /* There should be no need to process this mapping any further, because we
+       * feed it the split memory region, with the old data inside */
       Mapping end(r, addr + off + len,
-          rem, prot, flags, fd, offset, pager);
+          rem, prot, flags, fd, offset + off + len, pager);
       Elkvm::rm.add_mapping(end);
     }
 
     length = off;
     /* XXX only if the mapping is still fully mapped! */
     mapped_pages = pages_from_size(length);
+  }
 
-    return mid;
+  void Mapping::slice_begin(size_t len) {
+    unsigned pages = pages_from_size(len);
+    unmap(addr, pages);
+
+    addr += len;
+    length -= len;
+    host_p = reinterpret_cast<char *>(host_p) + len;
+
+  }
+
+  void Mapping::slice_end(guestptr_t slice_base, size_t len) {
+    /* unmap the old stuff */
+    unsigned pages = pages_from_size((addr + length) - slice_base);
+    unmap(slice_base, pages);
+
+    assert(((addr + length) - slice_base) < length);
+    length = length - ((addr + length) - slice_base);
+
+    /* TODO free part of the attached memory region */
+
   }
 
   int Mapping::fill() {
+    assert(fd > 0 && "cannot fill mapping without file descriptor");
+
     off_t pos = lseek(fd, 0, SEEK_CUR);
     assert(pos >= 0 && "could not get current file position");
 
@@ -166,9 +258,31 @@ namespace Elkvm {
   }
 
   std::ostream &print(std::ostream &os, const Mapping &mapping) {
+    if(mapping.anonymous()) {
+      os << "ANONYMOUS ";
+    } else {
+      os << "          ";
+    }
+
     os << "MAPPING: 0x" << std::hex << mapping.guest_address()
       << " (" << mapping.base_address() << ") length: 0x" << mapping.get_length()
-      << " pages mapped: 0x" << mapping.get_pages() << std::endl;
+      << " last address: " << mapping.guest_address() + mapping.get_length()
+      << " pages mapped: 0x" << mapping.get_pages();
+    if(!mapping.anonymous()) {
+      os << " fd: " << mapping.get_fd();
+    }
+    os << " protection: ";
+    if(mapping.readable()) {
+      os << "R";
+    }
+    if(mapping.writeable()) {
+      os << "W";
+    }
+    if(mapping.executable()) {
+      os << "X";
+    }
+
+    os << std::endl;
     return os;
   }
 
