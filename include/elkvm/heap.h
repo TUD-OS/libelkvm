@@ -10,7 +10,7 @@ namespace Elkvm {
   class HeapManager {
     private:
       struct kvm_pager * pager;
-      std::vector<std::shared_ptr<Region>> heap_regions;
+      std::vector<Mapping> mappings;
       guestptr_t curbrk;
 
       int grow(size_t sz);
