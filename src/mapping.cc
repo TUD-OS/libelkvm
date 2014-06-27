@@ -44,6 +44,21 @@ namespace Elkvm {
   }
 
   int Mapping::map_self() {
+    if(!readable() && !writeable() && !executable()) {
+      guestptr_t current_addr = addr;
+      for(unsigned i = 0; i < mapped_pages; i++) {
+        void *host_p = elkvm_pager_get_host_p(pager, current_addr);
+        if(host_p != NULL) {
+          int err = elkvm_pager_destroy_mapping(pager, current_addr);
+          assert(err == 0 && "Could not unmap address");
+        }
+        current_addr += ELKVM_PAGESIZE;
+        i++;
+      }
+      mapped_pages = 0;
+      return 0;
+    }
+
     ptopt_t opts = 0;
     if(writeable()) {
       opts |= PT_OPT_WRITE;
