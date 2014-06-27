@@ -36,6 +36,7 @@ namespace Elkvm {
     fd(fdes),
     offset(off),
     pager(pa) {
+      assert(region->size() >= length);
       host_p = region->base_address();
       region->set_guest_addr(addr);
       assert(!region->is_free());
