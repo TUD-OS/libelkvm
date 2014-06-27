@@ -175,6 +175,12 @@ namespace Elkvm {
     return *iter;
   }
 
+  bool RegionManager::address_mapped(guestptr_t addr) {
+    auto iter = std::find_if(mappings.begin(), mappings.end(),
+        [addr](const Mapping &m) { return m.contains_address(addr); });
+    return iter != mappings.end();
+  }
+
   void RegionManager::add_mapping(const Mapping &mapping) {
     mappings.push_back(mapping);
   }
