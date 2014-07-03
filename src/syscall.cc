@@ -651,7 +651,7 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
     elkvm_pager_find_region_for_host_p(&vm->pager, addr);
   assert(chunk != NULL);
 
-  Elkvm::Mapping mapping = Elkvm::rm.find_mapping(addr);
+  Elkvm::Mapping &mapping = Elkvm::rm.find_mapping(addr);
   mapping.unmap(addr_p, pages_from_size(length));
 
   if(chunk == &vm->pager.system_chunk) {
