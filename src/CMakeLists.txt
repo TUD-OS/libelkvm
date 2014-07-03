@@ -15,7 +15,7 @@ SET( libelkvm_SRCS
   stack.cc
   syscall.cc
   tss.c
-  vcpu.c
+  vcpu.cc
   vm.cc
   )
 ADD_LIBRARY( elkvm SHARED ${libelkvm_SRCS} )
