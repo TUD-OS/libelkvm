@@ -12,9 +12,14 @@
 #include <elkvm.h>
 #include <gdt.h>
 #include <idt.h>
+#include <region.h>
 #include <stack-c.h>
 #include <syscall.h>
 #include <vcpu.h>
+
+namespace Elkvm {
+  extern RegionManager rm;
+}
 
 int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
 	if(vm->fd <= 0) {
