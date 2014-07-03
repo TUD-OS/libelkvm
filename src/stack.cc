@@ -33,7 +33,6 @@ namespace Elkvm {
         kernel_stack->base_address(), 1, 0);
     assert(kstack_addr != 0x0 && "could not allocate memory for kernel stack");
 
-    /* as stack grows downward we save it's virtual address at the page afterwards */
     kernel_stack->set_guest_addr(kstack_addr);
 
     /* as the stack grows downward we can initialize its address at the base address
@@ -156,7 +155,9 @@ bool elkvm_check_stack_grow(guestptr_t pfla) {
 }
 
 guestptr_t elkvm_get_kernel_stack_base() {
-  return Elkvm::stack.kernel_base();
+  /* as stack grows downward we return it's virtual address
+   * at the page afterwards */
+  return Elkvm::stack.kernel_base() + ELKVM_PAGESIZE;
 }
 
 #ifdef __cplusplus
