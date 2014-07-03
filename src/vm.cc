@@ -23,6 +23,7 @@
 namespace Elkvm {
   extern ElfBinary binary;
   extern Stack stack;
+  extern RegionManager rm;
 }
 
 int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus,
@@ -165,25 +166,27 @@ int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * pat
 	}
 
 	flat->size = stbuf.st_size;
-	flat->region = elkvm_region_create(stbuf.st_size);
-	flat->region->guest_virtual = 0x0;
+  std::shared_ptr<Elkvm::Region> region = Elkvm::rm.allocate_region(stbuf.st_size);
 
   if(kernel) {
-    flat->region->guest_virtual = elkvm_pager_map_kernel_page(&vm->pager,
-        flat->region->host_base_p, 0, 1);
-    if(flat->region->guest_virtual == 0) {
+    guestptr_t addr = elkvm_pager_map_kernel_page(&vm->pager,
+        region->base_address(), 0, 1);
+    if(addr == 0x0) {
       close(fd);
       return -ENOMEM;
     }
+    region->set_guest_addr(addr);
   } else {
     /* XXX this will break! */
-    flat->region->guest_virtual = 0x1000;
-    err = elkvm_pager_create_mapping(&vm->pager, flat->region->host_base_p,
-        flat->region->guest_virtual, PT_OPT_EXEC);
+    region->set_guest_addr(0x1000);
+    err = elkvm_pager_create_mapping(&vm->pager,
+        region->base_address(),
+        region->guest_address(),
+        PT_OPT_EXEC);
     assert(err == 0);
   }
 
-	char *buf = reinterpret_cast<char *>(flat->region->host_base_p);
+	char *buf = reinterpret_cast<char *>(region->base_address());
 	int bufsize = ELKVM_PAGESIZE;
 	int bytes = 0;
 	while((bytes = read(fd, buf, bufsize)) > 0) {
@@ -191,6 +194,7 @@ int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * pat
 	}
 
 	close(fd);
+  flat->region = region->c_region();
 
 	return 0;
 }
