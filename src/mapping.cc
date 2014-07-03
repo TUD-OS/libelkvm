@@ -119,11 +119,10 @@ namespace Elkvm {
 
     //TODO use elkvm_pager_unmap_region here again!
     guestptr_t cur_addr_p = unmap_addr;
-    while(pages) {
+    for(unsigned i = 0; i < pages; i++) {
       int err = elkvm_pager_destroy_mapping(pager, cur_addr_p);
       assert(err == 0);
       cur_addr_p += ELKVM_PAGESIZE;
-      pages--;
     }
     mapped_pages -= pages;
 
