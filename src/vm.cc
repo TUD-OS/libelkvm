@@ -20,6 +20,13 @@
 #include <vcpu.h>
 #include "debug.h"
 
+/*
+ * Load a flat binary into the guest address space
+ * returns 0 on success, an errno otherwise
+ */
+int elkvm_load_flat(struct kvm_vm *, struct elkvm_flat *, const std::string,
+    int kernel);
+
 namespace Elkvm {
   extern ElfBinary binary;
   extern Stack stack;
@@ -89,7 +96,7 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
 
 	struct elkvm_flat idth;
   std::string isr_path(RES_PATH "/isr");
-	err = elkvm_load_flat(vm, &idth, isr_path.c_str(), 1);
+	err = elkvm_load_flat(vm, &idth, isr_path, 1);
 	if(err) {
     if(err == -ENOENT) {
       printf("LIBELKVM: ISR shared file could not be found\n");
@@ -104,7 +111,7 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
 
 	struct elkvm_flat sysenter;
   std::string sysenter_path(RES_PATH "/entry");
-	err = elkvm_load_flat(vm, &sysenter, sysenter_path.c_str(), 1);
+	err = elkvm_load_flat(vm, &sysenter, sysenter_path, 1);
 	if(err) {
     if(err == -ENOENT) {
       printf("LIBELKVM: SYSCALL ENTRY shared file could not be found\n");
@@ -116,7 +123,7 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
   vm->sighandler_cleanup = new(struct elkvm_flat);
   assert(vm->sighandler_cleanup != NULL);
 
-  err = elkvm_load_flat(vm, vm->sighandler_cleanup, sighandler_path.c_str(), 0);
+  err = elkvm_load_flat(vm, vm->sighandler_cleanup, sighandler_path, 0);
   if(err) {
     if(err == -ENOENT) {
       printf("LIBELKVM: SIGNAL HANDLER shared file could not be found\n");
@@ -151,9 +158,10 @@ int elkvm_set_debug(struct kvm_vm *vm) {
   return 0;
 }
 
-int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * path,
+int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat,
+    const std::string path,
     int kernel) {
-	int fd = open(path, O_RDONLY);
+	int fd = open(path.c_str(), O_RDONLY);
 	if(fd < 0) {
 		return -errno;
 	}
