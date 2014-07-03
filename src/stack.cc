@@ -34,7 +34,7 @@ namespace Elkvm {
     assert(kstack_addr != 0x0 && "could not allocate memory for kernel stack");
 
     /* as stack grows downward we save it's virtual address at the page afterwards */
-    kernel_stack->set_guest_addr(kstack_addr + ELKVM_PAGESIZE);
+    kernel_stack->set_guest_addr(kstack_addr);
 
     /* as the stack grows downward we can initialize its address at the base address
      * of the env region */

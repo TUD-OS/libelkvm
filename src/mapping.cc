@@ -197,7 +197,8 @@ namespace Elkvm {
     addr += len;
     length -= len;
     host_p = reinterpret_cast<char *>(host_p) + len;
-
+    auto r = region->slice_begin(len);
+    Elkvm::rm.add_free_region(r);
   }
 
   void Mapping::slice_end(guestptr_t slice_base) {
