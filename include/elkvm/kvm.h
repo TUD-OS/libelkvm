@@ -1,7 +1,5 @@
 #pragma once
 
-#include <linux/kvm.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -19,6 +17,9 @@ struct elkvm_opts {
 
 int elkvm_init(struct elkvm_opts *, int, char **, char **);
 int elkvm_cleanup(struct elkvm_opts *);
+
+int elkvm_idt_setup(struct kvm_vm *, struct elkvm_flat *);
+int elkvm_gdt_setup(struct kvm_vm *vm);
 
 #ifdef __cplusplus
 }

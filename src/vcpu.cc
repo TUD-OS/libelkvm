@@ -12,16 +12,21 @@
 #include <elkvm.h>
 #include <gdt.h>
 #include <idt.h>
+#include <region.h>
 #include <stack-c.h>
 #include <syscall.h>
 #include <vcpu.h>
+
+namespace Elkvm {
+  extern RegionManager rm;
+}
 
 int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
 	if(vm->fd <= 0) {
 		return -EIO;
 	}
 
-	struct kvm_vcpu *vcpu = malloc(sizeof(struct kvm_vcpu));
+	struct kvm_vcpu *vcpu = new(struct kvm_vcpu);
 	if(vcpu == NULL) {
 		return -ENOMEM;
 	}
@@ -42,8 +47,9 @@ int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
 		return err;
 	}
 
-	vcpu->run_struct = mmap(NULL, sizeof(struct kvm_run), PROT_READ | PROT_WRITE,
-			MAP_SHARED, vcpu->fd, 0);
+	vcpu->run_struct = reinterpret_cast<struct kvm_run *>(
+      mmap(NULL, sizeof(struct kvm_run), PROT_READ | PROT_WRITE,
+			MAP_SHARED, vcpu->fd, 0));
 	if(vcpu->run_struct == NULL) {
 		free(vcpu);
 		return -ENOMEM;
@@ -70,7 +76,7 @@ int kvm_vcpu_add_tail(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 		vl = vl->next;
 	}
 
-	struct vcpu_list *new_item = malloc(sizeof(struct vcpu_list));
+	struct vcpu_list *new_item = new(struct vcpu_list);
 	if(new_item == NULL) {
 		return -ENOMEM;
 	}
@@ -215,8 +221,8 @@ int kvm_vcpu_destroy(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 }
 
 int kvm_vcpu_get_msr(struct kvm_vcpu *vcpu, uint32_t index, uint64_t *res_p) {
-	struct kvm_msrs *msr = malloc(
-			sizeof(struct kvm_msrs) + sizeof(struct kvm_msr_entry));
+	struct kvm_msrs *msr = reinterpret_cast<struct kvm_msrs *>(
+      malloc(sizeof(struct kvm_msrs) + sizeof(struct kvm_msr_entry)));
 	msr->nmsrs = 1;
 	msr->entries[0].index = index;
 
@@ -233,8 +239,8 @@ int kvm_vcpu_get_msr(struct kvm_vcpu *vcpu, uint32_t index, uint64_t *res_p) {
 }
 
 int kvm_vcpu_set_msr(struct kvm_vcpu *vcpu, uint32_t index, uint64_t data) {
-	struct kvm_msrs *msr = malloc(
-			sizeof(struct kvm_msrs) + sizeof(struct kvm_msr_entry));
+	struct kvm_msrs *msr = reinterpret_cast<struct kvm_msrs *>(
+      malloc(sizeof(struct kvm_msrs) + sizeof(struct kvm_msr_entry)));
   memset(msr, 0, sizeof(struct kvm_msrs) + sizeof(struct kvm_msr_entry));
 
 	msr->nmsrs = 1;
@@ -461,7 +467,7 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
           fprintf(stderr, "Errno: %i Msg: %s\n", err, strerror(err));
         }
         break;
-			case KVM_EXIT_FAIL_ENTRY:
+			case KVM_EXIT_FAIL_ENTRY: {
 				;
 				uint64_t code = vcpu->run_struct->fail_entry.hardware_entry_failure_reason;
 				fprintf(stderr, "KVM: entry failed, hardware error 0x%lx\n",
@@ -479,6 +485,7 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 				}
 				is_running = 0;
 				break;
+                                }
 			case KVM_EXIT_EXCEPTION:
 				fprintf(stderr, "KVM VCPU had exception\n");
 				is_running = 0;
@@ -487,7 +494,7 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 				fprintf(stderr, "KVM VCPU did shutdown\n");
         is_running = 0;
 				break;
-			case KVM_EXIT_DEBUG:
+			case KVM_EXIT_DEBUG: {
         /* NO-OP */
         ;
         int debug_handled = elkvm_handle_debug(vcpu->vm);
@@ -495,6 +502,7 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
           is_running = 0;
         }
 				break;
+      }
       case KVM_EXIT_MMIO:
         fprintf(stderr, "KVM_EXIT_MMIO\n");
         fprintf(stderr, "\tphys_addr: 0x%llx data[0] %x data[1] %x"
@@ -681,7 +689,8 @@ int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *vcpu, uint64_t guest_addr) {
 void elkvm_dump_isr(struct kvm_vm *vm, int iv) {
 
 	struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
-	struct kvm_idt_entry *entry = vm->idt_region->host_base_p +
+	struct kvm_idt_entry *entry = reinterpret_cast<struct kvm_idt_entry *>(
+      vm->idt_region->host_base_p) +
 		iv * sizeof(struct kvm_idt_entry);
 
 	guestptr_t guest_isr = idt_entry_offset(entry);

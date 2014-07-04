@@ -1,6 +1,8 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 #include <sys/ioctl.h>
 
 #include <elkvm.h>

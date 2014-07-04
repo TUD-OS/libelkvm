@@ -1,26 +1,37 @@
-#include <linux/kvm.h>
+#include <cstring>
+#include <string>
 
 #include <errno.h>
 #include <fcntl.h>
-#include <string.h>
+#include <linux/kvm.h>
 #include <stropts.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
 #include <elkvm.h>
-#include <environ-c.h>
+#include <environ.h>
+#include <elfloader.h>
 #include <flats.h>
-#include <gdt.h>
-#include <idt.h>
 #include <kvm.h>
 #include <pager.h>
 #include <region-c.h>
-#include <stack-c.h>
+#include <stack.h>
 #include <vcpu.h>
-#include <elkvm.h>
-#include <elfloader.h>
 #include "debug.h"
+
+/*
+ * Load a flat binary into the guest address space
+ * returns 0 on success, an errno otherwise
+ */
+int elkvm_load_flat(struct kvm_vm *, struct elkvm_flat *, const std::string,
+    int kernel);
+
+namespace Elkvm {
+  extern ElfBinary binary;
+  extern Stack stack;
+  extern RegionManager rm;
+}
 
 int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus,
     const struct elkvm_handlers *handlers, const char *binary) {
@@ -57,19 +68,18 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
 		return err;
 	}
 
-  err = elkvm_load_binary(vm, binary);
-  if(err) {
-    return err;
-  }
+  Elkvm::ElfBinary bin(binary, &vm->pager);
 
-  elkvm_initialize_env();
+  guestptr_t entry = bin.get_entry_point();
+	err = kvm_vcpu_set_rip(elkvm_vcpu_get(vm, 0), entry);
+  assert(err == 0);
 
-	err = elkvm_initialize_stack(vm);
-	if(err) {
-		return err;
-	}
+  Elkvm::Environment env(bin);
 
-  err = elkvm_fill_env(opts, vm);
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  Elkvm::stack.init(vcpu, &vm->pager, env);
+
+  err = env.fill(opts, vm);
   if(err) {
     return err;
   }
@@ -85,7 +95,7 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
 	}
 
 	struct elkvm_flat idth;
-	char *isr_path = RES_PATH "/isr";
+  std::string isr_path(RES_PATH "/isr");
 	err = elkvm_load_flat(vm, &idth, isr_path, 1);
 	if(err) {
     if(err == -ENOENT) {
@@ -100,7 +110,7 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
 	}
 
 	struct elkvm_flat sysenter;
-	char *sysenter_path = RES_PATH "/entry";
+  std::string sysenter_path(RES_PATH "/entry");
 	err = elkvm_load_flat(vm, &sysenter, sysenter_path, 1);
 	if(err) {
     if(err == -ENOENT) {
@@ -109,8 +119,8 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
 		return err;
 	}
 
-  char *sighandler_path = RES_PATH "/signal";
-  vm->sighandler_cleanup = malloc(sizeof(struct elkvm_flat));
+  std::string sighandler_path(RES_PATH "/signal");
+  vm->sighandler_cleanup = new(struct elkvm_flat);
   assert(vm->sighandler_cleanup != NULL);
 
   err = elkvm_load_flat(vm, vm->sighandler_cleanup, sighandler_path, 0);
@@ -148,9 +158,10 @@ int elkvm_set_debug(struct kvm_vm *vm) {
   return 0;
 }
 
-int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * path,
+int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat,
+    const std::string path,
     int kernel) {
-	int fd = open(path, O_RDONLY);
+	int fd = open(path.c_str(), O_RDONLY);
 	if(fd < 0) {
 		return -errno;
 	}
@@ -163,25 +174,27 @@ int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * pat
 	}
 
 	flat->size = stbuf.st_size;
-	flat->region = elkvm_region_create(stbuf.st_size);
-	flat->region->guest_virtual = 0x0;
+  std::shared_ptr<Elkvm::Region> region = Elkvm::rm.allocate_region(stbuf.st_size);
 
   if(kernel) {
-    flat->region->guest_virtual = elkvm_pager_map_kernel_page(&vm->pager,
-        flat->region->host_base_p, 0, 1);
-    if(flat->region->guest_virtual == 0) {
+    guestptr_t addr = elkvm_pager_map_kernel_page(&vm->pager,
+        region->base_address(), 0, 1);
+    if(addr == 0x0) {
       close(fd);
       return -ENOMEM;
     }
+    region->set_guest_addr(addr);
   } else {
     /* XXX this will break! */
-    flat->region->guest_virtual = 0x1000;
-    err = elkvm_pager_create_mapping(&vm->pager, flat->region->host_base_p,
-        flat->region->guest_virtual, PT_OPT_EXEC);
+    region->set_guest_addr(0x1000);
+    err = elkvm_pager_create_mapping(&vm->pager,
+        region->base_address(),
+        region->guest_address(),
+        PT_OPT_EXEC);
     assert(err == 0);
   }
 
-	char *buf = flat->region->host_base_p;
+	char *buf = reinterpret_cast<char *>(region->base_address());
 	int bufsize = ELKVM_PAGESIZE;
 	int bytes = 0;
 	while((bytes = read(fd, buf, bufsize)) > 0) {
@@ -189,6 +202,7 @@ int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat, const char * pat
 	}
 
 	close(fd);
+  flat->region = region->c_region();
 
 	return 0;
 }
@@ -314,8 +328,8 @@ void elkvm_emulate_vmcall(struct kvm_vcpu *vcpu) {
 }
 
 int elkvm_dump_valid_msrs(struct elkvm_opts *opts) {
-	struct kvm_msr_list *list = malloc(
-			sizeof(struct kvm_msr_list) + 255 * sizeof(uint32_t));
+	struct kvm_msr_list *list = reinterpret_cast<struct kvm_msr_list *>(
+      malloc( sizeof(struct kvm_msr_list) + 255 * sizeof(uint32_t)));
 	list->nmsrs = 255;
 
 	int err = ioctl(opts->fd, KVM_GET_MSR_INDEX_LIST, list);

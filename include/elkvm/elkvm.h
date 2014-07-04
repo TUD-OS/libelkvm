@@ -11,6 +11,7 @@
 #include <sys/vfs.h>
 #include <unistd.h>
 #include <libelf.h>
+#include <linux/kvm.h>
 
 typedef uint64_t guestptr_t;
 
@@ -28,7 +29,6 @@ struct linux_dirent {
     */
 };
 
-#include "kvm.h"
 #include "pager.h"
 #include "region-c.h"
 #include "vcpu.h"
@@ -48,6 +48,8 @@ extern "C" {
 #ifdef _PREFIX_
 #define RES_PATH _PREFIX_ "/share/libelkvm"
 #endif
+
+struct elkvm_opts;
 
 struct region_mapping {
   void *host_p;
@@ -69,7 +71,6 @@ struct kvm_vm {
 	const struct elkvm_handlers *syscall_handlers;
   list(struct region_mapping *, mappings);
 
-	struct elkvm_memory_region *text;
   list(struct elkvm_memory_region *, heap);
 	struct elkvm_memory_region *gdt_region;
 	struct elkvm_memory_region *idt_region;

@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <algorithm>
 #include <iostream>
 
 #include <elkvm.h>
@@ -58,6 +59,14 @@ namespace Elkvm {
     return 0;
   }
 
+  Mapping &HeapManager::find_mapping(guestptr_t addr) {
+    auto it = std::find_if(mappings.begin(), mappings.end(),
+        [addr](const Mapping &m) { return m.contains_address(addr); });
+    assert(it != mappings.end());
+
+    return *it;
+  }
+
   int HeapManager::init(std::shared_ptr<Region> data, size_t sz) {
     assert(mappings.empty() && "heap must not be initialized after use");
     /* XXX sz might be wrong here! */
@@ -71,15 +80,6 @@ namespace Elkvm {
   }
 
   //namespace Elkvm
-}
-
-int elkvm_heap_initialize(struct elkvm_memory_region *region, uint64_t size) {
-  assert(region != NULL);
-
-  auto r = Elkvm::rm.find_region(region->host_base_p);
-  r->set_guest_addr(region->guest_virtual);
-  return Elkvm::heap_m.init(r, size);
-
 }
 
 void elkvm_init_heap_manager(struct kvm_pager *const pager) {

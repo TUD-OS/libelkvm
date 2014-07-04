@@ -36,6 +36,7 @@ namespace Elkvm {
     fd(fdes),
     offset(off),
     pager(pa) {
+      assert(region->size() >= length);
       host_p = region->base_address();
       region->set_guest_addr(addr);
       assert(!region->is_free());
@@ -118,11 +119,10 @@ namespace Elkvm {
 
     //TODO use elkvm_pager_unmap_region here again!
     guestptr_t cur_addr_p = unmap_addr;
-    while(pages) {
+    for(unsigned i = 0; i < pages; i++) {
       int err = elkvm_pager_destroy_mapping(pager, cur_addr_p);
       assert(err == 0);
       cur_addr_p += ELKVM_PAGESIZE;
-      pages--;
     }
     mapped_pages -= pages;
 
@@ -196,7 +196,8 @@ namespace Elkvm {
     addr += len;
     length -= len;
     host_p = reinterpret_cast<char *>(host_p) + len;
-
+    auto r = region->slice_begin(len);
+    Elkvm::rm.add_free_region(r);
   }
 
   void Mapping::slice_end(guestptr_t slice_base) {

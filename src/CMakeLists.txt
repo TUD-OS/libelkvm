@@ -1,6 +1,6 @@
 SET( libelkvm_SRCS
   debug.c
-  elfloader.c
+  elfloader.cc
   environ.cc
   gdbstub.c
   gdt.c
@@ -15,8 +15,8 @@ SET( libelkvm_SRCS
   stack.cc
   syscall.cc
   tss.c
-  vcpu.c
-  vm.c
+  vcpu.cc
+  vm.cc
   )
 ADD_LIBRARY( elkvm SHARED ${libelkvm_SRCS} )
 

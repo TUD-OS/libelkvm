@@ -76,13 +76,18 @@ namespace Elkvm {
   }
 
   std::shared_ptr<Region> Region::slice_begin(const size_t size) {
-    assert(free);
+    //assert(free);
     assert(size > 0x0);
     assert(rsize > pagesize_align(size));
 
-    std::shared_ptr<Region> r = std::make_shared<Region>(host_p, pagesize_align(size));
+    std::shared_ptr<Region> r =
+      std::make_shared<Region>(host_p, pagesize_align(size));
+
     host_p = reinterpret_cast<char *>(host_p) + r->size();
     rsize  -= r->size();
+    if(addr != 0x0) {
+      addr += r->size();
+    }
     assert(rsize > 0x0);
     assert(r->size() > 0x0);
     return r;
