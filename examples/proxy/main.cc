@@ -197,6 +197,10 @@ long pass_tgkill(int tgid, int tid, int sig) {
   return syscall(__NR_tgkill, tgid, tid, sig);
 }
 
+int pass_openat(int dirfd, const char *pathname, int flags) {
+  return openat(dirfd, pathname, flags);
+}
+
 struct elkvm_handlers example_handlers = {
 	.read = pass_read,
 	.write = pass_write,
@@ -252,6 +256,7 @@ struct elkvm_handlers example_handlers = {
   .clock_gettime = pass_clock_gettime,
   .exit_group = pass_exit_group,
   .tgkill = pass_tgkill,
+  .openat = pass_openat,
 
   .bp_callback = NULL,
 };
