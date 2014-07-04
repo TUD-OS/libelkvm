@@ -2439,3 +2439,6 @@ long elkvm_do_tgkill(struct kvm_vm *vm) {
 
 }
 
+long elkvm_do_openat(struct kvm_vm *vm __attribute__((unused))) {
+  return -ENOSYS;
+}
