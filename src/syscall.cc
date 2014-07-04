@@ -2439,3 +2439,38 @@ long elkvm_do_tgkill(struct kvm_vm *vm) {
 
 }
 
+long elkvm_do_openat(struct kvm_vm *vm __attribute__((unused))) {
+  if(vm->syscall_handlers->openat == NULL) {
+    printf("OPENAT handler not found\n");
+    return -ENOSYS;
+  }
+
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+
+  uint64_t dirfd = 0;
+  guestptr_t pathname_p = 0x0;
+  uint64_t flags = 0;
+
+  elkvm_syscall3(vcpu, &dirfd, &pathname_p, &flags);
+
+  char *pathname = NULL;
+  if(pathname_p != 0x0) {
+    pathname = reinterpret_cast<char *>(
+        elkvm_pager_get_host_p(&vm->pager, pathname_p));
+  }
+
+  int res = vm->syscall_handlers->openat((int)dirfd, pathname, (int)flags);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("OPENAT with dirfd %i pathname 0x%lx (%p) flags %i\n",
+        (int)dirfd, pathname_p, pathname, (int)flags);
+    printf("RESULT: %i\n", res);
+    printf("=================================\n");
+  }
+
+  if(res < 0) {
+    return -errno;
+  }
+
+  return res;
+}

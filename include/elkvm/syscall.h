@@ -268,6 +268,7 @@ long elkvm_do_exit_group(struct kvm_vm *);
 long elkvm_do_epoll_wait(struct kvm_vm *);
 long elkvm_do_epoll_ctl(struct kvm_vm *);
 long elkvm_do_tgkill(struct kvm_vm *);
+long elkvm_do_openat(struct kvm_vm *);
 
 static struct {
 	long (*func)(struct kvm_vm *);
@@ -508,6 +509,7 @@ static struct {
   [__NR_epoll_wait]      = { elkvm_do_epoll_wait, "EPOLL WAIT" },
   [__NR_epoll_ctl]       = { elkvm_do_epoll_ctl, "EPOLL CTL" },
   [__NR_tgkill]          = { elkvm_do_tgkill, "TGKILL" },
+  [__NR_openat]          = { elkvm_do_openat, "OPENAT" },
 
 };
 

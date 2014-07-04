@@ -129,6 +129,8 @@ struct elkvm_handlers {
   void (*exit_group) (int status);
   long (*tgkill)(int tgid, int tid, int sig);
 
+  int (*openat) (int dirfd, const char *pathname, int flags);
+
   /* ELKVM debug callbacks */
 
   /*
