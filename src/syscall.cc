@@ -1341,7 +1341,40 @@ long elkvm_do_ftruncate(struct kvm_vm *vm) {
 }
 
 long elkvm_do_getdents(struct kvm_vm *vm __attribute__((unused))) {
-  return -ENOSYS;
+  if(vm->syscall_handlers->getdents == NULL) {
+    std::cout << "GETDENTS handler not found\n";
+    return -ENOSYS;
+  }
+
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+
+  uint64_t fd = 0;
+  guestptr_t dirp_p = 0x0;
+  uint64_t count = 0;
+
+  elkvm_syscall3(vcpu, &fd, &dirp_p, &count);
+
+  struct linux_dirent *dirp = NULL;
+  if(dirp_p != 0x0) {
+    dirp = reinterpret_cast<struct linux_dirent *>(
+        elkvm_pager_get_host_p(&vm->pager, dirp_p));
+  }
+
+  int res = vm->syscall_handlers->getdents(fd, dirp, count);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("GETDENTS with fd: %u dirp: 0x%lx (%p) count %u\n",
+        (unsigned)fd, dirp_p, dirp, (unsigned)count);
+    printf("RESULT: %i\n", res);
+    if(res < 0) {
+      printf("ERROR No: %i Msg: %s\n", errno, strerror(errno));
+    }
+    printf("=================================\n");
+  }
+  if(res < 0) {
+    return -errno;
+  }
+  return res;
 }
 
 long elkvm_do_getcwd(struct kvm_vm *vm) {

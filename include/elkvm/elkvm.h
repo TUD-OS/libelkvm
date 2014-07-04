@@ -14,6 +14,20 @@
 
 typedef uint64_t guestptr_t;
 
+struct linux_dirent {
+    unsigned long  d_ino;     /* Inode number */
+    unsigned long  d_off;     /* Offset to next linux_dirent */
+    unsigned short d_reclen;  /* Length of this linux_dirent */
+    char           d_name[];  /* Filename (null-terminated) */
+                      /* length is actually (d_reclen - 2 -
+                         offsetof(struct linux_dirent, d_name)) */
+    /*
+    char           pad;       // Zero padding byte
+    char           d_type;    // File type (only since Linux
+                              // 2.6.4); offset is (d_reclen - 1)
+    */
+};
+
 #include "kvm.h"
 #include "pager.h"
 #include "region-c.h"
@@ -107,6 +121,7 @@ struct elkvm_handlers {
   long (*fcntl) (int fd, int cmd, ...);
   long (*truncate) (const char *path, off_t length);
   long (*ftruncate) (int fd, off_t length);
+  int (*getdents) (unsigned fd, struct linux_dirent *dirp, unsigned count);
   char *(*getcwd) (char *buf, size_t size);
   long (*mkdir) (const char *pathname, mode_t mode);
   long (*unlink) (const char *pathname);

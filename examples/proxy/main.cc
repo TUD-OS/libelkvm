@@ -144,6 +144,10 @@ long pass_ftruncate(int fd, off_t length) {
   return ftruncate(fd, length);
 }
 
+int pass_getdents(unsigned fd, struct linux_dirent *dirp, unsigned count) {
+  return syscall(__NR_getdents, fd, dirp, count);
+}
+
 char *pass_getcwd(char *buf, size_t size) {
   return getcwd(buf, size);
 }
@@ -238,6 +242,7 @@ struct elkvm_handlers example_handlers = {
   .fcntl = pass_fcntl,
   .truncate = pass_truncate,
   .ftruncate = pass_ftruncate,
+  .getdents = pass_getdents,
   .getcwd = pass_getcwd,
   .mkdir = pass_mkdir,
   .unlink = pass_unlink,
