@@ -438,6 +438,14 @@ uint64_t *elkvm_pager_page_table_walk(struct kvm_pager *pager, uint64_t guest_vi
 			guest_virtual, addr_low, addr_high);
 	addr_low -= 9;
 	addr_high -= 9;
+  if(entry_exists(entry) && create) {
+    if(opts & PT_OPT_WRITE) {
+      *entry |= PT_BIT_WRITEABLE;
+    }
+    if(opts & PT_OPT_EXEC) {
+      *entry &= ~PT_BIT_NXE;
+    }
+  }
 	if(!entry_exists(entry) && !create) {
     return NULL;
   }
