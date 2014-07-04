@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <sys/utsname.h>
+#include <sys/vfs.h>
 #include <unistd.h>
 #include <libelf.h>
 
@@ -115,6 +116,8 @@ struct elkvm_handlers {
   long (*getrusage) (int who, struct rusage *usage);
   /* ... */
   long (*times) (struct tms *buf);
+  /* ... */
+  long (*statfs) (const char *path, struct statfs *buf);
   /* ... */
   long (*gettid)(void);
   /* ... */

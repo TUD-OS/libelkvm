@@ -9,6 +9,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/vfs.h>
 #include <time.h>
 
 #include <elkvm/elkvm.h>
@@ -167,6 +168,10 @@ long pass_getrusage(int who, struct rusage *usage) {
   return getrusage(who, usage);
 }
 
+long pass_statfs(const char *path, struct statfs *buf) {
+  return statfs(path, buf);
+}
+
 long pass_gettid() {
   return syscall(__NR_gettid);
 }
@@ -237,6 +242,8 @@ struct elkvm_handlers example_handlers = {
   .gettimeofday = pass_gettimeofday,
   .getrusage = pass_getrusage,
   .times = NULL,
+  /* ... */
+  .statfs = pass_statfs,
   /* ... */
   .gettid = pass_gettid,
   .time = pass_time,

@@ -8,6 +8,7 @@
 #include <sys/prctl.h>
 #include <sys/resource.h>
 #include <sys/times.h>
+#include <sys/vfs.h>
 #include <unistd.h>
 
 #include <elkvm.h>
@@ -1840,7 +1841,40 @@ long elkvm_do_ustat(struct kvm_vm *vm __attribute__((unused))) {
 }
 
 long elkvm_do_statfs(struct kvm_vm *vm __attribute__((unused))) {
-  return -ENOSYS;
+  if(vm->syscall_handlers->statfs == NULL) {
+    std::cout << "STATFS handler not found\n";
+    return -ENOSYS;
+  }
+
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  guestptr_t path_p = 0x0;
+  guestptr_t buf_p = 0x0;
+
+  elkvm_syscall2(vcpu, &path_p, &buf_p);
+
+  char *path = NULL;
+  struct statfs *buf = NULL;
+  if(path_p != 0x0) {
+    path = reinterpret_cast<char *>(elkvm_pager_get_host_p(&vm->pager, path_p));
+  }
+  if(buf_p != 0x0) {
+    buf = reinterpret_cast<struct statfs *>(
+        elkvm_pager_get_host_p(&vm->pager, buf_p));
+  }
+
+  int res = vm->syscall_handlers->statfs(path, buf);
+  if(vm->debug) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("STATFS path 0x%lx (%p) buf 0x%lx (%p)",
+        path_p, path, buf_p, buf);
+    printf("RESULT: %i\n", res);
+    printf("=================================\n");
+  }
+
+  if(res == 0) {
+    return 0;
+  }
+  return -errno;
 }
 
 long elkvm_do_fstatfs(struct kvm_vm *vm __attribute__((unused))) {
