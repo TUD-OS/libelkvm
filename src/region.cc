@@ -9,8 +9,6 @@
 #include "region-c.h"
 
 namespace Elkvm {
-  RegionManager rm;
-
   std::ostream &print(std::ostream &stream, const Region &r) {
     if(r.is_free()) {
       stream << "FREE ";

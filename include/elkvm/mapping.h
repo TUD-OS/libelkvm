@@ -28,10 +28,9 @@ namespace Elkvm {
       void slice_end(guestptr_t slice_base);
 
     public:
-      Mapping(guestptr_t guest_addr, size_t l, int pr, int f, int fdes, off_t off,
-          struct kvm_pager * pa);
+      Mapping(guestptr_t guest_addr, size_t l, int pr, int f, int fdes, off_t off);
       Mapping(std::shared_ptr<Region> r, guestptr_t guest_addr, size_t l, int pr, int f,
-          int fdes, off_t off, struct kvm_pager * pa);
+          int fdes, off_t off);
 
       bool anonymous() const { return flags & MAP_ANONYMOUS; }
       bool contains_address(void *p) const;

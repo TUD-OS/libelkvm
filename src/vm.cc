@@ -51,6 +51,9 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
 		return -EIO;
 	}
 
+  Elkvm::RegionManager rm(opts->fd);
+  //XXX set pml4 address!
+
 	for(int i = 0; i < cpus; i++) {
 		err = kvm_vcpu_create(vm, mode);
 		if(err) {
@@ -187,7 +190,7 @@ int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat,
   } else {
     /* XXX this will break! */
     region->set_guest_addr(0x1000);
-    err = elkvm_pager_create_mapping(&vm->pager,
+    err = pager.map_user_page(
         region->base_address(),
         region->guest_address(),
         PT_OPT_EXEC);
@@ -308,18 +311,12 @@ struct kvm_vcpu *elkvm_vcpu_get(struct kvm_vm *vm, int vcpu_id) {
   return vcpu_list->vcpu;
 }
 
-int elkvm_chunk_count(struct kvm_vm *vm) {
-  int count = elkvm_pager_chunk_count(&vm->pager);
-  /* count the system chunk */
-  return count + 1;
+uint64_t elkvm_chunk_count(struct kvm_vm *vm) {
+  return pager.chunk_count();
 }
 
 struct kvm_userspace_memory_region elkvm_get_chunk(struct kvm_vm *vm, int chunk) {
-  if(chunk == 0) {
-    return elkvm_pager_get_system_chunk(&vm->pager);
-  } else {
-    return *elkvm_pager_get_chunk(&vm->pager, chunk-1);
-  }
+  return *pager.get_chunk(chunk);
 }
 
 void elkvm_emulate_vmcall(struct kvm_vcpu *vcpu) {

@@ -6,9 +6,8 @@ namespace Elkvm {
   extern RegionManager rm;
 
   Mapping::Mapping(guestptr_t guest_addr, size_t l, int pr, int f,
-      int fdes, off_t off, struct kvm_pager * pa)
-    : pager(pa),
-      addr(guest_addr),
+      int fdes, off_t off)
+    : addr(guest_addr),
       length(l),
       prot(pr),
       flags(f),
@@ -27,14 +26,13 @@ namespace Elkvm {
   }
 
   Mapping::Mapping(std::shared_ptr<Region> r, guestptr_t guest_addr, size_t l, int pr, int f,
-          int fdes, off_t off, struct kvm_pager * pa) :
-    pager(pa),
+          int fdes, off_t off) :
     addr(guest_addr),
     length(l),
     prot(pr),
     flags(f),
     fd(fdes),
-    offset(off),
+    offset(off) {
     region(r) {
       assert(region->size() >= length);
       host_p = region->base_address();
@@ -55,9 +53,9 @@ namespace Elkvm {
     if(!readable() && !writeable() && !executable()) {
       guestptr_t current_addr = addr;
       for(unsigned i = 0; i < mapped_pages; i++) {
-        void *host_p = elkvm_pager_get_host_p(pager, current_addr);
+        void *host_p = rm.get_pager().get_host_p(current_addr);
         if(host_p != NULL) {
-          int err = elkvm_pager_destroy_mapping(pager, current_addr);
+          int err = rm.get_pager().free_page(current_addr);
           assert(err == 0 && "Could not unmap address");
         }
         current_addr += ELKVM_PAGESIZE;
@@ -76,7 +74,7 @@ namespace Elkvm {
     }
 
     /* add page table entries according to the options specified by the monitor */
-    int err = elkvm_pager_map_region(pager, host_p, addr, mapped_pages, opts);
+    int err = rm.get_pager().map_region(host_p, addr, mapped_pages, opts);
     assert(err == 0);
     return err;
   }
@@ -193,7 +191,7 @@ namespace Elkvm {
       /* There should be no need to process this mapping any further, because we
        * feed it the split memory region, with the old data inside */
       Mapping end(r, addr + off + len,
-          rem, prot, flags, fd, offset + off + len, pager);
+          rem, prot, flags, fd, offset + off + len);
       Elkvm::rm.add_mapping(end);
     }
 

@@ -8,6 +8,12 @@
 namespace Elkvm {
   extern HeapManager heap_m;
 
+  RegionManager::RegionManager() {
+    auto sysregion = allocate_region(ELKVM_PAGER_MEMSIZE);
+    pager.set_pml4(sysregion);
+
+  }
+
   void RegionManager::dump_mappings() const {
     std::cout << "DUMPING ALL MAPPINGS:\n";
     std::cout << "====================\n";
@@ -95,7 +101,7 @@ namespace Elkvm {
     const size_t grow_size = size > ELKVM_SYSTEM_MEMGROW ?
       pagesize_align(size) : ELKVM_SYSTEM_MEMGROW;
 
-    int err = elkvm_pager_create_mem_chunk(pager, &chunk_p, grow_size);
+    int err = pager.create_mem_chunk(&chunk_p, grow_size);
     if(err) {
       printf("LIBELKVM: Could not create memory chunk!\n");
       printf("Errno: %i Msg: %s\n", -err, strerror(-err));

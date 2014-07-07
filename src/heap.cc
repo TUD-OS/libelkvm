@@ -35,7 +35,7 @@ namespace Elkvm {
   int HeapManager::grow(guestptr_t newbrk) {
     assert(newbrk > curbrk);
     size_t sz = newbrk - curbrk;
-    Mapping m(curbrk, sz, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0, pager);
+    Mapping m(curbrk, sz, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0);
     mappings.push_back(m);
     return m.map_self();
   }
@@ -73,7 +73,7 @@ namespace Elkvm {
     assert(mappings.empty() && "heap must not be initialized after use");
     /* XXX sz might be wrong here! */
     mappings.emplace_back(data, data->guest_address(), sz, PROT_READ | PROT_WRITE,
-        MAP_ANONYMOUS, 0, 0, pager);
+        MAP_ANONYMOUS, 0, 0);
 
     curbrk = next_page(data->guest_address() + sz);
     assert(data->contains_address(curbrk - 1) && "initial brk address must be in data region");

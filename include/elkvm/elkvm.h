@@ -29,7 +29,7 @@ struct linux_dirent {
     */
 };
 
-#include "pager.h"
+#include "pager-c.h"
 #include "region-c.h"
 #include "vcpu.h"
 #include "list.h"

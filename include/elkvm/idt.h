@@ -2,7 +2,7 @@
 
 #include "elkvm.h"
 #include "flats.h"
-#include "pager.h"
+#include "pager-c.h"
 
 struct kvm_idt_entry {
 	uint16_t offset1;

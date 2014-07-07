@@ -6,7 +6,7 @@
 
 #include <elkvm.h>
 #include <idt.h>
-#include <pager.h>
+#include <pager-c.h>
 #include <vcpu.h>
 #include "flats.h"
 

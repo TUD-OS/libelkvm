@@ -23,7 +23,6 @@ struct Elf_auxv {
 
 class ElfBinary {
   private:
-    struct kvm_pager * pager;
     std::unique_ptr<ElfBinary> ldr;
 
     int fd;
@@ -53,7 +52,7 @@ class ElfBinary {
     GElf_Phdr find_text_header();
 
   public:
-    ElfBinary(std::string pathname, struct kvm_pager * p);
+    ElfBinary(std::string pathname);
     int load_binary(std::string pathname);
     guestptr_t get_entry_point();
     const struct Elf_auxv &get_auxv() const;
