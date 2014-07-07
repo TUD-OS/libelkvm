@@ -62,8 +62,8 @@ namespace Elkvm {
       bool address_valid(const void *host_p) const;
       std::shared_ptr<Region> allocate_region(size_t size);
       std::shared_ptr<Region> find_free_region(size_t size);
-      std::shared_ptr<Region> find_region(const void *host_p);
-      std::shared_ptr<Region> find_region(guestptr_t addr);
+      std::shared_ptr<Region> find_region(const void *host_p) const;
+      std::shared_ptr<Region> find_region(guestptr_t addr) const;
       void free_region(std::shared_ptr<Region> r);
       void free_region(void *host_p, size_t sz);
       bool host_address_mapped(const void * const) const;
