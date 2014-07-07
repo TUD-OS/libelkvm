@@ -11,6 +11,7 @@
 #include <unistd.h>
 
 #include <elkvm.h>
+#include <elkvm-internal.h>
 #include <environ.h>
 #include <elfloader.h>
 #include <flats.h>
@@ -38,19 +39,7 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
     const struct elkvm_handlers *handlers, const char *binary) {
 	int err = 0;
 
-	if(opts->fd <= 0) {
-		return -EIO;
-	}
-
-	vm->fd = ioctl(opts->fd, KVM_CREATE_VM, 0);
-	if(vm->fd < 0) {
-		return -errno;
-	}
-
-	vm->run_struct_size = ioctl(opts->fd, KVM_GET_VCPU_MMAP_SIZE, 0);
-	if(vm->run_struct_size < 0) {
-		return -EIO;
-	}
+  Elkvm::VMInternals vmi(opts->fd, opts->argc, opts->argv, opts->environ, mode);
 
   Elkvm::rm.reset(new Elkvm::RegionManager(vm->fd));
   //XXX set pml4 address!
