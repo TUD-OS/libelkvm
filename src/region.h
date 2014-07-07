@@ -41,7 +41,6 @@ namespace Elkvm {
   };
 
   std::ostream &print(std::ostream &, const Region &);
-  bool same_region(const void *p1, const void *p2);
   bool operator==(const Region &, const Region &);
 
   class RegionManager {
@@ -66,6 +65,7 @@ namespace Elkvm {
       void free_region(std::shared_ptr<Region> r);
       void free_region(void *host_p, size_t sz);
       bool host_address_mapped(const void * const) const;
+      bool same_region(const void *p1, const void *p2) const;
       void use_region(std::shared_ptr<Region> r);
       Mapping &find_mapping(void *host_p);
       Mapping &find_mapping(guestptr_t addr);

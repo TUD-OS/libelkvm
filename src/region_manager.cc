@@ -161,6 +161,11 @@ namespace Elkvm {
     return false;
   }
 
+  bool RegionManager::same_region(const void *p1, const void *p2) const {
+    std::shared_ptr<Region> r = find_region(p1);
+    return r->contains_address(p2);
+  }
+
   void RegionManager::use_region(std::shared_ptr<Region> r) {
     assert(r->is_free());
     r->set_used();

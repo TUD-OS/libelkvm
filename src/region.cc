@@ -19,11 +19,6 @@ namespace Elkvm {
     return stream;
   }
 
-  bool same_region(const void *p1, const void *p2) {
-    std::shared_ptr<Region> r = Elkvm::rm.find_region(p1);
-    return r->contains_address(p2);
-  }
-
   bool operator==(const Region &r, const void *const p) {
     return r.contains_address(p);
   }
