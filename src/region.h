@@ -54,7 +54,7 @@ namespace Elkvm {
       std::vector<Mapping> mappings;
 
     public:
-      RegionManager(int vmfd) : pager(vmfd) {}
+      RegionManager(int vmfd);
       void add_free_region(std::shared_ptr<Region> region);
       void dump_regions() const;
       void dump_mappings() const;
