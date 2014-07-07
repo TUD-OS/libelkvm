@@ -13,9 +13,8 @@ namespace Elkvm {
   extern RegionManager rm;
   Stack stack;
 
-  void Stack::init(struct kvm_vcpu *v, struct kvm_pager *p, const Environment &env) {
+  void Stack::init(struct kvm_vcpu *v, const Environment &env) {
     vcpu = v;
-    pager = p;
 
     int err = kvm_vcpu_get_regs(vcpu);
     assert(err == 0 && "error getting vcpu");
@@ -29,7 +28,7 @@ namespace Elkvm {
     kernel_stack = rm.allocate_region(ELKVM_PAGESIZE);
 
     /* create a mapping for the kernel (interrupt) stack */
-    guestptr_t kstack_addr = pager.map_kernel_page(kernel_stack->base_address(),
+    guestptr_t kstack_addr = rm.get_pager().map_kernel_page(kernel_stack->base_address(),
        PT_OPT_WRITE);
     assert(kstack_addr != 0x0 && "could not allocate memory for kernel stack");
 
@@ -38,7 +37,7 @@ namespace Elkvm {
     /* as the stack grows downward we can initialize its address at the base address
      * of the env region */
     vcpu->regs.rsp = env.get_guest_address();
-    err = pager.map_user_page(env.get_base_address(),
+    err = rm.get_pager().map_user_page(env.get_base_address(),
         vcpu->regs.rsp, PT_OPT_WRITE);
     assert(err == 0 && "could not map stack address");
 
@@ -53,14 +52,14 @@ namespace Elkvm {
 
     assert(vcpu->regs.rsp != 0x0);
     uint64_t *host_p = reinterpret_cast<uint64_t *>(
-        pager.get_host_p(vcpu->regs.rsp));
+        rm.get_pager().get_host_p(vcpu->regs.rsp));
     if(host_p == nullptr) {
       /* current stack is full, we need to expand the stack */
       int err = expand();
       if(err) {
         return err;
       }
-      host_p = reinterpret_cast<uint64_t *>(pager.get_host_p(vcpu->regs.rsp));
+      host_p = reinterpret_cast<uint64_t *>(rm.get_pager().get_host_p(vcpu->regs.rsp));
       assert(host_p != NULL);
     }
     *host_p = val;
@@ -70,7 +69,7 @@ namespace Elkvm {
   uint64_t Stack::popq() {
     assert(vcpu->regs.rsp != 0x0);
     uint64_t *host_p = reinterpret_cast<uint64_t *>(
-        pager.get_host_p(vcpu->regs.rsp));
+        rm.get_pager().get_host_p(vcpu->regs.rsp));
     assert(host_p != NULL);
 
     vcpu->regs.rsp += 0x8;
@@ -86,7 +85,7 @@ namespace Elkvm {
       return -ENOMEM;
     }
 
-    int err = elkvm_pager_map_region(pager, region->base_address(), base,
+    int err = rm.get_pager().map_region(region->base_address(), base,
         ELKVM_STACK_GROW / ELKVM_PAGESIZE, PT_OPT_WRITE);
     if(err) {
       return err;
