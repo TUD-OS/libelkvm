@@ -95,8 +95,6 @@ namespace Elkvm {
   }
 
   int RegionManager::add_chunk(const size_t size) {
-    assert(pager != NULL && "must have pager to add chunks to region");
-
     void *chunk_p;
     const size_t grow_size = size > ELKVM_SYSTEM_MEMGROW ?
       pagesize_align(size) : ELKVM_SYSTEM_MEMGROW;
@@ -213,7 +211,7 @@ namespace Elkvm {
         /* this mapping needs to be split! */
         it->slice(addr, length);
       }
-      mappings.emplace_back(addr, length, prot, flags, fd, off, pager);
+      mappings.emplace_back(addr, length, prot, flags, fd, off);
       Mapping &mapping = mappings.back();
       mapping.map_self();
 
