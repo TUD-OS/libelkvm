@@ -113,14 +113,6 @@ namespace Elkvm {
     return 0;
   }
 
-  void RegionManager::add_system_chunk() {
-    auto list_idx = get_freelist_idx(pager->system_chunk.memory_size);
-    freelists[list_idx].push_back(
-        std::make_shared<Region>(
-        reinterpret_cast<void *>(pager->system_chunk.userspace_addr),
-        pager->system_chunk.memory_size));
-  }
-
   void RegionManager::add_free_region(std::shared_ptr<Region> r) {
     auto list_idx = get_freelist_idx(r->size());
     freelists[list_idx].push_back(r);
