@@ -183,7 +183,7 @@ namespace Elkvm {
     unsigned pages = pages_from_size(len);
     unmap(addr + off, pages);
 
-    region->slice_center(off, len);
+    region->slice_center(std::make_shared<RegionManager>(rm), off, len);
 
     if(length > off + len) {
       size_t rem = length - off - len;
