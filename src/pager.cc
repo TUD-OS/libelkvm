@@ -1,6 +1,8 @@
+#include <string>
+#include <iostream>
+
 #include <errno.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/ioctl.h>
 
 #include <elkvm.h>
@@ -573,7 +575,7 @@ void elkvm_pager_dump_table(struct kvm_pager *pager, void *host_p, int level) {
 		return;
 	}
 
-	char *tname;
+  std::string tname;
 	switch(level) {
 		case 1: tname = "Page Table\0";
 						break;
@@ -592,7 +594,8 @@ void elkvm_pager_dump_table(struct kvm_pager *pager, void *host_p, int level) {
 	int entries = 0;
 
 	uint64_t guest_physical = host_to_guest_physical(pager, host_p);
-	printf(" %s with host base %p (0x%lx)\n", tname, host_p, guest_physical);
+  std::cout << tname << " with host base " << host_p << " (0x" << std::hex
+    << guest_physical << ")\n";
 	printf(" Offset P W Us WTC C A 6-8 9-11\tNext\t\tNXE\n");
 
 	for(int i = 0; i < 512; i++) {
