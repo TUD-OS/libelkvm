@@ -1,5 +1,9 @@
 #include <inttypes.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct elkvm_tss64 {
 	uint32_t reserved1;
 	uint64_t rsp0;
@@ -61,3 +65,7 @@ struct elkvm_tss32 {
 
 int elkvm_tss_setup32(struct elkvm_tss32 *, int);
 int elkvm_tss_setup64(struct kvm_vm *, struct elkvm_memory_region *);
+
+#ifdef __cplusplus
+}
+#endif
