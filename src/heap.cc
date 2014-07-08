@@ -46,6 +46,7 @@ namespace Elkvm {
       if(err) {
         return err;
       }
+      curbrk = newbrk;
       return 0;
     }
 
