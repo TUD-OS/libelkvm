@@ -47,57 +47,6 @@ typedef unsigned int ptopt_t;
 
 typedef uint64_t ptentry_t;
 
-struct kvm_userspace_memory_region *
-elkvm_pager_alloc_chunk(struct kvm_pager *const pager, void *addr,
-    uint64_t chunk_size, int flags);
-/*
-	Let Pager create a mem chunk of the given size. The mem_chunk will be added
-  to the end of the other_chunks list
-*/
-int elkvm_pager_create_mem_chunk(struct kvm_pager *const, void **, int);
-
-/*
- * Maps a new mem chunk into the VM
-*/
-int elkvm_pager_map_chunk(struct kvm_vm *, struct kvm_userspace_memory_region *);
-
-int elkvm_pager_free_chunk(struct kvm_pager *pager,
-    struct kvm_userspace_memory_region *chunk);
-
-struct kvm_userspace_memory_region elkvm_pager_get_system_chunk(
-    struct kvm_pager *);
-struct kvm_userspace_memory_region *elkvm_pager_get_chunk(struct kvm_pager *, int);
-
-
-int elkvm_pager_unmap_region(struct kvm_pager *pager, uint64_t guest_start_addr,
-    unsigned pages);
-
-/*
- * \brief Destroy a Mapping in the Page tables
- */
-int elkvm_pager_destroy_mapping(struct kvm_pager *pager, uint64_t guest_virtual);
-
-
-/*
- * \brief find an entry in a pml4, pdpt, pd or pt
- * Args: pager, host table base pointer, guest virtual address, offsets
-*/
-uint64_t *elkvm_pager_find_table_entry(uint64_t *, guestptr_t,
-		int, int);
-
-/*
- * \brief Creates a new table and puts the entry in a pml4, pdpt, pd or pt
- * Args: pager, entry, writeable, executable
-*/
-int elkvm_pager_create_table(struct kvm_pager *, uint64_t *, ptopt_t opts);
-
-int elkvm_pager_handle_pagefault(struct kvm_pager *, uint64_t, uint32_t);
-
-void elkvm_pager_dump_page_fault_info(guestptr_t pfla,
-    uint32_t err_code, void *host_p);
-void elkvm_pager_dump_page_tables(struct kvm_pager *);
-void elkvm_pager_dump_table(struct kvm_pager *, void *, int);
-
 bool address_in_region(struct kvm_userspace_memory_region *r, void *host_addr);
 bool guest_address_in_region(struct kvm_userspace_memory_region *r,
     uint64_t guest_physical);
