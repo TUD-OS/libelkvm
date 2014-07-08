@@ -43,6 +43,14 @@ namespace Elkvm {
       mapped_pages = pages_from_size(length);
   }
 
+  guestptr_t Mapping::grow_to_fill() {
+    addr = region->guest_address();
+    length = region->size();
+    mapped_pages = pages_from_size(length);
+    map_self();
+    return addr + length;
+  }
+
   int Mapping::map_self() {
     if(!readable() && !writeable() && !executable()) {
       guestptr_t current_addr = addr;

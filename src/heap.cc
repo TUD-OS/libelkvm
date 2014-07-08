@@ -33,6 +33,7 @@ namespace Elkvm {
   }
 
   int HeapManager::grow(guestptr_t newbrk) {
+    assert(newbrk > curbrk);
     size_t sz = newbrk - curbrk;
     Mapping m(curbrk, sz, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0, pager);
     mappings.push_back(m);
