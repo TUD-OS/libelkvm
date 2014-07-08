@@ -22,7 +22,6 @@ uint64_t elkvm_popq(struct kvm_vm *, struct kvm_vcpu *);
 void elkvm_dump_stack(struct kvm_vm *, struct kvm_vcpu *vcpu);
 
 bool elkvm_is_stack_expansion(struct kvm_vm *vm, guestptr_t pfla);
-bool elkvm_check_stack_grow(guestptr_t pfla);
 
 guestptr_t elkvm_get_kernel_stack_base();
 

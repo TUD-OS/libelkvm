@@ -6,13 +6,11 @@
 #include <iostream>
 
 namespace Elkvm {
-  std::unique_ptr<RegionManager> rm = nullptr;
   extern HeapManager heap_m;
 
   RegionManager::RegionManager(int vmfd) : pager(vmfd) {
     auto sysregion = allocate_region(ELKVM_PAGER_MEMSIZE);
     pager.set_pml4(sysregion);
-
   }
 
   void RegionManager::dump_mappings() const {
@@ -64,7 +62,7 @@ namespace Elkvm {
     while(list_idx < freelists.size()) {
       auto rit = std::find_if(freelists[list_idx].begin(), freelists[list_idx].end(),
          [size](std::shared_ptr<Region> a)
-         { return a->size() >= size; });
+         { assert(a != nullptr); return a->size() >= size; });
       if(rit != freelists[list_idx].end()) {
         auto r = *rit;
         freelists[list_idx].erase(rit);

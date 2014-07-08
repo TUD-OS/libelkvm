@@ -11,8 +11,7 @@ namespace Elkvm {
 
   class VMInternals {
     private:
-      struct kvm_pager pager;
-      std::vector<struct kvm_vcpu *> cpus;
+      std::vector<std::shared_ptr<struct kvm_vcpu>> cpus;
 
       HeapManager heap_m;
       RegionManager rm;
@@ -25,10 +24,12 @@ namespace Elkvm {
       int _run_struct_size;
 
     public:
-      VMInternals(int fd, int argc, char **argv, char **environ, int mode);
-      RegionManager &get_region_manager();
+      VMInternals(int fd, int argc, char **argv, char **environ,
+          int run_struct_size);
+      RegionManager &get_region_manager() { return rm; }
       HeapManager &get_heap_manager();
       int add_cpu(int mode);
+      std::shared_ptr<struct kvm_vcpu> get_vcpu(int num);
   };
 
   //namespace Elkvm

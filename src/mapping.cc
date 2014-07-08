@@ -1,9 +1,10 @@
+#include <elkvm.h>
+#include <elkvm-internal.h>
 #include <mapping.h>
 #include <region.h>
-#include <elkvm.h>
 
 namespace Elkvm {
-  extern std::unique_ptr<RegionManager> rm;
+  extern std::unique_ptr<VMInternals> vmi;
 
   Mapping::Mapping(guestptr_t guest_addr, size_t l, int pr, int f,
       int fdes, off_t off)
@@ -14,7 +15,7 @@ namespace Elkvm {
       fd(fdes),
       offset(off) {
 
-    region = Elkvm::rm->allocate_region(length);
+    region = Elkvm::vmi->get_region_manager().allocate_region(length);
     assert(!region->is_free());
 
     host_p = region->base_address();
@@ -42,8 +43,8 @@ namespace Elkvm {
   }
 
   int Mapping::unmap_self() {
-    int err = rm->get_pager().unmap_region(addr, mapped_pages);
-    rm->free_region(region);
+    int err = vmi->get_region_manager().get_pager().unmap_region(addr, mapped_pages);
+    vmi->get_region_manager().free_region(region);
     return err;
   }
 
@@ -57,7 +58,7 @@ namespace Elkvm {
 
   int Mapping::map_self() {
     if(!readable() && !writeable() && !executable()) {
-      rm->get_pager().unmap_region(addr, mapped_pages);
+      vmi->get_region_manager().get_pager().unmap_region(addr, mapped_pages);
       mapped_pages = 0;
       return 0;
     }
@@ -71,7 +72,7 @@ namespace Elkvm {
     }
 
     /* add page table entries according to the options specified by the monitor */
-    int err = rm->get_pager().map_region(host_p, addr, mapped_pages, opts);
+    int err = vmi->get_region_manager().get_pager().map_region(host_p, addr, mapped_pages, opts);
     assert(err == 0);
     return err;
   }
@@ -120,13 +121,13 @@ namespace Elkvm {
     assert(pages <= mapped_pages);
     assert(contains_address(unmap_addr + ((pages-1) * ELKVM_PAGESIZE)));
 
-    int err = rm->get_pager().unmap_region(unmap_addr, pages);
+    int err = vmi->get_region_manager().get_pager().unmap_region(unmap_addr, pages);
     assert(err == 0 && "could not unmap this mapping");
     mapped_pages -= pages;
 
     if(mapped_pages == 0) {
-      Elkvm::rm->free_region(region);
-      Elkvm::rm->free_mapping(*this);
+      Elkvm::vmi->get_region_manager().free_region(region);
+      Elkvm::vmi->get_region_manager().free_mapping(*this);
     }
 
     return 0;
@@ -179,12 +180,12 @@ namespace Elkvm {
 
     if(length > off + len) {
       size_t rem = length - off - len;
-      auto r = rm->find_region(reinterpret_cast<char *>(host_p) + off + len);
+      auto r = vmi->get_region_manager().find_region(reinterpret_cast<char *>(host_p) + off + len);
       /* There should be no need to process this mapping any further, because we
        * feed it the split memory region, with the old data inside */
       Mapping end(r, addr + off + len,
           rem, prot, flags, fd, offset + off + len);
-      Elkvm::rm->add_mapping(end);
+      Elkvm::vmi->get_region_manager().add_mapping(end);
     }
 
     length = off;
@@ -200,7 +201,7 @@ namespace Elkvm {
     length -= len;
     host_p = reinterpret_cast<char *>(host_p) + len;
     auto r = region->slice_begin(len);
-    Elkvm::rm->add_free_region(r);
+    Elkvm::vmi->get_region_manager().add_free_region(r);
   }
 
   void Mapping::slice_end(guestptr_t slice_base) {

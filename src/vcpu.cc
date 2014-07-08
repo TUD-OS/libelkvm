@@ -10,6 +10,7 @@
 
 #include "debug.h"
 #include <elkvm.h>
+#include <elkvm-internal.h>
 #include <gdt.h>
 #include <idt.h>
 #include <region.h>
@@ -18,78 +19,7 @@
 #include <vcpu.h>
 
 namespace Elkvm {
-  extern std::unique_ptr<RegionManager> rm;
-}
-
-int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
-	if(vm->fd <= 0) {
-		return -EIO;
-	}
-
-	struct kvm_vcpu *vcpu = new(struct kvm_vcpu);
-	if(vcpu == NULL) {
-		return -ENOMEM;
-	}
-	memset(&vcpu->regs, 0, sizeof(struct kvm_regs));
-	memset(&vcpu->sregs, 0, sizeof(struct kvm_sregs));
-	vcpu->singlestep = 0;
-
-	int vcpu_count = elkvm_vcpu_count(vm);
-	vcpu->fd = ioctl(vm->fd, KVM_CREATE_VCPU, vcpu_count);
-	if(vcpu->fd <= 0) {
-		free(vcpu);
-		return -1;
-	}
-
-	int err = kvm_vcpu_initialize_regs(vcpu, mode);
-	if(err) {
-		free(vcpu);
-		return err;
-	}
-
-	vcpu->run_struct = reinterpret_cast<struct kvm_run *>(
-      mmap(NULL, sizeof(struct kvm_run), PROT_READ | PROT_WRITE,
-			MAP_SHARED, vcpu->fd, 0));
-	if(vcpu->run_struct == NULL) {
-		free(vcpu);
-		return -ENOMEM;
-	}
-
-	err = kvm_vcpu_add_tail(vm, vcpu);
-	if(err) {
-		free(vcpu);
-		return err;
-	}
-
-#ifdef HAVE_LIBUDIS86
-  elkvm_init_udis86(vcpu, mode);
-#endif
-
-	vcpu->vm = vm;
-	return 0;
-}
-
-int kvm_vcpu_add_tail(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
-	/* find the last entry in the vcpu list for this vm */
-	struct vcpu_list *vl = vm->vcpus;
-	while(vl != NULL && vl->next != NULL) {
-		vl = vl->next;
-	}
-
-	struct vcpu_list *new_item = new(struct vcpu_list);
-	if(new_item == NULL) {
-		return -ENOMEM;
-	}
-
-	new_item->next = NULL;
-	new_item->vcpu = vcpu;
-	if(vl == NULL) {
-		vm->vcpus = new_item;
-	} else {
-		vl->next = new_item;
-	}
-
-	return 0;
+  extern std::unique_ptr<VMInternals> vmi;
 }
 
 int kvm_vcpu_initialize_regs(struct kvm_vcpu *vcpu, int mode) {
@@ -678,7 +608,7 @@ void kvm_vcpu_dump_code(struct kvm_vcpu *vcpu) {
 #ifdef HAVE_LIBUDIS86
 int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *vcpu, uint64_t guest_addr) {
   assert(guest_addr != 0x0);
-	void *host_p = Elkvm::rm->get_pager().get_host_p(guest_addr);
+	void *host_p = Elkvm::vmi->get_region_manager().get_pager().get_host_p(guest_addr);
   assert(host_p != NULL);
 	size_t disassembly_size = 40;
 	ud_set_input_buffer(&vcpu->ud_obj, (const uint8_t *)host_p, disassembly_size);

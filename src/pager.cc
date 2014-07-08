@@ -7,16 +7,19 @@
 #include <sys/ioctl.h>
 
 #include <elkvm.h>
+#include <elkvm-internal.h>
 #include <pager.h>
-#include <stack-c.h>
+#include <stack.h>
 #include <vcpu.h>
 #include <region.h>
 
 namespace Elkvm {
-  extern std::unique_ptr<RegionManager> rm;
+  extern Stack stack;
+  extern std::unique_ptr<VMInternals> vmi;
 
   PagerX86_64::PagerX86_64(int vmfd) :
   _vmfd(vmfd) {
+    total_memsz = 0;
     if(vmfd < 1) {
       throw;
     }
@@ -260,7 +263,7 @@ namespace Elkvm {
 //      printf("PFLA: 0x%lx\nCURRENT STACK TOP:0x%lx\n",
 //          pfla, pager->vm->current_user_stack->guest_virtual);
 //    }
-    if(elkvm_check_stack_grow(pfla)) {
+    if(stack.grow(pfla)) {
       if(debug) {
         dump_page_fault_info(pfla, err_code, host_p);
       }
@@ -298,6 +301,7 @@ namespace Elkvm {
       }
 
       assert(chunk->slot < KVM_MEMORY_SLOTS);
+      print(std::cout, *chunk);
       int err = ioctl(_vmfd, KVM_SET_USER_MEMORY_REGION, chunk.get());
       return err ? -errno : 0;
     //  if(err) {
@@ -541,7 +545,7 @@ namespace Elkvm {
 
 void *elkvm_pager_get_host_p(struct kvm_pager *pager __attribute__((unused)),
     guestptr_t addr) {
-  return Elkvm::rm->get_pager().get_host_p(addr);
+  return Elkvm::vmi->get_region_manager().get_pager().get_host_p(addr);
 }
 
 guestptr_t elkvm_pager_map_kernel_page(
@@ -554,7 +558,7 @@ guestptr_t elkvm_pager_map_kernel_page(
   if(exec) {
     opts |= PT_OPT_EXEC;
   }
-  return Elkvm::rm->get_pager().map_kernel_page(host_p, opts);
+  return Elkvm::vmi->get_region_manager().get_pager().map_kernel_page(host_p, opts);
 }
 
 guestptr_t page_begin(guestptr_t addr) {

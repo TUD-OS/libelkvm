@@ -5,11 +5,12 @@
 #include <stdio.h>
 
 #include <elkvm.h>
-#include "region.h"
-#include "region-c.h"
+#include <elkvm-internal.h>
+#include <region.h>
+#include <region-c.h>
 
 namespace Elkvm {
-  extern std::unique_ptr<RegionManager> rm;
+  extern std::unique_ptr<VMInternals> vmi;
 
   std::ostream &print(std::ostream &stream, const Region &r) {
     if(r.is_free()) {
@@ -99,8 +100,8 @@ namespace Elkvm {
 
     rsize = off;
 
-    rm->use_region(r);
-    rm->add_free_region(std::make_shared<Region>(
+    vmi->get_region_manager().use_region(r);
+    vmi->get_region_manager().add_free_region(std::make_shared<Region>(
           reinterpret_cast<char *>(host_p) + off, len));
     //TODO maybe return ptr to free region?
   }
@@ -110,13 +111,13 @@ namespace Elkvm {
 
 
 struct elkvm_memory_region *elkvm_region_create(uint64_t req_size) {
-  std::shared_ptr<Elkvm::Region> r = Elkvm::rm->allocate_region(req_size);
+  std::shared_ptr<Elkvm::Region> r = Elkvm::vmi->get_region_manager().allocate_region(req_size);
   assert(r->size() >= req_size && "allocated region must be suitable in size!");
 	return r->c_region();
 }
 
 int elkvm_region_free(struct elkvm_memory_region *region) {
-  Elkvm::rm->free_region(region->host_base_p, region->region_size);
+  Elkvm::vmi->get_region_manager().free_region(region->host_base_p, region->region_size);
   delete(region);
   return 0;
 }

@@ -40,7 +40,7 @@ int elkvm_idt_setup(struct kvm_vm *vm, struct elkvm_flat *default_handler) {
 	}
 
 	/* set the idtr accordingly */
-	struct kvm_vcpu *vcpu = vm->vcpus->vcpu;
+	struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);;
 	int err = kvm_vcpu_get_regs(vcpu);
 	if(err) {
 		return err;

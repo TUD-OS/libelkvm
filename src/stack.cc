@@ -2,6 +2,7 @@
 #include <errno.h>
 
 #include <elkvm.h>
+#include <elkvm-internal.h>
 #include <environ.h>
 #include <pager.h>
 #include <stack.h>
@@ -10,8 +11,8 @@
 #include "debug.h"
 
 namespace Elkvm {
-  extern std::unique_ptr<RegionManager> rm;
   Stack stack;
+  extern std::unique_ptr<VMInternals> vmi;
 
   void Stack::init(struct kvm_vcpu *v, const Environment &env) {
     vcpu = v;
@@ -29,10 +30,10 @@ namespace Elkvm {
 
     /* get a frame for the kernel (interrupt) stack */
     /* this is only ONE page large */
-    kernel_stack = rm->allocate_region(ELKVM_PAGESIZE);
+    kernel_stack = vmi->get_region_manager().allocate_region(ELKVM_PAGESIZE);
 
     /* create a mapping for the kernel (interrupt) stack */
-    guestptr_t kstack_addr = rm->get_pager().map_kernel_page(kernel_stack->base_address(),
+    guestptr_t kstack_addr = vmi->get_region_manager().get_pager().map_kernel_page(kernel_stack->base_address(),
        PT_OPT_WRITE);
     assert(kstack_addr != 0x0 && "could not allocate memory for kernel stack");
 
@@ -47,14 +48,14 @@ namespace Elkvm {
 
     assert(vcpu->regs.rsp != 0x0);
     uint64_t *host_p = reinterpret_cast<uint64_t *>(
-        rm->get_pager().get_host_p(vcpu->regs.rsp));
+        vmi->get_region_manager().get_pager().get_host_p(vcpu->regs.rsp));
     if(host_p == nullptr) {
       /* current stack is full, we need to expand the stack */
       int err = expand();
       if(err) {
         return err;
       }
-      host_p = reinterpret_cast<uint64_t *>(rm->get_pager().get_host_p(vcpu->regs.rsp));
+      host_p = reinterpret_cast<uint64_t *>(vmi->get_region_manager().get_pager().get_host_p(vcpu->regs.rsp));
       assert(host_p != NULL);
     }
     *host_p = val;
@@ -64,7 +65,7 @@ namespace Elkvm {
   uint64_t Stack::popq() {
     assert(vcpu->regs.rsp != 0x0);
     uint64_t *host_p = reinterpret_cast<uint64_t *>(
-        rm->get_pager().get_host_p(vcpu->regs.rsp));
+        vmi->get_region_manager().get_pager().get_host_p(vcpu->regs.rsp));
     assert(host_p != NULL);
 
     vcpu->regs.rsp += 0x8;
@@ -75,12 +76,12 @@ namespace Elkvm {
   int Stack::expand() {
     base -= ELKVM_STACK_GROW;
 
-    std::shared_ptr<Region> region = rm->allocate_region(ELKVM_STACK_GROW);
+    std::shared_ptr<Region> region = vmi->get_region_manager().allocate_region(ELKVM_STACK_GROW);
     if(region == nullptr) {
       return -ENOMEM;
     }
 
-    int err = rm->get_pager().map_region(region->base_address(), base,
+    int err = vmi->get_region_manager().get_pager().map_region(region->base_address(), base,
         ELKVM_STACK_GROW / ELKVM_PAGESIZE, PT_OPT_WRITE);
     if(err) {
       return err;
@@ -140,10 +141,6 @@ int elkvm_pushq(struct kvm_vm *vm __attribute__((unused)),
 uint64_t elkvm_popq(struct kvm_vm *vm __attribute__((unused)),
     struct kvm_vcpu *vcpu __attribute__((unused))) {
   return Elkvm::stack.popq();
-}
-
-bool elkvm_check_stack_grow(guestptr_t pfla) {
-  return Elkvm::stack.grow(pfla);
 }
 
 guestptr_t elkvm_get_kernel_stack_base() {

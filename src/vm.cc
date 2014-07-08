@@ -32,24 +32,35 @@ int elkvm_load_flat(struct elkvm_flat *, const std::string,
 namespace Elkvm {
   extern ElfBinary binary;
   extern Stack stack;
-  extern std::unique_ptr<RegionManager> rm;
+  std::unique_ptr<VMInternals> vmi = nullptr;
 }
 
-int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus,
-    const struct elkvm_handlers *handlers, const char *binary) {
-	int err = 0;
+int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode,
+    unsigned cpus, const struct elkvm_handlers *handlers, const char *binary) {
 
-  Elkvm::VMInternals vmi(opts->fd, opts->argc, opts->argv, opts->environ, mode);
+  int err = 0;
 
-  Elkvm::rm.reset(new Elkvm::RegionManager(vm->fd));
-  //XXX set pml4 address!
+  int vmfd = ioctl(opts->fd, KVM_CREATE_VM, 0);
+  if(vmfd < 0) {
+    return -errno;
+  }
 
-	for(int i = 0; i < cpus; i++) {
-		err = kvm_vcpu_create(vm, mode);
+  int run_struct_size = ioctl(opts->fd, KVM_GET_VCPU_MMAP_SIZE, 0);
+  if(run_struct_size < 0) {
+    return -errno;
+  }
+
+  Elkvm::vmi.reset(new Elkvm::VMInternals(vmfd,
+        opts->argc,
+        opts->argv,
+        opts->environ,
+        run_struct_size));
+  for(unsigned i = 0; i < cpus; i++) {
+    err = Elkvm::vmi->add_cpu(mode);
 		if(err) {
 			return err;
 		}
-	}
+  }
 
   Elkvm::ElfBinary bin(binary);
 
@@ -112,7 +123,7 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
 	/*
 	 * setup the lstar register with the syscall handler
 	 */
-	err = kvm_vcpu_set_msr(vm->vcpus->vcpu,
+	err = kvm_vcpu_set_msr(Elkvm::vmi->get_vcpu(0).get(),
 			VCPU_MSR_LSTAR,
 			sysenter.region->guest_virtual);
 	if(err) {
@@ -153,10 +164,10 @@ int elkvm_load_flat(struct elkvm_flat *flat,
 
 	flat->size = stbuf.st_size;
   std::shared_ptr<Elkvm::Region> region =
-    Elkvm::rm->allocate_region(stbuf.st_size);
+    Elkvm::vmi->get_region_manager().allocate_region(stbuf.st_size);
 
   if(kernel) {
-    guestptr_t addr = Elkvm::rm->get_pager().map_kernel_page(
+    guestptr_t addr = Elkvm::vmi->get_region_manager().get_pager().map_kernel_page(
         region->base_address(),
         PT_OPT_EXEC);
     if(addr == 0x0) {
@@ -167,7 +178,7 @@ int elkvm_load_flat(struct elkvm_flat *flat,
   } else {
     /* XXX this will break! */
     region->set_guest_addr(0x1000);
-    err = Elkvm::rm->get_pager().map_user_page(
+    err = Elkvm::vmi->get_region_manager().get_pager().map_user_page(
         region->base_address(),
         region->guest_address(),
         PT_OPT_EXEC);
@@ -234,7 +245,7 @@ int elkvm_cleanup(struct elkvm_opts *opts) {
 }
 
 int elkvm_chunk_remap(struct kvm_vm *vm, int num, uint64_t newsize) {
-  auto chunk = Elkvm::rm->get_pager().get_chunk(num);
+  auto chunk = Elkvm::vmi->get_region_manager().get_pager().get_chunk(num);
   chunk->memory_size = 0;
 
 	int err = ioctl(vm->fd, KVM_SET_USER_MEMORY_REGION, chunk.get());
@@ -248,26 +259,19 @@ int elkvm_chunk_remap(struct kvm_vm *vm, int num, uint64_t newsize) {
   return 0;
 }
 
-struct kvm_vcpu *elkvm_vcpu_get(struct kvm_vm *vm, int vcpu_id) {
-  struct vcpu_list *vcpu_list = vm->vcpus;
-  for(int i = 0; i < vcpu_id && vcpu_list != NULL; i++) {
-    vcpu_list = vcpu_list->next;
-  }
-
-  if(vcpu_list == NULL) {
-    return NULL;
-  }
-
-  return vcpu_list->vcpu;
+struct kvm_vcpu *elkvm_vcpu_get(struct kvm_vm *vm __attribute__((unused)),
+    int vcpu_id) {
+  auto vcpu = Elkvm::vmi->get_vcpu(vcpu_id);
+  return vcpu.get();
 }
 
 uint64_t elkvm_chunk_count(struct kvm_vm *vm __attribute__((unused))) {
-  return Elkvm::rm->get_pager().chunk_count();
+  return Elkvm::vmi->get_region_manager().get_pager().chunk_count();
 }
 
 struct kvm_userspace_memory_region elkvm_get_chunk(
     struct kvm_vm *vm __attribute__((unused)), int chunk) {
-  return *Elkvm::rm->get_pager().get_chunk(chunk);
+  return *Elkvm::vmi->get_region_manager().get_pager().get_chunk(chunk);
 }
 
 void elkvm_emulate_vmcall(struct kvm_vcpu *vcpu) {

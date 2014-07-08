@@ -160,7 +160,7 @@ struct elkvm_handlers {
 	Create a new VM, with the given mode, cpu count, memory and syscall handlers
 	Return 0 on success, -1 on error
 */
-int elkvm_vm_create(struct elkvm_opts *, struct kvm_vm *, int mode, int cpus,
+int elkvm_vm_create(struct elkvm_opts *, struct kvm_vm *, int mode, unsigned cpus,
 		const struct elkvm_handlers *, const char *binary);
 
 /*
