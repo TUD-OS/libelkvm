@@ -239,7 +239,7 @@ namespace Elkvm {
       (*entry & ~(ELKVM_PAGESIZE-1)) | (guest_virtual & (ELKVM_PAGESIZE-1));
 
     for(const auto &c : chunks) {
-      if(contains_phys_address(chunk, guest_physical)) {
+      if(contains_phys_address(c, guest_physical)) {
         chunk = c;
         break;
       }
