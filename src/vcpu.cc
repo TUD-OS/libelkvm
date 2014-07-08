@@ -584,24 +584,6 @@ int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *vcpu, uint64_t guest_addr) {
 	return 0;
 }
 
-void elkvm_dump_isr(struct kvm_vm *vm, int iv) {
-
-	struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
-	struct kvm_idt_entry *entry = reinterpret_cast<struct kvm_idt_entry *>(
-      vm->idt_region->host_base_p) +
-		iv * sizeof(struct kvm_idt_entry);
-
-	guestptr_t guest_isr = idt_entry_offset(entry);
-  assert(guest_isr != 0x0);
-
-	printf("\n ISR Code for Interrupt Vector %3i guest_address: 0x%lx:\n",
-      iv, guest_isr);
-	printf(  " ----------------------------------\n");
-  kvm_vcpu_dump_code_at(vcpu, guest_isr);
-
-	return;
-}
-
 void elkvm_init_udis86(struct kvm_vcpu *vcpu, int mode) {
 	ud_init(&vcpu->ud_obj);
 	switch(mode) {
