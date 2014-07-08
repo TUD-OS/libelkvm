@@ -51,16 +51,6 @@ struct kvm_vcpu {
   struct kvm_guest_debug debug;
 };
 
-struct vcpu_list {
-	struct kvm_vcpu *vcpu;
-	struct vcpu_list *next;
-};
-
-/*
-	Remove and clean up the VCPU
-*/
-int kvm_vcpu_destroy(struct kvm_vm *, struct kvm_vcpu *);
-
 /*
 	Set the VCPU's rip to a specific value
 */

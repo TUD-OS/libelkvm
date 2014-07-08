@@ -169,11 +169,6 @@ int elkvm_vm_create(struct elkvm_opts *, struct kvm_vm *, int mode, unsigned cpu
 int elkvm_set_debug(struct kvm_vm *);
 
 /*
-	Returns the number of VCPUs in a VM
-*/
-int elkvm_vcpu_count(struct kvm_vm *);
-
-/*
  * \brief Emulates (skips) the VMCALL instruction
  */
 void elkvm_emulate_vmcall(struct kvm_vcpu *);

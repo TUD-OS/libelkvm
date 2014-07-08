@@ -117,39 +117,6 @@ int kvm_vcpu_set_sregs(struct kvm_vcpu *vcpu) {
   return 0;
 }
 
-int kvm_vcpu_destroy(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
-	struct vcpu_list *vl = vm->vcpus;
-	int found = 0;
-
-	if(vl != NULL && vl->vcpu == vcpu) {
-		vm->vcpus = vl->next;
-		close(vl->vcpu->fd);
-		free(vl->vcpu);
-		free(vl);
-		return 0;
-	}
-
-	while(vl != NULL && vl->next != NULL) {
-		if(vl->next->vcpu == vcpu) {
-			found = 1;
-			break;
-		}
-		vl = vl->next;
-	}
-
-	if(!found) {
-		return -1;
-	}
-
-	struct vcpu_list *old = vl->next;
-	vl->next = vl->next->next;
-	free(old);
-	close(vcpu->fd);
-	free(vcpu);
-
-	return 0;
-}
-
 int kvm_vcpu_get_msr(struct kvm_vcpu *vcpu, uint32_t index, uint64_t *res_p) {
 	struct kvm_msrs *msr = reinterpret_cast<struct kvm_msrs *>(
       malloc(sizeof(struct kvm_msrs) + sizeof(struct kvm_msr_entry)));

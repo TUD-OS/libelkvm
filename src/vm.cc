@@ -198,22 +198,6 @@ int elkvm_load_flat(struct elkvm_flat *flat,
 	return 0;
 }
 
-int elkvm_vcpu_count(struct kvm_vm *vm) {
-	int count = 0;
-	struct vcpu_list *vl = vm->vcpus;
-	if(vl == NULL) {
-		return 0;
-	}
-
-	while(vl != NULL) {
-		if(vl->vcpu != NULL) {
-			count++;
-		}
-		vl = vl->next;
-	}
-	return count;
-}
-
 int elkvm_init(struct elkvm_opts *opts, int argc, char **argv, char **environ) {
 	opts->argc = argc;
 	opts->argv = argv;
