@@ -14,7 +14,6 @@
 
 #include <elkvm/elkvm.h>
 #include <elkvm/kvm.h>
-#include <elkvm/vcpu.h>
 
 #include <stdint.h>
 #include <smmintrin.h>
@@ -283,7 +282,6 @@ int main(int argc, char **argv) {
   int gdb = 0;
   int myopts = 1;
   opterr = 0;
-  struct kvm_vcpu *vcpu = NULL;
 
   while((opt = getopt(argc, argv, "+dD")) != -1) {
     switch(opt) {
@@ -323,8 +321,6 @@ int main(int argc, char **argv) {
 		printf("ERROR creating VM errno: %i Msg: %s\n", -err, strerror(-err));
 		return -1;
 	}
-
-  vcpu = elkvm_vcpu_get(&vm, 0);
 
   if(debug) {
     err = elkvm_set_debug(&vm);
