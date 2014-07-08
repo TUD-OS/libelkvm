@@ -12,7 +12,6 @@ namespace Elkvm {
 
   class Mapping {
     private:
-      struct kvm_pager * pager;
       void *host_p;
       guestptr_t addr;
       size_t length;

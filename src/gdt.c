@@ -13,7 +13,7 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 	vm->gdt_region = elkvm_region_create(
 				GDT_NUM_ENTRIES * sizeof(struct elkvm_gdt_segment_descriptor));
 
-	vm->gdt_region->guest_virtual = elkvm_pager_map_kernel_page(&vm->pager,
+	vm->gdt_region->guest_virtual = elkvm_pager_map_kernel_page(NULL,
 			vm->gdt_region->host_base_p, 0, 0);
 	if(vm->gdt_region->guest_virtual == 0) {
 		return -ENOMEM;

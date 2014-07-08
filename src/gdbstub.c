@@ -335,7 +335,7 @@ static void debug_loop(struct kvm_vm *vm) {
         int len = strtoul(ebuf + 1, &ebuf, 16);
         hex2mem(ebuf + 1, mem, len);
 
-        void *host_p = elkvm_pager_get_host_p(&vm->pager, addr);
+        void *host_p = elkvm_pager_get_host_p(NULL, addr);
         memcpy(host_p, mem, len);
         struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
         vcpu->debug.control |= KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_USE_SW_BP;
@@ -366,7 +366,7 @@ static void debug_loop(struct kvm_vm *vm) {
         if(addr == 0x0) {
           put_reply("");
         } else {
-          void *host_p = elkvm_pager_get_host_p(&vm->pager, addr);
+          void *host_p = elkvm_pager_get_host_p(NULL, addr);
           if(host_p != NULL) {
             memcpy(obuf, host_p, len);
 
@@ -447,7 +447,7 @@ static void debug_loop(struct kvm_vm *vm) {
         } else {
           /* in kernel mode, figure out the real stack and return that
            * this really helps with backtraces (hopefully) */
-          guestptr_t *sf = elkvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp + 24);
+          guestptr_t *sf = elkvm_pager_get_host_p(NULL, vcpu->regs.rsp + 24);
           guestptr_t real_rsp = *sf;
           PUTREG(buf, real_rsp, 8);
         }
@@ -464,7 +464,7 @@ static void debug_loop(struct kvm_vm *vm) {
         } else {
           /* in kernel mode, figure out the real stack and return that
            * this really helps with backtraces (hopefully) */
-          guestptr_t *sf = elkvm_pager_get_host_p(&vm->pager, vcpu->regs.rsp);
+          guestptr_t *sf = elkvm_pager_get_host_p(NULL, vcpu->regs.rsp);
           guestptr_t real_rip = *sf;
           PUTREG(buf, real_rip, 8);
         }

@@ -7,12 +7,6 @@ extern "C" {
 struct kvm_vm;
 
 struct kvm_pager {
-	uint64_t guest_top_pm;
-	int mode;
-	void *host_pml4_p;
-	void *host_next_free_tbl_p;
-	uint64_t guest_next_free;
-  uint64_t total_memsz;
   int free_slot_id;
 };
 

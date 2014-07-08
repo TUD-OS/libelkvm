@@ -65,7 +65,6 @@ struct region_mapping {
 struct kvm_vm {
 	int fd;
 	struct vcpu_list *vcpus;
-	struct kvm_pager pager;
 	int run_struct_size;
   list(struct elkvm_memory_region *, root_region);
 	const struct elkvm_handlers *syscall_handlers;
