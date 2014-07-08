@@ -25,7 +25,7 @@
  * Load a flat binary into the guest address space
  * returns 0 on success, an errno otherwise
  */
-int elkvm_load_flat(struct kvm_vm *, struct elkvm_flat *, const std::string,
+int elkvm_load_flat(struct elkvm_flat *, const std::string,
     int kernel);
 
 namespace Elkvm {
@@ -85,7 +85,7 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
 
 	struct elkvm_flat idth;
   std::string isr_path(RES_PATH "/isr");
-	err = elkvm_load_flat(vm, &idth, isr_path, 1);
+	err = elkvm_load_flat(&idth, isr_path, 1);
 	if(err) {
     if(err == -ENOENT) {
       printf("LIBELKVM: ISR shared file could not be found\n");
@@ -100,7 +100,7 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
 
 	struct elkvm_flat sysenter;
   std::string sysenter_path(RES_PATH "/entry");
-	err = elkvm_load_flat(vm, &sysenter, sysenter_path, 1);
+	err = elkvm_load_flat(&sysenter, sysenter_path, 1);
 	if(err) {
     if(err == -ENOENT) {
       printf("LIBELKVM: SYSCALL ENTRY shared file could not be found\n");
@@ -112,7 +112,7 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
   vm->sighandler_cleanup = new(struct elkvm_flat);
   assert(vm->sighandler_cleanup != NULL);
 
-  err = elkvm_load_flat(vm, vm->sighandler_cleanup, sighandler_path, 0);
+  err = elkvm_load_flat(vm->sighandler_cleanup, sighandler_path, 0);
   if(err) {
     if(err == -ENOENT) {
       printf("LIBELKVM: SIGNAL HANDLER shared file could not be found\n");
@@ -147,7 +147,7 @@ int elkvm_set_debug(struct kvm_vm *vm) {
   return 0;
 }
 
-int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat,
+int elkvm_load_flat(struct elkvm_flat *flat,
     const std::string path,
     int kernel) {
 	int fd = open(path.c_str(), O_RDONLY);
@@ -167,8 +167,9 @@ int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat,
     Elkvm::rm->allocate_region(stbuf.st_size);
 
   if(kernel) {
-    guestptr_t addr = elkvm_pager_map_kernel_page(&vm->pager,
-        region->base_address(), 0, 1);
+    guestptr_t addr = Elkvm::rm->get_pager().map_kernel_page(
+        region->base_address(),
+        PT_OPT_EXEC);
     if(addr == 0x0) {
       close(fd);
       return -ENOMEM;
