@@ -101,7 +101,8 @@ int elkvm_handle_interrupt(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
     }
 
     uint32_t err_code = Elkvm::stack.popq();
-    err = elkvm_pager_handle_pagefault(&vm->pager, vcpu->sregs.cr2, err_code);
+    err = Elkvm::rm->get_pager().handle_pagefault(vcpu->sregs.cr2, err_code,
+        vm->debug);
 
 		return err;
 	}
