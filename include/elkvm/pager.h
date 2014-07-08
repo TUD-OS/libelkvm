@@ -47,11 +47,6 @@ typedef unsigned int ptopt_t;
 
 typedef uint64_t ptentry_t;
 
-/*
-	Initialize the Pager with the given mode
-*/
-int elkvm_pager_initialize(struct kvm_vm *, int);
-
 struct kvm_userspace_memory_region *
 elkvm_pager_alloc_chunk(struct kvm_pager *const pager, void *addr,
     uint64_t chunk_size, int flags);

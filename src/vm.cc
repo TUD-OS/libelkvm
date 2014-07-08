@@ -62,17 +62,7 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
 		}
 	}
 
-	err = elkvm_region_setup(vm);
-	if(err) {
-		return err;
-	}
-
-	err = elkvm_pager_initialize(vm, mode);
-	if(err) {
-		return err;
-	}
-
-  Elkvm::ElfBinary bin(binary, &vm->pager);
+  Elkvm::ElfBinary bin(binary);
 
   guestptr_t entry = bin.get_entry_point();
 	err = kvm_vcpu_set_rip(elkvm_vcpu_get(vm, 0), entry);
@@ -81,17 +71,12 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
   Elkvm::Environment env(bin);
 
   struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
-  Elkvm::stack.init(vcpu, &vm->pager, env);
+  Elkvm::stack.init(vcpu, env);
 
   err = env.fill(opts, vm);
   if(err) {
     return err;
   }
-
-	err = elkvm_pager_map_chunk(vm, &vm->pager.system_chunk);
-	if(err) {
-		return err;
-	}
 
 	err = elkvm_gdt_setup(vm);
 	if(err) {
@@ -178,7 +163,8 @@ int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat,
 	}
 
 	flat->size = stbuf.st_size;
-  std::shared_ptr<Elkvm::Region> region = Elkvm::rm.allocate_region(stbuf.st_size);
+  std::shared_ptr<Elkvm::Region> region =
+    Elkvm::rm->allocate_region(stbuf.st_size);
 
   if(kernel) {
     guestptr_t addr = elkvm_pager_map_kernel_page(&vm->pager,
@@ -191,7 +177,7 @@ int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat,
   } else {
     /* XXX this will break! */
     region->set_guest_addr(0x1000);
-    err = pager.map_user_page(
+    err = Elkvm::rm->get_pager().map_user_page(
         region->base_address(),
         region->guest_address(),
         PT_OPT_EXEC);
@@ -207,28 +193,6 @@ int elkvm_load_flat(struct kvm_vm *vm, struct elkvm_flat *flat,
 
 	close(fd);
   flat->region = region->c_region();
-
-	return 0;
-}
-
-int elkvm_region_setup(struct kvm_vm *vm) {
-	/* create an initial chunk for system data */
-
-	void *system_chunk_p;
-  vm->root_region = NULL;
-
-	int err = posix_memalign(&system_chunk_p, HOST_PAGESIZE, ELKVM_SYSTEM_MEMSIZE);
-	if(err) {
-		return err;
-	}
-
-	vm->pager.system_chunk.userspace_addr = (__u64)system_chunk_p;
-	vm->pager.system_chunk.guest_phys_addr = 0x0;
-	vm->pager.system_chunk.memory_size = ELKVM_SYSTEM_MEMSIZE;
-	vm->pager.system_chunk.flags = 0;
-	vm->pager.system_chunk.slot = 0;
-
-  vm->pager.total_memsz = vm->pager.system_chunk.memory_size;
 
 	return 0;
 }
@@ -281,11 +245,7 @@ int elkvm_cleanup(struct elkvm_opts *opts) {
 
 int elkvm_chunk_remap(struct kvm_vm *vm, int num, uint64_t newsize) {
   struct kvm_userspace_memory_region *chunk = NULL;
-  if(num == 0) {
-    chunk = &vm->pager.system_chunk;
-  } else {
-    chunk = elkvm_pager_get_chunk(&vm->pager, num - 1);
-  }
+  chunk = elkvm_pager_get_chunk(&vm->pager, num - 1);
 
   chunk->memory_size = 0;
 	int err = ioctl(vm->fd, KVM_SET_USER_MEMORY_REGION, chunk);
@@ -312,12 +272,13 @@ struct kvm_vcpu *elkvm_vcpu_get(struct kvm_vm *vm, int vcpu_id) {
   return vcpu_list->vcpu;
 }
 
-uint64_t elkvm_chunk_count(struct kvm_vm *vm) {
-  return pager.chunk_count();
+uint64_t elkvm_chunk_count(struct kvm_vm *vm __attribute__((unused))) {
+  return Elkvm::rm->get_pager().chunk_count();
 }
 
-struct kvm_userspace_memory_region elkvm_get_chunk(struct kvm_vm *vm, int chunk) {
-  return *pager.get_chunk(chunk);
+struct kvm_userspace_memory_region elkvm_get_chunk(
+    struct kvm_vm *vm __attribute__((unused)), int chunk) {
+  return *Elkvm::rm->get_pager().get_chunk(chunk);
 }
 
 void elkvm_emulate_vmcall(struct kvm_vcpu *vcpu) {

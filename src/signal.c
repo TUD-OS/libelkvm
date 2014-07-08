@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <signal.h>
 
 #include <elkvm.h>

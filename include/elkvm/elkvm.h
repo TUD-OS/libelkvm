@@ -170,11 +170,6 @@ int elkvm_vm_create(struct elkvm_opts *, struct kvm_vm *, int mode, int cpus,
 int elkvm_set_debug(struct kvm_vm *);
 
 /*
- * Setup the addresses of the system regions
- */
-int elkvm_region_setup(struct kvm_vm *vm);
-
-/*
 	Returns the number of VCPUs in a VM
 */
 int elkvm_vcpu_count(struct kvm_vm *);
@@ -192,7 +187,7 @@ void elkvm_emulate_vmcall(struct kvm_vcpu *);
 int elkvm_chunk_remap(struct kvm_vm *, int num, uint64_t newsize);
 
 struct kvm_vcpu *elkvm_vcpu_get(struct kvm_vm *, int vcpu_id);
-int elkvm_chunk_count(struct kvm_vm *);
+uint64_t elkvm_chunk_count(struct kvm_vm *);
 
 struct kvm_userspace_memory_region elkvm_get_chunk(struct kvm_vm *, int chunk);
 
