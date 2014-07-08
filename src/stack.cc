@@ -19,6 +19,10 @@ namespace Elkvm {
     int err = kvm_vcpu_get_regs(vcpu);
     assert(err == 0 && "error getting vcpu");
 
+    /* as the stack grows downward we can initialize its address at the base address
+     * of the env region */
+    base = vcpu->regs.rsp = env.get_guest_address();
+
     /* get memory for the stack, this is expanded as needed */
     err = expand();
     assert(err == 0 && "stack creation failed");
@@ -33,15 +37,6 @@ namespace Elkvm {
     assert(kstack_addr != 0x0 && "could not allocate memory for kernel stack");
 
     kernel_stack->set_guest_addr(kstack_addr);
-
-    /* as the stack grows downward we can initialize its address at the base address
-     * of the env region */
-    vcpu->regs.rsp = env.get_guest_address();
-    err = rm.get_pager().map_user_page(env.get_base_address(),
-        vcpu->regs.rsp, PT_OPT_WRITE);
-    assert(err == 0 && "could not map stack address");
-
-    base = env.get_guest_address();
 
     err = kvm_vcpu_set_regs(vcpu);
     assert(err == 0 && "could not set registers");

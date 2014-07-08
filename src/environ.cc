@@ -19,6 +19,9 @@ namespace Elkvm {
     region = rm->allocate_region(12 * ELKVM_PAGESIZE);
     assert(region != nullptr && "error getting memory for env");
     region->set_guest_addr(LINUX_64_STACK_BASE - region->size());
+    int err = rm->get_pager().map_user_page(region->base_address(),
+        region->guest_address(), PT_OPT_WRITE);
+    assert(err == 0 && "error mapping env region");
   }
 
   unsigned Environment::calc_auxv_num_and_set_auxv(char **env_p) {
@@ -80,7 +83,6 @@ namespace Elkvm {
       for(unsigned i= 0 ; i < count; auxv--, i++);
     }
     for(unsigned i = 0 ; auxv->a_type != AT_NULL; auxv++, i++) {
-
       switch(auxv->a_type) {
         case AT_NULL:
         case AT_IGNORE:
