@@ -13,6 +13,7 @@
 #include <region.h>
 
 namespace Elkvm {
+  extern std::unique_ptr<RegionManager> rm;
 
   PagerX86_64::PagerX86_64(int vmfd) :
   _vmfd(vmfd) {
@@ -529,6 +530,11 @@ namespace Elkvm {
   }
 
   //namespace Elkvm
+}
+
+void *elkvm_pager_get_host_p(struct kvm_pager *pager __attribute__((unused)),
+    guestptr_t addr) {
+  return Elkvm::rm->get_pager().get_host_p(addr);
 }
 
 guestptr_t page_begin(guestptr_t addr) {
