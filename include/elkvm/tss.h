@@ -1,5 +1,9 @@
 #include <inttypes.h>
 
+#include <memory>
+
+#include <region.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -64,7 +68,7 @@ struct elkvm_tss32 {
 }__attribute__((packed));
 
 int elkvm_tss_setup32(struct elkvm_tss32 *, int);
-int elkvm_tss_setup64(struct kvm_vm *, struct elkvm_memory_region *);
+int elkvm_tss_setup64(std::shared_ptr<Elkvm::Region> r);
 
 #ifdef __cplusplus
 }

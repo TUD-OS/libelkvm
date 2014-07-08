@@ -65,7 +65,6 @@ struct kvm_vm {
 	int fd;
 	const struct elkvm_handlers *syscall_handlers;
 
-	struct elkvm_memory_region *gdt_region;
 	struct elkvm_memory_region *idt_region;
 
   struct elkvm_signals sigs;

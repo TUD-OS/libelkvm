@@ -4,12 +4,14 @@
 
 #include <string.h>
 
-int elkvm_tss_setup64(struct kvm_vm *vm __attribute__((unused)),
-    struct elkvm_memory_region *tss_region) {
+int elkvm_tss_setup64(std::shared_ptr<Elkvm::Region> r) {
 
-	tss_region->guest_virtual = elkvm_pager_map_kernel_page(NULL,
-			tss_region->host_base_p, 0, 0);
-	struct elkvm_tss64 *tss = (struct elkvm_tss64 *)tss_region->host_base_p;
+  guestptr_t guest_virtual = elkvm_pager_map_kernel_page(NULL,
+			r->base_address(), 0, 0);
+  assert(guest_virtual != 0x0 && "could not map tss");
+
+  r->set_guest_addr(guest_virtual);
+	struct elkvm_tss64 *tss = (struct elkvm_tss64 *)r->base_address();
 	memset(tss, 0, sizeof(struct elkvm_tss64));
 
 	tss->ist1 = elkvm_get_kernel_stack_base();

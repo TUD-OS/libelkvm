@@ -37,8 +37,6 @@ struct elkvm_gdt_segment_descriptor {
 int elkvm_gdt_create_segment_descriptor(struct elkvm_gdt_segment_descriptor *,
 		uint32_t, uint32_t, uint8_t, uint8_t);
 
-void elkvm_gdt_dump(struct kvm_vm *);
-
 static inline
 uint32_t gdt_base(struct elkvm_gdt_segment_descriptor *entry) {
 	return entry->base1 | ((uint32_t)entry->base2 << 16) |
