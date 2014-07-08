@@ -236,7 +236,7 @@ namespace Elkvm {
 
     std::shared_ptr<struct kvm_userspace_memory_region> chunk = nullptr;
     guestptr_t guest_physical =
-      (*entry & ~(ELKVM_PAGESIZE-1)) | (guest_virtual & (ELKVM_PAGESIZE-1));
+      (*entry & 0x000FFFFFFFFFF000) | (guest_virtual & (ELKVM_PAGESIZE-1));
 
     for(const auto &c : chunks) {
       if(contains_phys_address(c, guest_physical)) {
