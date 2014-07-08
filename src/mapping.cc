@@ -143,7 +143,7 @@ namespace Elkvm {
   }
 
   bool Mapping::fits_address(guestptr_t a) const {
-    return (a <= region->guest_address())
+    return (region->guest_address()) <= a
         && (a < (region->guest_address() + region->size()));
   }
 
