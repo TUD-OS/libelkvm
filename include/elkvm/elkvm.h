@@ -63,12 +63,10 @@ struct region_mapping {
 
 struct kvm_vm {
 	int fd;
-	int run_struct_size;
 	const struct elkvm_handlers *syscall_handlers;
 
 	struct elkvm_memory_region *gdt_region;
 	struct elkvm_memory_region *idt_region;
-  struct elkvm_memory_region *env_region;
 
   struct elkvm_signals sigs;
   struct elkvm_flat *sighandler_cleanup;
