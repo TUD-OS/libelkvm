@@ -405,7 +405,7 @@ namespace Elkvm {
 
     /* do NOT overwrite existing page table entries! */
     if(entry_exists(pt_entry)) {
-      if((*pt_entry & ~(ELKVM_PAGESIZE-1))
+      if((*pt_entry & 0x000FFFFFFFFFF000)
           != (guest_physical & ~(ELKVM_PAGESIZE-1))) {
         return -1;
       }
