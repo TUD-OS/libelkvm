@@ -47,14 +47,12 @@ namespace Elkvm {
     chunk->flags = flags;
     total_memsz += chunk_size;
 
+    chunk->slot = chunks.size();
     chunks.push_back(chunk);
 
     if(!free_slots.empty()) {
       chunk->slot = free_slots.back();
       free_slots.pop_back();
-    } else {
-      /* system chunk has slot 0, so we need to add 1 to all user chunks */
-      chunk->slot = chunks.size() + 1;
     }
 
     return chunk;
