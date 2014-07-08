@@ -52,7 +52,7 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
 		return -EIO;
 	}
 
-  Elkvm::rm.reset(new Elkvm::RegionManager(opts->fd));
+  Elkvm::rm.reset(new Elkvm::RegionManager(vm->fd));
   //XXX set pml4 address!
 
 	for(int i = 0; i < cpus; i++) {
