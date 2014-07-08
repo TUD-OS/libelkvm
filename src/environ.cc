@@ -10,13 +10,13 @@
 
 namespace Elkvm {
   extern Stack stack;
-  extern RegionManager rm;
+  extern std::unique_ptr<RegionManager> rm;
 
   Environment::Environment(const ElfBinary &bin) :
     binary(bin)
   {
     /* for now the region to hold env etc. will be 12 pages large */
-    region = rm.allocate_region(12 * ELKVM_PAGESIZE);
+    region = rm->allocate_region(12 * ELKVM_PAGESIZE);
     assert(region != nullptr && "error getting memory for env");
     region->set_guest_addr(LINUX_64_STACK_BASE - region->size());
   }

@@ -8,7 +8,7 @@
 #include <elfloader.h>
 
 namespace Elkvm {
-  extern RegionManager rm;
+  extern std::unique_ptr<RegionManager> rm;
   HeapManager heap_m;
 
   int HeapManager::shrink(guestptr_t newbrk) {
