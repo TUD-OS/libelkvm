@@ -9,6 +9,8 @@
 #include "region-c.h"
 
 namespace Elkvm {
+  extern std::unique_ptr<RegionManager> rm;
+
   std::ostream &print(std::ostream &stream, const Region &r) {
     if(r.is_free()) {
       stream << "FREE ";
@@ -109,20 +111,14 @@ namespace Elkvm {
 
 
 struct elkvm_memory_region *elkvm_region_create(uint64_t req_size) {
-  std::shared_ptr<Elkvm::Region> r = Elkvm::rm.allocate_region(req_size);
+  std::shared_ptr<Elkvm::Region> r = Elkvm::rm->allocate_region(req_size);
   assert(r->size() >= req_size && "allocated region must be suitable in size!");
 	return r->c_region();
 }
 
 int elkvm_region_free(struct elkvm_memory_region *region) {
-  Elkvm::rm.free_region(region->host_base_p, region->region_size);
+  Elkvm::rm->free_region(region->host_base_p, region->region_size);
   delete(region);
-  return 0;
-}
-
-int elkvm_init_region_manager(struct kvm_pager *const pager) {
-  Elkvm::rm.set_pager(pager);
-  Elkvm::rm.add_system_chunk();
   return 0;
 }
 
