@@ -13,6 +13,8 @@ namespace Elkvm {
 
   int HeapManager::shrink(guestptr_t newbrk) {
     while(newbrk <= mappings.back().guest_address()) {
+      int err = mappings.back().unmap_self();
+      assert(err == 0);
       mappings.pop_back();
     }
 

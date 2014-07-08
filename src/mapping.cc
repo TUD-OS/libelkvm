@@ -41,6 +41,12 @@ namespace Elkvm {
       mapped_pages = pages_from_size(length);
   }
 
+  int Mapping::unmap_self() {
+    int err = rm->get_pager().unmap_region(addr, mapped_pages);
+    rm->free_region(region);
+    return err;
+  }
+
   guestptr_t Mapping::grow_to_fill() {
     addr = region->guest_address();
     length = region->size();
