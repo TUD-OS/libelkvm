@@ -12,7 +12,6 @@ namespace Elkvm {
 
   class Mapping {
     private:
-      struct kvm_pager * pager;
       void *host_p;
       guestptr_t addr;
       size_t length;
@@ -28,10 +27,9 @@ namespace Elkvm {
       void slice_end(guestptr_t slice_base);
 
     public:
-      Mapping(guestptr_t guest_addr, size_t l, int pr, int f, int fdes, off_t off,
-          struct kvm_pager * pa);
+      Mapping(guestptr_t guest_addr, size_t l, int pr, int f, int fdes, off_t off);
       Mapping(std::shared_ptr<Region> r, guestptr_t guest_addr, size_t l, int pr, int f,
-          int fdes, off_t off, struct kvm_pager * pa);
+          int fdes, off_t off);
 
       bool anonymous() const { return flags & MAP_ANONYMOUS; }
       bool contains_address(void *p) const;
@@ -60,6 +58,8 @@ namespace Elkvm {
       int fill();
 
       int map_self();
+      int unmap_self();
+
       void modify(int pr, int fl, int filedes, off_t o);
       int mprotect(int pr);
       int unmap(guestptr_t unmap_addr, unsigned pages);

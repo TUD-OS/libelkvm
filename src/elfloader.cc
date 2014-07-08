@@ -20,19 +20,13 @@
 #include <vcpu.h>
 
 namespace Elkvm {
-  extern RegionManager rm;
+  extern std::unique_ptr<RegionManager> rm;
   extern HeapManager heap_m;
 
-  ElfBinary::ElfBinary(std::string pathname, struct kvm_pager *p) :
-    pager(p)
-  {
+  ElfBinary::ElfBinary(std::string pathname) {
     auxv.valid = false;
 
     if(pathname.empty()) {
-      throw;
-    }
-
-    if(pager->system_chunk.userspace_addr == 0) {
       throw;
     }
 
@@ -213,7 +207,7 @@ namespace Elkvm {
     }
 
     size_t total_size = phdr.p_memsz + offset_in_page(load_addr);
-    std::shared_ptr<Region> loadable_region = Elkvm::rm.allocate_region(total_size);
+    std::shared_ptr<Region> loadable_region = Elkvm::rm->allocate_region(total_size);
     loadable_region->set_guest_addr(page_begin(load_addr));
 
     int err = load_program_header(phdr, loadable_region);
@@ -228,7 +222,7 @@ namespace Elkvm {
     }
 
     int pages = pages_from_size(total_size);
-    err = elkvm_pager_map_region(pager, loadable_region->base_address(),
+    err = Elkvm::rm->get_pager().map_region(loadable_region->base_address(),
         loadable_region->guest_address(), pages, opts);
     assert(err == 0 && "could not create pt entries for loadable region");
 
@@ -401,7 +395,7 @@ namespace Elkvm {
   }
 
   void ElfBinary::load_dynamic() {
-    ldr = std::unique_ptr<ElfBinary>(new ElfBinary(loader, pager));
+    ldr = std::unique_ptr<ElfBinary>(new ElfBinary(loader));
   }
 
   const struct Elf_auxv &ElfBinary::get_auxv() const {

@@ -3,19 +3,18 @@
 #include <elkvm.h>
 
 namespace Elkvm {
-  extern RegionManager rm;
+  extern std::unique_ptr<RegionManager> rm;
 
   Mapping::Mapping(guestptr_t guest_addr, size_t l, int pr, int f,
-      int fdes, off_t off, struct kvm_pager * pa)
-    : pager(pa),
-      addr(guest_addr),
+      int fdes, off_t off)
+    : addr(guest_addr),
       length(l),
       prot(pr),
       flags(f),
       fd(fdes),
       offset(off) {
 
-    region = Elkvm::rm.allocate_region(length);
+    region = Elkvm::rm->allocate_region(length);
     assert(!region->is_free());
 
     host_p = region->base_address();
@@ -27,8 +26,7 @@ namespace Elkvm {
   }
 
   Mapping::Mapping(std::shared_ptr<Region> r, guestptr_t guest_addr, size_t l, int pr, int f,
-          int fdes, off_t off, struct kvm_pager * pa) :
-    pager(pa),
+          int fdes, off_t off) :
     addr(guest_addr),
     length(l),
     prot(pr),
@@ -43,6 +41,12 @@ namespace Elkvm {
       mapped_pages = pages_from_size(length);
   }
 
+  int Mapping::unmap_self() {
+    int err = rm->get_pager().unmap_region(addr, mapped_pages);
+    rm->free_region(region);
+    return err;
+  }
+
   guestptr_t Mapping::grow_to_fill() {
     addr = region->guest_address();
     length = region->size();
@@ -53,16 +57,7 @@ namespace Elkvm {
 
   int Mapping::map_self() {
     if(!readable() && !writeable() && !executable()) {
-      guestptr_t current_addr = addr;
-      for(unsigned i = 0; i < mapped_pages; i++) {
-        void *host_p = elkvm_pager_get_host_p(pager, current_addr);
-        if(host_p != NULL) {
-          int err = elkvm_pager_destroy_mapping(pager, current_addr);
-          assert(err == 0 && "Could not unmap address");
-        }
-        current_addr += ELKVM_PAGESIZE;
-        i++;
-      }
+      rm->get_pager().unmap_region(addr, mapped_pages);
       mapped_pages = 0;
       return 0;
     }
@@ -76,7 +71,7 @@ namespace Elkvm {
     }
 
     /* add page table entries according to the options specified by the monitor */
-    int err = elkvm_pager_map_region(pager, host_p, addr, mapped_pages, opts);
+    int err = rm->get_pager().map_region(host_p, addr, mapped_pages, opts);
     assert(err == 0);
     return err;
   }
@@ -125,18 +120,13 @@ namespace Elkvm {
     assert(pages <= mapped_pages);
     assert(contains_address(unmap_addr + ((pages-1) * ELKVM_PAGESIZE)));
 
-    //TODO use elkvm_pager_unmap_region here again!
-    guestptr_t cur_addr_p = unmap_addr;
-    for(unsigned i = 0; i < pages; i++) {
-      int err = elkvm_pager_destroy_mapping(pager, cur_addr_p);
-      assert(err == 0);
-      cur_addr_p += ELKVM_PAGESIZE;
-    }
+    int err = rm->get_pager().unmap_region(unmap_addr, pages);
+    assert(err == 0 && "could not unmap this mapping");
     mapped_pages -= pages;
 
     if(mapped_pages == 0) {
-      Elkvm::rm.free_region(region);
-      Elkvm::rm.free_mapping(*this);
+      Elkvm::rm->free_region(region);
+      Elkvm::rm->free_mapping(*this);
     }
 
     return 0;
@@ -189,12 +179,12 @@ namespace Elkvm {
 
     if(length > off + len) {
       size_t rem = length - off - len;
-      auto r = rm.find_region(reinterpret_cast<char *>(host_p) + off + len);
+      auto r = rm->find_region(reinterpret_cast<char *>(host_p) + off + len);
       /* There should be no need to process this mapping any further, because we
        * feed it the split memory region, with the old data inside */
       Mapping end(r, addr + off + len,
-          rem, prot, flags, fd, offset + off + len, pager);
-      Elkvm::rm.add_mapping(end);
+          rem, prot, flags, fd, offset + off + len);
+      Elkvm::rm->add_mapping(end);
     }
 
     length = off;
@@ -210,7 +200,7 @@ namespace Elkvm {
     length -= len;
     host_p = reinterpret_cast<char *>(host_p) + len;
     auto r = region->slice_begin(len);
-    Elkvm::rm.add_free_region(r);
+    Elkvm::rm->add_free_region(r);
   }
 
   void Mapping::slice_end(guestptr_t slice_base) {

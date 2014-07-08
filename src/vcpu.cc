@@ -18,7 +18,7 @@
 #include <vcpu.h>
 
 namespace Elkvm {
-  extern RegionManager rm;
+  extern std::unique_ptr<RegionManager> rm;
 }
 
 int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
@@ -678,7 +678,7 @@ void kvm_vcpu_dump_code(struct kvm_vcpu *vcpu) {
 #ifdef HAVE_LIBUDIS86
 int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *vcpu, uint64_t guest_addr) {
   assert(guest_addr != 0x0);
-	void *host_p = elkvm_pager_get_host_p(&vcpu->vm->pager, guest_addr);
+	void *host_p = Elkvm::rm->get_pager().get_host_p(guest_addr);
   assert(host_p != NULL);
 	size_t disassembly_size = 40;
 	ud_set_input_buffer(&vcpu->ud_obj, (const uint8_t *)host_p, disassembly_size);

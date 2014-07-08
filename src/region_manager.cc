@@ -6,7 +6,14 @@
 #include <iostream>
 
 namespace Elkvm {
+  std::unique_ptr<RegionManager> rm = nullptr;
   extern HeapManager heap_m;
+
+  RegionManager::RegionManager(int vmfd) : pager(vmfd) {
+    auto sysregion = allocate_region(ELKVM_PAGER_MEMSIZE);
+    pager.set_pml4(sysregion);
+
+  }
 
   void RegionManager::dump_mappings() const {
     std::cout << "DUMPING ALL MAPPINGS:\n";
@@ -68,7 +75,7 @@ namespace Elkvm {
     return nullptr;
   }
 
-  std::shared_ptr<Region> RegionManager::find_region(const void *host_p) {
+  std::shared_ptr<Region> RegionManager::find_region(const void *host_p) const {
     auto r = std::find_if(allocated_regions.begin(), allocated_regions.end(),
          [host_p](std::shared_ptr<Region> a)
          { return a->contains_address(host_p); });
@@ -78,7 +85,7 @@ namespace Elkvm {
     return *r;
   }
 
-  std::shared_ptr<Region> RegionManager::find_region(guestptr_t addr) {
+  std::shared_ptr<Region> RegionManager::find_region(guestptr_t addr) const {
     auto r = std::find_if(allocated_regions.begin(), allocated_regions.end(),
          [addr](std::shared_ptr<Region> a)
          { return a->contains_address(addr); });
@@ -89,13 +96,11 @@ namespace Elkvm {
   }
 
   int RegionManager::add_chunk(const size_t size) {
-    assert(pager != NULL && "must have pager to add chunks to region");
-
     void *chunk_p;
     const size_t grow_size = size > ELKVM_SYSTEM_MEMGROW ?
       pagesize_align(size) : ELKVM_SYSTEM_MEMGROW;
 
-    int err = elkvm_pager_create_mem_chunk(pager, &chunk_p, grow_size);
+    int err = pager.create_mem_chunk(&chunk_p, grow_size);
     if(err) {
       printf("LIBELKVM: Could not create memory chunk!\n");
       printf("Errno: %i Msg: %s\n", -err, strerror(-err));
@@ -105,14 +110,6 @@ namespace Elkvm {
     assert(grow_size <= 0x8000000 && grow_size > 0x400000);
     freelists[15].push_back(std::make_shared<Region>(chunk_p, grow_size));
     return 0;
-  }
-
-  void RegionManager::add_system_chunk() {
-    auto list_idx = get_freelist_idx(pager->system_chunk.memory_size);
-    freelists[list_idx].push_back(
-        std::make_shared<Region>(
-        reinterpret_cast<void *>(pager->system_chunk.userspace_addr),
-        pager->system_chunk.memory_size));
   }
 
   void RegionManager::add_free_region(std::shared_ptr<Region> r) {
@@ -153,6 +150,11 @@ namespace Elkvm {
       }
     }
     return false;
+  }
+
+  bool RegionManager::same_region(const void *p1, const void *p2) const {
+    std::shared_ptr<Region> r = find_region(p1);
+    return r->contains_address(p2);
   }
 
   void RegionManager::use_region(std::shared_ptr<Region> r) {
@@ -210,7 +212,7 @@ namespace Elkvm {
         /* this mapping needs to be split! */
         it->slice(addr, length);
       }
-      mappings.emplace_back(addr, length, prot, flags, fd, off, pager);
+      mappings.emplace_back(addr, length, prot, flags, fd, off);
       Mapping &mapping = mappings.back();
       mapping.map_self();
 

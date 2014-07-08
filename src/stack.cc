@@ -10,15 +10,18 @@
 #include "debug.h"
 
 namespace Elkvm {
-  extern RegionManager rm;
+  extern std::unique_ptr<RegionManager> rm;
   Stack stack;
 
-  void Stack::init(struct kvm_vcpu *v, struct kvm_pager *p, const Environment &env) {
+  void Stack::init(struct kvm_vcpu *v, const Environment &env) {
     vcpu = v;
-    pager = p;
 
     int err = kvm_vcpu_get_regs(vcpu);
     assert(err == 0 && "error getting vcpu");
+
+    /* as the stack grows downward we can initialize its address at the base address
+     * of the env region */
+    base = vcpu->regs.rsp = env.get_guest_address();
 
     /* get memory for the stack, this is expanded as needed */
     err = expand();
@@ -26,24 +29,14 @@ namespace Elkvm {
 
     /* get a frame for the kernel (interrupt) stack */
     /* this is only ONE page large */
-    kernel_stack = rm.allocate_region(ELKVM_PAGESIZE);
+    kernel_stack = rm->allocate_region(ELKVM_PAGESIZE);
 
     /* create a mapping for the kernel (interrupt) stack */
-    guestptr_t kstack_addr = elkvm_pager_map_kernel_page(pager,
-        kernel_stack->base_address(), 1, 0);
+    guestptr_t kstack_addr = rm->get_pager().map_kernel_page(kernel_stack->base_address(),
+       PT_OPT_WRITE);
     assert(kstack_addr != 0x0 && "could not allocate memory for kernel stack");
 
     kernel_stack->set_guest_addr(kstack_addr);
-
-    /* as the stack grows downward we can initialize its address at the base address
-     * of the env region */
-    vcpu->regs.rsp = env.get_guest_address();
-    err = elkvm_pager_create_mapping(pager,
-        env.get_base_address(),
-        vcpu->regs.rsp, PT_OPT_WRITE);
-    assert(err == 0 && "could not map stack address");
-
-    base = env.get_guest_address();
 
     err = kvm_vcpu_set_regs(vcpu);
     assert(err == 0 && "could not set registers");
@@ -54,15 +47,14 @@ namespace Elkvm {
 
     assert(vcpu->regs.rsp != 0x0);
     uint64_t *host_p = reinterpret_cast<uint64_t *>(
-        elkvm_pager_get_host_p(pager, vcpu->regs.rsp));
+        rm->get_pager().get_host_p(vcpu->regs.rsp));
     if(host_p == nullptr) {
       /* current stack is full, we need to expand the stack */
       int err = expand();
       if(err) {
         return err;
       }
-      host_p = reinterpret_cast<uint64_t *>(
-          elkvm_pager_get_host_p(pager, vcpu->regs.rsp));
+      host_p = reinterpret_cast<uint64_t *>(rm->get_pager().get_host_p(vcpu->regs.rsp));
       assert(host_p != NULL);
     }
     *host_p = val;
@@ -72,7 +64,7 @@ namespace Elkvm {
   uint64_t Stack::popq() {
     assert(vcpu->regs.rsp != 0x0);
     uint64_t *host_p = reinterpret_cast<uint64_t *>(
-        elkvm_pager_get_host_p(pager, vcpu->regs.rsp));
+        rm->get_pager().get_host_p(vcpu->regs.rsp));
     assert(host_p != NULL);
 
     vcpu->regs.rsp += 0x8;
@@ -83,12 +75,12 @@ namespace Elkvm {
   int Stack::expand() {
     base -= ELKVM_STACK_GROW;
 
-    std::shared_ptr<Region> region = rm.allocate_region(ELKVM_STACK_GROW);
+    std::shared_ptr<Region> region = rm->allocate_region(ELKVM_STACK_GROW);
     if(region == nullptr) {
       return -ENOMEM;
     }
 
-    int err = elkvm_pager_map_region(pager, region->base_address(), base,
+    int err = rm->get_pager().map_region(region->base_address(), base,
         ELKVM_STACK_GROW / ELKVM_PAGESIZE, PT_OPT_WRITE);
     if(err) {
       return err;

@@ -9,7 +9,7 @@
 #include "region-c.h"
 
 namespace Elkvm {
-  RegionManager rm;
+  extern std::unique_ptr<RegionManager> rm;
 
   std::ostream &print(std::ostream &stream, const Region &r) {
     if(r.is_free()) {
@@ -19,11 +19,6 @@ namespace Elkvm {
       <<"REGION[" << &r << "] guest address: 0x" << r.guest_address()
       << " host_p: " << r.base_address() << " size: 0x" << r.size() << std::endl;
     return stream;
-  }
-
-  bool same_region(const void *p1, const void *p2) {
-    std::shared_ptr<Region> r = Elkvm::rm.find_region(p1);
-    return r->contains_address(p2);
   }
 
   bool operator==(const Region &r, const void *const p) {
@@ -104,8 +99,8 @@ namespace Elkvm {
 
     rsize = off;
 
-    Elkvm::rm.use_region(r);
-    Elkvm::rm.add_free_region(std::make_shared<Region>(
+    rm->use_region(r);
+    rm->add_free_region(std::make_shared<Region>(
           reinterpret_cast<char *>(host_p) + off, len));
     //TODO maybe return ptr to free region?
   }
@@ -115,20 +110,14 @@ namespace Elkvm {
 
 
 struct elkvm_memory_region *elkvm_region_create(uint64_t req_size) {
-  std::shared_ptr<Elkvm::Region> r = Elkvm::rm.allocate_region(req_size);
+  std::shared_ptr<Elkvm::Region> r = Elkvm::rm->allocate_region(req_size);
   assert(r->size() >= req_size && "allocated region must be suitable in size!");
 	return r->c_region();
 }
 
 int elkvm_region_free(struct elkvm_memory_region *region) {
-  Elkvm::rm.free_region(region->host_base_p, region->region_size);
+  Elkvm::rm->free_region(region->host_base_p, region->region_size);
   delete(region);
-  return 0;
-}
-
-int elkvm_init_region_manager(struct kvm_pager *const pager) {
-  Elkvm::rm.set_pager(pager);
-  Elkvm::rm.add_system_chunk();
   return 0;
 }
 

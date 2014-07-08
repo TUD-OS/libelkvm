@@ -8,7 +8,7 @@ SET( libelkvm_SRCS
   idt.c
   list/list.c
   mapping.cc
-  pager.c
+  pager.cc
   region.cc
   region_manager.cc
   signal.c

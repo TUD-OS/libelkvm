@@ -6,7 +6,7 @@
 
 #include <elkvm.h>
 #include <idt.h>
-#include <pager.h>
+#include <pager-c.h>
 #include <vcpu.h>
 #include "flats.h"
 
@@ -33,7 +33,7 @@ int elkvm_idt_setup(struct kvm_vm *vm, struct elkvm_flat *default_handler) {
 
 
 	/* create a page for the idt */
-	vm->idt_region->guest_virtual = elkvm_pager_map_kernel_page(&vm->pager,
+	vm->idt_region->guest_virtual = elkvm_pager_map_kernel_page(NULL,
 			vm->idt_region->host_base_p, 0, 0);
 	if(vm->idt_region->guest_virtual == 0) {
 		return -ENOMEM;

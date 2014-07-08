@@ -8,11 +8,13 @@
 #include <elfloader.h>
 
 namespace Elkvm {
-  extern RegionManager rm;
+  extern std::unique_ptr<RegionManager> rm;
   HeapManager heap_m;
 
   int HeapManager::shrink(guestptr_t newbrk) {
     while(newbrk <= mappings.back().guest_address()) {
+      int err = mappings.back().unmap_self();
+      assert(err == 0);
       mappings.pop_back();
     }
 
@@ -35,7 +37,7 @@ namespace Elkvm {
   int HeapManager::grow(guestptr_t newbrk) {
     assert(newbrk > curbrk);
     size_t sz = newbrk - curbrk;
-    Mapping m(curbrk, sz, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0, pager);
+    Mapping m(curbrk, sz, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0);
     mappings.push_back(m);
     return m.map_self();
   }
@@ -46,6 +48,7 @@ namespace Elkvm {
       if(err) {
         return err;
       }
+      curbrk = newbrk;
       return 0;
     }
 
@@ -73,7 +76,7 @@ namespace Elkvm {
     assert(mappings.empty() && "heap must not be initialized after use");
     /* XXX sz might be wrong here! */
     mappings.emplace_back(data, data->guest_address(), sz, PROT_READ | PROT_WRITE,
-        MAP_ANONYMOUS, 0, 0, pager);
+        MAP_ANONYMOUS, 0, 0);
 
     curbrk = next_page(data->guest_address() + sz);
     assert(data->contains_address(curbrk - 1) && "initial brk address must be in data region");
