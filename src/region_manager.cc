@@ -6,6 +6,7 @@
 #include <iostream>
 
 namespace Elkvm {
+  std::unique_ptr<RegionManager> rm = nullptr;
   extern HeapManager heap_m;
 
   RegionManager::RegionManager(int vmfd) : pager(vmfd) {

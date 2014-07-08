@@ -1,4 +1,5 @@
 #include <cstring>
+#include <memory>
 #include <string>
 
 #include <errno.h>
@@ -30,7 +31,7 @@ int elkvm_load_flat(struct kvm_vm *, struct elkvm_flat *, const std::string,
 namespace Elkvm {
   extern ElfBinary binary;
   extern Stack stack;
-  extern RegionManager rm;
+  extern std::unique_ptr<RegionManager> rm;
 }
 
 int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus,
@@ -51,7 +52,7 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cp
 		return -EIO;
 	}
 
-  Elkvm::RegionManager rm(opts->fd);
+  Elkvm::rm.reset(new Elkvm::RegionManager(opts->fd));
   //XXX set pml4 address!
 
 	for(int i = 0; i < cpus; i++) {
