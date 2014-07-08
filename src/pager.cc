@@ -337,6 +337,7 @@ namespace Elkvm {
 
 
 
+  guestptr_t PagerX86_64::map_kernel_page(void *host_mem_p, ptopt_t opts) {
     guestptr_t guest_physical = host_to_guest_physical(host_mem_p);
     guestptr_t guest_virtual = (guest_next_free & ~(ELKVM_PAGESIZE-1))
       | (guest_physical & (ELKVM_PAGESIZE-1));

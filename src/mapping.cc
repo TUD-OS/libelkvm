@@ -32,7 +32,7 @@ namespace Elkvm {
     prot(pr),
     flags(f),
     fd(fdes),
-    offset(off) {
+    offset(off),
     region(r) {
       assert(region->size() >= length);
       host_p = region->base_address();
