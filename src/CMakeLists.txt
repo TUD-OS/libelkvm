@@ -10,7 +10,7 @@ SET( libelkvm_SRCS
   pager.cc
   region.cc
   region_manager.cc
-  signal.c
+  signal.cc
   stack.cc
   syscall.cc
   tss.cc
