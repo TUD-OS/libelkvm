@@ -525,6 +525,16 @@ namespace Elkvm {
     return *e & 0x1;
   }
 
+  std::ostream &print(std::ostream &os,
+      const struct kvm_userspace_memory_region &r) {
+    os << "KVM REGION: userspace_addr: 0x" << std::hex << r.userspace_addr
+      << " guest physical address: 0x" << r.guest_phys_addr
+      << " size: 0x" << r.memory_size
+      << " slot: " << std::dec << r.slot
+      << std::endl;
+    return os;
+  }
+
   //namespace Elkvm
 }
 

@@ -141,5 +141,6 @@ namespace Elkvm {
   void dump_page_fault_info(guestptr_t pfla, uint32_t err_code, void *host_p);
   bool entry_exists(ptentry_t *entry);
 
+  std::ostream &print(std::ostream &os, const struct kvm_userspace_memory_region &r);
   //namespace Elkvm
 }
