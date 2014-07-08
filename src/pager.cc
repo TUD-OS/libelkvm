@@ -448,9 +448,7 @@ namespace Elkvm {
     entry = find_table_entry(table_base, guest_virtual, addr_low, addr_high);
     addr_low -= 9;
     addr_high -= 9;
-    if(create) {
-      update_entry(entry, opts);
-    } else if(!entry_exists(entry)) {
+    if(!create && !entry_exists(entry)) {
       return NULL;
     }
 
