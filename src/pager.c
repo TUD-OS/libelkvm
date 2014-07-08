@@ -293,6 +293,11 @@ int elkvm_pager_map_region(struct kvm_pager *pager, void *host_start_p,
   uint64_t guest_addr = guest_start_addr;
 	uint64_t guest_physical = host_to_guest_physical(pager, host_start_p);
 
+	/* sanity checks on the offset */
+	if(((uint64_t)host_start_p & 0xFFF) != (guest_start_addr & 0xFFF)) {
+		return -EIO;
+	}
+
   /* get the base address of pt for first guest addr */
   uint64_t guest_pt_base_addr = guest_addr & ~0x1FFFFF;
   /* calc offset in that pt */

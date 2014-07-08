@@ -7,13 +7,13 @@ namespace Elkvm {
 
   Mapping::Mapping(guestptr_t guest_addr, size_t l, int pr, int f,
       int fdes, off_t off, struct kvm_pager * pa)
-    : addr(guest_addr),
+    : pager(pa),
+      addr(guest_addr),
       length(l),
       prot(pr),
       flags(f),
       fd(fdes),
-      offset(off),
-      pager(pa) {
+      offset(off) {
 
     region = Elkvm::rm.allocate_region(length);
     assert(!region->is_free());
@@ -28,19 +28,27 @@ namespace Elkvm {
 
   Mapping::Mapping(std::shared_ptr<Region> r, guestptr_t guest_addr, size_t l, int pr, int f,
           int fdes, off_t off, struct kvm_pager * pa) :
-    region(r),
+    pager(pa),
     addr(guest_addr),
     length(l),
     prot(pr),
     flags(f),
     fd(fdes),
     offset(off),
-    pager(pa) {
+    region(r) {
       assert(region->size() >= length);
       host_p = region->base_address();
       region->set_guest_addr(addr);
       assert(!region->is_free());
       mapped_pages = pages_from_size(length);
+  }
+
+  guestptr_t Mapping::grow_to_fill() {
+    addr = region->guest_address();
+    length = region->size();
+    mapped_pages = pages_from_size(length);
+    map_self();
+    return addr + length;
   }
 
   int Mapping::map_self() {
@@ -140,6 +148,11 @@ namespace Elkvm {
 
   bool Mapping::contains_address(guestptr_t a) const {
     return (addr <= a) && (a < (addr + length));
+  }
+
+  bool Mapping::fits_address(guestptr_t a) const {
+    return (region->guest_address()) <= a
+        && (a < (region->guest_address() + region->size()));
   }
 
   void Mapping::slice(guestptr_t slice_base, size_t len) {

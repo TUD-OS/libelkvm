@@ -33,6 +33,7 @@ namespace Elkvm {
   }
 
   int HeapManager::grow(guestptr_t newbrk) {
+    assert(newbrk > curbrk);
     size_t sz = newbrk - curbrk;
     Mapping m(curbrk, sz, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0, pager);
     mappings.push_back(m);
@@ -48,7 +49,8 @@ namespace Elkvm {
       return 0;
     }
 
-    if(!mappings.back().contains_address(newbrk-1)) {
+    if(!mappings.back().fits_address(newbrk-1)) {
+      curbrk = mappings.back().grow_to_fill();
       int err = grow(newbrk);
       if(err) {
         return err;

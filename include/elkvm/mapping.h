@@ -36,6 +36,8 @@ namespace Elkvm {
       bool anonymous() const { return flags & MAP_ANONYMOUS; }
       bool contains_address(void *p) const;
       bool contains_address(guestptr_t a) const;
+      bool fits_address(guestptr_t a) const;
+      guestptr_t grow_to_fill();
       bool readable() const { return prot & PROT_READ; }
       bool executable() const { return prot & PROT_EXEC; }
       bool writeable() const { return prot & PROT_WRITE; }
