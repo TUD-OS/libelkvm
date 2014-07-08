@@ -244,17 +244,16 @@ int elkvm_cleanup(struct elkvm_opts *opts) {
 }
 
 int elkvm_chunk_remap(struct kvm_vm *vm, int num, uint64_t newsize) {
-  struct kvm_userspace_memory_region *chunk = NULL;
-  chunk = elkvm_pager_get_chunk(&vm->pager, num - 1);
-
+  auto chunk = Elkvm::rm->get_pager().get_chunk(num);
   chunk->memory_size = 0;
-	int err = ioctl(vm->fd, KVM_SET_USER_MEMORY_REGION, chunk);
+
+	int err = ioctl(vm->fd, KVM_SET_USER_MEMORY_REGION, chunk.get());
   assert(err == 0);
   free((void *)chunk->userspace_addr);
   chunk->memory_size = newsize;
   err = posix_memalign(((void **)&chunk->userspace_addr), ELKVM_PAGESIZE, chunk->memory_size);
   assert(err == 0);
-	err = ioctl(vm->fd, KVM_SET_USER_MEMORY_REGION, chunk);
+	err = ioctl(vm->fd, KVM_SET_USER_MEMORY_REGION, chunk.get());
   assert(err == 0);
   return 0;
 }

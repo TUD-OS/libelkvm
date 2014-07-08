@@ -124,12 +124,8 @@ namespace Elkvm {
     assert(contains_address(unmap_addr + ((pages-1) * ELKVM_PAGESIZE)));
 
     //TODO use elkvm_pager_unmap_region here again!
-    guestptr_t cur_addr_p = unmap_addr;
-    for(unsigned i = 0; i < pages; i++) {
-      int err = elkvm_pager_destroy_mapping(pager, cur_addr_p);
-      assert(err == 0);
-      cur_addr_p += ELKVM_PAGESIZE;
-    }
+    int err = rm.get_pager().unmap_region(unmap_addr, pages);
+    assert(err == 0 && "could not unmap this mapping");
     mapped_pages -= pages;
 
     if(mapped_pages == 0) {
