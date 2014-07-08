@@ -142,6 +142,11 @@ namespace Elkvm {
     return (addr <= a) && (a < (addr + length));
   }
 
+  bool Mapping::fits_address(guestptr_t a) const {
+    return (a <= region->guest_address())
+        && (a < (region->guest_address() + region->size()));
+  }
+
   void Mapping::slice(guestptr_t slice_base, size_t len) {
     assert(contains_address(slice_base)
         && "slice address must be contained in mapping");

@@ -48,7 +48,8 @@ namespace Elkvm {
       return 0;
     }
 
-    if(!mappings.back().contains_address(newbrk-1)) {
+    if(!mappings.back().fits_address(newbrk-1)) {
+      curbrk = mappings.back().grow_to_fill();
       int err = grow(newbrk);
       if(err) {
         return err;
