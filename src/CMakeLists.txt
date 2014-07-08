@@ -13,7 +13,7 @@ SET( libelkvm_SRCS
   signal.c
   stack.cc
   syscall.cc
-  tss.c
+  tss.cc
   vcpu.cc
   vm.cc
   vm_internals.cc
