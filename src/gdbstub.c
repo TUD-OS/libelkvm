@@ -292,7 +292,7 @@ static void debug_loop(struct kvm_vm *vm) {
           vcpu->regs.rip = new_rip;
         }
 
-        kvm_vcpu_loop(vcpu);
+        elkvm_vm_run(vm);
 
         //if (buffer[1] != 0)
         //{
@@ -314,7 +314,7 @@ static void debug_loop(struct kvm_vm *vm) {
 
         struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
         elkvm_debug_singlestep(vcpu);
-        kvm_vcpu_loop(vcpu);
+        elkvm_vm_run(vm);
         elkvm_debug_singlestep_off(vcpu);
 
         buf[0] = 'S';
@@ -643,6 +643,5 @@ void elkvm_gdbstub_init(struct kvm_vm *vm) {
   debug_loop(vm);
 
   /* CPU loop */
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
-  kvm_vcpu_loop(vcpu);
+  elkvm_vm_run(vm);
 }

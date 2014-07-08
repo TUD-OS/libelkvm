@@ -29,16 +29,16 @@ namespace Elkvm {
   extern std::unique_ptr<VMInternals> vmi;
 }
 
-int elkvm_handle_hypercall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+int elkvm_handle_hypercall(struct kvm_vm *vm, std::shared_ptr<struct kvm_vcpu> vcpu) {
   int err = 0;
 
-  uint64_t call = kvm_vcpu_get_hypercall_type(vm, vcpu);
+  uint64_t call = kvm_vcpu_get_hypercall_type(vm, vcpu.get());
   switch(call) {
     case ELKVM_HYPERCALL_SYSCALL:
-			err = elkvm_handle_syscall(vm, vcpu);
+			err = elkvm_handle_syscall(vm, vcpu.get());
       break;
     case ELKVM_HYPERCALL_INTERRUPT:
-      err = elkvm_handle_interrupt(vm, vcpu);
+      err = elkvm_handle_interrupt(vm, vcpu.get());
       if(err) {
         return err;
       }
@@ -53,7 +53,7 @@ int elkvm_handle_hypercall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 		return err;
 	}
 
-  elkvm_emulate_vmcall(vcpu);
+  elkvm_emulate_vmcall(vcpu.get());
 
   err = elkvm_signal_deliver(vm);
   assert(err == 0);

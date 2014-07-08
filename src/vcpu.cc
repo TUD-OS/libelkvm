@@ -305,7 +305,7 @@ int kvm_vcpu_run(struct kvm_vcpu *vcpu) {
 	return 0;
 }
 
-int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
+int elkvm_vm_run(struct kvm_vm *vm) {
 	int is_running = 1;
 //	if(vcpu->singlestep) {
 //		elkvm_gdt_dump(vcpu->vm);
@@ -317,10 +317,11 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 //		kvm_pager_dump_page_tables(&vcpu->vm->pager);
 //	}
 
+  std::shared_ptr<struct kvm_vcpu> vcpu = Elkvm::vmi->get_vcpu(0);
   int err = 0;
 	while(is_running) {
 
-    err = kvm_vcpu_set_regs(vcpu);
+    err = kvm_vcpu_set_regs(vcpu.get());
     if(err) {
       return err;
     }
@@ -332,12 +333,12 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 //      }
 //    }
 
-		err = kvm_vcpu_run(vcpu);
+		err = kvm_vcpu_run(vcpu.get());
 		if(err) {
 			break;
 		}
 
-    err = kvm_vcpu_get_regs(vcpu);
+    err = kvm_vcpu_get_regs(vcpu.get());
     if(err) {
       return err;
     }
@@ -352,10 +353,10 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
       case KVM_EXIT_HYPERCALL:
         if(vcpu->singlestep) {
 				  fprintf(stderr, "KVM_EXIT_HYPERCALL\n");
-          kvm_vcpu_dump_regs(vcpu);
-          kvm_vcpu_dump_code(vcpu);
+          kvm_vcpu_dump_regs(vcpu.get());
+          kvm_vcpu_dump_code(vcpu.get());
         }
-        err = elkvm_handle_hypercall(vcpu->vm, vcpu);
+        err = elkvm_handle_hypercall(vm, vcpu);
         if(err == ELKVM_HYPERCALL_EXIT) {
           is_running = 0;
         } else if(err) {
@@ -394,7 +395,7 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 			case KVM_EXIT_DEBUG: {
         /* NO-OP */
         ;
-        int debug_handled = elkvm_handle_debug(vcpu->vm);
+        int debug_handled = elkvm_handle_debug(vm);
         if(debug_handled == 0) {
           is_running = 0;
         }
@@ -431,9 +432,9 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 
 		if(	vcpu->run_struct->exit_reason == KVM_EXIT_MMIO ||
 				vcpu->run_struct->exit_reason == KVM_EXIT_SHUTDOWN) {
-			kvm_vcpu_dump_regs(vcpu);
-      elkvm_dump_stack(vcpu->vm, vcpu);
-			kvm_vcpu_dump_code(vcpu);
+			kvm_vcpu_dump_regs(vcpu.get());
+      elkvm_dump_stack(vcpu->vm, vcpu.get());
+			kvm_vcpu_dump_code(vcpu.get());
 		}
 
 	}

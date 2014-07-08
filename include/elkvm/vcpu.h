@@ -92,11 +92,6 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *);
 */
 int kvm_vcpu_run(struct kvm_vcpu *);
 
-/*
- * \brief Enter the VCPU loop
- */
-int kvm_vcpu_loop(struct kvm_vcpu *vcpu);
-
 uint64_t kvm_vcpu_get_hypercall_type(struct kvm_vm *, struct kvm_vcpu *);
 
 int kvm_vcpu_had_page_fault(struct kvm_vcpu *);

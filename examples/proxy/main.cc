@@ -340,7 +340,7 @@ int main(int argc, char **argv) {
     return 0;
   }
 
-	err = kvm_vcpu_loop(vcpu);
+	err = elkvm_vm_run(&vm);
 	if(err) {
 		printf("ERROR running VCPU errno: %i Msg: %s\n", -err, strerror(-err));
 		return -1;

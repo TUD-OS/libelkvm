@@ -164,6 +164,11 @@ int elkvm_vm_create(struct elkvm_opts *, struct kvm_vm *, int mode, unsigned cpu
 		const struct elkvm_handlers *, const char *binary);
 
 /*
+ * Runs all CPUS of the VM
+ */
+int elkvm_vm_run(struct kvm_vm *vm);
+
+/*
  * \brief Put the VM in debug mode
  */
 int elkvm_set_debug(struct kvm_vm *);
