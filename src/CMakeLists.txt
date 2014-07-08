@@ -5,7 +5,7 @@ SET( libelkvm_SRCS
   gdbstub.c
   gdt.cc
   heap.cc
-  idt.c
+  idt.cc
   mapping.cc
   pager.cc
   region.cc
