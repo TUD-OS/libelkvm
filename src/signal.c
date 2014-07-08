@@ -1,11 +1,11 @@
 #include <assert.h>
+#include <string.h>
 #include <signal.h>
 
 #include <elkvm.h>
-
+#include "elkvm-signal.h"
 #include "flats.h"
 #include "stack-c.h"
-#include "elkvm-signal.h"
 
 static int pending_signals[32];
 static int num_pending_signals = 0;

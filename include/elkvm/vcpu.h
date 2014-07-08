@@ -8,8 +8,6 @@
 #include <udis86.h>
 #endif
 
-#include "list.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif

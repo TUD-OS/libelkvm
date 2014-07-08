@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include <sys/ioctl.h>
 
 #include <elkvm.h>

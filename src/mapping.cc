@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include <elkvm.h>
 #include <elkvm-internal.h>
 #include <mapping.h>

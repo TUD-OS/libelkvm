@@ -282,22 +282,3 @@ int elkvm_dump_valid_msrs(struct elkvm_opts *opts) {
 	return 0;
 }
 
-void elkvm_print_regions(struct kvm_vm *vm) {
-	printf("\n System Memory Regions:\n");
-	printf(" ----------------------\n");
-	printf(" Host virtual\t\tGuest virtual\t\tSize\t\t\tD\n");
-	elkvm_dump_region(*list_elem_front(vm->root_region));
-	printf("\n");
-}
-
-void elkvm_dump_region(struct elkvm_memory_region *region) {
-	printf("%16p\t0x%016lx\t0x%016lx\t%i\n", region->host_base_p,
-		region->guest_virtual, region->region_size, region->grows_downward);
-	if(region->lc != NULL) {
-		elkvm_dump_region(region->lc);
-	}
-	if(region->rc != NULL) {
-		elkvm_dump_region(region->rc);
-	}
-}
-

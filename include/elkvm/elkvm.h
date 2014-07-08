@@ -32,7 +32,6 @@ struct linux_dirent {
 #include "pager-c.h"
 #include "region-c.h"
 #include "vcpu.h"
-#include "list.h"
 #include "elkvm-signal.h"
 
 #ifdef __cplusplus
@@ -64,13 +63,9 @@ struct region_mapping {
 
 struct kvm_vm {
 	int fd;
-	struct vcpu_list *vcpus;
 	int run_struct_size;
-  list(struct elkvm_memory_region *, root_region);
 	const struct elkvm_handlers *syscall_handlers;
-  list(struct region_mapping *, mappings);
 
-  list(struct elkvm_memory_region *, heap);
 	struct elkvm_memory_region *gdt_region;
 	struct elkvm_memory_region *idt_region;
   struct elkvm_memory_region *env_region;
@@ -191,12 +186,6 @@ uint64_t elkvm_chunk_count(struct kvm_vm *);
 struct kvm_userspace_memory_region elkvm_get_chunk(struct kvm_vm *, int chunk);
 
 int elkvm_dump_valid_msrs(struct elkvm_opts *);
-
-/*
- * Print the locations of the system memory regions
- */
-void elkvm_print_regions(struct kvm_vm *);
-void elkvm_dump_region(struct elkvm_memory_region *);
 
 /**
  * \brief Initialize the gdbstub and wait for gdb

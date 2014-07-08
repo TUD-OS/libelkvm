@@ -1,10 +1,11 @@
+#include <algorithm>
+#include <cstring>
+#include <memory>
+#include <iostream>
+
 #include <elkvm-internal.h>
 #include <heap.h>
 #include <region.h>
-
-#include <algorithm>
-#include <memory>
-#include <iostream>
 
 namespace Elkvm {
   extern std::unique_ptr<VMInternals> vmi;
