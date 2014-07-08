@@ -21,7 +21,6 @@
 #include <vcpu.h>
 
 namespace Elkvm {
-  extern HeapManager heap_m;
   extern std::unique_ptr<VMInternals> vmi;
 
   ElfBinary::ElfBinary(std::string pathname) {
@@ -230,7 +229,7 @@ namespace Elkvm {
 
     if(phdr.p_flags & PF_W) {
       /* writable region should be data */
-      err = heap_m.init(loadable_region, total_size);
+      err = vmi->get_heap_manager().init(loadable_region, total_size);
       assert(err == 0 && "Error initializing heap");
     }
   }

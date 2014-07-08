@@ -13,7 +13,7 @@ namespace Elkvm {
     private:
       std::vector<std::shared_ptr<struct kvm_vcpu>> cpus;
 
-      HeapManager heap_m;
+      HeapManager hm;
       RegionManager rm;
       Stack stack;
 
@@ -27,7 +27,7 @@ namespace Elkvm {
       VMInternals(int fd, int argc, char **argv, char **environ,
           int run_struct_size);
       RegionManager &get_region_manager() { return rm; }
-      HeapManager &get_heap_manager();
+      HeapManager &get_heap_manager() { return hm; }
       int add_cpu(int mode);
       std::shared_ptr<struct kvm_vcpu> get_vcpu(int num);
   };

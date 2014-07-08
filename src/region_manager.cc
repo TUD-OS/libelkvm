@@ -1,12 +1,13 @@
-#include "heap.h"
-#include "region.h"
+#include <elkvm-internal.h>
+#include <heap.h>
+#include <region.h>
 
 #include <algorithm>
 #include <memory>
 #include <iostream>
 
 namespace Elkvm {
-  extern HeapManager heap_m;
+  extern std::unique_ptr<VMInternals> vmi;
 
   RegionManager::RegionManager(int vmfd) : pager(vmfd) {
     auto sysregion = allocate_region(ELKVM_PAGER_MEMSIZE);
@@ -166,8 +167,8 @@ namespace Elkvm {
         [addr](const Mapping &m) { return m.contains_address(addr); });
 
     if(iter == mappings.end()) {
-      if(heap_m.contains_address(addr)) {
-        return heap_m.find_mapping(addr);
+      if(vmi->get_heap_manager().contains_address(addr)) {
+        return vmi->get_heap_manager().find_mapping(addr);
       }
     }
     assert(iter != mappings.end());
@@ -187,7 +188,7 @@ namespace Elkvm {
     auto iter = std::find_if(mappings.begin(), mappings.end(),
         [addr](const Mapping &m) { return m.contains_address(addr); });
     if(iter == mappings.end()) {
-      return heap_m.contains_address(addr);
+      return vmi->get_heap_manager().contains_address(addr);
     }
     return true;
   }

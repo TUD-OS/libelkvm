@@ -24,7 +24,6 @@
 #include "region.h"
 
 namespace Elkvm {
-  extern HeapManager heap_m;
   extern Stack stack;
   extern std::unique_ptr<VMInternals> vmi;
 }
@@ -678,7 +677,7 @@ long elkvm_do_brk(struct kvm_vm *vm) {
   if(vm->debug) {
     printf("\n============ LIBELKVM ===========\n");
     printf("BRK reguested with address: 0x%lx current brk address: 0x%lx\n",
-        user_brk_req, Elkvm::heap_m.get_brk());
+        user_brk_req, Elkvm::vmi->get_heap_manager().get_brk());
   }
 
   /* if the requested brk address is 0 just return the current brk address */
@@ -686,19 +685,19 @@ long elkvm_do_brk(struct kvm_vm *vm) {
     if(vm->debug) {
       printf("=================================\n");
     }
-    return Elkvm::heap_m.get_brk();
+    return Elkvm::vmi->get_heap_manager().get_brk();
   }
 
-  int err = Elkvm::heap_m.brk(user_brk_req);
+  int err = Elkvm::vmi->get_heap_manager().brk(user_brk_req);
   if(vm->debug) {
     printf("BRK done: err: %i (%s) newbrk: 0x%lx\n",
-        err, strerror(err), Elkvm::heap_m.get_brk());
+        err, strerror(err), Elkvm::vmi->get_heap_manager().get_brk());
     printf("=================================\n");
   }
   if(err) {
     return err;
   }
-  return Elkvm::heap_m.get_brk();
+  return Elkvm::vmi->get_heap_manager().get_brk();
 }
 
 long elkvm_do_sigaction(struct kvm_vm *vm) {

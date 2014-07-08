@@ -3,12 +3,13 @@
 #include <iostream>
 
 #include <elkvm.h>
+#include <elkvm-internal.h>
 #include <heap.h>
 #include <region-c.h>
 #include <elfloader.h>
 
 namespace Elkvm {
-  HeapManager heap_m;
+  extern std::unique_ptr<VMInternals> vmi;
 
   int HeapManager::shrink(guestptr_t newbrk) {
     while(newbrk <= mappings.back().guest_address()) {
@@ -87,5 +88,5 @@ namespace Elkvm {
 }
 
 void elkvm_init_heap_manager(struct kvm_pager *const pager) {
-  Elkvm::heap_m.set_pager(pager);
+  Elkvm::vmi->get_heap_manager().set_pager(pager);
 }
