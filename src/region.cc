@@ -88,8 +88,7 @@ namespace Elkvm {
     return r;
   }
 
-  void Region::slice_center(std::shared_ptr<RegionManager> rm,
-      off_t off, size_t len) {
+  void Region::slice_center(off_t off, size_t len) {
     assert(contains_address(reinterpret_cast<char *>(host_p) + off + len));
     assert(0 < off <= rsize);
 
