@@ -3,7 +3,7 @@ SET( libelkvm_SRCS
   elfloader.cc
   environ.cc
   gdbstub.c
-  gdt.c
+  gdt.cc
   heap.cc
   idt.c
   mapping.cc
