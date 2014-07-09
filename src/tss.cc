@@ -1,17 +1,20 @@
 #include <cstring>
 
 #include <elkvm.h>
+#include <elkvm-internal.h>
 #include <stack.h>
 #include <tss.h>
 
 namespace Elkvm {
+  extern std::shared_ptr<VMInternals> vmi;
   extern Stack stack;
 }
 
 int elkvm_tss_setup64(std::shared_ptr<Elkvm::Region> r) {
 
-  guestptr_t guest_virtual = elkvm_pager_map_kernel_page(NULL,
-			r->base_address(), 0, 0);
+  guestptr_t guest_virtual =
+    Elkvm::vmi->get_region_manager().get_pager().map_kernel_page(
+			r->base_address(), 0);
   assert(guest_virtual != 0x0 && "could not map tss");
 
   r->set_guest_addr(guest_virtual);

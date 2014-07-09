@@ -7,7 +7,6 @@
 #include <elkvm.h>
 #include <elkvm-internal.h>
 #include <region.h>
-#include <region-c.h>
 
 namespace Elkvm {
   extern std::unique_ptr<VMInternals> vmi;
@@ -31,17 +30,6 @@ namespace Elkvm {
       && r1.guest_address() == r2.guest_address()
       && r1.size() == r2.size()
       && r1.is_free() == r2.is_free();
-  }
-
-  struct elkvm_memory_region *Region::c_region() const {
-    struct elkvm_memory_region *r = new(struct elkvm_memory_region);
-    r->host_base_p = host_p;
-    r->guest_virtual = addr;
-    r->region_size = rsize;
-    r->used = !free;
-    r->grows_downward = 0;
-    r->rc = r->lc = NULL;
-    return r;
   }
 
   bool Region::contains_address(const void * const p) const {
@@ -108,17 +96,3 @@ namespace Elkvm {
 
 //namespace Elkvm
 }
-
-
-struct elkvm_memory_region *elkvm_region_create(uint64_t req_size) {
-  std::shared_ptr<Elkvm::Region> r = Elkvm::vmi->get_region_manager().allocate_region(req_size);
-  assert(r->size() >= req_size && "allocated region must be suitable in size!");
-	return r->c_region();
-}
-
-int elkvm_region_free(struct elkvm_memory_region *region) {
-  Elkvm::vmi->get_region_manager().free_region(region->host_base_p, region->region_size);
-  delete(region);
-  return 0;
-}
-

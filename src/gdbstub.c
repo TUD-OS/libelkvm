@@ -35,7 +35,8 @@
 #include <netdb.h>
 
 #include <elkvm.h>
-#include "debug.h"
+#include <debug.h>
+#include <pager-c.h>
 
 #define NEED_CPU_REG_SHORTCUTS 1
 

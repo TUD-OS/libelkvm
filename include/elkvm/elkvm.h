@@ -29,8 +29,6 @@ struct linux_dirent {
     */
 };
 
-#include "pager-c.h"
-#include "region-c.h"
 #include "vcpu.h"
 #include "elkvm-signal.h"
 

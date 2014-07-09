@@ -2,11 +2,10 @@
 
 #include <inttypes.h>
 
-struct kvm_vm;
-struct elkvm_memory_region;
+#include <region.h>
 
 struct elkvm_flat {
-	struct elkvm_memory_region *region;
+  std::shared_ptr<Elkvm::Region> region;
 	uint64_t size;
 };
 

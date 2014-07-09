@@ -4,9 +4,8 @@
 
 #include <elkvm.h>
 #include <elkvm-internal.h>
-#include <heap.h>
-#include <region-c.h>
 #include <elfloader.h>
+#include <heap.h>
 
 namespace Elkvm {
   extern std::unique_ptr<VMInternals> vmi;
@@ -85,8 +84,4 @@ namespace Elkvm {
   }
 
   //namespace Elkvm
-}
-
-void elkvm_init_heap_manager(struct kvm_pager *const pager) {
-  Elkvm::vmi->get_heap_manager().set_pager(pager);
 }

@@ -71,7 +71,7 @@ int elkvm_signal_deliver(struct kvm_vm *vm) {
   Elkvm::stack.pushq(vcpu->regs.rax);
 
   /* push signal handler cleanup asm addr onto stack */
-  Elkvm::stack.pushq(Elkvm::vmi->get_cleanup_flat()->region->guest_virtual);
+  Elkvm::stack.pushq(Elkvm::vmi->get_cleanup_flat()->region->guest_address());
 
   /* setup the signal handler stack frame and pass the signal number as arg */
   Elkvm::stack.pushq((uint64_t) Elkvm::vmi->get_sig_ptr(signum)->sa_handler);

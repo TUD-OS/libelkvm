@@ -27,7 +27,7 @@ int elkvm_idt_setup(struct kvm_vm *vm, struct elkvm_flat *default_handler) {
 
   /* default handler defines 48 entries, that push the iv to the stack */
 	for(int i = 0; i < 48; i++) {
-		uint64_t offset = default_handler->region->guest_virtual + i * 9;
+		uint64_t offset = default_handler->region->guest_address() + i * 9;
 		struct kvm_idt_entry *entry =
       reinterpret_cast<struct kvm_idt_entry *>(
           reinterpret_cast<char *>(idt_region->base_address()) +

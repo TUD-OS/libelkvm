@@ -544,23 +544,18 @@ namespace Elkvm {
   //namespace Elkvm
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void *elkvm_pager_get_host_p(struct kvm_pager *pager __attribute__((unused)),
     guestptr_t addr) {
   return Elkvm::vmi->get_region_manager().get_pager().get_host_p(addr);
 }
 
-guestptr_t elkvm_pager_map_kernel_page(
-    struct kvm_pager *pager __attribute__((unused)), void *host_p,
-    int write, int exec) {
-  ptopt_t opts = 0;
-  if(write) {
-    opts |= PT_OPT_WRITE;
-  }
-  if(exec) {
-    opts |= PT_OPT_EXEC;
-  }
-  return Elkvm::vmi->get_region_manager().get_pager().map_kernel_page(host_p, opts);
+#ifdef __cplusplus
 }
+#endif
 
 guestptr_t page_begin(guestptr_t addr) {
   return (addr & ~(ELKVM_PAGESIZE-1));

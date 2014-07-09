@@ -17,7 +17,6 @@
 #include <flats.h>
 #include <kvm.h>
 #include <pager.h>
-#include <region-c.h>
 #include <stack.h>
 #include <vcpu.h>
 #include "debug.h"
@@ -126,7 +125,7 @@ struct kvm_vm *elkvm_vm_create(struct elkvm_opts *opts, int mode,
 	 */
 	err = kvm_vcpu_set_msr(Elkvm::vmi->get_vcpu(0).get(),
 			VCPU_MSR_LSTAR,
-			sysenter.region->guest_virtual);
+			sysenter.region->guest_address());
   assert(err == 0);
 
   for(int i = 0; i < RLIMIT_NLIMITS; i++) {
@@ -188,7 +187,7 @@ int elkvm_load_flat(struct elkvm_flat *flat,
 	}
 
 	close(fd);
-  flat->region = region->c_region();
+  flat->region = region;
 
 	return 0;
 }

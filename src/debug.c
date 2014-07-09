@@ -6,7 +6,8 @@
 #include <sys/ioctl.h>
 
 #include <elkvm.h>
-#include "debug.h"
+#include <debug.h>
+#include <pager-c.h>
 
 int elkvm_handle_debug(struct kvm_vm *vm) {
   int handled = 0;
