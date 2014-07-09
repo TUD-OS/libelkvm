@@ -448,7 +448,7 @@ static void debug_loop(struct kvm_vm *vm) {
         } else {
           /* in kernel mode, figure out the real stack and return that
            * this really helps with backtraces (hopefully) */
-          guestptr_t *sf = elkvm_pager_get_host_p(NULL, vcpu->regs.rsp + 24);
+          guestptr_t *sf = reinterpret_cast<guestptr_t *>(elkvm_pager_get_host_p(NULL, vcpu->regs.rsp + 24));
           guestptr_t real_rsp = *sf;
           PUTREG(buf, real_rsp, 8);
         }
@@ -465,7 +465,7 @@ static void debug_loop(struct kvm_vm *vm) {
         } else {
           /* in kernel mode, figure out the real stack and return that
            * this really helps with backtraces (hopefully) */
-          guestptr_t *sf = elkvm_pager_get_host_p(NULL, vcpu->regs.rsp);
+          guestptr_t *sf = reinterpret_cast<guestptr_t *>(elkvm_pager_get_host_p(NULL, vcpu->regs.rsp));
           guestptr_t real_rip = *sf;
           PUTREG(buf, real_rip, 8);
         }
