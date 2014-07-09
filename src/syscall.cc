@@ -16,7 +16,6 @@
 #include <heap.h>
 #include <mapping.h>
 #include <stack.h>
-#include <stack-c.h>
 #include <syscall.h>
 #include <vcpu.h>
 
@@ -67,7 +66,7 @@ int elkvm_handle_interrupt(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
     printf(" INTERRUPT with vector 0x%lx detected\n", interrupt_vector);
     kvm_vcpu_get_sregs(vcpu);
     kvm_vcpu_dump_regs(vcpu);
-    elkvm_dump_stack(vm, vcpu);
+    Elkvm::dump_stack(vm, vcpu);
   }
 
   /* Stack Segment */

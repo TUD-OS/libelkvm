@@ -6,7 +6,6 @@
 #include <environ.h>
 #include <pager.h>
 #include <stack.h>
-#include <stack-c.h>
 #include <vcpu.h>
 #include "debug.h"
 
@@ -120,35 +119,10 @@ namespace Elkvm {
     return kernel_stack->guest_address();
   }
 
+  void dump_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+    assert(vcpu->regs.rsp != 0x0);
+    elkvm_dump_memory(vm, vcpu->regs.rsp);
+  }
+
 //namespace Elkvm
 }
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void elkvm_dump_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
-  assert(vcpu->regs.rsp != 0x0);
-  elkvm_dump_memory(vm, vcpu->regs.rsp);
-}
-
-int elkvm_pushq(struct kvm_vm *vm __attribute__((unused)),
-    struct kvm_vcpu *vcpu __attribute__((unused)),
-    uint64_t val) {
-  return Elkvm::stack.pushq(val);
-}
-
-uint64_t elkvm_popq(struct kvm_vm *vm __attribute__((unused)),
-    struct kvm_vcpu *vcpu __attribute__((unused))) {
-  return Elkvm::stack.popq();
-}
-
-guestptr_t elkvm_get_kernel_stack_base() {
-  /* as stack grows downward we return it's virtual address
-   * at the page afterwards */
-  return Elkvm::stack.kernel_base() + ELKVM_PAGESIZE;
-}
-
-#ifdef __cplusplus
-}
-#endif

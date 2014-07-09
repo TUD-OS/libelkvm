@@ -14,12 +14,13 @@
 #include <gdt.h>
 #include <idt.h>
 #include <region.h>
-#include <stack-c.h>
+#include <stack.h>
 #include <syscall.h>
 #include <vcpu.h>
 
 namespace Elkvm {
   extern std::unique_ptr<VMInternals> vmi;
+  extern Stack stack;
 }
 
 int kvm_vcpu_initialize_regs(struct kvm_vcpu *vcpu, int mode) {
@@ -433,7 +434,7 @@ int elkvm_vm_run(struct kvm_vm *vm) {
 		if(	vcpu->run_struct->exit_reason == KVM_EXIT_MMIO ||
 				vcpu->run_struct->exit_reason == KVM_EXIT_SHUTDOWN) {
 			kvm_vcpu_dump_regs(vcpu.get());
-      elkvm_dump_stack(vcpu->vm, vcpu.get());
+      Elkvm::dump_stack(vm, vcpu.get());
 			kvm_vcpu_dump_code(vcpu.get());
 		}
 
@@ -599,7 +600,7 @@ int kvm_vcpu_had_page_fault(struct kvm_vcpu *vcpu) {
 	return vcpu->sregs.cr2 != 0x0;
 }
 
-uint64_t kvm_vcpu_get_hypercall_type(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
-  uint64_t type = elkvm_popq(vm, vcpu);
-  return type;
+uint64_t kvm_vcpu_get_hypercall_type(struct kvm_vm *vm __attribute__((unused))    ,
+    struct kvm_vcpu *vcpu __attribute__((unused))) {
+  return Elkvm::stack.popq();
 }

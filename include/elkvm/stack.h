@@ -26,5 +26,7 @@ namespace Elkvm {
       guestptr_t kernel_base();
   };
 
+  void dump_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu);
+
 //namespace Elkvm
 }
