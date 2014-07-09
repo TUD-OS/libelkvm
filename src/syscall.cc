@@ -22,9 +22,12 @@
 #include "region.h"
 
 int elkvm_handle_hypercall(Elkvm::VMInternals &vmi, std::shared_ptr<struct kvm_vcpu> vcpu) {
+  std::cout << __FILE__ << ":" << __LINE__ << std::endl;
+
   int err = 0;
 
   uint64_t call = Elkvm::get_hypercall_type(vmi, vcpu);
+  std::cout << __FILE__ << ":" << __LINE__ << std::endl;
   switch(call) {
     case ELKVM_HYPERCALL_SYSCALL:
 			err = elkvm_handle_syscall(vmi, vcpu.get());
@@ -226,9 +229,14 @@ long elkvm_do_read(Elkvm::VMInternals &vmi) {
 	uint64_t count;
 
 	elkvm_syscall3(vcpu, &fd, &buf_p, &count);
+  kvm_vcpu_dump_regs(vcpu.get());
 
   assert(buf_p != 0x0);
 	buf = reinterpret_cast<char *>(vmi.get_region_manager().get_pager().get_host_p(buf_p));
+  Elkvm::RegionManager &rm = vmi.get_region_manager();
+  rm.dump_regions();
+  std::cout << "done\n";
+	buf = reinterpret_cast<char *>(rm.get_pager().get_host_p(buf_p));
 
   uint64_t bend_p = buf_p + count - 1;
   void *bend = vmi.get_region_manager().get_pager().get_host_p(bend_p);
@@ -236,6 +244,7 @@ long elkvm_do_read(Elkvm::VMInternals &vmi) {
 
   if(!vmi.get_region_manager().same_region(buf, bend)) {
     assert(vmi.get_region_manager().host_address_mapped(bend));
+    assert(rm.host_address_mapped(bend));
     char *host_begin_mark = NULL;
     char *host_end_mark = buf;
     uint64_t mark_p = buf_p;
@@ -1581,26 +1590,27 @@ long elkvm_do_gettimeofday(Elkvm::VMInternals &vmi) {
 }
 
 long elkvm_do_getrlimit(Elkvm::VMInternals &vmi) {
-  uint64_t resource = 0x0;
-  uint64_t rlim_p = 0x0;
-  struct rlimit *rlim = NULL;
-
-  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
-  elkvm_syscall2(vcpu, &resource, &rlim_p);
-
-  assert(rlim_p != 0x0);
-  rlim = reinterpret_cast<struct rlimit *>(vmi.get_region_manager().get_pager().get_host_p(rlim_p));
-
-  std::shared_ptr<struct kvm_vm> vm = vmi.get_vm_ptr();
-  memcpy(rlim, &vm->rlimits[resource], sizeof(struct rlimit));
-  if(vmi.debug_mode()) {
-    printf("\n============ LIBELKVM ===========\n");
-    printf("GETRLIMIT with resource: %li rlim: 0x%lx (%p)\n",
-        resource, rlim_p, rlim);
-    printf("=================================\n");
-  }
-
-  return 0;
+  /* XXX implement again! */
+  return -ENOSYS;
+//  uint64_t resource = 0x0;
+//  uint64_t rlim_p = 0x0;
+//  struct rlimit *rlim = NULL;
+//
+//  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
+//  elkvm_syscall2(vcpu, &resource, &rlim_p);
+//
+//  assert(rlim_p != 0x0);
+//  rlim = reinterpret_cast<struct rlimit *>(vmi.get_region_manager().get_pager().get_host_p(rlim_p));
+//
+//  memcpy(rlim, &vm->rlimits[resource], sizeof(struct rlimit));
+//  if(vmi.debug_mode()) {
+//    printf("\n============ LIBELKVM ===========\n");
+//    printf("GETRLIMIT with resource: %li rlim: 0x%lx (%p)\n",
+//        resource, rlim_p, rlim);
+//    printf("=================================\n");
+//  }
+//
+//  return 0;
 }
 
 long elkvm_do_getrusage(Elkvm::VMInternals &vmi) {

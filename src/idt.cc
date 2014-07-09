@@ -17,9 +17,8 @@
 #include "flats.h"
 
 int elkvm_idt_setup(Elkvm::RegionManager &rm, 
-   std::shared_ptr<kvm_vcpu> vcpu,
-   struct elkvm_flat *default_handler) {
-
+    std::shared_ptr<kvm_vcpu> vcpu,
+    struct elkvm_flat *default_handler) {
   std::shared_ptr<Elkvm::Region> idt_region =
     rm.allocate_region(
 			256 * sizeof(struct kvm_idt_entry));

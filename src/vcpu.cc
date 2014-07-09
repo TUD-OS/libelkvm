@@ -304,6 +304,7 @@ int kvm_vcpu_run(struct kvm_vcpu *vcpu) {
 int elkvm_vm_run(struct kvm_vm *vm) {
   Elkvm::VMInternals &vmi = Elkvm::get_vmi(vm);
 
+
 	int is_running = 1;
 //	if(vcpu->singlestep) {
 //		elkvm_gdt_dump(vcpu->vm);
@@ -323,7 +324,6 @@ int elkvm_vm_run(struct kvm_vm *vm) {
     if(err) {
       return err;
     }
-
 //    if(vcpu->singlestep) {
 //      err = kvm_vcpu_singlestep(vcpu);
 //      if(err) {
@@ -354,7 +354,7 @@ int elkvm_vm_run(struct kvm_vm *vm) {
           kvm_vcpu_dump_regs(vcpu.get());
           kvm_vcpu_dump_code(vcpu.get());
         }
-        err = elkvm_handle_hypercall(vmi, vcpu);
+         err = elkvm_handle_hypercall(vmi, vcpu);
         if(err == ELKVM_HYPERCALL_EXIT) {
           is_running = 0;
         } else if(err) {
@@ -394,7 +394,7 @@ int elkvm_vm_run(struct kvm_vm *vm) {
         /* NO-OP */
         ;
         /* XXX rethink debug handling */
-//        int debug_handled = elkvm_handle_debug(vm);
+//        int debug_handled = elkvm_handle_debug(vmi);
 //        if(debug_handled == 0) {
           is_running = 0;
         //}

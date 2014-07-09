@@ -64,6 +64,8 @@ namespace Elkvm {
   VMInternals &get_vmi(struct kvm_vm *vm);
 
   unsigned get_hypercall_type(VMInternals &, std::shared_ptr<struct kvm_vcpu>);
+
+  unsigned get_hypercall_type(VMInternals &, std::shared_ptr<struct kvm_vcpu>);
   
   //namespace Elkvm
 }
