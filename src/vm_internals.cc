@@ -58,5 +58,14 @@ namespace Elkvm {
     return cpus.at(num);
   }
 
+  std::shared_ptr<struct elkvm_flat> VMInternals::get_cleanup_flat() const {
+    return std::make_shared<struct elkvm_flat>(sighandler_cleanup);
+  }
+
+  std::shared_ptr<struct sigaction> VMInternals::get_sig_ptr(unsigned sig) const {
+    return std::make_shared<struct sigaction>(sigs.signals[sig]);
+  }
+
+
   //namespace Elkvm
 }

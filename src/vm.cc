@@ -109,10 +109,8 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode,
 	}
 
   std::string sighandler_path(RES_PATH "/signal");
-  vm->sighandler_cleanup = new(struct elkvm_flat);
-  assert(vm->sighandler_cleanup != NULL);
-
-  err = elkvm_load_flat(vm->sighandler_cleanup, sighandler_path, 0);
+  auto sigclean = Elkvm::vmi->get_cleanup_flat();
+  err = elkvm_load_flat(sigclean.get(), sighandler_path, 0);
   if(err) {
     if(err == -ENOENT) {
       printf("LIBELKVM: SIGNAL HANDLER shared file could not be found\n");
@@ -129,8 +127,6 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode,
 	if(err) {
 		return err;
 	}
-
-  elkvm_signal_init(vm);
 
 	vm->syscall_handlers = handlers;
 

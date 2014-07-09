@@ -65,8 +65,6 @@ struct kvm_vm {
 	int fd;
 	const struct elkvm_handlers *syscall_handlers;
 
-  struct elkvm_signals sigs;
-  struct elkvm_flat *sighandler_cleanup;
   struct rlimit rlimits[RLIMIT_NLIMITS];
 
   int debug;
