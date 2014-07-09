@@ -10,14 +10,21 @@
 namespace Elkvm {
 
   VMInternals::VMInternals(int vmfd, int argc, char ** argv, char **environ,
-      int run_struct_size) :
+      int run_struct_size,
+      const struct elkvm_handlers * const handlers,
+      int debug) :
     rm(vmfd),
     _vmfd(vmfd),
     _argc(argc),
     _argv(argv),
     _environ(environ),
     _run_struct_size(run_struct_size)
-  {}
+  {
+    _vm = std::make_shared<struct kvm_vm>();
+    _vm->fd = _vmfd;
+    _vm->syscall_handlers = handlers;
+    _vm->debug = debug;
+  }
 
   int VMInternals::add_cpu(int mode) {
     std::shared_ptr<struct kvm_vcpu> vcpu = std::make_shared<struct kvm_vcpu>();
@@ -54,7 +61,7 @@ namespace Elkvm {
     return 0;
   }
 
-  std::shared_ptr<struct kvm_vcpu> VMInternals::get_vcpu(int num) {
+  std::shared_ptr<struct kvm_vcpu> VMInternals::get_vcpu(int num) const {
     return cpus.at(num);
   }
 
@@ -66,6 +73,9 @@ namespace Elkvm {
     return std::make_shared<struct sigaction>(sigs.signals[sig]);
   }
 
+  bool operator==(const VMInternals &lhs, const struct kvm_vm &rhs) {
+    return lhs.get_vmfd() == rhs.fd;
+  }
 
   //namespace Elkvm
 }

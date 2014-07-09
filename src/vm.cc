@@ -35,53 +35,55 @@ namespace Elkvm {
   std::unique_ptr<VMInternals> vmi = nullptr;
 }
 
-int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode,
-    unsigned cpus, const struct elkvm_handlers *handlers, const char *binary) {
+struct kvm_vm *elkvm_vm_create(struct elkvm_opts *opts, int mode,
+    unsigned cpus, const struct elkvm_handlers *handlers, const char *binary,
+    int debug) {
 
   int err = 0;
 
   int vmfd = ioctl(opts->fd, KVM_CREATE_VM, 0);
   if(vmfd < 0) {
-    return -errno;
+    return NULL;
   }
 
   int run_struct_size = ioctl(opts->fd, KVM_GET_VCPU_MMAP_SIZE, 0);
   if(run_struct_size < 0) {
-    return -errno;
+    return NULL;
   }
 
   Elkvm::vmi.reset(new Elkvm::VMInternals(vmfd,
         opts->argc,
         opts->argv,
         opts->environ,
-        run_struct_size));
+        run_struct_size,
+        handlers,
+        debug));
+
   for(unsigned i = 0; i < cpus; i++) {
     err = Elkvm::vmi->add_cpu(mode);
 		if(err) {
-			return err;
+      errno = -err;
+			return NULL;
 		}
   }
 
   Elkvm::ElfBinary bin(binary);
 
   guestptr_t entry = bin.get_entry_point();
-	err = kvm_vcpu_set_rip(elkvm_vcpu_get(vm, 0), entry);
+  err = Elkvm::vmi->set_entry_point(entry);
   assert(err == 0);
 
   Elkvm::Environment env(bin);
 
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vm> vm = Elkvm::vmi->get_vm_ptr();
+  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm.get(), 0);
   Elkvm::stack.init(vcpu, env);
 
-  err = env.fill(opts, vm);
-  if(err) {
-    return err;
-  }
+  err = env.fill(opts, vm.get());
+  assert(err == 0);
 
-	err = elkvm_gdt_setup(vm);
-	if(err) {
-		return err;
-	}
+	err = elkvm_gdt_setup(vm.get());
+  assert(err == 0);
 
 	struct elkvm_flat idth;
   std::string isr_path(RES_PATH "/isr");
@@ -90,13 +92,12 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode,
     if(err == -ENOENT) {
       printf("LIBELKVM: ISR shared file could not be found\n");
     }
-		return err;
+    errno = -err;
+		return NULL;
 	}
 
-	err = elkvm_idt_setup(vm, &idth);
-	if(err) {
-		return err;
-	}
+	err = elkvm_idt_setup(vm.get(), &idth);
+  assert(err == 0);
 
 	struct elkvm_flat sysenter;
   std::string sysenter_path(RES_PATH "/entry");
@@ -105,7 +106,8 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode,
     if(err == -ENOENT) {
       printf("LIBELKVM: SYSCALL ENTRY shared file could not be found\n");
     }
-		return err;
+    errno = -err;
+		return NULL;
 	}
 
   std::string sighandler_path(RES_PATH "/signal");
@@ -115,7 +117,8 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode,
     if(err == -ENOENT) {
       printf("LIBELKVM: SIGNAL HANDLER shared file could not be found\n");
     }
-    return err;
+    errno = -err;
+    return NULL;
   }
 
 	/*
@@ -124,18 +127,14 @@ int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode,
 	err = kvm_vcpu_set_msr(Elkvm::vmi->get_vcpu(0).get(),
 			VCPU_MSR_LSTAR,
 			sysenter.region->guest_virtual);
-	if(err) {
-		return err;
-	}
-
-	vm->syscall_handlers = handlers;
+  assert(err == 0);
 
   for(int i = 0; i < RLIMIT_NLIMITS; i++) {
     err = getrlimit(i, &vm->rlimits[i]);
     assert(err == 0);
   }
 
-	return 0;
+	return vm.get();
 }
 
 int elkvm_set_debug(struct kvm_vm *vm) {

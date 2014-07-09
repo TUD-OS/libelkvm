@@ -64,10 +64,9 @@ struct region_mapping {
 struct kvm_vm {
 	int fd;
 	const struct elkvm_handlers *syscall_handlers;
+  int debug;
 
   struct rlimit rlimits[RLIMIT_NLIMITS];
-
-  int debug;
 };
 
 struct elkvm_handlers {
@@ -146,10 +145,14 @@ struct elkvm_handlers {
 
 /*
 	Create a new VM, with the given mode, cpu count, memory and syscall handlers
-	Return 0 on success, -1 on error
 */
-int elkvm_vm_create(struct elkvm_opts *, struct kvm_vm *, int mode, unsigned cpus,
-		const struct elkvm_handlers *, const char *binary);
+struct kvm_vm *
+elkvm_vm_create(struct elkvm_opts *,
+    int mode,
+    unsigned cpus,
+		const struct elkvm_handlers * const,
+    const char *binary,
+    int debug);
 
 /*
  * Runs all CPUS of the VM

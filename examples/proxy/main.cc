@@ -316,14 +316,15 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 
-	err = elkvm_vm_create(&elkvm, &vm, VM_MODE_X86_64, 1, &example_handlers, binary);
-	if(err) {
-		printf("ERROR creating VM errno: %i Msg: %s\n", -err, strerror(-err));
-		return -1;
-	}
+	struct kvm_vm *vm = elkvm_vm_create(&elkvm, VM_MODE_X86_64, 1, &example_handlers, binary, debug);
+  if(vm == NULL) {
+    printf("ERROR creating VM: %i\n", errno);
+    printf("  Msg: %s\n", strerror(errno));
+    return EXIT_FAILURE;
+  }
 
   if(debug) {
-    err = elkvm_set_debug(&vm);
+    err = elkvm_set_debug(vm);
     if(err) {
       printf("ERROR putting VM in debug mode errno: %i Msg: %s\n", -err, strerror(-err));
       return -1;
@@ -332,11 +333,11 @@ int main(int argc, char **argv) {
 
   if(gdb) {
     //gdbstub will take it from here!
-    elkvm_gdbstub_init(&vm);
+    elkvm_gdbstub_init(vm);
     return 0;
   }
 
-	err = elkvm_vm_run(&vm);
+	err = elkvm_vm_run(vm);
 	if(err) {
 		printf("ERROR running VCPU errno: %i Msg: %s\n", -err, strerror(-err));
 		return -1;

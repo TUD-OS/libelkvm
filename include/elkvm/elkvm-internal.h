@@ -13,6 +13,7 @@ namespace Elkvm {
   class VMInternals {
     private:
       std::vector<std::shared_ptr<struct kvm_vcpu>> cpus;
+      std::shared_ptr<struct kvm_vm> _vm;
 
       HeapManager hm;
       RegionManager rm;
@@ -29,15 +30,25 @@ namespace Elkvm {
 
     public:
       VMInternals(int fd, int argc, char **argv, char **environ,
-          int run_struct_size);
+          int run_struct_size,
+          const struct elkvm_handlers * const handlers,
+          int debug);
+
+      int add_cpu(int mode);
+
       RegionManager &get_region_manager() { return rm; }
       HeapManager &get_heap_manager() { return hm; }
-      int add_cpu(int mode);
-      std::shared_ptr<struct kvm_vcpu> get_vcpu(int num);
-
+      std::shared_ptr<struct kvm_vcpu> get_vcpu(int num) const;
+      int get_vmfd() const { return _vmfd; }
       std::shared_ptr<struct elkvm_flat> get_cleanup_flat() const;
       std::shared_ptr<struct sigaction> get_sig_ptr(unsigned sig) const;
+      std::shared_ptr<struct kvm_vm> get_vm_ptr() const { return _vm; }
+
+      int set_entry_point(guestptr_t rip)
+        { return kvm_vcpu_set_rip(cpus.front().get(), rip); }
   };
+
+  bool operator==(const VMInternals &lhs, const struct kvm_vm &rhs);
 
   //namespace Elkvm
 }
