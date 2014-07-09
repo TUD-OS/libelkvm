@@ -1,8 +1,8 @@
 SET( libelkvm_SRCS
-  debug.c
+  debug.cc
   elfloader.cc
   environ.cc
-  gdbstub.c
+  gdbstub.cc
   gdt.cc
   heap.cc
   idt.cc
