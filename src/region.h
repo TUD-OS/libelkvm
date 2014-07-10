@@ -51,32 +51,41 @@ namespace Elkvm {
 
   class RegionManager {
     private:
-      PagerX86_64 pager;
-      std::array<std::vector<std::shared_ptr<Region>>, 16> freelists;
-      int add_chunk(size_t size);
       std::vector<std::shared_ptr<Region>> allocated_regions;
+      std::array<std::vector<std::shared_ptr<Region>>, 16> freelists;
       std::vector<Mapping> mappings;
+
+      PagerX86_64 pager;
+
+      int add_chunk(size_t size);
 
     public:
       RegionManager(int vmfd);
-      void add_free_region(std::shared_ptr<Region> region);
-      void dump_regions() const;
-      void dump_mappings() const;
+
+      bool address_mapped(guestptr_t addr) const;
       bool address_valid(const void *host_p) const;
+      bool host_address_mapped(const void * const) const;
+      bool same_region(const void *p1, const void *p2) const;
+
+      void add_free_region(std::shared_ptr<Region> region);
       std::shared_ptr<Region> allocate_region(size_t size);
+      void free_region(std::shared_ptr<Region> r);
+      void free_region(void *host_p, size_t sz);
+      void use_region(std::shared_ptr<Region> r);
+
       std::shared_ptr<Region> find_free_region(size_t size);
       std::shared_ptr<Region> find_region(const void *host_p) const;
       std::shared_ptr<Region> find_region(guestptr_t addr) const;
-      void free_region(std::shared_ptr<Region> r);
-      void free_region(void *host_p, size_t sz);
-      bool host_address_mapped(const void * const) const;
-      bool same_region(const void *p1, const void *p2) const;
-      void use_region(std::shared_ptr<Region> r);
+
+      void dump_regions() const;
+      void dump_mappings() const;
+
       Mapping &find_mapping(void *host_p);
       Mapping &find_mapping(guestptr_t addr);
-      bool address_mapped(guestptr_t addr) const;
+
       Mapping &get_mapping(guestptr_t addr, size_t length, int prot, int flags,
           int fd, off_t off);
+
       void add_mapping(const Mapping &mapping);
       void free_mapping(Mapping &mapping);
 
