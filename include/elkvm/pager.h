@@ -113,8 +113,7 @@ namespace Elkvm {
           std::vector<std::shared_ptr<struct kvm_userspace_memory_region *>>::size_type chunk)
         const;
 
-      /* XXX make this const */
-      void *get_host_p(guestptr_t guest_virtual);
+      void *get_host_p(guestptr_t guest_virtual) const ;
       guestptr_t host_to_guest_physical(void *host_p) const;
 
       int map_chunk_to_kvm(

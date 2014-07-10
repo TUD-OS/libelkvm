@@ -223,8 +223,7 @@ namespace Elkvm {
     return 0;
   }
 
-  /* XXX make this const */
-  void *PagerX86_64::get_host_p(guestptr_t guest_virtual) {
+  void *PagerX86_64::get_host_p(guestptr_t guest_virtual) const {
     if(guest_virtual == 0x0) {
       return nullptr;
     }
