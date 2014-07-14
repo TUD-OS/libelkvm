@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <memory>
 
 #include <errno.h>
@@ -15,7 +16,7 @@
 #include <vcpu.h>
 #include "flats.h"
 
-int elkvm_idt_setup(Elkvm::RegionManager &rm,
+int elkvm_idt_setup(Elkvm::RegionManager &rm, 
    std::shared_ptr<kvm_vcpu> vcpu,
    struct elkvm_flat *default_handler) {
 

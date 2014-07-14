@@ -4,9 +4,9 @@
 
 #include <elkvm.h>
 #include <flats.h>
-#include <pager-c.h>
+#include <region.h>
 
-int elkvm_idt_setup(Elkvm::RegionManager &rm, std::shared_ptr< struct kvm_vcpu> vcpu,
+int elkvm_idt_setup(Elkvm::RegionManager &rm, std::shared_ptr<struct kvm_vcpu> vcpu,
     struct elkvm_flat *);
 
 #ifdef __cplusplus

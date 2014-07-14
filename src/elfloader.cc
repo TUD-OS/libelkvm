@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "elfloader.h"
+#include <elfloader.h>
 #include <elkvm.h>
 #include <elkvm-internal.h>
 #include <kvm.h>

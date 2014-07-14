@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstring>
 #include <memory>
 #include <string>
@@ -12,6 +13,7 @@
 
 #include <elkvm.h>
 #include <elkvm-internal.h>
+#include <debug.h>
 #include <environ.h>
 #include <elfloader.h>
 #include <flats.h>
@@ -21,16 +23,14 @@
 #include <pager.h>
 #include <stack.h>
 #include <vcpu.h>
-#include "debug.h"
 
 namespace Elkvm {
-  extern ElfBinary binary;
   extern Stack stack;
   std::unique_ptr<VMInternals> vmi = nullptr;
 }
 
 struct kvm_vm *elkvm_vm_create(struct elkvm_opts *opts, int mode,
-    unsigned cpus, const struct elkvm_handlers *handlers, const char *binary,
+    unsigned cpus, const struct elkvm_handlers * const handlers, const char *binary,
     int debug) {
 
   int err = 0;
@@ -70,7 +70,6 @@ struct kvm_vm *elkvm_vm_create(struct elkvm_opts *opts, int mode,
 
   Elkvm::Environment env(bin, Elkvm::vmi->get_region_manager());
 
-  std::shared_ptr<struct kvm_vm> vm = Elkvm::vmi->get_vm_ptr();
   std::shared_ptr<struct kvm_vcpu> vcpu = Elkvm::vmi->get_vcpu(0);
   Elkvm::stack.init(vcpu.get(), env);
 
@@ -124,6 +123,7 @@ struct kvm_vm *elkvm_vm_create(struct elkvm_opts *opts, int mode,
 			sysenter.region->guest_address());
   assert(err == 0);
 
+  std::shared_ptr<struct kvm_vm> vm = Elkvm::vmi->get_vm_ptr();
   for(int i = 0; i < RLIMIT_NLIMITS; i++) {
     err = getrlimit(i, &vm->rlimits[i]);
     assert(err == 0);

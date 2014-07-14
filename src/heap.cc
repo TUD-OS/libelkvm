@@ -8,8 +8,6 @@
 #include <heap.h>
 
 namespace Elkvm {
-  extern std::unique_ptr<VMInternals> vmi;
-
   int HeapManager::shrink(guestptr_t newbrk) {
     while(newbrk <= mappings.back().guest_address()) {
       int err = mappings.back().unmap_self();

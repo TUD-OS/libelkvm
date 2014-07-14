@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include <elkvm-signal.h>
 #include <elfloader.h>
 #include <flats.h>
 #include <heap.h>

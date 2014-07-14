@@ -11,7 +11,6 @@
 
 namespace Elkvm {
   extern Stack stack;
-  extern std::unique_ptr<VMInternals> vmi;
 
   Environment::Environment(const ElfBinary &bin, RegionManager &rm) :
     binary(bin)

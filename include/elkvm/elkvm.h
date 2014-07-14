@@ -29,12 +29,12 @@ struct linux_dirent {
     */
 };
 
-#include "vcpu.h"
-#include "elkvm-signal.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+  struct kvm_vcpu;
 
 #define VM_MODE_X86    1
 #define VM_MODE_PAGING 2

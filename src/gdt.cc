@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstring>
 #include <memory>
 
@@ -11,12 +12,7 @@
 #include <tss.h>
 #include <vcpu.h>
 
-namespace Elkvm {
-  extern std::shared_ptr<VMInternals> vmi;
-}
-
 int elkvm_gdt_setup(Elkvm::RegionManager &rm, std::shared_ptr<struct kvm_vcpu> vcpu) {
-
   std::shared_ptr<Elkvm::Region> gdt_region =
     rm.allocate_region(
 				GDT_NUM_ENTRIES * sizeof(struct elkvm_gdt_segment_descriptor));
