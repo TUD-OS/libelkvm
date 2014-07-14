@@ -12,6 +12,7 @@
 
 namespace Elkvm {
   extern Stack stack;
+  extern std::unique_ptr<VMInternals> vmi;
 
   VMInternals::VMInternals(int vmfd, int argc, char ** argv, char **environ,
       int run_struct_size,
@@ -128,6 +129,10 @@ namespace Elkvm {
 
   bool operator==(const VMInternals &lhs, const struct kvm_vm &rhs) {
     return lhs.get_vmfd() == rhs.fd;
+  }
+
+  VMInternals &get_vmi(struct kvm_vm *vm) {
+    return *vmi;
   }
 
   unsigned get_hypercall_type(Elkvm::VMInternals &vmi,
