@@ -6,14 +6,12 @@
 #include <tss.h>
 
 namespace Elkvm {
-  extern std::shared_ptr<VMInternals> vmi;
   extern Stack stack;
 }
 
-int elkvm_tss_setup64(std::shared_ptr<Elkvm::Region> r) {
-
+int elkvm_tss_setup64(Elkvm::RegionManager &rm, std::shared_ptr<Elkvm::Region> r) {
   guestptr_t guest_virtual =
-    Elkvm::vmi->get_region_manager().get_pager().map_kernel_page(
+    rm.get_pager().map_kernel_page(
 			r->base_address(), 0);
   assert(guest_virtual != 0x0 && "could not map tss");
 

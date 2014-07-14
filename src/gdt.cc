@@ -63,7 +63,7 @@ int elkvm_gdt_setup(Elkvm::RegionManager &rm, std::shared_ptr<struct kvm_vcpu> v
     rm.allocate_region(
       sizeof(struct elkvm_tss64));
 	/* setup the tss, before loading the segment descriptor */
-	int err = elkvm_tss_setup64(tss_region);
+	int err = elkvm_tss_setup64(rm, tss_region);
 	if(err) {
 		return -err;
 	}
