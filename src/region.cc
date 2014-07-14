@@ -9,7 +9,6 @@
 #include <region.h>
 
 namespace Elkvm {
-  extern std::unique_ptr<VMInternals> vmi;
 
   std::ostream &print(std::ostream &stream, const Region &r) {
     if(r.is_free()) {
@@ -65,7 +64,7 @@ namespace Elkvm {
     assert(rsize > pagesize_align(size));
 
     std::shared_ptr<Region> r =
-      std::make_shared<Region>(host_p, pagesize_align(size));
+      std::make_shared<Region>(host_p, pagesize_align(size), _rm);
 
     host_p = reinterpret_cast<char *>(host_p) + r->size();
     rsize  -= r->size();
@@ -83,14 +82,14 @@ namespace Elkvm {
 
     std::shared_ptr<Region> r = std::make_shared<Region>(
         reinterpret_cast<char *>(host_p) + off + len,
-        rsize - off - len);
+        rsize - off - len, _rm);
     r->set_guest_addr(addr + off);
 
     rsize = off;
 
-    vmi->get_region_manager().use_region(r);
-    vmi->get_region_manager().add_free_region(std::make_shared<Region>(
-          reinterpret_cast<char *>(host_p) + off, len));
+    _rm.use_region(r);
+    _rm.add_free_region(std::make_shared<Region>(
+          reinterpret_cast<char *>(host_p) + off, len, _rm));
     //TODO maybe return ptr to free region?
   }
 

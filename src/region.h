@@ -18,12 +18,16 @@ namespace Elkvm {
       guestptr_t addr;
       size_t rsize;
       bool free;
+
+      RegionManager &_rm;
     public:
-      Region(void *chunk_p, size_t size) :
+      Region(void *chunk_p, size_t size, RegionManager &rm) :
         host_p(chunk_p),
         addr(0),
         rsize(size),
-        free(true) {}
+        free(true),
+        _rm(rm)
+    {}
       void *base_address() const { return host_p; }
       struct elkvm_memory_region *c_region() const;
       bool contains_address(const void *addr) const;
