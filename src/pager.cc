@@ -217,7 +217,7 @@ namespace Elkvm {
   }
 
   int PagerX86_64::free_page(guestptr_t guest_virtual) {
-    ptentry_t *pt_entry = page_table_walk(guest_virtual, 0, 0);
+    ptentry_t *pt_entry = page_table_walk(guest_virtual);
 
     if(pt_entry == NULL) {
       return -1;
@@ -233,7 +233,7 @@ namespace Elkvm {
       return nullptr;
     }
 
-    ptentry_t *entry = page_table_walk(guest_virtual, 0, 0);
+    ptentry_t *entry = page_table_walk(guest_virtual);
     if(entry == NULL) {
       return NULL;
     }
@@ -348,7 +348,7 @@ namespace Elkvm {
       | (guest_physical & (ELKVM_PAGESIZE-1));
     assert(guest_virtual != 0);
 
-    ptentry_t *pt_entry = page_table_walk(guest_virtual, opts, 1);
+    ptentry_t *pt_entry = page_table_walk_create(guest_virtual, opts);
     if(pt_entry == NULL) {
       return -EIO;
     }
@@ -360,7 +360,7 @@ namespace Elkvm {
         /*this page table seems to be completely full, try the next one */
         guest_virtual = guest_virtual + 0x100000;
         assert(guest_virtual != 0);
-        pt_entry = page_table_walk(guest_virtual, opts, 1);
+        pt_entry = page_table_walk_create(guest_virtual, opts);
       }
     }
 
@@ -405,7 +405,7 @@ namespace Elkvm {
     guestptr_t guest_physical = host_to_guest_physical(host_mem_p);
     assert(guest_physical != 0);
 
-    ptentry_t *pt_entry = page_table_walk(guest_virtual, opts, 1);
+    ptentry_t *pt_entry = page_table_walk_create(guest_virtual, opts);
     assert(pt_entry != NULL && "pt entry must not be NULL after page table walk");
 
     /* do NOT overwrite existing page table entries! */
@@ -422,8 +422,7 @@ namespace Elkvm {
     return 0;
   }
 
-  ptentry_t *PagerX86_64::page_table_walk(guestptr_t guest_virtual, ptopt_t opts,
-      bool create) {
+  ptentry_t *PagerX86_64::page_table_walk_create(guestptr_t guest_virtual, ptopt_t opts) {
     assert(guest_virtual != 0);
 
     ptentry_t *table_base = reinterpret_cast<uint64_t *>(host_pml4_p);
@@ -439,12 +438,8 @@ namespace Elkvm {
       entry = find_table_entry(table_base, guest_virtual, addr_low, addr_high);
       addr_low -= 9;
       addr_high -= 9;
-      if(create) {
-        int err = update_entry(entry, opts);
-        if(err) {
-          return NULL;
-        }
-      } else if(!entry_exists(entry)) {
+      int err = update_entry(entry, opts);
+      if(err) {
         return NULL;
       }
       table_base = find_next_table(entry);
@@ -454,7 +449,37 @@ namespace Elkvm {
     entry = find_table_entry(table_base, guest_virtual, addr_low, addr_high);
     addr_low -= 9;
     addr_high -= 9;
-    if(!create && !entry_exists(entry)) {
+
+    return entry;
+  }
+
+  ptentry_t *PagerX86_64::page_table_walk(guestptr_t guest_virtual) const {
+    assert(guest_virtual != 0);
+
+    ptentry_t *table_base = reinterpret_cast<uint64_t *>(host_pml4_p);
+    /* we should always have paging in place, when this gets called! */
+    assert(table_base != NULL);
+
+    ptentry_t *entry = NULL;
+    off64_t addr_low = 39;
+    off64_t addr_high = 47;
+
+    /* walk through the three levels of pml4, pdpt, pd, to find the page table */
+    for(unsigned i = 0; i < 3; i++) {
+      entry = find_table_entry(table_base, guest_virtual, addr_low, addr_high);
+      addr_low -= 9;
+      addr_high -= 9;
+      if(!entry_exists(entry)) {
+        return NULL;
+      }
+      table_base = find_next_table(entry);
+    }
+
+    /* now look for the actual page table entry in the pt */
+    entry = find_table_entry(table_base, guest_virtual, addr_low, addr_high);
+    addr_low -= 9;
+    addr_high -= 9;
+    if(!entry_exists(entry)) {
       return NULL;
     }
 

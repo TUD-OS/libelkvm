@@ -90,8 +90,8 @@ namespace Elkvm {
       ptentry_t *find_table_entry(ptentry_t *tbl_base_p,
           guestptr_t addr, off64_t off_low, off64_t off_high) const;
 
-      ptentry_t *page_table_walk(guestptr_t guest_virtual, ptopt_t opts,
-          bool create);
+      ptentry_t *page_table_walk(guestptr_t guest_virtual) const;
+      ptentry_t *page_table_walk_create(guestptr_t guest_virtual, ptopt_t opts);
 
     public:
       PagerX86_64(int vmfd);
