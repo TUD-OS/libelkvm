@@ -68,10 +68,10 @@ struct kvm_vm *elkvm_vm_create(struct elkvm_opts *opts, int mode,
   Elkvm::Environment env(bin, Elkvm::vmi->get_region_manager());
 
   std::shared_ptr<struct kvm_vm> vm = Elkvm::vmi->get_vm_ptr();
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm.get(), 0);
-  Elkvm::stack.init(vcpu, env);
+  std::shared_ptr<struct kvm_vcpu> vcpu = Elkvm::vmi->get_vcpu(0);
+  Elkvm::stack.init(vcpu.get(), env);
 
-  err = env.fill(opts, vm.get());
+  err = env.fill(opts, vcpu);
   assert(err == 0);
 
 	err = elkvm_gdt_setup(vm.get());

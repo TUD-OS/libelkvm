@@ -181,9 +181,9 @@ namespace Elkvm {
   }
 
 
-int Environment::fill(struct elkvm_opts *opts, struct kvm_vm *vm) {
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
-  int err = kvm_vcpu_get_regs(vcpu);
+int Environment::fill(struct elkvm_opts *opts,
+    std::shared_ptr<struct kvm_vcpu> vcpu) {
+  int err = kvm_vcpu_get_regs(vcpu.get());
   assert(err == 0 && "error getting vcpu");
 
   off64_t bytes = push_auxv(opts->environ);
@@ -209,7 +209,7 @@ int Environment::fill(struct elkvm_opts *opts, struct kvm_vm *vm) {
   /* at last push argc on the stack */
   Elkvm::stack.pushq(opts->argc);
 
-  err = kvm_vcpu_set_regs(vcpu);
+  err = kvm_vcpu_set_regs(vcpu.get());
   return err;
 }
 

@@ -23,7 +23,7 @@ namespace Elkvm {
       off64_t push_str_copy(off64_t offset, std::string str) const;
       guestptr_t get_guest_address() const { return region->guest_address(); }
       void *get_base_address() const { return region->base_address(); }
-      int fill(struct elkvm_opts *opts, struct kvm_vm *vm);
+      int fill(struct elkvm_opts *opts, std::shared_ptr<struct kvm_vcpu> vcpu);
 
   };
 
