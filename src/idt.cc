@@ -15,14 +15,12 @@
 #include <vcpu.h>
 #include "flats.h"
 
-namespace Elkvm {
-  extern std::shared_ptr<VMInternals> vmi;
-}
-
-int elkvm_idt_setup(struct kvm_vm *vm, struct elkvm_flat *default_handler) {
+int elkvm_idt_setup(Elkvm::RegionManager &rm,
+   std::shared_ptr<kvm_vcpu> vcpu,
+   struct elkvm_flat *default_handler) {
 
   std::shared_ptr<Elkvm::Region> idt_region =
-    Elkvm::vmi->get_region_manager().allocate_region(
+    rm.allocate_region(
 			256 * sizeof(struct kvm_idt_entry));
 
   /* default handler defines 48 entries, that push the iv to the stack */
@@ -46,22 +44,15 @@ int elkvm_idt_setup(struct kvm_vm *vm, struct elkvm_flat *default_handler) {
 
 	/* create a page for the idt */
 	guestptr_t guest_virtual =
-    Elkvm::vmi->get_region_manager().get_pager().map_kernel_page(
+    rm.get_pager().map_kernel_page(
 			idt_region->base_address(), 0);
   assert(guest_virtual != 0x0);
   idt_region->set_guest_addr(guest_virtual);
 
-	/* set the idtr accordingly */
-	struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);;
-	int err = kvm_vcpu_get_regs(vcpu);
-	if(err) {
-		return err;
-	}
-
 	vcpu->sregs.idt.base = idt_region->guest_address();
 	vcpu->sregs.idt.limit = 0xFFF;
 
-	err = kvm_vcpu_set_sregs(vcpu);
+	int err = kvm_vcpu_set_sregs(vcpu.get());
 
 	return err;
 }

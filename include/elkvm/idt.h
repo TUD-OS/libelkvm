@@ -1,8 +1,13 @@
 #pragma once
 
-#include "elkvm.h"
-#include "flats.h"
-#include "pager-c.h"
+#include <memory>
+
+#include <elkvm.h>
+#include <flats.h>
+#include <pager-c.h>
+
+int elkvm_idt_setup(Elkvm::RegionManager &rm, std::shared_ptr< struct kvm_vcpu> vcpu,
+    struct elkvm_flat *);
 
 #ifdef __cplusplus
 extern "C" {
