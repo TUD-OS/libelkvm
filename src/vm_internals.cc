@@ -1,6 +1,9 @@
 #include <cstring>
 
+#include <fcntl.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include <elkvm.h>
 #include <elkvm-internal.h>
@@ -61,12 +64,61 @@ namespace Elkvm {
     return 0;
   }
 
+  int VMInternals::load_flat(struct elkvm_flat &flat, const std::string path,
+      bool kernel) {
+    int fd = open(path.c_str(), O_RDONLY);
+    if(fd < 0) {
+      return -errno;
+    }
+
+    struct stat stbuf;
+    int err = fstat(fd, &stbuf);
+    if(err) {
+      close(fd);
+      return -errno;
+    }
+
+    flat.size = stbuf.st_size;
+    std::shared_ptr<Elkvm::Region> region = rm.allocate_region(stbuf.st_size);
+
+    if(kernel) {
+      guestptr_t addr = rm.get_pager().map_kernel_page(
+          region->base_address(),
+          PT_OPT_EXEC);
+      if(addr == 0x0) {
+        close(fd);
+        return -ENOMEM;
+      }
+      region->set_guest_addr(addr);
+    } else {
+      /* XXX this will break! */
+      region->set_guest_addr(0x1000);
+      err = rm.get_pager().map_user_page(
+          region->base_address(),
+          region->guest_address(),
+          PT_OPT_EXEC);
+      assert(err == 0);
+    }
+
+    char *buf = reinterpret_cast<char *>(region->base_address());
+    int bufsize = ELKVM_PAGESIZE;
+    int bytes = 0;
+    while((bytes = read(fd, buf, bufsize)) > 0) {
+      buf += bytes;
+    }
+
+    close(fd);
+    flat.region = region;
+
+    return 0;
+  }
+
   std::shared_ptr<struct kvm_vcpu> VMInternals::get_vcpu(int num) const {
     return cpus.at(num);
   }
 
-  std::shared_ptr<struct elkvm_flat> VMInternals::get_cleanup_flat() const {
-    return std::make_shared<struct elkvm_flat>(sighandler_cleanup);
+  struct elkvm_flat &VMInternals::get_cleanup_flat() {
+    return sighandler_cleanup;
   }
 
   std::shared_ptr<struct sigaction> VMInternals::get_sig_ptr(unsigned sig) const {

@@ -21,13 +21,6 @@
 #include <vcpu.h>
 #include "debug.h"
 
-/*
- * Load a flat binary into the guest address space
- * returns 0 on success, an errno otherwise
- */
-int elkvm_load_flat(struct elkvm_flat *, const std::string,
-    int kernel);
-
 namespace Elkvm {
   extern ElfBinary binary;
   extern Stack stack;
@@ -86,7 +79,7 @@ struct kvm_vm *elkvm_vm_create(struct elkvm_opts *opts, int mode,
 
 	struct elkvm_flat idth;
   std::string isr_path(RES_PATH "/isr");
-	err = elkvm_load_flat(&idth, isr_path, 1);
+	err = Elkvm::vmi->load_flat(idth, isr_path, 1);
 	if(err) {
     if(err == -ENOENT) {
       printf("LIBELKVM: ISR shared file could not be found\n");
@@ -100,7 +93,7 @@ struct kvm_vm *elkvm_vm_create(struct elkvm_opts *opts, int mode,
 
 	struct elkvm_flat sysenter;
   std::string sysenter_path(RES_PATH "/entry");
-	err = elkvm_load_flat(&sysenter, sysenter_path, 1);
+	err = Elkvm::vmi->load_flat(sysenter, sysenter_path, 1);
 	if(err) {
     if(err == -ENOENT) {
       printf("LIBELKVM: SYSCALL ENTRY shared file could not be found\n");
@@ -110,8 +103,8 @@ struct kvm_vm *elkvm_vm_create(struct elkvm_opts *opts, int mode,
 	}
 
   std::string sighandler_path(RES_PATH "/signal");
-  auto sigclean = Elkvm::vmi->get_cleanup_flat();
-  err = elkvm_load_flat(sigclean.get(), sighandler_path, 0);
+  struct elkvm_flat &sigclean = Elkvm::vmi->get_cleanup_flat();
+  err = Elkvm::vmi->load_flat(sigclean, sighandler_path, 0);
   if(err) {
     if(err == -ENOENT) {
       printf("LIBELKVM: SIGNAL HANDLER shared file could not be found\n");
@@ -139,57 +132,6 @@ struct kvm_vm *elkvm_vm_create(struct elkvm_opts *opts, int mode,
 int elkvm_set_debug(struct kvm_vm *vm) {
   vm->debug = 1;
   return 0;
-}
-
-int elkvm_load_flat(struct elkvm_flat *flat,
-    const std::string path,
-    int kernel) {
-	int fd = open(path.c_str(), O_RDONLY);
-	if(fd < 0) {
-		return -errno;
-	}
-
-	struct stat stbuf;
-	int err = fstat(fd, &stbuf);
-	if(err) {
-		close(fd);
-		return -errno;
-	}
-
-	flat->size = stbuf.st_size;
-  std::shared_ptr<Elkvm::Region> region =
-    Elkvm::vmi->get_region_manager().allocate_region(stbuf.st_size);
-
-  if(kernel) {
-    guestptr_t addr = Elkvm::vmi->get_region_manager().get_pager().map_kernel_page(
-        region->base_address(),
-        PT_OPT_EXEC);
-    if(addr == 0x0) {
-      close(fd);
-      return -ENOMEM;
-    }
-    region->set_guest_addr(addr);
-  } else {
-    /* XXX this will break! */
-    region->set_guest_addr(0x1000);
-    err = Elkvm::vmi->get_region_manager().get_pager().map_user_page(
-        region->base_address(),
-        region->guest_address(),
-        PT_OPT_EXEC);
-    assert(err == 0);
-  }
-
-	char *buf = reinterpret_cast<char *>(region->base_address());
-	int bufsize = ELKVM_PAGESIZE;
-	int bytes = 0;
-	while((bytes = read(fd, buf, bufsize)) > 0) {
-		buf += bytes;
-	}
-
-	close(fd);
-  flat->region = region;
-
-	return 0;
 }
 
 int elkvm_init(struct elkvm_opts *opts, int argc, char **argv, char **environ) {
