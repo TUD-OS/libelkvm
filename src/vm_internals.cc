@@ -25,7 +25,7 @@ namespace Elkvm {
     _run_struct_size(run_struct_size)
   {
     _vm = std::make_shared<struct kvm_vm>();
-    _vm->fd = _vmfd;
+    _vm->fd = vmfd;
     _vm->syscall_handlers = handlers;
     _vm->debug = debug;
   }
