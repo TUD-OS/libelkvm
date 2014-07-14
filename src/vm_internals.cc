@@ -11,6 +11,7 @@
 #include <vcpu.h>
 
 namespace Elkvm {
+  extern Stack stack;
 
   VMInternals::VMInternals(int vmfd, int argc, char ** argv, char **environ,
       int run_struct_size,
@@ -127,6 +128,15 @@ namespace Elkvm {
 
   bool operator==(const VMInternals &lhs, const struct kvm_vm &rhs) {
     return lhs.get_vmfd() == rhs.fd;
+  }
+
+  unsigned get_hypercall_type(Elkvm::VMInternals &vmi,
+      std::shared_ptr<struct kvm_vcpu> vcpu) {
+    std::cout << __FILE__ << ":" << __LINE__ << std::endl;
+    std::cout << "pager: " << &(vmi.get_region_manager().get_pager()) << std::endl;
+    std::cout << "rm: " << &(vmi.get_region_manager()) << std::endl;
+    std::cout << __FILE__ << ":" << __LINE__ << std::endl;
+    return Elkvm::stack.popq();
   }
 
   //namespace Elkvm

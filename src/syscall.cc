@@ -30,7 +30,7 @@ namespace Elkvm {
 int elkvm_handle_hypercall(struct kvm_vm *vm, std::shared_ptr<struct kvm_vcpu> vcpu) {
   int err = 0;
 
-  uint64_t call = kvm_vcpu_get_hypercall_type(vm, vcpu.get());
+  uint64_t call = Elkvm::get_hypercall_type(*Elkvm::vmi, vcpu);
   switch(call) {
     case ELKVM_HYPERCALL_SYSCALL:
 			err = elkvm_handle_syscall(vm, vcpu.get());

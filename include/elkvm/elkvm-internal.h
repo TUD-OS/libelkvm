@@ -59,5 +59,7 @@ namespace Elkvm {
 
   bool operator==(const VMInternals &lhs, const struct kvm_vm &rhs);
 
+  unsigned get_hypercall_type(VMInternals &, std::shared_ptr<struct kvm_vcpu>);
+  
   //namespace Elkvm
 }

@@ -599,8 +599,3 @@ void elkvm_init_udis86(struct kvm_vcpu *vcpu, int mode) {
 int kvm_vcpu_had_page_fault(struct kvm_vcpu *vcpu) {
 	return vcpu->sregs.cr2 != 0x0;
 }
-
-uint64_t kvm_vcpu_get_hypercall_type(struct kvm_vm *vm __attribute__((unused))    ,
-    struct kvm_vcpu *vcpu __attribute__((unused))) {
-  return Elkvm::stack.popq();
-}
