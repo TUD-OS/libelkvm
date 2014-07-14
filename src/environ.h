@@ -17,7 +17,7 @@ namespace Elkvm {
       const ElfBinary &binary;
 
     public:
-      Environment(const ElfBinary &bin);
+      Environment(const ElfBinary &bin, RegionManager &rm);
       off64_t push_auxv(char **env_p);
       int copy_and_push_str_arr_p(off64_t offset, char **str) const;
       off64_t push_str_copy(off64_t offset, std::string str) const;
