@@ -33,10 +33,10 @@ int elkvm_handle_hypercall(Elkvm::VMInternals &vmi, std::shared_ptr<struct kvm_v
   uint64_t call = Elkvm::get_hypercall_type(vmi, vcpu);
   switch(call) {
     case ELKVM_HYPERCALL_SYSCALL:
-			err = elkvm_handle_syscall(vmi.get_vm_ptr().get(), vcpu.get());
+			err = elkvm_handle_syscall(vmi, vcpu.get());
       break;
     case ELKVM_HYPERCALL_INTERRUPT:
-      err = elkvm_handle_interrupt(vmi.get_vm_ptr().get(), vcpu.get());
+      err = elkvm_handle_interrupt(vmi, vcpu.get());
       if(err) {
         return err;
       }
@@ -59,14 +59,14 @@ int elkvm_handle_hypercall(Elkvm::VMInternals &vmi, std::shared_ptr<struct kvm_v
   return 0;
 }
 
-int elkvm_handle_interrupt(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+int elkvm_handle_interrupt(Elkvm::VMInternals &vmi, struct kvm_vcpu *vcpu) {
   uint64_t interrupt_vector = Elkvm::stack.popq();
 
-  if(vm->debug) {
+  if(vmi.debug_mode()) {
     printf(" INTERRUPT with vector 0x%lx detected\n", interrupt_vector);
     kvm_vcpu_get_sregs(vcpu);
     kvm_vcpu_dump_regs(vcpu);
-    Elkvm::dump_stack(vm, vcpu);
+    //Elkvm::dump_stack(vm, vcpu);
   }
 
   /* Stack Segment */
@@ -101,7 +101,7 @@ int elkvm_handle_interrupt(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 
     uint32_t err_code = Elkvm::stack.popq();
     err = Elkvm::vmi->get_region_manager().get_pager().handle_pagefault(vcpu->sregs.cr2, err_code,
-        vm->debug);
+        vmi.debug_mode());
 
 		return err;
 	}
@@ -147,9 +147,9 @@ int elkvm_handle_interrupt(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 
    Syscalls of more than 6 arguments are not supported.  */
 
-int elkvm_handle_syscall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+int elkvm_handle_syscall(Elkvm::VMInternals &vmi, struct kvm_vcpu *vcpu) {
 	uint64_t syscall_num = vcpu->regs.rax;
-  if(vm->debug) {
+  if(vmi.debug_mode()) {
     fprintf(stderr, " SYSCALL %3lu detected\n", syscall_num);
   }
 
@@ -158,10 +158,10 @@ int elkvm_handle_syscall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
     fprintf(stderr, "\tINVALID syscall_num: %lu\n", syscall_num);
 		result = -ENOSYS;
 	} else {
-    if(vm->debug) {
+    if(vmi.debug_mode()) {
       fprintf(stderr, "(%s)\n", elkvm_syscalls[syscall_num].name);
     }
-		result = elkvm_syscalls[syscall_num].func(vm);
+		result = elkvm_syscalls[syscall_num].func(vmi);
     if(syscall_num == __NR_exit_group) {
       return ELKVM_HYPERCALL_EXIT;
     }
@@ -172,24 +172,24 @@ int elkvm_handle_syscall(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
 	return 0;
 }
 
-void elkvm_syscall1(struct kvm_vcpu *vcpu, uint64_t *arg) {
+void elkvm_syscall1(std::shared_ptr<struct kvm_vcpu> vcpu, uint64_t *arg) {
 	*arg = vcpu->regs.rdi;
 }
 
-void elkvm_syscall2(struct kvm_vcpu *vcpu,
+void elkvm_syscall2(std::shared_ptr<struct kvm_vcpu> vcpu,
 		uint64_t *arg1, uint64_t *arg2) {
 	*arg1 = vcpu->regs.rdi;
 	*arg2 = vcpu->regs.rsi;
 }
 
-void elkvm_syscall3(struct kvm_vcpu *vcpu,
+void elkvm_syscall3(std::shared_ptr<struct kvm_vcpu> vcpu,
 		uint64_t *arg1, uint64_t *arg2, uint64_t *arg3) {
 	*arg1 = vcpu->regs.rdi;
 	*arg2 = vcpu->regs.rsi;
 	*arg3 = vcpu->regs.rdx;
 }
 
-void elkvm_syscall4(struct kvm_vcpu *vcpu,
+void elkvm_syscall4(std::shared_ptr<struct kvm_vcpu> vcpu,
 		uint64_t *arg1, uint64_t *arg2, uint64_t *arg3, uint64_t *arg4) {
 	*arg1 = vcpu->regs.rdi;
 	*arg2 = vcpu->regs.rsi;
@@ -197,7 +197,7 @@ void elkvm_syscall4(struct kvm_vcpu *vcpu,
   *arg4 = vcpu->regs.r10;
 }
 
-void elkvm_syscall5(struct kvm_vcpu *vcpu,
+void elkvm_syscall5(std::shared_ptr<struct kvm_vcpu> vcpu,
 		uint64_t *arg1, uint64_t *arg2, uint64_t *arg3, uint64_t *arg4,
     uint64_t *arg5) {
 	*arg1 = vcpu->regs.rdi;
@@ -207,7 +207,7 @@ void elkvm_syscall5(struct kvm_vcpu *vcpu,
   *arg5 = vcpu->regs.r8;
 }
 
-void elkvm_syscall6(struct kvm_vcpu *vcpu,
+void elkvm_syscall6(std::shared_ptr<struct kvm_vcpu> vcpu,
 		uint64_t *arg1, uint64_t *arg2, uint64_t *arg3, uint64_t *arg4,
     uint64_t *arg5, uint64_t *arg6) {
 	*arg1 = vcpu->regs.rdi;
@@ -218,12 +218,12 @@ void elkvm_syscall6(struct kvm_vcpu *vcpu,
   *arg6 = vcpu->regs.r9;
 }
 
-long elkvm_do_read(struct kvm_vm *vm) {
-	if(vm->syscall_handlers->read == NULL) {
+long elkvm_do_read(Elkvm::VMInternals &vmi) {
+	if(vmi.get_handlers()->read == NULL) {
 		printf("READ handler not found\n");
 		return -ENOSYS;
 	}
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
 	uint64_t fd;
 	uint64_t buf_p;
@@ -260,14 +260,14 @@ long elkvm_do_read(struct kvm_vm *vm) {
         newcount = current_count;
       }
 
-      long in_result = vm->syscall_handlers->read((int)fd, host_begin_mark, newcount);
+      long in_result = vmi.get_handlers()->read((int)fd, host_begin_mark, newcount);
       if(in_result < 0) {
         return errno;
       }
       if(in_result < newcount) {
         return result + in_result;
       }
-      if(vm->debug) {
+      if(vmi.debug_mode()) {
         printf("\n============ LIBELKVM ===========\n");
         printf("READ from fd: %i with size 0x%lx of 0x%lx buf 0x%lx (%p)\n",
             (int)fd, newcount, count, buf_p, buf);
@@ -282,10 +282,10 @@ long elkvm_do_read(struct kvm_vm *vm) {
     assert(current_count == 0);
 
   } else {
-    result = vm->syscall_handlers->read((int)fd, buf, (size_t)count);
+    result = vmi.get_handlers()->read((int)fd, buf, (size_t)count);
   }
 
-  if(vm->debug) {
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("READ from fd: %i with size 0x%lx buf 0x%lx (%p)\n",
         (int)fd, count, buf_p, buf);
@@ -296,12 +296,12 @@ long elkvm_do_read(struct kvm_vm *vm) {
 	return result;
 }
 
-long elkvm_do_write(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->write == NULL) {
+long elkvm_do_write(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->write == NULL) {
     printf("WRITE handler not found\n");
     return -ENOSYS;
   }
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   uint64_t fd = 0x0;
   guestptr_t buf_p = 0x0;
@@ -320,14 +320,14 @@ long elkvm_do_write(struct kvm_vm *vm) {
   size_t remaining_count = count;
   ssize_t total = 0;
   while(!r->contains_address(current_buf + remaining_count - 1)) {
-    long result = vm->syscall_handlers->write(static_cast<int>(fd),
+    long result = vmi.get_handlers()->write(static_cast<int>(fd),
         current_buf, r->space_after_address(current_buf));
     if(result < 0) {
       return -errno;
     }
     total += result;
 
-    if(vm->debug) {
+    if(vmi.debug_mode()) {
       printf("\n============ LIBELKVM ===========\n");
       printf("SPLIT WRITE to fd: %i with size 0x%lx buf 0x%lx (%p)\n",
           (int)fd, count, buf_p, buf);
@@ -342,14 +342,14 @@ long elkvm_do_write(struct kvm_vm *vm) {
   }
   assert(r->contains_address(reinterpret_cast<char *>(buf) + count - 1));
 
-  long result = vm->syscall_handlers->write(static_cast<int>(fd),
+  long result = vmi.get_handlers()->write(static_cast<int>(fd),
       current_buf, remaining_count);
   if(result < 0) {
     return -errno;
   }
   total += result;
 
-  if(vm->debug) {
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("WRITE to fd: %i with size 0x%lx buf 0x%lx (%p)\n",
         (int)fd, count, buf_p, buf);
@@ -360,12 +360,12 @@ long elkvm_do_write(struct kvm_vm *vm) {
   return total;
 }
 
-long elkvm_do_open(struct kvm_vm *vm) {
-	if(vm->syscall_handlers->open == NULL) {
+long elkvm_do_open(Elkvm::VMInternals &vmi) {
+	if(vmi.get_handlers()->open == NULL) {
 		printf("OPEN handler not found\n");
 		return -ENOSYS;
 	}
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
 	uint64_t pathname_p = 0x0;
 	char *pathname = NULL;
@@ -377,9 +377,9 @@ long elkvm_do_open(struct kvm_vm *vm) {
   assert(pathname_p != 0x0);
 	pathname = reinterpret_cast<char *>(Elkvm::vmi->get_region_manager().get_pager().get_host_p(pathname_p));
 
-	long result = vm->syscall_handlers->open(pathname, (int)flags, (mode_t)mode);
+	long result = vmi.get_handlers()->open(pathname, (int)flags, (mode_t)mode);
 
-  if(vm->debug) {
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("OPEN file %s with flags %i and mode %x\n", pathname,
 			(int)flags, (mode_t)mode);
@@ -390,34 +390,34 @@ long elkvm_do_open(struct kvm_vm *vm) {
 	return result;
 }
 
-long elkvm_do_close(struct kvm_vm *vm) {
-	if(vm->syscall_handlers->close == NULL) {
+long elkvm_do_close(Elkvm::VMInternals &vmi) {
+	if(vmi.get_handlers()->close == NULL) {
 		printf("CLOSE handler not found\n");
 		return -ENOSYS;
 	}
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
 	uint64_t fd = 0;
 	elkvm_syscall1(vcpu, &fd);
 
-  if(vm->debug) {
+  if(vmi.debug_mode()) {
     printf("CLOSE file with fd: %li\n", fd);
   }
-	long result = vm->syscall_handlers->close((int)fd);
+	long result = vmi.get_handlers()->close((int)fd);
 
-  if(vm->debug) {
+  if(vmi.debug_mode()) {
     printf("RESULT: %li\n", result);
   }
 
 	return result;
 }
 
-long elkvm_do_stat(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->stat == NULL) {
+long elkvm_do_stat(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->stat == NULL) {
     printf("STAT handler not found\n");
     return -ENOSYS;
   }
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   uint64_t path_p = 0;
   uint64_t buf_p = 0;
@@ -430,8 +430,8 @@ long elkvm_do_stat(struct kvm_vm *vm) {
   assert(buf_p != 0x0);
   buf  = reinterpret_cast<struct stat *>(Elkvm::vmi->get_region_manager().get_pager().get_host_p(buf_p));
 
-  long result = vm->syscall_handlers->stat(path, buf);
-  if(vm->debug) {
+  long result = vmi.get_handlers()->stat(path, buf);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("STAT file %s with buf at: 0x%lx (%p)\n",
         path, buf_p, buf);
@@ -442,12 +442,12 @@ long elkvm_do_stat(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_fstat(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->fstat == NULL) {
+long elkvm_do_fstat(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->fstat == NULL) {
     printf("FSTAT handler not found\n");
     return -ENOSYS;
   }
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   uint64_t fd = 0;
   uint64_t buf_p = 0;
@@ -457,24 +457,24 @@ long elkvm_do_fstat(struct kvm_vm *vm) {
   assert(buf_p != 0x0);
 	buf = reinterpret_cast<struct stat *>(Elkvm::vmi->get_region_manager().get_pager().get_host_p(buf_p));
 
-  if(vm->debug) {
+  if(vmi.debug_mode()) {
     printf("FSTAT file with fd %li buf at 0x%lx (%p)\n", fd, buf_p, buf);
   }
-  long result = vm->syscall_handlers->fstat(fd, buf);
+  long result = vmi.get_handlers()->fstat(fd, buf);
 
-  if(vm->debug) {
+  if(vmi.debug_mode()) {
     printf("RESULT: %li\n", result);
   }
 
   return result;
 }
 
-long elkvm_do_lstat(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->lstat == NULL) {
+long elkvm_do_lstat(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->lstat == NULL) {
     printf("LSTAT handler not found\n");
     return -ENOSYS;
   }
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   uint64_t path_p = 0;
   uint64_t buf_p = 0;
@@ -487,8 +487,8 @@ long elkvm_do_lstat(struct kvm_vm *vm) {
   assert(buf_p != 0x0);
   buf  = reinterpret_cast<struct stat *>(Elkvm::vmi->get_region_manager().get_pager().get_host_p(buf_p));
 
-  long result = vm->syscall_handlers->lstat(path, buf);
-  if(vm->debug) {
+  long result = vmi.get_handlers()->lstat(path, buf);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("LSTAT file %s with buf at: 0x%lx (%p)\n",
         path, buf_p, buf);
@@ -499,12 +499,12 @@ long elkvm_do_lstat(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_poll(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_poll(Elkvm::VMInternals &vmi __attribute__((unused))) {
 	return -ENOSYS;
 }
 
-long elkvm_do_lseek(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->lseek == NULL) {
+long elkvm_do_lseek(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->lseek == NULL) {
     printf("LSEEK handler not found\n");
     return -ENOSYS;
   }
@@ -512,12 +512,12 @@ long elkvm_do_lseek(struct kvm_vm *vm) {
   uint64_t fd;
   uint64_t off;
   uint64_t whence;
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   elkvm_syscall3(vcpu, &fd, &off, &whence);
 
-  long result = vm->syscall_handlers->lseek(fd, off, whence);
-  if(vm->debug) {
+  long result = vmi.get_handlers()->lseek(fd, off, whence);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("LSEEK fd %lu offset %lu whence %lu\n",
         fd, off, whence);
@@ -530,10 +530,10 @@ long elkvm_do_lseek(struct kvm_vm *vm) {
 
 }
 
-long elkvm_do_mmap(struct kvm_vm *vm) {
+long elkvm_do_mmap(Elkvm::VMInternals &vmi) {
   /* obtain a region_mapping and fill this with a proposal
    * on how to do the mapping */
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
   guestptr_t addr = 0x0;
   uint64_t length = 0x0;
   uint64_t prot   = 0x0;
@@ -551,9 +551,9 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
 
   /* if a handler is specified, call the monitor for corrections etc. */
   long result = 0;
-  if(vm->syscall_handlers->mmap_before != NULL) {
+  if(vmi.get_handlers()->mmap_before != NULL) {
     struct region_mapping *cm = mapping.c_mapping();
-    result = vm->syscall_handlers->mmap_before(cm);
+    result = vmi.get_handlers()->mmap_before(cm);
     /* write changes back to mapping obj */
     mapping.sync_back(cm);
     free(cm);
@@ -568,11 +568,11 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   }
 
   /* call the monitor again, so it can do what has been left */
-  if(vm->syscall_handlers->mmap_after != NULL) {
-    result = vm->syscall_handlers->mmap_after(mapping.c_mapping());
+  if(vmi.get_handlers()->mmap_after != NULL) {
+    result = vmi.get_handlers()->mmap_after(mapping.c_mapping());
   }
 
-  if(vm->debug) {
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("MMAP addr 0x%lx length %lu (0x%lx) prot %lu flags %lu",
         addr, length, length, prot, flags);
@@ -594,8 +594,8 @@ long elkvm_do_mmap(struct kvm_vm *vm) {
   return mapping.guest_address();
 }
 
-long elkvm_do_mprotect(struct kvm_vm *vm) {
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+long elkvm_do_mprotect(Elkvm::VMInternals &vmi) {
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   guestptr_t addr = 0;
   uint64_t len = 0;
@@ -624,7 +624,7 @@ long elkvm_do_mprotect(struct kvm_vm *vm) {
     err = mapping.mprotect(prot);
   }
 
-  if(vm->debug) {
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("MPROTECT reguested with address: 0x%lx len: 0x%lx prot: %i\n",
         addr, len, (int)prot);
@@ -636,8 +636,8 @@ long elkvm_do_mprotect(struct kvm_vm *vm) {
 	return err;
 }
 
-long elkvm_do_munmap(struct kvm_vm *vm) {
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+long elkvm_do_munmap(Elkvm::VMInternals &vmi) {
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   guestptr_t addr_p = 0;
   void *addr = NULL;
@@ -654,7 +654,7 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
   Elkvm::Mapping &mapping = Elkvm::vmi->get_region_manager().find_mapping(addr);
   mapping.unmap(addr_p, pages_from_size(length));
 
-  if(vm->debug) {
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("MUNMAP reguested with address: 0x%lx (%p) length: 0x%lx\n",
         addr_p, addr, length);
@@ -668,12 +668,12 @@ long elkvm_do_munmap(struct kvm_vm *vm) {
 
 }
 
-long elkvm_do_brk(struct kvm_vm *vm) {
+long elkvm_do_brk(Elkvm::VMInternals &vmi) {
   guestptr_t user_brk_req = 0;
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
   elkvm_syscall1(vcpu, &user_brk_req);
 
-  if(vm->debug) {
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("BRK reguested with address: 0x%lx current brk address: 0x%lx\n",
         user_brk_req, Elkvm::vmi->get_heap_manager().get_brk());
@@ -681,14 +681,14 @@ long elkvm_do_brk(struct kvm_vm *vm) {
 
   /* if the requested brk address is 0 just return the current brk address */
   if(user_brk_req == 0) {
-    if(vm->debug) {
+    if(vmi.debug_mode()) {
       printf("=================================\n");
     }
     return Elkvm::vmi->get_heap_manager().get_brk();
   }
 
   int err = Elkvm::vmi->get_heap_manager().brk(user_brk_req);
-  if(vm->debug) {
+  if(vmi.debug_mode()) {
     printf("BRK done: err: %i (%s) newbrk: 0x%lx\n",
         err, strerror(err), Elkvm::vmi->get_heap_manager().get_brk());
     printf("=================================\n");
@@ -699,13 +699,13 @@ long elkvm_do_brk(struct kvm_vm *vm) {
   return Elkvm::vmi->get_heap_manager().get_brk();
 }
 
-long elkvm_do_sigaction(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->sigaction == NULL) {
+long elkvm_do_sigaction(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->sigaction == NULL) {
     printf("SIGACTION handler not found\n");
     return -ENOSYS;
   }
 
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
   uint64_t signum;
   uint64_t act_p;
   uint64_t oldact_p;
@@ -722,11 +722,11 @@ long elkvm_do_sigaction(struct kvm_vm *vm) {
   }
 
   int err = 0;
-  if(vm->syscall_handlers->sigaction((int)signum, act, oldact)) {
-    err = elkvm_signal_register(Elkvm::get_vmi(vm), (int)signum, act, oldact);
+  if(vmi.get_handlers()->sigaction((int)signum, act, oldact)) {
+    err = elkvm_signal_register(vmi, (int)signum, act, oldact);
   }
 
-  if(vm->debug) {
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf(" SIGACTION with signum: %i act: 0x%lx (%p) oldact: 0x%lx (%p)\n",
         (int)signum, act_p, act, oldact_p, oldact);
@@ -740,13 +740,13 @@ long elkvm_do_sigaction(struct kvm_vm *vm) {
   return err;
 }
 
-long elkvm_do_sigprocmask(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->sigprocmask == NULL) {
+long elkvm_do_sigprocmask(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->sigprocmask == NULL) {
     printf("SIGPROCMASK handler not found\n");
     return -ENOSYS;
   }
 
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   uint64_t how;
   uint64_t set_p;
@@ -763,8 +763,8 @@ long elkvm_do_sigprocmask(struct kvm_vm *vm) {
     oldset = reinterpret_cast<sigset_t *>(Elkvm::vmi->get_region_manager().get_pager().get_host_p(oldset_p));
   }
 
-  long result = vm->syscall_handlers->sigprocmask(how, set, oldset);
-  if(vm->debug) {
+  long result = vmi.get_handlers()->sigprocmask(how, set, oldset);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("RT SIGPROCMASK with how: %i (%p) set: 0x%lx (%p) oldset: 0x%lx (%p)\n",
         (int)how, &how, set_p, set, oldset_p, oldset);
@@ -778,23 +778,23 @@ long elkvm_do_sigprocmask(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_sigreturn(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_sigreturn(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_ioctl(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_ioctl(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_pread64(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_pread64(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_pwrite64(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_pwrite64(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-void elkvm_get_host_iov(struct kvm_vm *vm __attribute__((unused)),
+void elkvm_get_host_iov(Elkvm::VMInternals &vmi __attribute__((unused)),
     uint64_t iov_p, uint64_t iovcnt, struct iovec *host_iov) {
   struct iovec *guest_iov = NULL;
   assert(iov_p != 0x0);
@@ -810,12 +810,12 @@ void elkvm_get_host_iov(struct kvm_vm *vm __attribute__((unused)),
 
 }
 
-long elkvm_do_readv(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->readv == NULL) {
+long elkvm_do_readv(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->readv == NULL) {
     printf("READV handler not found\n");
     return -ENOSYS;
   }
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   uint64_t fd = 0;
   uint64_t iov_p = 0;
@@ -824,10 +824,10 @@ long elkvm_do_readv(struct kvm_vm *vm) {
   elkvm_syscall3(vcpu, &fd, &iov_p, &iovcnt);
 
   struct iovec host_iov[iovcnt];
-  elkvm_get_host_iov(vm, iov_p, iovcnt, host_iov);
+  elkvm_get_host_iov(vmi, iov_p, iovcnt, host_iov);
 
-  long result = vm->syscall_handlers->readv(fd, host_iov, iovcnt);
-  if(vm->debug) {
+  long result = vmi.get_handlers()->readv(fd, host_iov, iovcnt);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("READV with fd: %i (%p) iov: 0x%lx iovcnt: %i\n",
         (int)fd, &fd, iov_p, (int)iovcnt);
@@ -840,12 +840,12 @@ long elkvm_do_readv(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_writev(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->writev == NULL) {
+long elkvm_do_writev(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->writev == NULL) {
     printf("WRITEV handler not found\n");
     return -ENOSYS;
   }
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   uint64_t fd = 0;
   uint64_t iov_p = 0;
@@ -854,10 +854,10 @@ long elkvm_do_writev(struct kvm_vm *vm) {
   elkvm_syscall3(vcpu, &fd, &iov_p, &iovcnt);
 
   struct iovec host_iov[iovcnt];
-  elkvm_get_host_iov(vm, iov_p, iovcnt, host_iov);
+  elkvm_get_host_iov(vmi, iov_p, iovcnt, host_iov);
 
-  long result = vm->syscall_handlers->writev(fd, host_iov, iovcnt);
-  if(vm->debug) {
+  long result = vmi.get_handlers()->writev(fd, host_iov, iovcnt);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("WRITEV with fd: %i iov: 0x%lx iovcnt: %i\n",
         (int)fd, iov_p, (int)iovcnt);
@@ -867,12 +867,12 @@ long elkvm_do_writev(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_access(struct kvm_vm *vm) {
-	if(vm->syscall_handlers->access == NULL) {
+long elkvm_do_access(Elkvm::VMInternals &vmi) {
+	if(vmi.get_handlers()->access == NULL) {
     printf("ACCESS handler not found\n");
 		return -ENOSYS;
 	}
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   uint64_t path_p;
   uint64_t mode;
@@ -885,8 +885,8 @@ long elkvm_do_access(struct kvm_vm *vm) {
     return -EFAULT;
   }
 
-  long result = vm->syscall_handlers->access(pathname, mode);
-  if(vm->debug) {
+  long result = vmi.get_handlers()->access(pathname, mode);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("ACCESS with pathname: %s (0x%lx) mode: %i\n",
       pathname, path_p, (int)mode);
@@ -901,13 +901,13 @@ long elkvm_do_access(struct kvm_vm *vm) {
   return 0;
 }
 
-long elkvm_do_pipe(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->pipe == NULL) {
+long elkvm_do_pipe(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->pipe == NULL) {
     printf("PIPE handler not found\n");
     return -ENOSYS;
   }
 
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   uint64_t pipefd_p = 0x0;
   int *pipefd = NULL;
@@ -917,8 +917,8 @@ long elkvm_do_pipe(struct kvm_vm *vm) {
   pipefd = reinterpret_cast<int *>(Elkvm::vmi->get_region_manager().get_pager().get_host_p(pipefd_p));
   assert(pipefd != NULL);
 
-  long result = vm->syscall_handlers->pipe(pipefd);
-  if(vm->debug) {
+  long result = vmi.get_handlers()->pipe(pipefd);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("PIPE with pipefds at: %p (0x%lx)\n",
         pipefd, pipefd_p);
@@ -932,81 +932,81 @@ long elkvm_do_pipe(struct kvm_vm *vm) {
   return 0;
 }
 
-long elkvm_do_select(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_select(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_yield(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_sched_yield(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mremap(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_mremap(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_msync(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_msync(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mincore(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_mincore(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_madvise(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_madvise(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_shmget(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_shmget(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_shmat(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_shmat(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_shmctl(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_shmctl(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_dup(struct kvm_vm *vm) {
-	if(vm->syscall_handlers->dup == NULL) {
+long elkvm_do_dup(Elkvm::VMInternals &vmi) {
+	if(vmi.get_handlers()->dup == NULL) {
     printf("DUP handler not found\n");
 		return -ENOSYS;
 	}
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   uint64_t oldfd;
 
   elkvm_syscall1(vcpu, &oldfd);
 
-  if(vm->debug) {
+  if(vmi.debug_mode()) {
     printf("CALLING DUP handler with oldfd %i\n",
       (int)oldfd);
   }
 
-  long result = vm->syscall_handlers->dup(oldfd);
-  if(vm->debug) {
+  long result = vmi.get_handlers()->dup(oldfd);
+  if(vmi.debug_mode()) {
     printf("DUP result: %li\n", result);
   }
 
   return -errno;
 }
 
-long elkvm_do_dup2(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_dup2(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_pause(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_pause(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_nanosleep(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->nanosleep == NULL) {
+long elkvm_do_nanosleep(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->nanosleep == NULL) {
     printf("NANOSLEEP handler not found\n");
     return -ENOSYS;
   }
 
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   uint64_t req_p;
   uint64_t rem_p;
@@ -1022,8 +1022,8 @@ long elkvm_do_nanosleep(struct kvm_vm *vm) {
     rem = reinterpret_cast<struct timespec *>(Elkvm::vmi->get_region_manager().get_pager().get_host_p(rem_p));
   }
 
-  long result = vm->syscall_handlers->nanosleep(req, rem);
-  if(vm->debug) {
+  long result = vmi.get_handlers()->nanosleep(req, rem);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("NANOSLEEP\n");
     printf("RESULT: %li\n", result);
@@ -1033,25 +1033,25 @@ long elkvm_do_nanosleep(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_getitimer(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_getitimer(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_alarm(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_alarm(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setitimer(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_setitimer(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getpid(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->getpid == NULL) {
+long elkvm_do_getpid(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->getpid == NULL) {
     return -ENOSYS;
   }
 
-  long pid = vm->syscall_handlers->getpid();
-  if(vm->debug) {
+  long pid = vmi.get_handlers()->getpid();
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("GETPID\n");
     printf("RESULT: %li\n", pid);
@@ -1061,103 +1061,103 @@ long elkvm_do_getpid(struct kvm_vm *vm) {
   return pid;
 }
 
-long elkvm_do_sendfile(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_sendfile(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_socket(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_socket(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_connect(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_connect(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_accept(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_accept(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sendto(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_sendto(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_recvfrom(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_recvfrom(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sendmsg(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_sendmsg(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_recvmsg(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_recvmsg(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_shutdown(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_shutdown(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_bind(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_bind(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_listen(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_listen(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getsockname(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_getsockname(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getpeername(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_getpeername(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_socketpair(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_socketpair(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setsockopt(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_setsockopt(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getsockopt(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_getsockopt(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_clone(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_clone(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fork(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_fork(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_vfork(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_vfork(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_execve(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_execve(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_exit(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_exit(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_wait4(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_wait4(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_kill(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_kill(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_uname(struct kvm_vm *vm) {
-	if(vm->syscall_handlers->uname == NULL) {
+long elkvm_do_uname(Elkvm::VMInternals &vmi) {
+	if(vmi.get_handlers()->uname == NULL) {
 		return -ENOSYS;
 	}
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
 	struct utsname *buf = NULL;
 	uint64_t bufp = 0;
@@ -1167,8 +1167,8 @@ long elkvm_do_uname(struct kvm_vm *vm) {
 	buf = (struct utsname *)Elkvm::vmi->get_region_manager().get_pager().get_host_p(bufp);
   assert(buf != NULL && "host buffer address cannot be NULL in uname");
 
-	long result = vm->syscall_handlers->uname(buf);
-  if(vm->debug) {
+	long result = vmi.get_handlers()->uname(buf);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("UNAME buf at: 0x%lx (%p)\n", bufp, buf);
     printf("syname: %s nodename: %s release: %s version: %s machine: %s\n",
@@ -1179,45 +1179,45 @@ long elkvm_do_uname(struct kvm_vm *vm) {
 	return result;
 }
 
-long elkvm_do_semget(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_semget(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_semop(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_semop(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_semctl(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_semctl(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_shmdt(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_shmdt(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_msgget(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_msgget(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_msgsnd(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_msgsnd(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_msgrcv(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_msgrcv(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_msgctl(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_msgctl(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fcntl(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->fcntl == NULL) {
+long elkvm_do_fcntl(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->fcntl == NULL) {
     printf("FCNTL handler not found\n");
     return -ENOSYS;
   }
 
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   uint64_t fd = 0;
   uint64_t cmd = 0;
@@ -1238,15 +1238,15 @@ long elkvm_do_fcntl(struct kvm_vm *vm) {
     case F_SETLKW: {
       /* NULL statement */;
       void *arg = Elkvm::vmi->get_region_manager().get_pager().get_host_p(arg_p);
-      result = vm->syscall_handlers->fcntl(fd, cmd, arg);
+      result = vmi.get_handlers()->fcntl(fd, cmd, arg);
       break;
                    }
     default:
-      result = vm->syscall_handlers->fcntl(fd, cmd, arg_p);
+      result = vmi.get_handlers()->fcntl(fd, cmd, arg_p);
       break;
   }
 
-  if(vm->debug) {
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("FCNTL with fd: %lu cmd: %lu arg_p: 0x%lx\n",
         fd, cmd, arg_p);
@@ -1260,25 +1260,25 @@ long elkvm_do_fcntl(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_flock(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_flock(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fsync(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_fsync(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fdatasync(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_fdatasync(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_truncate(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->truncate == NULL) {
+long elkvm_do_truncate(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->truncate == NULL) {
     printf("TRUNCATE handler not found\n");
     return -ENOSYS;
   }
 
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   uint64_t path_p = 0;
   uint64_t length;
@@ -1287,8 +1287,8 @@ long elkvm_do_truncate(struct kvm_vm *vm) {
   elkvm_syscall2(vcpu, &path_p, &length);
 
   path = reinterpret_cast<char *>(Elkvm::vmi->get_region_manager().get_pager().get_host_p(path_p));
-  long result = vm->syscall_handlers->truncate(path, length);
-  if(vm->debug) {
+  long result = vmi.get_handlers()->truncate(path, length);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("TRUNCATE with path at: %p (%s) length %lu\n",
         path, path, length);
@@ -1301,21 +1301,21 @@ long elkvm_do_truncate(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_ftruncate(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->ftruncate == NULL) {
+long elkvm_do_ftruncate(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->ftruncate == NULL) {
     printf("FTRUNCATE handler not found\n");
     return -ENOSYS;
   }
 
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   uint64_t fd = 0;
   uint64_t length;
 
   elkvm_syscall2(vcpu, &fd, &length);
 
-  long result = vm->syscall_handlers->ftruncate(fd, length);
-  if(vm->debug) {
+  long result = vmi.get_handlers()->ftruncate(fd, length);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("FTRUNCATE with fd: %lu length %lu\n",
         fd, length);
@@ -1328,13 +1328,13 @@ long elkvm_do_ftruncate(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_getdents(struct kvm_vm *vm __attribute__((unused))) {
-  if(vm->syscall_handlers->getdents == NULL) {
+long elkvm_do_getdents(Elkvm::VMInternals &vmi __attribute__((unused))) {
+  if(vmi.get_handlers()->getdents == NULL) {
     std::cout << "GETDENTS handler not found\n";
     return -ENOSYS;
   }
 
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   uint64_t fd = 0;
   guestptr_t dirp_p = 0x0;
@@ -1348,8 +1348,8 @@ long elkvm_do_getdents(struct kvm_vm *vm __attribute__((unused))) {
         Elkvm::vmi->get_region_manager().get_pager().get_host_p(dirp_p));
   }
 
-  int res = vm->syscall_handlers->getdents(fd, dirp, count);
-  if(vm->debug) {
+  int res = vmi.get_handlers()->getdents(fd, dirp, count);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("GETDENTS with fd: %u dirp: 0x%lx (%p) count %u\n",
         (unsigned)fd, dirp_p, dirp, (unsigned)count);
@@ -1365,13 +1365,13 @@ long elkvm_do_getdents(struct kvm_vm *vm __attribute__((unused))) {
   return res;
 }
 
-long elkvm_do_getcwd(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->getcwd == NULL) {
+long elkvm_do_getcwd(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->getcwd == NULL) {
     printf("GETCWD handler not found\n");
     return -ENOSYS;
   }
 
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   uint64_t buf_p = 0;
   uint64_t size = 0;
@@ -1381,8 +1381,8 @@ long elkvm_do_getcwd(struct kvm_vm *vm) {
 
   buf = reinterpret_cast<char *>(Elkvm::vmi->get_region_manager().get_pager().get_host_p(buf_p));
 
-  char *result = vm->syscall_handlers->getcwd(buf, size);
-  if(vm->debug) {
+  char *result = vmi.get_handlers()->getcwd(buf, size);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("GETCWD with buf at: 0x%lx (%p) size %lu\n",
         buf_p, buf, size);
@@ -1399,25 +1399,25 @@ long elkvm_do_getcwd(struct kvm_vm *vm) {
   }
 }
 
-long elkvm_do_chdir(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_chdir(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fchdir(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_fchdir(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_rename(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_rename(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mkdir(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->mkdir == NULL) {
+long elkvm_do_mkdir(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->mkdir == NULL) {
     printf("MKDIR handler not found\n");
     return -ENOSYS;
   }
 
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   uint64_t pathname_p = 0;
   uint64_t mode = 0;
@@ -1427,8 +1427,8 @@ long elkvm_do_mkdir(struct kvm_vm *vm) {
 
   assert(pathname_p != 0x0);
   pathname = reinterpret_cast<char *>(Elkvm::vmi->get_region_manager().get_pager().get_host_p(pathname_p));
-  long result = vm->syscall_handlers->mkdir(pathname, mode);
-  if(vm->debug) {
+  long result = vmi.get_handlers()->mkdir(pathname, mode);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("MKDIR with pathname at: %p (%s) mode %lu\n",
         pathname, pathname, mode);
@@ -1442,24 +1442,24 @@ long elkvm_do_mkdir(struct kvm_vm *vm) {
 
 }
 
-long elkvm_do_rmdir(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_rmdir(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_creat(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_creat(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_link(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_link(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_unlink(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->unlink == NULL) {
+long elkvm_do_unlink(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->unlink == NULL) {
     printf("UNLINK handler not found\n");
     return -ENOSYS;
   }
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   uint64_t pathname_p = 0;
   char *pathname = NULL;
@@ -1468,8 +1468,8 @@ long elkvm_do_unlink(struct kvm_vm *vm) {
 
   assert(pathname_p != 0x0);
   pathname = reinterpret_cast<char *>(Elkvm::vmi->get_region_manager().get_pager().get_host_p(pathname_p));
-  long result = vm->syscall_handlers->unlink(pathname);
-  if(vm->debug) {
+  long result = vmi.get_handlers()->unlink(pathname);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("UNLINK with pathname at: %p (%s)\n",
         pathname, pathname);
@@ -1482,17 +1482,17 @@ long elkvm_do_unlink(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_symlink(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_symlink(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_readlink(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->readlink == NULL) {
+long elkvm_do_readlink(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->readlink == NULL) {
     printf("READLINK handler not found\n");
     return -ENOSYS;
   }
 
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   uint64_t path_p = 0;
   uint64_t buf_p = 0;
@@ -1504,8 +1504,8 @@ long elkvm_do_readlink(struct kvm_vm *vm) {
 
   path = reinterpret_cast<char *>(Elkvm::vmi->get_region_manager().get_pager().get_host_p(path_p));
   buf  = reinterpret_cast<char *>(Elkvm::vmi->get_region_manager().get_pager().get_host_p(buf_p));
-  long result = vm->syscall_handlers->readlink(path, buf, bufsiz);
-  if(vm->debug) {
+  long result = vmi.get_handlers()->readlink(path, buf, bufsiz);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("READLINK with path at: %p (%s) buf at: %p bufsize: %lu\n",
         path, path, buf, bufsiz);
@@ -1518,38 +1518,38 @@ long elkvm_do_readlink(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_chmod(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_chmod(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fchmod(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_fchmod(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_chown(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_chown(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fchown(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_fchown(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_lchown(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_lchown(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_umask(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_umask(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_gettimeofday(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->gettimeofday == NULL) {
+long elkvm_do_gettimeofday(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->gettimeofday == NULL) {
     return -ENOSYS;
   }
 
   uint64_t tv_p = 0;
   uint64_t tz_p = 0;
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
   elkvm_syscall2(vcpu, &tv_p, &tz_p);
 
   struct timeval *tv = NULL;
@@ -1562,8 +1562,8 @@ long elkvm_do_gettimeofday(struct kvm_vm *vm) {
     tz = reinterpret_cast<struct timezone *>(Elkvm::vmi->get_region_manager().get_pager().get_host_p(tz_p));
   }
 
-  long result = vm->syscall_handlers->gettimeofday(tv, tz);
-  if(vm->debug) {
+  long result = vmi.get_handlers()->gettimeofday(tv, tz);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("GETTIMEOFDAY with timeval: %lx (%p) timezone: %lx (%p)\n",
         tv_p, tv, tz_p, tz);
@@ -1585,19 +1585,20 @@ long elkvm_do_gettimeofday(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_getrlimit(struct kvm_vm *vm) {
+long elkvm_do_getrlimit(Elkvm::VMInternals &vmi) {
   uint64_t resource = 0x0;
   uint64_t rlim_p = 0x0;
   struct rlimit *rlim = NULL;
 
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
   elkvm_syscall2(vcpu, &resource, &rlim_p);
 
   assert(rlim_p != 0x0);
   rlim = reinterpret_cast<struct rlimit *>(Elkvm::vmi->get_region_manager().get_pager().get_host_p(rlim_p));
 
+  std::shared_ptr<struct kvm_vm> vm = vmi.get_vm_ptr();
   memcpy(rlim, &vm->rlimits[resource], sizeof(struct rlimit));
-  if(vm->debug) {
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("GETRLIMIT with resource: %li rlim: 0x%lx (%p)\n",
         resource, rlim_p, rlim);
@@ -1607,13 +1608,13 @@ long elkvm_do_getrlimit(struct kvm_vm *vm) {
   return 0;
 }
 
-long elkvm_do_getrusage(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->getrusage == NULL) {
+long elkvm_do_getrusage(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->getrusage == NULL) {
     printf("GETRUSAGE handler not found\n");
     return -ENOSYS;
   }
 
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   uint64_t who = 0;
   uint64_t usage_p = 0x0;
@@ -1626,8 +1627,8 @@ long elkvm_do_getrusage(struct kvm_vm *vm) {
 
   usage = reinterpret_cast<struct rusage *>(Elkvm::vmi->get_region_manager().get_pager().get_host_p(usage_p));
 
-  long result = vm->syscall_handlers->getrusage(who, usage);
-  if(vm->debug) {
+  long result = vmi.get_handlers()->getrusage(who, usage);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("RUSAGE with who: %li usage: %p (0x%lx)\n",
         who, usage, usage_p);
@@ -1636,16 +1637,16 @@ long elkvm_do_getrusage(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_sysinfo(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_sysinfo(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_times(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->times == NULL) {
+long elkvm_do_times(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->times == NULL) {
     printf("TIMES handler not found\n");
     return -ENOSYS;
   }
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   uint64_t buf_p = 0x0;
   struct tms *buf = NULL;
@@ -1656,8 +1657,8 @@ long elkvm_do_times(struct kvm_vm *vm) {
   buf = reinterpret_cast<struct tms *>(Elkvm::vmi->get_region_manager().get_pager().get_host_p(buf_p));
   assert(buf != NULL);
 
-  long result = vm->syscall_handlers->times(buf);
-  if(vm->debug) {
+  long result = vmi.get_handlers()->times(buf);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("TIMES with buf: 0x%lx (%p)\n",
         buf_p, buf);
@@ -1676,197 +1677,197 @@ long elkvm_do_times(struct kvm_vm *vm) {
   }
 }
 
-long elkvm_do_ptrace(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_ptrace(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getuid(struct kvm_vm *vm) {
-	if(vm->syscall_handlers->getuid == NULL) {
+long elkvm_do_getuid(Elkvm::VMInternals &vmi) {
+	if(vmi.get_handlers()->getuid == NULL) {
 		printf("GETUID handler not found\n");
 		return -ENOSYS;
 	}
 
-	long result = vm->syscall_handlers->getuid();
-  if(vm->debug) {
+	long result = vmi.get_handlers()->getuid();
+  if(vmi.debug_mode()) {
     printf("GETUID RESULT: %li\n", result);
   }
 
 	return result;
 }
 
-long elkvm_do_syslog(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_syslog(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getgid(struct kvm_vm *vm) {
-	if(vm->syscall_handlers->getgid == NULL) {
+long elkvm_do_getgid(Elkvm::VMInternals &vmi) {
+	if(vmi.get_handlers()->getgid == NULL) {
 		printf("GETGID handler not found\n");
 		return -ENOSYS;
 	}
 
-	long result = vm->syscall_handlers->getgid();
-  if(vm->debug) {
+	long result = vmi.get_handlers()->getgid();
+  if(vmi.debug_mode()) {
     printf("GETGID RESULT: %li\n", result);
   }
 
 	return result;
 }
 
-long elkvm_do_setuid(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_setuid(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setgid(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_setgid(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_geteuid(struct kvm_vm *vm) {
-	if(vm->syscall_handlers->geteuid == NULL) {
+long elkvm_do_geteuid(Elkvm::VMInternals &vmi) {
+	if(vmi.get_handlers()->geteuid == NULL) {
 		printf("GETEUID handler not found\n");
 		return -ENOSYS;
 	}
 
-	long result = vm->syscall_handlers->geteuid();
-  if(vm->debug) {
+	long result = vmi.get_handlers()->geteuid();
+  if(vmi.debug_mode()) {
     printf("GETEUID RESULT: %li\n", result);
   }
 
 	return result;
 }
 
-long elkvm_do_getegid(struct kvm_vm *vm) {
-	if(vm->syscall_handlers->getegid == NULL) {
+long elkvm_do_getegid(Elkvm::VMInternals &vmi) {
+	if(vmi.get_handlers()->getegid == NULL) {
 		printf("GETEGID handler not found\n");
 		return -ENOSYS;
 	}
 
-	long result = vm->syscall_handlers->getegid();
-  if(vm->debug) {
+	long result = vmi.get_handlers()->getegid();
+  if(vmi.debug_mode()) {
     printf("GETEGID RESULT: %li\n", result);
   }
 
 	return result;
 }
 
-long elkvm_do_setpgid(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_setpgid(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getppid(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_getppid(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getpgrp(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_getpgrp(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setsid(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_setsid(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setreuid(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_setreuid(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setregid(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_setregid(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getgroups(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_getgroups(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setgroups(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_setgroups(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setresuid(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_setresuid(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getresuid(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_getresuid(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setresgid(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_setresgid(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getresgid(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_getresgid(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getpgid(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_getpgid(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setfsuid(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_setfsuid(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setfsgid(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_setfsgid(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getsid(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_getsid(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_capget(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_capget(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_capset(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_capset(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_rt_sigpending(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_rt_sigpending(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_rt_sigtimedwait(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_rt_sigtimedwait(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_rt_sigqueueinfo(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_rt_sigqueueinfo(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_rt_sigsuspend(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_rt_sigsuspend(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sigaltstack(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_sigaltstack(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_utime(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_utime(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mknod(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_mknod(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_uselib(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_uselib(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_personality(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_personality(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_ustat(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_ustat(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_statfs(struct kvm_vm *vm __attribute__((unused))) {
-  if(vm->syscall_handlers->statfs == NULL) {
+long elkvm_do_statfs(Elkvm::VMInternals &vmi __attribute__((unused))) {
+  if(vmi.get_handlers()->statfs == NULL) {
     std::cout << "STATFS handler not found\n";
     return -ENOSYS;
   }
 
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
   guestptr_t path_p = 0x0;
   guestptr_t buf_p = 0x0;
 
@@ -1882,8 +1883,8 @@ long elkvm_do_statfs(struct kvm_vm *vm __attribute__((unused))) {
         Elkvm::vmi->get_region_manager().get_pager().get_host_p(buf_p));
   }
 
-  int res = vm->syscall_handlers->statfs(path, buf);
-  if(vm->debug) {
+  int res = vmi.get_handlers()->statfs(path, buf);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("STATFS path 0x%lx (%p) buf 0x%lx (%p)",
         path_p, path, buf_p, buf);
@@ -1897,92 +1898,92 @@ long elkvm_do_statfs(struct kvm_vm *vm __attribute__((unused))) {
   return -errno;
 }
 
-long elkvm_do_fstatfs(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_fstatfs(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sysfs(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_sysfs(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getpriority(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_getpriority(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setpriority(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_setpriority(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_setparam(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_sched_setparam(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_getparam(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_sched_getparam(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_setscheduler(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_sched_setscheduler(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_getscheduler(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_sched_getscheduler(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_get_priority_max(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_sched_get_priority_max(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_get_priority_min(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_sched_get_priority_min(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_rr_get_interval(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_sched_rr_get_interval(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mlock(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_mlock(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_munlock(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_munlock(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mlockall(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_mlockall(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_munlockall(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_munlockall(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_vhangup(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_vhangup(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_modify_ldt(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_modify_ldt(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_pivot_root(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_pivot_root(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sysctl(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_sysctl(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_prctl(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_prctl(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_arch_prctl(struct kvm_vm *vm) {
+long elkvm_do_arch_prctl(Elkvm::VMInternals &vmi) {
   uint64_t code = 0;
   uint64_t user_addr = 0;
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
-  int err = kvm_vcpu_get_sregs(vcpu);
+  int err = kvm_vcpu_get_sregs(vcpu.get());
   if(err) {
     return err;
   }
@@ -1994,7 +1995,7 @@ long elkvm_do_arch_prctl(struct kvm_vm *vm) {
     return -EFAULT;
   }
 
-  if(vm->debug) {
+  if(vmi.debug_mode()) {
     printf("ARCH PRCTL with code %i user_addr 0x%lx\n", (int)code, user_addr);
   }
   switch(code) {
@@ -2014,7 +2015,7 @@ long elkvm_do_arch_prctl(struct kvm_vm *vm) {
       return -EINVAL;
   }
 
-  err = kvm_vcpu_set_sregs(vcpu);
+  err = kvm_vcpu_set_sregs(vcpu.get());
   if(err) {
     return err;
   }
@@ -2022,122 +2023,122 @@ long elkvm_do_arch_prctl(struct kvm_vm *vm) {
   return 0;
 }
 
-long elkvm_do_adjtimex(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_adjtimex(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setrlimit(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_setrlimit(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_chroot(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_chroot(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sync(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_sync(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_acct(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_acct(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_settimeofday(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_settimeofday(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mount(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_mount(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_umount2(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_umount2(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_swapon(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_swapon(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_swapoff(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_swapoff(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_reboot(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_reboot(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sethostname(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_sethostname(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setdomainname(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_setdomainname(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_iopl(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_iopl(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_ioperm(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_ioperm(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_create_module(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_create_module(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_init_module(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_init_module(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_delete_module(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_delete_module(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_get_kernel_syms(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_get_kernel_syms(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_query_module(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_query_module(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_quotactl(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_quotactl(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_nfsservctl(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_nfsservctl(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getpmsg(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_getpmsg(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_putpmsg(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_putpmsg(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_afs_syscall(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_afs_syscall(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_tuxcall(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_tuxcall(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_security(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_security(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_gettid(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->gettid == NULL) {
+long elkvm_do_gettid(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->gettid == NULL) {
     printf("GETTID handler not found\n");
     return -ENOSYS;
   }
 
-  long result = vm->syscall_handlers->gettid();
-  if(vm->debug) {
+  long result = vmi.get_handlers()->gettid();
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("GETTID\n");
     printf("RESULT: %li\n", result);
@@ -2146,70 +2147,70 @@ long elkvm_do_gettid(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_readahead(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_readahead(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setxattr(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_setxattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_lsetxattr(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_lsetxattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fsetxattr(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_fsetxattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getxattr(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_getxattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_lgetxattr(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_lgetxattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fgetxattr(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_fgetxattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_listxattr(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_listxattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_llistxattr(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_llistxattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_flistxattr(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_flistxattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_removexattr(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_removexattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_lremovexattr(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_lremovexattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fremovexattr(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_fremovexattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_tkill(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_tkill(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_time(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->time == NULL) {
+long elkvm_do_time(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->time == NULL) {
     printf("TIME handler not found\n");
     return -ENOSYS;
   }
 
   uint64_t time_p = 0;
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
   elkvm_syscall1(vcpu, &time_p);
 
   time_t *time = NULL;
@@ -2217,8 +2218,8 @@ long elkvm_do_time(struct kvm_vm *vm) {
     time = reinterpret_cast<time_t *>(Elkvm::vmi->get_region_manager().get_pager().get_host_p(time_p));
   }
 
-  long result = vm->syscall_handlers->time(time);
-  if(vm->debug) {
+  long result = vmi.get_handlers()->time(time);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("TIME with arg %lx (%p)\n", time_p, time);
     printf("RESULT: %li\n", result);
@@ -2228,8 +2229,8 @@ long elkvm_do_time(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_futex(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->futex == NULL) {
+long elkvm_do_futex(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->futex == NULL) {
     printf("FUTEX handler not found\n");
     return -ENOSYS;
   }
@@ -2244,7 +2245,7 @@ long elkvm_do_futex(struct kvm_vm *vm) {
   const struct timespec *timeout = NULL;
   int *uaddr2 = NULL;
 
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
   elkvm_syscall6(vcpu, &uaddr_p, &op, &val, &timeout_p, &uaddr2_p, &val3);
 
   if(uaddr_p != 0x0) {
@@ -2260,8 +2261,8 @@ long elkvm_do_futex(struct kvm_vm *vm) {
   printf("FUTEX with uaddr %p (0x%lx) op %lu val %lu timeout %p (0x%lx)"
       " uaddr2 %p (0x%lx) val3 %lu\n",
       uaddr, uaddr_p, op, val, timeout, timeout_p, uaddr2, uaddr2_p, val3);
-  long result = vm->syscall_handlers->futex(uaddr, op, val, timeout, uaddr2, val3);
-  if(vm->debug) {
+  long result = vmi.get_handlers()->futex(uaddr, op, val, timeout, uaddr2, val3);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("FUTEX with uaddr %p (0x%lx) op %lu val %lu timeout %p (0x%lx)"
         " uaddr2 %p (0x%lx) val3 %lu\n",
@@ -2277,108 +2278,108 @@ long elkvm_do_futex(struct kvm_vm *vm) {
 
 }
 
-long elkvm_do_sched_setaffinity(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_sched_setaffinity(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_getaffinity(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_sched_getaffinity(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_set_thread_area(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_set_thread_area(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_io_setup(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_io_setup(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_io_destroy(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_io_destroy(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getevents(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_getevents(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_submit(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_submit(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_cancel(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_cancel(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_get_thread_area(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_get_thread_area(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_lookup_dcookie(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_lookup_dcookie(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_epoll_create(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_epoll_create(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_epoll_ctl_old(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_epoll_ctl_old(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_epoll_wait_old(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_epoll_wait_old(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_remap_file_pages(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_remap_file_pages(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getdents64(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_getdents64(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_set_tid_address(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_set_tid_address(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_restart_syscall(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_restart_syscall(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_semtimedop(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_semtimedop(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fadive64(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_fadive64(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_timer_create(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_timer_create(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_timer_settime(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_timer_settime(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_timer_gettime(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_timer_gettime(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_timer_getoverrun(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_timer_getoverrun(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_timer_delete(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_timer_delete(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_clock_settime(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_clock_settime(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_clock_gettime(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->clock_gettime == NULL) {
+long elkvm_do_clock_gettime(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->clock_gettime == NULL) {
     printf("CLOCK GETTIME handler not found\n");
     return -ENOSYS;
   }
@@ -2387,7 +2388,7 @@ long elkvm_do_clock_gettime(struct kvm_vm *vm) {
   uint64_t tp_p = 0x0;
   struct timespec *tp = NULL;
 
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
   assert(vcpu != NULL);
 
   elkvm_syscall2(vcpu, &clk_id, &tp_p);
@@ -2396,8 +2397,8 @@ long elkvm_do_clock_gettime(struct kvm_vm *vm) {
   tp = reinterpret_cast<struct timespec *>(Elkvm::vmi->get_region_manager().get_pager().get_host_p(tp_p));
   assert(tp != NULL);
 
-  long result = vm->syscall_handlers->clock_gettime(clk_id, tp);
-  if(vm->debug) {
+  long result = vmi.get_handlers()->clock_gettime(clk_id, tp);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("CLOCK GETTIME with clk_id %li tp 0x%lx (%p)\n",
         clk_id, tp_p, tp);
@@ -2407,38 +2408,38 @@ long elkvm_do_clock_gettime(struct kvm_vm *vm) {
   return result;
 }
 
-long elkvm_do_clock_getres(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_clock_getres(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_clock_nanosleep(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_clock_nanosleep(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_exit_group(struct kvm_vm *vm) {
+long elkvm_do_exit_group(Elkvm::VMInternals &vmi) {
   uint64_t status = 0;
-  elkvm_syscall1(elkvm_vcpu_get(vm, 0), &status);
+  elkvm_syscall1(vmi.get_vcpu(0), &status);
 
-  vm->syscall_handlers->exit_group(status);
+  vmi.get_handlers()->exit_group(status);
   /* should not be reached... */
   return -ENOSYS;
 }
 
-long elkvm_do_epoll_wait(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_epoll_wait(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_epoll_ctl(struct kvm_vm *vm __attribute__((unused))) {
+long elkvm_do_epoll_ctl(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_tgkill(struct kvm_vm *vm) {
-  if(vm->syscall_handlers->tgkill == NULL) {
+long elkvm_do_tgkill(Elkvm::VMInternals &vmi) {
+  if(vmi.get_handlers()->tgkill == NULL) {
     printf("TGKILL handler not found\n");
     return -ENOSYS;
   }
 
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   uint64_t tgid = 0x0;
   uint64_t tid = 0x0;
@@ -2446,8 +2447,8 @@ long elkvm_do_tgkill(struct kvm_vm *vm) {
 
   elkvm_syscall3(vcpu, &tgid, &tid, &sig);
 
-  long result = vm->syscall_handlers->tgkill(tgid, tid, sig);
-  if(vm->debug) {
+  long result = vmi.get_handlers()->tgkill(tgid, tid, sig);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("TGKILL with tgid %li tid %li sig %li\n", tgid, tid, sig);
     printf("RESULT: %li\n", result);
@@ -2457,101 +2458,101 @@ long elkvm_do_tgkill(struct kvm_vm *vm) {
 
 }
 
-long elkvm_do_utimes(struct kvm_vm *) {
+long elkvm_do_utimes(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_vserver(struct kvm_vm *) {
+long elkvm_do_vserver(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mbind(struct kvm_vm *) {
+long elkvm_do_mbind(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mpolicy(struct kvm_vm *) {
+long elkvm_do_mpolicy(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_get_mempolicy(struct kvm_vm *) {
+long elkvm_do_get_mempolicy(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mq_open(struct kvm_vm *) {
+long elkvm_do_mq_open(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mq_unlink(struct kvm_vm *) {
+long elkvm_do_mq_unlink(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mq_timedsend(struct kvm_vm *) {
+long elkvm_do_mq_timedsend(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mq_timedreceive(struct kvm_vm *) {
+long elkvm_do_mq_timedreceive(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mq_notify(struct kvm_vm *) {
+long elkvm_do_mq_notify(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getsetattr(struct kvm_vm *) {
+long elkvm_do_getsetattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_kexec_load(struct kvm_vm *) {
+long elkvm_do_kexec_load(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_waitid(struct kvm_vm *) {
+long elkvm_do_waitid(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_add_key(struct kvm_vm *) {
+long elkvm_do_add_key(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_request_key(struct kvm_vm *) {
+long elkvm_do_request_key(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_keyctl(struct kvm_vm *) {
+long elkvm_do_keyctl(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_ioprio_set(struct kvm_vm *) {
+long elkvm_do_ioprio_set(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_ioprio_get(struct kvm_vm *) {
+long elkvm_do_ioprio_get(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_inotify_init(struct kvm_vm *) {
+long elkvm_do_inotify_init(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_inotify_add_watch(struct kvm_vm *) {
+long elkvm_do_inotify_add_watch(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_inotify_rm_watch(struct kvm_vm *) {
+long elkvm_do_inotify_rm_watch(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_migrate_pages(struct kvm_vm *) {
+long elkvm_do_migrate_pages(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_openat(struct kvm_vm *vm __attribute__((unused))) {
-  if(vm->syscall_handlers->openat == NULL) {
+long elkvm_do_openat(Elkvm::VMInternals &vmi __attribute__((unused))) {
+  if(vmi.get_handlers()->openat == NULL) {
     printf("OPENAT handler not found\n");
     return -ENOSYS;
   }
 
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   uint64_t dirfd = 0;
   guestptr_t pathname_p = 0x0;
@@ -2565,8 +2566,8 @@ long elkvm_do_openat(struct kvm_vm *vm __attribute__((unused))) {
         Elkvm::vmi->get_region_manager().get_pager().get_host_p(pathname_p));
   }
 
-  int res = vm->syscall_handlers->openat((int)dirfd, pathname, (int)flags);
-  if(vm->debug) {
+  int res = vmi.get_handlers()->openat((int)dirfd, pathname, (int)flags);
+  if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("OPENAT with dirfd %i pathname 0x%lx (%p) flags %i\n",
         (int)dirfd, pathname_p, pathname, (int)flags);
