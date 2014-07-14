@@ -61,7 +61,8 @@ struct kvm_vm *elkvm_vm_create(struct elkvm_opts *opts, int mode,
 		}
   }
 
-  Elkvm::ElfBinary bin(binary);
+  Elkvm::ElfBinary bin(binary, Elkvm::vmi->get_region_manager(),
+      Elkvm::vmi->get_heap_manager());
 
   guestptr_t entry = bin.get_entry_point();
   err = Elkvm::vmi->set_entry_point(entry);

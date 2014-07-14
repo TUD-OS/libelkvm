@@ -23,7 +23,10 @@
 namespace Elkvm {
   extern std::unique_ptr<VMInternals> vmi;
 
-  ElfBinary::ElfBinary(std::string pathname) {
+  ElfBinary::ElfBinary(std::string pathname, RegionManager &rm, HeapManager &hm) :
+    _rm(rm),
+    _hm(hm)
+  {
     auxv.valid = false;
 
     if(pathname.empty()) {
@@ -208,7 +211,7 @@ namespace Elkvm {
 
     size_t total_size = phdr.p_memsz + offset_in_page(load_addr);
     std::shared_ptr<Region> loadable_region =
-      Elkvm::vmi->get_region_manager().allocate_region(total_size);
+      _rm.allocate_region(total_size);
     loadable_region->set_guest_addr(page_begin(load_addr));
 
     int err = load_program_header(phdr, loadable_region);
@@ -223,13 +226,13 @@ namespace Elkvm {
     }
 
     int pages = pages_from_size(total_size);
-    err = Elkvm::vmi->get_region_manager().get_pager().map_region(loadable_region->base_address(),
+    err = _rm.get_pager().map_region(loadable_region->base_address(),
         loadable_region->guest_address(), pages, opts);
     assert(err == 0 && "could not create pt entries for loadable region");
 
     if(phdr.p_flags & PF_W) {
       /* writable region should be data */
-      err = vmi->get_heap_manager().init(loadable_region, total_size);
+      err = _hm.init(loadable_region, total_size);
       assert(err == 0 && "Error initializing heap");
     }
   }
@@ -396,7 +399,7 @@ namespace Elkvm {
   }
 
   void ElfBinary::load_dynamic() {
-    ldr = std::unique_ptr<ElfBinary>(new ElfBinary(loader));
+    ldr = std::unique_ptr<ElfBinary>(new ElfBinary(loader, _rm, _hm));
   }
 
   const struct Elf_auxv &ElfBinary::get_auxv() const {
