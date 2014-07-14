@@ -15,6 +15,7 @@
 #include <environ.h>
 #include <elfloader.h>
 #include <flats.h>
+#include <gdt.h>
 #include <kvm.h>
 #include <pager.h>
 #include <stack.h>
@@ -74,7 +75,7 @@ struct kvm_vm *elkvm_vm_create(struct elkvm_opts *opts, int mode,
   err = env.fill(opts, vcpu);
   assert(err == 0);
 
-	err = elkvm_gdt_setup(vm.get());
+	err = elkvm_gdt_setup(Elkvm::vmi->get_region_manager(), vcpu);
   assert(err == 0);
 
 	struct elkvm_flat idth;

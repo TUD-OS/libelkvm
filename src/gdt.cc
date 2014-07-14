@@ -15,14 +15,14 @@ namespace Elkvm {
   extern std::shared_ptr<VMInternals> vmi;
 }
 
-int elkvm_gdt_setup(struct kvm_vm *vm) {
+int elkvm_gdt_setup(Elkvm::RegionManager &rm, std::shared_ptr<struct kvm_vcpu> vcpu) {
 
   std::shared_ptr<Elkvm::Region> gdt_region =
-    Elkvm::vmi->get_region_manager().allocate_region(
+    rm.allocate_region(
 				GDT_NUM_ENTRIES * sizeof(struct elkvm_gdt_segment_descriptor));
 
   guestptr_t guest_virtual =
-    Elkvm::vmi->get_region_manager().get_pager().map_kernel_page(
+    rm.get_pager().map_kernel_page(
       gdt_region->base_address(), 0);
   assert(guest_virtual != 0x0 && "could not map gdt");
   gdt_region->set_guest_addr(guest_virtual);
@@ -60,7 +60,7 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 	entry++;
 
   std::shared_ptr<Elkvm::Region> tss_region =
-    Elkvm::vmi->get_region_manager().allocate_region(
+    rm.allocate_region(
       sizeof(struct elkvm_tss64));
 	/* setup the tss, before loading the segment descriptor */
 	int err = elkvm_tss_setup64(tss_region);
@@ -105,19 +105,18 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 	entry++;
 
 
-	struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
 	uint64_t syscall_star = kernel_cs_selector;
 	uint64_t sysret_star = (ss_selector - 0x8) | 0x3;
 	uint64_t star = (sysret_star << 48) | (syscall_star << 32);
 
-	err = kvm_vcpu_set_msr(vcpu,
+	err = kvm_vcpu_set_msr(vcpu.get(),
 			VCPU_MSR_STAR,
 			star);
 	if(err) {
 		return err;
 	}
 
-	err = kvm_vcpu_get_sregs(vcpu);
+	err = kvm_vcpu_get_sregs(vcpu.get());
 	if(err) {
 		return err;
 	}
@@ -129,7 +128,7 @@ int elkvm_gdt_setup(struct kvm_vm *vm) {
 	vcpu->sregs.tr.limit = sizeof(struct elkvm_tss64);
 	vcpu->sregs.tr.selector = tr_selector;
 
-	err = kvm_vcpu_set_sregs(vcpu);
+	err = kvm_vcpu_set_sregs(vcpu.get());
 	if(err) {
 		return err;
 	}

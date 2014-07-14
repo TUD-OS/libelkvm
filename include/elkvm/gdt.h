@@ -1,6 +1,11 @@
 #pragma once
 
-#include "elkvm.h"
+#include <memory>
+
+#include <region.h>
+#include <vcpu.h>
+
+int elkvm_gdt_setup(Elkvm::RegionManager &rm, std::shared_ptr<struct kvm_vcpu> vcpu);
 
 #ifdef __cplusplus
 extern "C" {
