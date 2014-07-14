@@ -307,6 +307,8 @@ int kvm_vcpu_run(struct kvm_vcpu *vcpu) {
 }
 
 int elkvm_vm_run(struct kvm_vm *vm) {
+  Elkvm::VMInternals &vmi = Elkvm::get_vmi(vm);
+
 	int is_running = 1;
 //	if(vcpu->singlestep) {
 //		elkvm_gdt_dump(vcpu->vm);
@@ -318,7 +320,7 @@ int elkvm_vm_run(struct kvm_vm *vm) {
 //		kvm_pager_dump_page_tables(&vcpu->vm->pager);
 //	}
 
-  std::shared_ptr<struct kvm_vcpu> vcpu = Elkvm::vmi->get_vcpu(0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
   int err = 0;
 	while(is_running) {
 
@@ -357,7 +359,7 @@ int elkvm_vm_run(struct kvm_vm *vm) {
           kvm_vcpu_dump_regs(vcpu.get());
           kvm_vcpu_dump_code(vcpu.get());
         }
-        err = elkvm_handle_hypercall(*Elkvm::vmi, vcpu);
+        err = elkvm_handle_hypercall(vmi, vcpu);
         if(err == ELKVM_HYPERCALL_EXIT) {
           is_running = 0;
         } else if(err) {
@@ -396,10 +398,11 @@ int elkvm_vm_run(struct kvm_vm *vm) {
 			case KVM_EXIT_DEBUG: {
         /* NO-OP */
         ;
-        int debug_handled = elkvm_handle_debug(vm);
-        if(debug_handled == 0) {
+        /* XXX rethink debug handling */
+//        int debug_handled = elkvm_handle_debug(vm);
+//        if(debug_handled == 0) {
           is_running = 0;
-        }
+        //}
 				break;
       }
       case KVM_EXIT_MMIO:
@@ -434,7 +437,7 @@ int elkvm_vm_run(struct kvm_vm *vm) {
 		if(	vcpu->run_struct->exit_reason == KVM_EXIT_MMIO ||
 				vcpu->run_struct->exit_reason == KVM_EXIT_SHUTDOWN) {
 			kvm_vcpu_dump_regs(vcpu.get());
-      Elkvm::dump_stack(vm, vcpu.get());
+      Elkvm::dump_stack(vmi, vcpu.get());
 			kvm_vcpu_dump_code(vcpu.get());
 		}
 

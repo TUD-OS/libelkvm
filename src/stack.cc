@@ -119,9 +119,9 @@ namespace Elkvm {
     return kernel_stack->guest_address();
   }
 
-  void dump_stack(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
+  void dump_stack(VMInternals &vmi, struct kvm_vcpu *vcpu) {
     assert(vcpu->regs.rsp != 0x0);
-    elkvm_dump_memory(vm, vcpu->regs.rsp);
+    //elkvm_dump_memory(vm, vcpu->regs.rsp);
   }
 
 //namespace Elkvm
