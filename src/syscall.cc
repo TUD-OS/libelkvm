@@ -2457,6 +2457,94 @@ long elkvm_do_tgkill(struct kvm_vm *vm) {
 
 }
 
+long elkvm_do_utimes(struct kvm_vm *) {
+  return -ENOSYS;
+}
+
+long elkvm_do_vserver(struct kvm_vm *) {
+  return -ENOSYS;
+}
+
+long elkvm_do_mbind(struct kvm_vm *) {
+  return -ENOSYS;
+}
+
+long elkvm_do_mpolicy(struct kvm_vm *) {
+  return -ENOSYS;
+}
+
+long elkvm_do_get_mempolicy(struct kvm_vm *) {
+  return -ENOSYS;
+}
+
+long elkvm_do_mq_open(struct kvm_vm *) {
+  return -ENOSYS;
+}
+
+long elkvm_do_mq_unlink(struct kvm_vm *) {
+  return -ENOSYS;
+}
+
+long elkvm_do_mq_timedsend(struct kvm_vm *) {
+  return -ENOSYS;
+}
+
+long elkvm_do_mq_timedreceive(struct kvm_vm *) {
+  return -ENOSYS;
+}
+
+long elkvm_do_mq_notify(struct kvm_vm *) {
+  return -ENOSYS;
+}
+
+long elkvm_do_getsetattr(struct kvm_vm *) {
+  return -ENOSYS;
+}
+
+long elkvm_do_kexec_load(struct kvm_vm *) {
+  return -ENOSYS;
+}
+
+long elkvm_do_waitid(struct kvm_vm *) {
+  return -ENOSYS;
+}
+
+long elkvm_do_add_key(struct kvm_vm *) {
+  return -ENOSYS;
+}
+
+long elkvm_do_request_key(struct kvm_vm *) {
+  return -ENOSYS;
+}
+
+long elkvm_do_keyctl(struct kvm_vm *) {
+  return -ENOSYS;
+}
+
+long elkvm_do_ioprio_set(struct kvm_vm *) {
+  return -ENOSYS;
+}
+
+long elkvm_do_ioprio_get(struct kvm_vm *) {
+  return -ENOSYS;
+}
+
+long elkvm_do_inotify_init(struct kvm_vm *) {
+  return -ENOSYS;
+}
+
+long elkvm_do_inotify_add_watch(struct kvm_vm *) {
+  return -ENOSYS;
+}
+
+long elkvm_do_inotify_rm_watch(struct kvm_vm *) {
+  return -ENOSYS;
+}
+
+long elkvm_do_migrate_pages(struct kvm_vm *) {
+  return -ENOSYS;
+}
+
 long elkvm_do_openat(struct kvm_vm *vm __attribute__((unused))) {
   if(vm->syscall_handlers->openat == NULL) {
     printf("OPENAT handler not found\n");

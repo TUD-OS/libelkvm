@@ -268,6 +268,28 @@ long elkvm_do_exit_group(struct kvm_vm *);
 long elkvm_do_epoll_wait(struct kvm_vm *);
 long elkvm_do_epoll_ctl(struct kvm_vm *);
 long elkvm_do_tgkill(struct kvm_vm *);
+long elkvm_do_utimes(struct kvm_vm *);
+long elkvm_do_vserver(struct kvm_vm *);
+long elkvm_do_mbind(struct kvm_vm *);
+long elkvm_do_mpolicy(struct kvm_vm *);
+long elkvm_do_get_mempolicy(struct kvm_vm *);
+long elkvm_do_mq_open(struct kvm_vm *);
+long elkvm_do_mq_unlink(struct kvm_vm *);
+long elkvm_do_mq_timedsend(struct kvm_vm *);
+long elkvm_do_mq_timedreceive(struct kvm_vm *);
+long elkvm_do_mq_notify(struct kvm_vm *);
+long elkvm_do_getsetattr(struct kvm_vm *);
+long elkvm_do_kexec_load(struct kvm_vm *);
+long elkvm_do_waitid(struct kvm_vm *);
+long elkvm_do_add_key(struct kvm_vm *);
+long elkvm_do_request_key(struct kvm_vm *);
+long elkvm_do_keyctl(struct kvm_vm *);
+long elkvm_do_ioprio_set(struct kvm_vm *);
+long elkvm_do_ioprio_get(struct kvm_vm *);
+long elkvm_do_inotify_init(struct kvm_vm *);
+long elkvm_do_inotify_add_watch(struct kvm_vm *);
+long elkvm_do_inotify_rm_watch(struct kvm_vm *);
+long elkvm_do_migrate_pages(struct kvm_vm *);
 long elkvm_do_openat(struct kvm_vm *);
 
 static struct {
@@ -509,6 +531,28 @@ static struct {
   [__NR_epoll_wait]      = { elkvm_do_epoll_wait, "EPOLL WAIT" },
   [__NR_epoll_ctl]       = { elkvm_do_epoll_ctl, "EPOLL CTL" },
   [__NR_tgkill]          = { elkvm_do_tgkill, "TGKILL" },
+  [__NR_utimes]          = { elkvm_do_utimes, "UTIMES" },
+  [__NR_vserver]         = { elkvm_do_vserver, "VSERVER" },
+  [__NR_mbind]           = { elkvm_do_mbind, "MBIND" },
+  [__NR_set_mempolicy]   = { elkvm_do_mpolicy, "SET MPOLICY" },
+  [__NR_get_mempolicy]   = { elkvm_do_get_mempolicy, "GET MEMPOLICY" },
+  [__NR_mq_open]         = { elkvm_do_mq_open, "MQ OPEN" },
+  [__NR_mq_unlink]       = { elkvm_do_mq_unlink, "MQ UNLINK" },
+  [__NR_mq_timedsend]    = { elkvm_do_mq_timedsend, "MQ TIMEDSEND" },
+  [__NR_mq_timedreceive] = { elkvm_do_mq_timedreceive, "MQ TIMEDRECEIVE" },
+  [__NR_mq_notify]       = { elkvm_do_mq_notify, "MQ NOTIFY" },
+  [__NR_mq_getsetattr]   = { elkvm_do_getsetattr, "MQ GETSETATTR" },
+  [__NR_kexec_load]      = { elkvm_do_kexec_load, "KEXEC LOAD" },
+  [__NR_waitid]          = { elkvm_do_waitid, "WAITID" },
+  [__NR_add_key]         = { elkvm_do_add_key, "ADD KEY" },
+  [__NR_request_key]     = { elkvm_do_request_key, "REQUEST KEY" },
+  [__NR_keyctl]          = { elkvm_do_keyctl, "KEYCTL" },
+  [__NR_ioprio_set]      = { elkvm_do_ioprio_set, "IOPRIO SET" },
+  [__NR_ioprio_get]      = { elkvm_do_ioprio_get, "IOPRIO GET" },
+  [__NR_inotify_init]    = { elkvm_do_inotify_init, "INOTIFY INIT" },
+  [__NR_inotify_add_watch] = { elkvm_do_inotify_add_watch, "INOTIFY ADD WATCH" },
+  [__NR_inotify_rm_watch]  = { elkvm_do_inotify_rm_watch, "INOTIFY RM WATCH" },
+  [__NR_migrate_pages]     = { elkvm_do_migrate_pages, "MIGRATE PAGES" },
   [__NR_openat]          = { elkvm_do_openat, "OPENAT" },
 
 };
