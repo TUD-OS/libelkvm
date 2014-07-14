@@ -20,7 +20,7 @@ extern "C" {
  */
 int elkvm_handle_syscall(struct kvm_vm *, struct kvm_vcpu *);
 int elkvm_handle_interrupt(struct kvm_vm *, struct kvm_vcpu *);
-int elkvm_handle_hypercall(struct kvm_vm *, std::shared_ptr<struct kvm_vcpu>);
+int elkvm_handle_hypercall(Elkvm::VMInternals &, std::shared_ptr<struct kvm_vcpu>);
 void elkvm_syscall1(struct kvm_vcpu *, uint64_t *);
 void elkvm_syscall2(struct kvm_vcpu *, uint64_t *, uint64_t *);
 void elkvm_syscall3(struct kvm_vcpu *, uint64_t *, uint64_t *,

@@ -27,16 +27,16 @@ namespace Elkvm {
   extern std::unique_ptr<VMInternals> vmi;
 }
 
-int elkvm_handle_hypercall(struct kvm_vm *vm, std::shared_ptr<struct kvm_vcpu> vcpu) {
+int elkvm_handle_hypercall(Elkvm::VMInternals &vmi, std::shared_ptr<struct kvm_vcpu> vcpu) {
   int err = 0;
 
-  uint64_t call = Elkvm::get_hypercall_type(*Elkvm::vmi, vcpu);
+  uint64_t call = Elkvm::get_hypercall_type(vmi, vcpu);
   switch(call) {
     case ELKVM_HYPERCALL_SYSCALL:
-			err = elkvm_handle_syscall(vm, vcpu.get());
+			err = elkvm_handle_syscall(vmi.get_vm_ptr().get(), vcpu.get());
       break;
     case ELKVM_HYPERCALL_INTERRUPT:
-      err = elkvm_handle_interrupt(vm, vcpu.get());
+      err = elkvm_handle_interrupt(vmi.get_vm_ptr().get(), vcpu.get());
       if(err) {
         return err;
       }
@@ -53,7 +53,7 @@ int elkvm_handle_hypercall(struct kvm_vm *vm, std::shared_ptr<struct kvm_vcpu> v
 
   elkvm_emulate_vmcall(vcpu.get());
 
-  err = elkvm_signal_deliver(vm);
+  err = elkvm_signal_deliver(vmi);
   assert(err == 0);
 
   return 0;
@@ -723,7 +723,7 @@ long elkvm_do_sigaction(struct kvm_vm *vm) {
 
   int err = 0;
   if(vm->syscall_handlers->sigaction((int)signum, act, oldact)) {
-    err = elkvm_signal_register(vm, (int)signum, act, oldact);
+    err = elkvm_signal_register(Elkvm::get_vmi(vm), (int)signum, act, oldact);
   }
 
   if(vm->debug) {

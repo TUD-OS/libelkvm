@@ -357,7 +357,7 @@ int elkvm_vm_run(struct kvm_vm *vm) {
           kvm_vcpu_dump_regs(vcpu.get());
           kvm_vcpu_dump_code(vcpu.get());
         }
-        err = elkvm_handle_hypercall(vm, vcpu);
+        err = elkvm_handle_hypercall(*Elkvm::vmi, vcpu);
         if(err == ELKVM_HYPERCALL_EXIT) {
           is_running = 0;
         } else if(err) {
