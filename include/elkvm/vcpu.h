@@ -8,6 +8,21 @@
 #include <udis86.h>
 #endif
 
+#include <stack.h>
+
+struct kvm_vcpu {
+	int fd;
+  Elkvm::Stack stack;
+#ifdef HAVE_LIBUDIS86
+	ud_t ud_obj;
+#endif
+	struct kvm_regs regs;
+	struct kvm_sregs sregs;
+	struct kvm_run *run_struct;
+	int singlestep;
+  struct kvm_guest_debug debug;
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,21 +48,6 @@ extern "C" {
 #define VCPU_MSR_LSTAR  0xC0000082
 #define VCPU_MSR_CSTAR  0xC0000083
 #define VCPU_MSR_SFMASK 0XC0000084
-
-struct kvm_vm;
-
-struct kvm_vcpu {
-	int fd;
-#ifdef HAVE_LIBUDIS86
-	ud_t ud_obj;
-#endif
-	struct kvm_regs regs;
-	struct kvm_sregs sregs;
-	struct kvm_run *run_struct;
-	struct kvm_vm *vm;
-	int singlestep;
-  struct kvm_guest_debug debug;
-};
 
 /*
 	Set the VCPU's rip to a specific value
@@ -89,8 +89,6 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *);
  * \brief Run the VCPU
 */
 int kvm_vcpu_run(struct kvm_vcpu *);
-
-uint64_t kvm_vcpu_get_hypercall_type(struct kvm_vm *, struct kvm_vcpu *);
 
 int kvm_vcpu_had_page_fault(struct kvm_vcpu *);
 

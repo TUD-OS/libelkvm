@@ -9,6 +9,8 @@
 
 namespace Elkvm {
 
+  class VMInternals;
+
   class Stack {
     private:
       std::vector<std::shared_ptr<Region>> stack_regions;
