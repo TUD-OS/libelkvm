@@ -13,16 +13,16 @@ namespace Elkvm {
 
   class Stack {
     private:
-      RegionManager &_rm;
       std::vector<std::shared_ptr<Region>> stack_regions;
+      RegionManager &_rm;
       std::shared_ptr<Region> kernel_stack;
-      struct kvm_vcpu *vcpu;
       int expand();
       guestptr_t base;
 
     public:
       Stack(RegionManager &rm);
-      void init(struct kvm_vcpu *v, const Environment &e);
+      void init(std::shared_ptr<struct kvm_vcpu> v, const Environment &e,
+          std::shared_ptr<RegionManager> rm);
       int pushq(guestptr_t rsp, uint64_t val);
       uint64_t popq(guestptr_t rsp);
       bool is_stack_expansion(guestptr_t pfla);

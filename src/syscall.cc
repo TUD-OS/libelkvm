@@ -64,7 +64,7 @@ int elkvm_handle_interrupt(Elkvm::VMInternals &vmi, struct kvm_vcpu *vcpu) {
     printf(" INTERRUPT with vector 0x%lx detected\n", interrupt_vector);
     kvm_vcpu_get_sregs(vcpu);
     kvm_vcpu_dump_regs(vcpu);
-    //Elkvm::dump_stack(vm, vcpu);
+    Elkvm::dump_stack(vmi, vcpu);
   }
 
   /* Stack Segment */
@@ -225,7 +225,7 @@ long elkvm_do_read(Elkvm::VMInternals &vmi) {
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
 	uint64_t fd;
-	uint64_t buf_p;
+	uint64_t buf_p = 0x0;
 	char *buf;
 	uint64_t count;
 
