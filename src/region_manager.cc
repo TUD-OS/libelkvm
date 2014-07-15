@@ -166,14 +166,7 @@ namespace Elkvm {
   Mapping &RegionManager::find_mapping(guestptr_t addr) {
     auto iter = std::find_if(mappings.begin(), mappings.end(),
         [addr](const Mapping &m) { return m.contains_address(addr); });
-
-    if(iter == mappings.end()) {
-      if(vmi->get_heap_manager().contains_address(addr)) {
-        return vmi->get_heap_manager().find_mapping(addr);
-      }
-    }
     assert(iter != mappings.end());
-
     return *iter;
   }
 
@@ -188,10 +181,7 @@ namespace Elkvm {
   bool RegionManager::address_mapped(guestptr_t addr) const {
     auto iter = std::find_if(mappings.begin(), mappings.end(),
         [addr](const Mapping &m) { return m.contains_address(addr); });
-    if(iter == mappings.end()) {
-      return vmi->get_heap_manager().contains_address(addr);
-    }
-    return true;
+    return iter == mappings.end();
   }
 
   Mapping &RegionManager::get_mapping(guestptr_t addr, size_t length, int prot,

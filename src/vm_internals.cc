@@ -19,6 +19,7 @@ namespace Elkvm {
       const struct elkvm_handlers * const handlers,
       int debug) :
     rm(vmfd),
+    hm(rm),
     _vmfd(vmfd),
     _argc(argc),
     _argv(argv),
@@ -65,6 +66,20 @@ namespace Elkvm {
     cpus.push_back(vcpu);
     return 0;
   }
+
+  bool VMInternals::address_mapped(guestptr_t addr) const {
+    return rm.address_mapped(addr) && hm.contains_address(addr);
+  }
+
+  Mapping &VMInternals::find_mapping(guestptr_t addr) {
+    if(rm.address_mapped(addr)) {
+      return rm.find_mapping(addr);
+    } else if(hm.contains_address(addr)) {
+      return hm.find_mapping(addr);
+    }
+    assert(false && "could not find mapping!");
+  }
+
 
   int VMInternals::load_flat(struct elkvm_flat &flat, const std::string path,
       bool kernel) {

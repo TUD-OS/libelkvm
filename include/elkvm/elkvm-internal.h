@@ -37,6 +37,9 @@ namespace Elkvm {
 
       int add_cpu(int mode);
 
+      bool address_mapped(guestptr_t addr) const;
+      Mapping &find_mapping(guestptr_t addr);
+
       int load_flat(struct elkvm_flat &flat, const std::string path,
           bool kernel);
 
