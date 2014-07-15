@@ -5,11 +5,7 @@
 #include <stack.h>
 #include <tss.h>
 
-namespace Elkvm {
-  extern Stack stack;
-}
-
-int elkvm_tss_setup64(Elkvm::RegionManager &rm, std::shared_ptr<Elkvm::Region> r) {
+int elkvm_tss_setup64(std::shared_ptr<struct kvm_vcpu> vcpu, Elkvm::RegionManager &rm, std::shared_ptr<Elkvm::Region> r) {
   guestptr_t guest_virtual =
     rm.get_pager().map_kernel_page(
 			r->base_address(), 0);
@@ -19,7 +15,7 @@ int elkvm_tss_setup64(Elkvm::RegionManager &rm, std::shared_ptr<Elkvm::Region> r
 	struct elkvm_tss64 *tss = (struct elkvm_tss64 *)r->base_address();
 	memset(tss, 0, sizeof(struct elkvm_tss64));
 
-	tss->ist1 = Elkvm::stack.kernel_base();
+	tss->ist1 = vcpu->kernel_stack_base();
 	tss->rsp0 = 0xFFFFFFFFFFFFFFFF;
 	tss->rsp2 = 0x00007FFFFFFFFFFF;
 	return 0;

@@ -10,12 +10,10 @@
 #include <elkvm.h>
 #include <elkvm-internal.h>
 #include <pager.h>
-#include <stack.h>
 #include <vcpu.h>
 #include <region.h>
 
 namespace Elkvm {
-  extern Stack stack;
   extern std::unique_ptr<VMInternals> vmi;
 
   PagerX86_64::PagerX86_64(int vmfd) :
@@ -256,31 +254,6 @@ namespace Elkvm {
         + chunk->userspace_addr);
   }
 
-  int PagerX86_64::handle_pagefault(guestptr_t pfla, uint32_t err_code,
-      bool debug) {
-    void *host_p = get_host_p(pfla);
-
-//    if(pager->vm->debug) {
-//      printf("PFLA: 0x%lx\nCURRENT STACK TOP:0x%lx\n",
-//          pfla, pager->vm->current_user_stack->guest_virtual);
-//    }
-    if(stack.grow(pfla)) {
-      if(debug) {
-        dump_page_fault_info(pfla, err_code, host_p);
-      }
-      return 0;
-    }
-
-    dump_page_fault_info(pfla, err_code, host_p);
-    if(host_p != NULL) {
-      dump_page_tables();
-    }
-
-    return 1;
-}
-
-
-
   guestptr_t PagerX86_64::host_to_guest_physical(void *host_p) const {
     auto chunk = find_chunk_for_host_p(host_p);
     if(chunk == NULL) {
@@ -455,6 +428,7 @@ namespace Elkvm {
 
   ptentry_t *PagerX86_64::page_table_walk(guestptr_t guest_virtual) const {
     assert(guest_virtual != 0);
+    assert(host_pml4_p != NULL);
 
     ptentry_t *table_base = reinterpret_cast<uint64_t *>(host_pml4_p);
     /* we should always have paging in place, when this gets called! */

@@ -20,7 +20,6 @@
 
 namespace Elkvm {
   extern std::unique_ptr<VMInternals> vmi;
-  extern Stack stack;
 }
 
 int kvm_vcpu_initialize_regs(struct kvm_vcpu *vcpu, int mode) {

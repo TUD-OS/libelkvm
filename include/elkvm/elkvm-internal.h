@@ -18,7 +18,6 @@ namespace Elkvm {
 
       HeapManager hm;
       RegionManager rm;
-      Stack stack;
 
       int _vmfd;
       int _argc;

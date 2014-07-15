@@ -21,11 +21,9 @@
 #include <idt.h>
 #include <kvm.h>
 #include <pager.h>
-#include <stack.h>
 #include <vcpu.h>
 
 namespace Elkvm {
-  extern Stack stack;
   std::unique_ptr<VMInternals> vmi = nullptr;
 }
 
@@ -71,7 +69,6 @@ struct kvm_vm *elkvm_vm_create(struct elkvm_opts *opts, int mode,
   Elkvm::Environment env(bin, Elkvm::vmi->get_region_manager());
 
   std::shared_ptr<struct kvm_vcpu> vcpu = Elkvm::vmi->get_vcpu(0);
-  Elkvm::stack.init(vcpu.get(), env);
 
   err = env.fill(opts, vcpu);
   assert(err == 0);

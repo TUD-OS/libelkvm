@@ -15,7 +15,6 @@ static int pending_signals[32];
 static int num_pending_signals = 0;
 
 namespace Elkvm {
-  extern Stack stack;
   extern std::shared_ptr<VMInternals> vmi;
 }
 
@@ -66,13 +65,13 @@ int elkvm_signal_deliver(Elkvm::VMInternals &vmi) {
   int signum = pending_signals[num_pending_signals];
 
   /* push rax onto stack */
-  Elkvm::stack.pushq(vcpu->regs.rax);
+  vcpu->push(vcpu->regs.rax);
 
   /* push signal handler cleanup asm addr onto stack */
-  Elkvm::stack.pushq(vmi.get_cleanup_flat().region->guest_address());
+  vcpu->push(vmi.get_cleanup_flat().region->guest_address());
 
   /* setup the signal handler stack frame and pass the signal number as arg */
-  Elkvm::stack.pushq((uint64_t) vmi.get_sig_ptr(signum)->sa_handler);
+  vcpu->push((uint64_t) vmi.get_sig_ptr(signum)->sa_handler);
   vcpu->regs.rdi = signum;
 
   return 0;

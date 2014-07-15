@@ -115,7 +115,6 @@ namespace Elkvm {
 
       /* XXX make this const */
       void *get_host_p(guestptr_t guest_virtual);
-      int handle_pagefault(guestptr_t pfla, uint32_t err_code, bool debug);
       guestptr_t host_to_guest_physical(void *host_p) const;
 
       int map_chunk_to_kvm(

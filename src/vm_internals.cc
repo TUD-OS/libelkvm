@@ -11,7 +11,6 @@
 #include <vcpu.h>
 
 namespace Elkvm {
-  extern Stack stack;
   extern std::unique_ptr<VMInternals> vmi;
 
   VMInternals::VMInternals(int vmfd, int argc, char ** argv, char **environ,
@@ -33,7 +32,9 @@ namespace Elkvm {
   }
 
   int VMInternals::add_cpu(int mode) {
-    std::shared_ptr<struct kvm_vcpu> vcpu = std::make_shared<struct kvm_vcpu>();
+    std::shared_ptr<struct kvm_vcpu> vcpu =
+      std::make_shared<struct kvm_vcpu>(rm);
+
     if(vcpu == NULL) {
       return -ENOMEM;
     }
@@ -52,6 +53,8 @@ namespace Elkvm {
       return err;
     }
 
+    vcpu->init_rsp();
+
     vcpu->run_struct = reinterpret_cast<struct kvm_run *>(
         mmap(NULL, sizeof(struct kvm_run), PROT_READ | PROT_WRITE,
         MAP_SHARED, vcpu->fd, 0));
@@ -64,6 +67,8 @@ namespace Elkvm {
 #endif
 
     cpus.push_back(vcpu);
+
+    kvm_vcpu_set_regs(vcpu.get());
     return 0;
   }
 
@@ -156,7 +161,7 @@ namespace Elkvm {
     std::cout << "pager: " << &(vmi.get_region_manager().get_pager()) << std::endl;
     std::cout << "rm: " << &(vmi.get_region_manager()) << std::endl;
     std::cout << __FILE__ << ":" << __LINE__ << std::endl;
-    return Elkvm::stack.popq();
+    return vcpu->pop();
   }
 
   //namespace Elkvm

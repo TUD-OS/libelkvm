@@ -15,7 +15,6 @@
 #include <elkvm-internal.h>
 #include <heap.h>
 #include <mapping.h>
-#include <stack.h>
 #include <syscall.h>
 #include <vcpu.h>
 
@@ -23,7 +22,6 @@
 #include "region.h"
 
 namespace Elkvm {
-  extern Stack stack;
   extern std::unique_ptr<VMInternals> vmi;
 }
 
@@ -60,7 +58,7 @@ int elkvm_handle_hypercall(Elkvm::VMInternals &vmi, std::shared_ptr<struct kvm_v
 }
 
 int elkvm_handle_interrupt(Elkvm::VMInternals &vmi, struct kvm_vcpu *vcpu) {
-  uint64_t interrupt_vector = Elkvm::stack.popq();
+  uint64_t interrupt_vector = vcpu->pop();
 
   if(vmi.debug_mode()) {
     printf(" INTERRUPT with vector 0x%lx detected\n", interrupt_vector);
@@ -71,7 +69,7 @@ int elkvm_handle_interrupt(Elkvm::VMInternals &vmi, struct kvm_vcpu *vcpu) {
 
   /* Stack Segment */
   if(interrupt_vector == 0x0c) {
-    uint64_t err_code = Elkvm::stack.popq();
+    uint64_t err_code = vcpu->pop();
     printf("STACK SEGMENT FAULT\n");
     printf("Error Code: %lu\n", err_code);
     return 1;
@@ -79,7 +77,7 @@ int elkvm_handle_interrupt(Elkvm::VMInternals &vmi, struct kvm_vcpu *vcpu) {
 
   /* General Protection */
   if(interrupt_vector == 0x0d) {
-    uint64_t err_code = Elkvm::stack.popq();
+    uint64_t err_code = vcpu->pop();
     printf("GENERAL PROTECTION FAULT\n");
     printf("Error Code: %lu\n", err_code);
     return 1;
@@ -99,11 +97,12 @@ int elkvm_handle_interrupt(Elkvm::VMInternals &vmi, struct kvm_vcpu *vcpu) {
       return 1;
     }
 
-    uint32_t err_code = Elkvm::stack.popq();
-    err = vmi.get_region_manager().get_pager().handle_pagefault(vcpu->sregs.cr2, err_code,
-        vmi.debug_mode());
+    uint32_t err_code = vcpu->pop();
+    if(vcpu->check_pagefault(err_code, vmi.debug_mode())) {
+      return 0;
+    }
 
-		return err;
+    return 1;
 	}
 
 	return 1;
