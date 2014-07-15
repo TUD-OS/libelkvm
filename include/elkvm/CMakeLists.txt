@@ -6,11 +6,9 @@ SET( libelkvm_MOC_HEADERS
   heap.h
   idt.h
   kvm.h
-  list.h
   mapping.h
   mem_chunk.h
   pager.h
-  region-c.h
   stack.h
   syscall.h
   tss.h
@@ -20,10 +18,8 @@ SET( libelkvm_MOC_HEADERS
 install (FILES elkvm.h
   config.h
   elkvm-signal.h
-  list.h
   kvm.h
   pager.h
-  region-c.h
   stack.h
   vcpu.h
   DESTINATION include/elkvm)

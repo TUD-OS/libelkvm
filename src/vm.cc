@@ -1,6 +1,8 @@
+#include <algorithm>
 #include <cstring>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <errno.h>
 #include <fcntl.h>
@@ -11,207 +13,127 @@
 #include <unistd.h>
 
 #include <elkvm.h>
+#include <elkvm-internal.h>
+#include <debug.h>
 #include <environ.h>
 #include <elfloader.h>
 #include <flats.h>
+#include <gdt.h>
+#include <idt.h>
 #include <kvm.h>
 #include <pager.h>
-#include <region-c.h>
-#include <stack.h>
 #include <vcpu.h>
-#include "debug.h"
-
-/*
- * Load a flat binary into the guest address space
- * returns 0 on success, an errno otherwise
- */
-int elkvm_load_flat(struct elkvm_flat *, const std::string,
-    int kernel);
-
 namespace Elkvm {
-  extern ElfBinary binary;
-  extern Stack stack;
-  extern std::unique_ptr<RegionManager> rm;
+  std::vector<VMInternals> vmi;
 }
 
-int elkvm_vm_create(struct elkvm_opts *opts, struct kvm_vm *vm, int mode, int cpus,
-    const struct elkvm_handlers *handlers, const char *binary) {
-	int err = 0;
+struct kvm_vm *elkvm_vm_create(struct elkvm_opts *opts, int mode,
+    unsigned cpus, const struct elkvm_handlers * const handlers, const char *binary,
+    int debug) {
 
-	if(opts->fd <= 0) {
-		return -EIO;
-	}
+  int err = 0;
 
-	vm->fd = ioctl(opts->fd, KVM_CREATE_VM, 0);
-	if(vm->fd < 0) {
-		return -errno;
-	}
-
-	vm->run_struct_size = ioctl(opts->fd, KVM_GET_VCPU_MMAP_SIZE, 0);
-	if(vm->run_struct_size < 0) {
-		return -EIO;
-	}
-
-  Elkvm::rm.reset(new Elkvm::RegionManager(vm->fd));
-  //XXX set pml4 address!
-
-	for(int i = 0; i < cpus; i++) {
-		err = kvm_vcpu_create(vm, mode);
-		if(err) {
-			return err;
-		}
-	}
-
-  Elkvm::ElfBinary bin(binary);
-
-  guestptr_t entry = bin.get_entry_point();
-	err = kvm_vcpu_set_rip(elkvm_vcpu_get(vm, 0), entry);
-  assert(err == 0);
-
-  Elkvm::Environment env(bin);
-
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
-  Elkvm::stack.init(vcpu, env);
-
-  err = env.fill(opts, vm);
-  if(err) {
-    return err;
+  int vmfd = ioctl(opts->fd, KVM_CREATE_VM, 0);
+  if(vmfd < 0) {
+    return NULL;
   }
 
-	err = elkvm_gdt_setup(vm);
-	if(err) {
-		return err;
-	}
+  int run_struct_size = ioctl(opts->fd, KVM_GET_VCPU_MMAP_SIZE, 0);
+  if(run_struct_size < 0) {
+    return NULL;
+  }
+
+  Elkvm::vmi.emplace_back(
+      vmfd,
+        opts->argc,
+        opts->argv,
+        opts->environ,
+        run_struct_size,
+        handlers,
+        debug);
+  Elkvm::VMInternals &vmi = Elkvm::vmi.back();
+
+  for(unsigned i = 0; i < cpus; i++) {
+    err = vmi.add_cpu(mode);
+		if(err) {
+      errno = -err;
+			return NULL;
+		}
+  }
+
+  Elkvm::ElfBinary bin(binary, vmi.get_region_manager(), vmi.get_heap_manager());
+
+  guestptr_t entry = bin.get_entry_point();
+  err = vmi.set_entry_point(entry);
+  assert(err == 0);
+
+  Elkvm::Environment env(bin, vmi.get_region_manager());
+
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
+
+  /* gets and sets vcpu->regs */
+  err = env.fill(opts, vcpu);
+  assert(err == 0);
+
+	err = elkvm_gdt_setup(vmi.get_region_manager(), vcpu);
+  assert(err == 0);
 
 	struct elkvm_flat idth;
   std::string isr_path(RES_PATH "/isr");
-	err = elkvm_load_flat(&idth, isr_path, 1);
+	err = vmi.load_flat(idth, isr_path, 1);
 	if(err) {
     if(err == -ENOENT) {
       printf("LIBELKVM: ISR shared file could not be found\n");
     }
-		return err;
+    errno = -err;
+		return NULL;
 	}
 
-	err = elkvm_idt_setup(vm, &idth);
-	if(err) {
-		return err;
-	}
+	err = elkvm_idt_setup(vmi.get_region_manager(), vcpu, &idth);
+  assert(err == 0);
 
 	struct elkvm_flat sysenter;
   std::string sysenter_path(RES_PATH "/entry");
-	err = elkvm_load_flat(&sysenter, sysenter_path, 1);
+	err = vmi.load_flat(sysenter, sysenter_path, 1);
 	if(err) {
     if(err == -ENOENT) {
       printf("LIBELKVM: SYSCALL ENTRY shared file could not be found\n");
     }
-		return err;
+    errno = -err;
+		return NULL;
 	}
 
   std::string sighandler_path(RES_PATH "/signal");
-  vm->sighandler_cleanup = new(struct elkvm_flat);
-  assert(vm->sighandler_cleanup != NULL);
-
-  err = elkvm_load_flat(vm->sighandler_cleanup, sighandler_path, 0);
+  auto sigclean = vmi.get_cleanup_flat();
+  err = vmi.load_flat(sigclean, sighandler_path, 0);
   if(err) {
     if(err == -ENOENT) {
       printf("LIBELKVM: SIGNAL HANDLER shared file could not be found\n");
     }
-    return err;
+    errno = -err;
+    return NULL;
   }
 
 	/*
 	 * setup the lstar register with the syscall handler
 	 */
-	err = kvm_vcpu_set_msr(vm->vcpus->vcpu,
+	err = kvm_vcpu_set_msr(vmi.get_vcpu(0).get(),
 			VCPU_MSR_LSTAR,
-			sysenter.region->guest_virtual);
-	if(err) {
-		return err;
-	}
+			sysenter.region->guest_address());
+  assert(err == 0);
 
-  elkvm_signal_init(vm);
-
-	vm->syscall_handlers = handlers;
-
+  std::shared_ptr<struct kvm_vm> vm = vmi.get_vm_ptr();
   for(int i = 0; i < RLIMIT_NLIMITS; i++) {
     err = getrlimit(i, &vm->rlimits[i]);
     assert(err == 0);
   }
 
-	return 0;
+	return vm.get();
 }
 
 int elkvm_set_debug(struct kvm_vm *vm) {
   vm->debug = 1;
   return 0;
-}
-
-int elkvm_load_flat(struct elkvm_flat *flat,
-    const std::string path,
-    int kernel) {
-	int fd = open(path.c_str(), O_RDONLY);
-	if(fd < 0) {
-		return -errno;
-	}
-
-	struct stat stbuf;
-	int err = fstat(fd, &stbuf);
-	if(err) {
-		close(fd);
-		return -errno;
-	}
-
-	flat->size = stbuf.st_size;
-  std::shared_ptr<Elkvm::Region> region =
-    Elkvm::rm->allocate_region(stbuf.st_size);
-
-  if(kernel) {
-    guestptr_t addr = Elkvm::rm->get_pager().map_kernel_page(
-        region->base_address(),
-        PT_OPT_EXEC);
-    if(addr == 0x0) {
-      close(fd);
-      return -ENOMEM;
-    }
-    region->set_guest_addr(addr);
-  } else {
-    /* XXX this will break! */
-    region->set_guest_addr(0x1000);
-    err = Elkvm::rm->get_pager().map_user_page(
-        region->base_address(),
-        region->guest_address(),
-        PT_OPT_EXEC);
-    assert(err == 0);
-  }
-
-	char *buf = reinterpret_cast<char *>(region->base_address());
-	int bufsize = ELKVM_PAGESIZE;
-	int bytes = 0;
-	while((bytes = read(fd, buf, bufsize)) > 0) {
-		buf += bytes;
-	}
-
-	close(fd);
-  flat->region = region->c_region();
-
-	return 0;
-}
-
-int elkvm_vcpu_count(struct kvm_vm *vm) {
-	int count = 0;
-	struct vcpu_list *vl = vm->vcpus;
-	if(vl == NULL) {
-		return 0;
-	}
-
-	while(vl != NULL) {
-		if(vl->vcpu != NULL) {
-			count++;
-		}
-		vl = vl->next;
-	}
-	return count;
 }
 
 int elkvm_init(struct elkvm_opts *opts, int argc, char **argv, char **environ) {
@@ -245,7 +167,9 @@ int elkvm_cleanup(struct elkvm_opts *opts) {
 }
 
 int elkvm_chunk_remap(struct kvm_vm *vm, int num, uint64_t newsize) {
-  auto chunk = Elkvm::rm->get_pager().get_chunk(num);
+  Elkvm::VMInternals &vmi = Elkvm::get_vmi(vm);
+
+  auto chunk = vmi.get_region_manager().get_pager().get_chunk(num);
   chunk->memory_size = 0;
 
 	int err = ioctl(vm->fd, KVM_SET_USER_MEMORY_REGION, chunk.get());
@@ -260,25 +184,23 @@ int elkvm_chunk_remap(struct kvm_vm *vm, int num, uint64_t newsize) {
 }
 
 struct kvm_vcpu *elkvm_vcpu_get(struct kvm_vm *vm, int vcpu_id) {
-  struct vcpu_list *vcpu_list = vm->vcpus;
-  for(int i = 0; i < vcpu_id && vcpu_list != NULL; i++) {
-    vcpu_list = vcpu_list->next;
-  }
+  Elkvm::VMInternals &vmi = Elkvm::get_vmi(vm);
 
-  if(vcpu_list == NULL) {
-    return NULL;
-  }
-
-  return vcpu_list->vcpu;
+  auto vcpu = vmi.get_vcpu(vcpu_id);
+  return vcpu.get();
 }
 
 uint64_t elkvm_chunk_count(struct kvm_vm *vm __attribute__((unused))) {
-  return Elkvm::rm->get_pager().chunk_count();
+  Elkvm::VMInternals &vmi = Elkvm::get_vmi(vm);
+
+  return vmi.get_region_manager().get_pager().chunk_count();
 }
 
 struct kvm_userspace_memory_region elkvm_get_chunk(
     struct kvm_vm *vm __attribute__((unused)), int chunk) {
-  return *Elkvm::rm->get_pager().get_chunk(chunk);
+  Elkvm::VMInternals &vmi = Elkvm::get_vmi(vm);
+
+  return *vmi.get_region_manager().get_pager().get_chunk(chunk);
 }
 
 void elkvm_emulate_vmcall(struct kvm_vcpu *vcpu) {
@@ -303,24 +225,5 @@ int elkvm_dump_valid_msrs(struct elkvm_opts *opts) {
 	free(list);
 
 	return 0;
-}
-
-void elkvm_print_regions(struct kvm_vm *vm) {
-	printf("\n System Memory Regions:\n");
-	printf(" ----------------------\n");
-	printf(" Host virtual\t\tGuest virtual\t\tSize\t\t\tD\n");
-	elkvm_dump_region(*list_elem_front(vm->root_region));
-	printf("\n");
-}
-
-void elkvm_dump_region(struct elkvm_memory_region *region) {
-	printf("%16p\t0x%016lx\t0x%016lx\t%i\n", region->host_base_p,
-		region->guest_virtual, region->region_size, region->grows_downward);
-	if(region->lc != NULL) {
-		elkvm_dump_region(region->lc);
-	}
-	if(region->rc != NULL) {
-		elkvm_dump_region(region->rc);
-	}
 }
 

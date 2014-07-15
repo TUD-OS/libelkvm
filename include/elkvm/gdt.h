@@ -1,6 +1,15 @@
 #pragma once
 
-#include "elkvm.h"
+#include <memory>
+
+#include <region.h>
+#include <vcpu.h>
+
+int elkvm_gdt_setup(Elkvm::RegionManager &rm, std::shared_ptr<struct kvm_vcpu> vcpu);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct elkvm_gdt_segment_descriptor {
 	uint16_t limit1;
@@ -33,8 +42,6 @@ struct elkvm_gdt_segment_descriptor {
 int elkvm_gdt_create_segment_descriptor(struct elkvm_gdt_segment_descriptor *,
 		uint32_t, uint32_t, uint8_t, uint8_t);
 
-void elkvm_gdt_dump(struct kvm_vm *);
-
 static inline
 uint32_t gdt_base(struct elkvm_gdt_segment_descriptor *entry) {
 	return entry->base1 | ((uint32_t)entry->base2 << 16) |
@@ -50,3 +57,7 @@ static inline
 uint8_t gdt_flags(struct elkvm_gdt_segment_descriptor *entry) {
 	return entry->limit2_flags >> 4;
 }
+
+#ifdef __cplusplus
+}
+#endif

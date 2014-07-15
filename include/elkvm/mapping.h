@@ -9,6 +9,7 @@
 
 namespace Elkvm {
   class Region;
+  class RegionManager;
 
   class Mapping {
     private:
@@ -21,15 +22,17 @@ namespace Elkvm {
       int fd;
       off_t offset;
       std::shared_ptr<Region> region;
+      RegionManager &_rm;
 
       void slice_begin(size_t len);
       void slice_center(off_t off, size_t len);
       void slice_end(guestptr_t slice_base);
 
     public:
-      Mapping(guestptr_t guest_addr, size_t l, int pr, int f, int fdes, off_t off);
-      Mapping(std::shared_ptr<Region> r, guestptr_t guest_addr, size_t l, int pr, int f,
+      Mapping(RegionManager &rm, guestptr_t guest_addr, size_t l, int pr, int f,
           int fdes, off_t off);
+      Mapping(RegionManager &rm, std::shared_ptr<Region> r, guestptr_t guest_addr,
+          size_t l, int pr, int f, int fdes, off_t off);
 
       bool anonymous() const { return flags & MAP_ANONYMOUS; }
       bool contains_address(void *p) const;

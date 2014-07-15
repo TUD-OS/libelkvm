@@ -9,22 +9,29 @@
 
 namespace Elkvm {
 
+  class VMInternals;
+
   class Stack {
     private:
       std::vector<std::shared_ptr<Region>> stack_regions;
+      RegionManager &_rm;
       std::shared_ptr<Region> kernel_stack;
-      struct kvm_vcpu *vcpu;
       int expand();
       guestptr_t base;
 
     public:
-      void init(struct kvm_vcpu *v, const Environment &e);
-      int pushq(uint64_t val);
-      uint64_t popq();
+      Stack(RegionManager &rm);
+      void init(std::shared_ptr<struct kvm_vcpu> v, const Environment &e,
+          std::shared_ptr<RegionManager> rm);
+      int pushq(guestptr_t rsp, uint64_t val);
+      uint64_t popq(guestptr_t rsp);
       bool is_stack_expansion(guestptr_t pfla);
       bool grow(guestptr_t pfla);
-      guestptr_t kernel_base();
+      guestptr_t kernel_base() const { return kernel_stack->guest_address(); }
+      guestptr_t user_base() const { return base; }
   };
+
+  void dump_stack(VMInternals &vmi, struct kvm_vcpu *vcpu);
 
 //namespace Elkvm
 }

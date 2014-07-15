@@ -14,7 +14,6 @@
 
 #include <elkvm/elkvm.h>
 #include <elkvm/kvm.h>
-#include <elkvm/vcpu.h>
 
 #include <stdint.h>
 #include <smmintrin.h>
@@ -283,7 +282,6 @@ int main(int argc, char **argv) {
   int gdb = 0;
   int myopts = 1;
   opterr = 0;
-  struct kvm_vcpu *vcpu = NULL;
 
   while((opt = getopt(argc, argv, "+dD")) != -1) {
     switch(opt) {
@@ -318,16 +316,15 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 
-	err = elkvm_vm_create(&elkvm, &vm, VM_MODE_X86_64, 1, &example_handlers, binary);
-	if(err) {
-		printf("ERROR creating VM errno: %i Msg: %s\n", -err, strerror(-err));
-		return -1;
-	}
-
-  vcpu = elkvm_vcpu_get(&vm, 0);
+	struct kvm_vm *vm = elkvm_vm_create(&elkvm, VM_MODE_X86_64, 1, &example_handlers, binary, debug);
+  if(vm == NULL) {
+    printf("ERROR creating VM: %i\n", errno);
+    printf("  Msg: %s\n", strerror(errno));
+    return EXIT_FAILURE;
+  }
 
   if(debug) {
-    err = elkvm_set_debug(&vm);
+    err = elkvm_set_debug(vm);
     if(err) {
       printf("ERROR putting VM in debug mode errno: %i Msg: %s\n", -err, strerror(-err));
       return -1;
@@ -336,11 +333,11 @@ int main(int argc, char **argv) {
 
   if(gdb) {
     //gdbstub will take it from here!
-    elkvm_gdbstub_init(&vm);
+    elkvm_gdbstub_init(vm);
     return 0;
   }
 
-	err = kvm_vcpu_loop(vcpu);
+	err = elkvm_vm_run(vm);
 	if(err) {
 		printf("ERROR running VCPU errno: %i Msg: %s\n", -err, strerror(-err));
 		return -1;

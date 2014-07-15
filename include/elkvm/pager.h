@@ -90,8 +90,8 @@ namespace Elkvm {
       ptentry_t *find_table_entry(ptentry_t *tbl_base_p,
           guestptr_t addr, off64_t off_low, off64_t off_high) const;
 
-      ptentry_t *page_table_walk(guestptr_t guest_virtual, ptopt_t opts,
-          bool create);
+      ptentry_t *page_table_walk(guestptr_t guest_virtual) const;
+      ptentry_t *page_table_walk_create(guestptr_t guest_virtual, ptopt_t opts);
 
     public:
       PagerX86_64(int vmfd);
@@ -113,9 +113,7 @@ namespace Elkvm {
           std::vector<std::shared_ptr<struct kvm_userspace_memory_region *>>::size_type chunk)
         const;
 
-      /* XXX make this const */
-      void *get_host_p(guestptr_t guest_virtual);
-      int handle_pagefault(guestptr_t pfla, uint32_t err_code, bool debug);
+      void *get_host_p(guestptr_t guest_virtual) const ;
       guestptr_t host_to_guest_physical(void *host_p) const;
 
       int map_chunk_to_kvm(

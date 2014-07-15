@@ -5,24 +5,25 @@
 #include <iostream>
 #include <memory>
 
-#include "elkvm.h"
-#include "region.h"
+#include <elkvm.h>
+#include <region.h>
+#include <mapping.h>
 
 namespace Elkvm {
   class HeapManager {
     private:
-      struct kvm_pager * pager;
       std::vector<Mapping> mappings;
+      RegionManager &_rm;
       guestptr_t curbrk;
 
       int grow(size_t sz);
       int shrink(guestptr_t newbrk);
 
     public:
+      HeapManager(RegionManager &rm) : _rm(rm) {}
       int init(std::shared_ptr<Region> data, size_t sz);
       int brk(guestptr_t newbrk);
       guestptr_t get_brk() const { return curbrk; };
-      void set_pager(struct kvm_pager *const p) { pager = p; }
       bool contains_address(guestptr_t addr) const
       { return (mappings.front().guest_address() <= addr) && (addr < curbrk); }
       Mapping &find_mapping(guestptr_t addr);

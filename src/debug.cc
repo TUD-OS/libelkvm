@@ -6,7 +6,7 @@
 #include <sys/ioctl.h>
 
 #include <elkvm.h>
-#include "debug.h"
+#include <debug.h>
 
 int elkvm_handle_debug(struct kvm_vm *vm) {
   int handled = 0;
@@ -40,17 +40,18 @@ int elkvm_set_guest_debug(struct kvm_vcpu *vcpu) {
   return ioctl(vcpu->fd, KVM_SET_GUEST_DEBUG, &vcpu->debug);
 }
 
+/* XXX reenable */
 void elkvm_dump_memory(struct kvm_vm *vm __attribute__((unused)), uint64_t addr) {
-  assert(addr != 0x0 && "cannot dump address NULL");
-  uint64_t *host_p = elkvm_pager_get_host_p(NULL, addr);
-  assert(host_p != NULL && "cannot dump unmapped memory");
-
-  fprintf(stderr, " Host Address\tGuest Address\t\tValue\t\tValue\n");
-  for(int i = 0; i < 16; i++) {
-    fprintf(stderr, " %p\t0x%016lx\t0x%016lx\t0x%016lx\n",
-        host_p, addr,
-        *host_p, *(host_p+1));
-    addr  += 0x10;
-    host_p+=2;
-  }
+//  assert(addr != 0x0 && "cannot dump address NULL");
+//  uint64_t *host_p = reinterpret_cast<uint64_t *>(elkvm_pager_get_host_p(NULL, addr));
+//  assert(host_p != NULL && "cannot dump unmapped memory");
+//
+//  fprintf(stderr, " Host Address\tGuest Address\t\tValue\t\tValue\n");
+//  for(int i = 0; i < 16; i++) {
+//    fprintf(stderr, " %p\t0x%016lx\t0x%016lx\t0x%016lx\n",
+//        host_p, addr,
+//        *host_p, *(host_p+1));
+//    addr  += 0x10;
+//    host_p+=2;
+//  }
 }

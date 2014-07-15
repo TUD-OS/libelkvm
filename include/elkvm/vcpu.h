@@ -8,7 +8,27 @@
 #include <udis86.h>
 #endif
 
-#include "list.h"
+#include <stack.h>
+
+struct kvm_vcpu {
+	int fd;
+  Elkvm::Stack stack;
+#ifdef HAVE_LIBUDIS86
+	ud_t ud_obj;
+#endif
+	struct kvm_regs regs;
+	struct kvm_sregs sregs;
+	struct kvm_run *run_struct;
+	int singlestep;
+  struct kvm_guest_debug debug;
+
+  kvm_vcpu(Elkvm::RegionManager &rm) : stack(rm) {}
+  uint64_t pop() { uint64_t val = stack.popq(regs.rsp); regs.rsp += 0x8; return val; }
+  void push(uint64_t val) { regs.rsp -= 0x8; stack.pushq(regs.rsp, val); }
+  guestptr_t kernel_stack_base() { return stack.kernel_base(); }
+  int check_pagefault(uint32_t err, bool debug) { return 1; }
+  void init_rsp() { regs.rsp = stack.user_base(); }
+};
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,41 +55,6 @@ extern "C" {
 #define VCPU_MSR_LSTAR  0xC0000082
 #define VCPU_MSR_CSTAR  0xC0000083
 #define VCPU_MSR_SFMASK 0XC0000084
-
-struct kvm_vm;
-
-struct kvm_vcpu {
-	int fd;
-#ifdef HAVE_LIBUDIS86
-	ud_t ud_obj;
-#endif
-	struct kvm_regs regs;
-	struct kvm_sregs sregs;
-	struct kvm_run *run_struct;
-	struct kvm_vm *vm;
-	int singlestep;
-  struct kvm_guest_debug debug;
-};
-
-struct vcpu_list {
-	struct kvm_vcpu *vcpu;
-	struct vcpu_list *next;
-};
-
-/*
-	Creates a runnable VCPU in the mode given by the parameter
-*/
-int kvm_vcpu_create(struct kvm_vm *, int);
-
-/*
-	Add a new VCPU entry to the tail of the VCPU list
-*/
-int kvm_vcpu_add_tail(struct kvm_vm *, struct kvm_vcpu *);
-
-/*
-	Remove and clean up the VCPU
-*/
-int kvm_vcpu_destroy(struct kvm_vm *, struct kvm_vcpu *);
 
 /*
 	Set the VCPU's rip to a specific value
@@ -111,13 +96,6 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *);
  * \brief Run the VCPU
 */
 int kvm_vcpu_run(struct kvm_vcpu *);
-
-/*
- * \brief Enter the VCPU loop
- */
-int kvm_vcpu_loop(struct kvm_vcpu *vcpu);
-
-uint64_t kvm_vcpu_get_hypercall_type(struct kvm_vm *, struct kvm_vcpu *);
 
 int kvm_vcpu_had_page_fault(struct kvm_vcpu *);
 

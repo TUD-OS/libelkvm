@@ -5,11 +5,10 @@
 #include <stdio.h>
 
 #include <elkvm.h>
-#include "region.h"
-#include "region-c.h"
+#include <elkvm-internal.h>
+#include <region.h>
 
 namespace Elkvm {
-  extern std::unique_ptr<RegionManager> rm;
 
   std::ostream &print(std::ostream &stream, const Region &r) {
     if(r.is_free()) {
@@ -30,17 +29,6 @@ namespace Elkvm {
       && r1.guest_address() == r2.guest_address()
       && r1.size() == r2.size()
       && r1.is_free() == r2.is_free();
-  }
-
-  struct elkvm_memory_region *Region::c_region() const {
-    struct elkvm_memory_region *r = new(struct elkvm_memory_region);
-    r->host_base_p = host_p;
-    r->guest_virtual = addr;
-    r->region_size = rsize;
-    r->used = !free;
-    r->grows_downward = 0;
-    r->rc = r->lc = NULL;
-    return r;
   }
 
   bool Region::contains_address(const void * const p) const {
@@ -76,7 +64,7 @@ namespace Elkvm {
     assert(rsize > pagesize_align(size));
 
     std::shared_ptr<Region> r =
-      std::make_shared<Region>(host_p, pagesize_align(size));
+      std::make_shared<Region>(host_p, pagesize_align(size), _rm);
 
     host_p = reinterpret_cast<char *>(host_p) + r->size();
     rsize  -= r->size();
@@ -94,30 +82,16 @@ namespace Elkvm {
 
     std::shared_ptr<Region> r = std::make_shared<Region>(
         reinterpret_cast<char *>(host_p) + off + len,
-        rsize - off - len);
+        rsize - off - len, _rm);
     r->set_guest_addr(addr + off);
 
     rsize = off;
 
-    rm->use_region(r);
-    rm->add_free_region(std::make_shared<Region>(
-          reinterpret_cast<char *>(host_p) + off, len));
+    _rm.use_region(r);
+    _rm.add_free_region(std::make_shared<Region>(
+          reinterpret_cast<char *>(host_p) + off, len, _rm));
     //TODO maybe return ptr to free region?
   }
 
 //namespace Elkvm
 }
-
-
-struct elkvm_memory_region *elkvm_region_create(uint64_t req_size) {
-  std::shared_ptr<Elkvm::Region> r = Elkvm::rm->allocate_region(req_size);
-  assert(r->size() >= req_size && "allocated region must be suitable in size!");
-	return r->c_region();
-}
-
-int elkvm_region_free(struct elkvm_memory_region *region) {
-  Elkvm::rm->free_region(region->host_base_p, region->region_size);
-  delete(region);
-  return 0;
-}
-

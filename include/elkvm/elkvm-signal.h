@@ -5,6 +5,14 @@
 
 #include "vcpu.h"
 
+namespace Elkvm {
+  class VMInternals;
+}
+
+int elkvm_signal_register(Elkvm::VMInternals &vmi, int signum, struct sigaction *act,
+    struct sigaction *oldact);
+int elkvm_signal_deliver(Elkvm::VMInternals &vmi);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -12,11 +20,6 @@ extern "C" {
 struct elkvm_signals {
   struct sigaction signals[_NSIG];
 };
-
-int elkvm_signal_init(struct kvm_vm *vm);
-int elkvm_signal_register(struct kvm_vm *vm, int signum, struct sigaction *act,
-    struct sigaction *oldact);
-int elkvm_signal_deliver(struct kvm_vm *vm);
 
 #ifdef __cplusplus
 }

@@ -17,13 +17,17 @@ namespace Elkvm {
       const ElfBinary &binary;
 
     public:
-      Environment(const ElfBinary &bin);
-      off64_t push_auxv(char **env_p);
-      int copy_and_push_str_arr_p(off64_t offset, char **str) const;
-      off64_t push_str_copy(off64_t offset, std::string str) const;
+      Environment(const ElfBinary &bin, RegionManager &rm);
+      off64_t push_auxv(std::shared_ptr<struct kvm_vcpu> vcpu, char **env_p);
+
+      int copy_and_push_str_arr_p(std::shared_ptr<struct kvm_vcpu> vcpu,
+          off64_t offset, char **str) const;
+
+      off64_t push_str_copy(std::shared_ptr<struct kvm_vcpu> vcpu,
+          off64_t offset, std::string str) const;
+
       guestptr_t get_guest_address() const { return region->guest_address(); }
-      void *get_base_address() const { return region->base_address(); }
-      int fill(struct elkvm_opts *opts, struct kvm_vm *vm);
+      int fill(struct elkvm_opts *opts, std::shared_ptr<struct kvm_vcpu> vcpu);
 
   };
 

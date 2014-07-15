@@ -1,18 +1,16 @@
-#include "heap.h"
-#include "region.h"
-
 #include <algorithm>
+#include <cstring>
 #include <memory>
 #include <iostream>
 
-namespace Elkvm {
-  std::unique_ptr<RegionManager> rm = nullptr;
-  extern HeapManager heap_m;
+#include <elkvm-internal.h>
+#include <heap.h>
+#include <region.h>
 
+namespace Elkvm {
   RegionManager::RegionManager(int vmfd) : pager(vmfd) {
     auto sysregion = allocate_region(ELKVM_PAGER_MEMSIZE);
     pager.set_pml4(sysregion);
-
   }
 
   void RegionManager::dump_mappings() const {
@@ -64,7 +62,7 @@ namespace Elkvm {
     while(list_idx < freelists.size()) {
       auto rit = std::find_if(freelists[list_idx].begin(), freelists[list_idx].end(),
          [size](std::shared_ptr<Region> a)
-         { return a->size() >= size; });
+         { assert(a != nullptr); return a->size() >= size; });
       if(rit != freelists[list_idx].end()) {
         auto r = *rit;
         freelists[list_idx].erase(rit);
@@ -108,7 +106,7 @@ namespace Elkvm {
     }
 
     assert(grow_size <= 0x8000000 && grow_size > 0x400000);
-    freelists[15].push_back(std::make_shared<Region>(chunk_p, grow_size));
+    freelists[15].push_back(std::make_shared<Region>(chunk_p, grow_size, *this));
     return 0;
   }
 
@@ -166,14 +164,7 @@ namespace Elkvm {
   Mapping &RegionManager::find_mapping(guestptr_t addr) {
     auto iter = std::find_if(mappings.begin(), mappings.end(),
         [addr](const Mapping &m) { return m.contains_address(addr); });
-
-    if(iter == mappings.end()) {
-      if(heap_m.contains_address(addr)) {
-        return heap_m.find_mapping(addr);
-      }
-    }
     assert(iter != mappings.end());
-
     return *iter;
   }
 
@@ -188,10 +179,7 @@ namespace Elkvm {
   bool RegionManager::address_mapped(guestptr_t addr) const {
     auto iter = std::find_if(mappings.begin(), mappings.end(),
         [addr](const Mapping &m) { return m.contains_address(addr); });
-    if(iter == mappings.end()) {
-      return heap_m.contains_address(addr);
-    }
-    return true;
+    return iter == mappings.end();
   }
 
   Mapping &RegionManager::get_mapping(guestptr_t addr, size_t length, int prot,
@@ -212,7 +200,7 @@ namespace Elkvm {
         /* this mapping needs to be split! */
         it->slice(addr, length);
       }
-      mappings.emplace_back(addr, length, prot, flags, fd, off);
+      mappings.emplace_back(*this, addr, length, prot, flags, fd, off);
       Mapping &mapping = mappings.back();
       mapping.map_self();
 
@@ -232,7 +220,7 @@ namespace Elkvm {
   void RegionManager::free_mapping(Mapping &mapping) {
     auto it = std::find(mappings.begin(), mappings.end(), mapping);
     assert(it != mappings.end());
-    mappings.erase(it);
+    //mappings.erase(it);
   }
 
 

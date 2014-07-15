@@ -3,8 +3,9 @@
 #include <gelf.h>
 #include <libelf.h>
 
-#include "elkvm.h"
-#include "region.h"
+#include <elkvm.h>
+#include <heap.h>
+#include <region.h>
 
 #include <memory>
 
@@ -24,6 +25,8 @@ struct Elf_auxv {
 class ElfBinary {
   private:
     std::unique_ptr<ElfBinary> ldr;
+    RegionManager &_rm;
+    HeapManager &_hm;
 
     int fd;
     Elf *e;
@@ -52,7 +55,7 @@ class ElfBinary {
     GElf_Phdr find_text_header();
 
   public:
-    ElfBinary(std::string pathname);
+    ElfBinary(std::string pathname, RegionManager &rm, HeapManager &hm);
     int load_binary(std::string pathname);
     guestptr_t get_entry_point();
     const struct Elf_auxv &get_auxv() const;

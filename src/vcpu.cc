@@ -10,87 +10,13 @@
 
 #include "debug.h"
 #include <elkvm.h>
+#include <elkvm-internal.h>
 #include <gdt.h>
 #include <idt.h>
 #include <region.h>
-#include <stack-c.h>
+#include <stack.h>
 #include <syscall.h>
 #include <vcpu.h>
-
-namespace Elkvm {
-  extern std::unique_ptr<RegionManager> rm;
-}
-
-int kvm_vcpu_create(struct kvm_vm *vm, int mode) {
-	if(vm->fd <= 0) {
-		return -EIO;
-	}
-
-	struct kvm_vcpu *vcpu = new(struct kvm_vcpu);
-	if(vcpu == NULL) {
-		return -ENOMEM;
-	}
-	memset(&vcpu->regs, 0, sizeof(struct kvm_regs));
-	memset(&vcpu->sregs, 0, sizeof(struct kvm_sregs));
-	vcpu->singlestep = 0;
-
-	int vcpu_count = elkvm_vcpu_count(vm);
-	vcpu->fd = ioctl(vm->fd, KVM_CREATE_VCPU, vcpu_count);
-	if(vcpu->fd <= 0) {
-		free(vcpu);
-		return -1;
-	}
-
-	int err = kvm_vcpu_initialize_regs(vcpu, mode);
-	if(err) {
-		free(vcpu);
-		return err;
-	}
-
-	vcpu->run_struct = reinterpret_cast<struct kvm_run *>(
-      mmap(NULL, sizeof(struct kvm_run), PROT_READ | PROT_WRITE,
-			MAP_SHARED, vcpu->fd, 0));
-	if(vcpu->run_struct == NULL) {
-		free(vcpu);
-		return -ENOMEM;
-	}
-
-	err = kvm_vcpu_add_tail(vm, vcpu);
-	if(err) {
-		free(vcpu);
-		return err;
-	}
-
-#ifdef HAVE_LIBUDIS86
-  elkvm_init_udis86(vcpu, mode);
-#endif
-
-	vcpu->vm = vm;
-	return 0;
-}
-
-int kvm_vcpu_add_tail(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
-	/* find the last entry in the vcpu list for this vm */
-	struct vcpu_list *vl = vm->vcpus;
-	while(vl != NULL && vl->next != NULL) {
-		vl = vl->next;
-	}
-
-	struct vcpu_list *new_item = new(struct vcpu_list);
-	if(new_item == NULL) {
-		return -ENOMEM;
-	}
-
-	new_item->next = NULL;
-	new_item->vcpu = vcpu;
-	if(vl == NULL) {
-		vm->vcpus = new_item;
-	} else {
-		vl->next = new_item;
-	}
-
-	return 0;
-}
 
 int kvm_vcpu_initialize_regs(struct kvm_vcpu *vcpu, int mode) {
 	switch(mode) {
@@ -185,39 +111,6 @@ int kvm_vcpu_set_sregs(struct kvm_vcpu *vcpu) {
 	}
 
   return 0;
-}
-
-int kvm_vcpu_destroy(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
-	struct vcpu_list *vl = vm->vcpus;
-	int found = 0;
-
-	if(vl != NULL && vl->vcpu == vcpu) {
-		vm->vcpus = vl->next;
-		close(vl->vcpu->fd);
-		free(vl->vcpu);
-		free(vl);
-		return 0;
-	}
-
-	while(vl != NULL && vl->next != NULL) {
-		if(vl->next->vcpu == vcpu) {
-			found = 1;
-			break;
-		}
-		vl = vl->next;
-	}
-
-	if(!found) {
-		return -1;
-	}
-
-	struct vcpu_list *old = vl->next;
-	vl->next = vl->next->next;
-	free(old);
-	close(vcpu->fd);
-	free(vcpu);
-
-	return 0;
 }
 
 int kvm_vcpu_get_msr(struct kvm_vcpu *vcpu, uint32_t index, uint64_t *res_p) {
@@ -408,7 +301,10 @@ int kvm_vcpu_run(struct kvm_vcpu *vcpu) {
 	return 0;
 }
 
-int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
+int elkvm_vm_run(struct kvm_vm *vm) {
+  Elkvm::VMInternals &vmi = Elkvm::get_vmi(vm);
+
+
 	int is_running = 1;
 //	if(vcpu->singlestep) {
 //		elkvm_gdt_dump(vcpu->vm);
@@ -420,14 +316,14 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 //		kvm_pager_dump_page_tables(&vcpu->vm->pager);
 //	}
 
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
   int err = 0;
 	while(is_running) {
 
-    err = kvm_vcpu_set_regs(vcpu);
+    err = kvm_vcpu_set_regs(vcpu.get());
     if(err) {
       return err;
     }
-
 //    if(vcpu->singlestep) {
 //      err = kvm_vcpu_singlestep(vcpu);
 //      if(err) {
@@ -435,12 +331,12 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 //      }
 //    }
 
-		err = kvm_vcpu_run(vcpu);
+		err = kvm_vcpu_run(vcpu.get());
 		if(err) {
 			break;
 		}
 
-    err = kvm_vcpu_get_regs(vcpu);
+    err = kvm_vcpu_get_regs(vcpu.get());
     if(err) {
       return err;
     }
@@ -455,10 +351,10 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
       case KVM_EXIT_HYPERCALL:
         if(vcpu->singlestep) {
 				  fprintf(stderr, "KVM_EXIT_HYPERCALL\n");
-          kvm_vcpu_dump_regs(vcpu);
-          kvm_vcpu_dump_code(vcpu);
+          kvm_vcpu_dump_regs(vcpu.get());
+          kvm_vcpu_dump_code(vcpu.get());
         }
-        err = elkvm_handle_hypercall(vcpu->vm, vcpu);
+         err = elkvm_handle_hypercall(vmi, vcpu);
         if(err == ELKVM_HYPERCALL_EXIT) {
           is_running = 0;
         } else if(err) {
@@ -497,10 +393,11 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 			case KVM_EXIT_DEBUG: {
         /* NO-OP */
         ;
-        int debug_handled = elkvm_handle_debug(vcpu->vm);
-        if(debug_handled == 0) {
+        /* XXX rethink debug handling */
+//        int debug_handled = elkvm_handle_debug(vmi);
+//        if(debug_handled == 0) {
           is_running = 0;
-        }
+        //}
 				break;
       }
       case KVM_EXIT_MMIO:
@@ -534,9 +431,9 @@ int kvm_vcpu_loop(struct kvm_vcpu *vcpu) {
 
 		if(	vcpu->run_struct->exit_reason == KVM_EXIT_MMIO ||
 				vcpu->run_struct->exit_reason == KVM_EXIT_SHUTDOWN) {
-			kvm_vcpu_dump_regs(vcpu);
-      elkvm_dump_stack(vcpu->vm, vcpu);
-			kvm_vcpu_dump_code(vcpu);
+			kvm_vcpu_dump_regs(vcpu.get());
+      Elkvm::dump_stack(vmi, vcpu.get());
+			kvm_vcpu_dump_code(vcpu.get());
 		}
 
 	}
@@ -677,31 +574,13 @@ void kvm_vcpu_dump_code(struct kvm_vcpu *vcpu) {
 
 #ifdef HAVE_LIBUDIS86
 int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *vcpu, uint64_t guest_addr) {
-  assert(guest_addr != 0x0);
-	void *host_p = Elkvm::rm->get_pager().get_host_p(guest_addr);
-  assert(host_p != NULL);
-	size_t disassembly_size = 40;
-	ud_set_input_buffer(&vcpu->ud_obj, (const uint8_t *)host_p, disassembly_size);
-
-	return 0;
-}
-
-void elkvm_dump_isr(struct kvm_vm *vm, int iv) {
-
-	struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
-	struct kvm_idt_entry *entry = reinterpret_cast<struct kvm_idt_entry *>(
-      vm->idt_region->host_base_p) +
-		iv * sizeof(struct kvm_idt_entry);
-
-	guestptr_t guest_isr = idt_entry_offset(entry);
-  assert(guest_isr != 0x0);
-
-	printf("\n ISR Code for Interrupt Vector %3i guest_address: 0x%lx:\n",
-      iv, guest_isr);
-	printf(  " ----------------------------------\n");
-  kvm_vcpu_dump_code_at(vcpu, guest_isr);
-
-	return;
+//  assert(guest_addr != 0x0);
+//	void *host_p = Elkvm::vmi->get_region_manager().get_pager().get_host_p(guest_addr);
+//  assert(host_p != NULL);
+//	size_t disassembly_size = 40;
+//	ud_set_input_buffer(&vcpu->ud_obj, (const uint8_t *)host_p, disassembly_size);
+//
+//	return 0;
 }
 
 void elkvm_init_udis86(struct kvm_vcpu *vcpu, int mode) {
@@ -717,9 +596,4 @@ void elkvm_init_udis86(struct kvm_vcpu *vcpu, int mode) {
 
 int kvm_vcpu_had_page_fault(struct kvm_vcpu *vcpu) {
 	return vcpu->sregs.cr2 != 0x0;
-}
-
-uint64_t kvm_vcpu_get_hypercall_type(struct kvm_vm *vm, struct kvm_vcpu *vcpu) {
-  uint64_t type = elkvm_popq(vm, vcpu);
-  return type;
 }

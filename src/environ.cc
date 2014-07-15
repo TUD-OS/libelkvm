@@ -3,23 +3,22 @@
 #include <gelf.h>
 
 #include <elfloader.h>
+#include <elkvm-internal.h>
 #include <environ.h>
 #include <kvm.h>
 #include <region.h>
 #include <stack.h>
 
 namespace Elkvm {
-  extern Stack stack;
-  extern std::unique_ptr<RegionManager> rm;
-
-  Environment::Environment(const ElfBinary &bin) :
+  Environment::Environment(const ElfBinary &bin, RegionManager &rm) :
     binary(bin)
   {
     /* for now the region to hold env etc. will be 12 pages large */
-    region = rm->allocate_region(12 * ELKVM_PAGESIZE);
+    region = rm.allocate_region(12 * ELKVM_PAGESIZE);
     assert(region != nullptr && "error getting memory for env");
-    region->set_guest_addr(LINUX_64_STACK_BASE - region->size());
-    int err = rm->get_pager().map_user_page(region->base_address(),
+    region->set_guest_addr(
+        reinterpret_cast<guestptr_t>(region->base_address()));
+    int err = rm.get_pager().map_user_page(region->base_address(),
         region->guest_address(), PT_OPT_WRITE);
     assert(err == 0 && "error mapping env region");
   }
@@ -40,7 +39,7 @@ namespace Elkvm {
     return i;
   }
 
-  off64_t Environment::push_auxv(char **env_p) {
+  off64_t Environment::push_auxv(std::shared_ptr<struct kvm_vcpu> vcpu, char **env_p) {
     unsigned count = calc_auxv_num_and_set_auxv(env_p);
 
     off64_t offset = 0;
@@ -106,7 +105,7 @@ namespace Elkvm {
         /*
          * AT_BASE points to the base address of the dynamic linker
          */
-          stack.pushq(auxv->a_un.a_val);
+          vcpu->push(auxv->a_un.a_val);
           break;
         case AT_PLATFORM:
         case 25:
@@ -118,33 +117,32 @@ namespace Elkvm {
           int len = strlen((char *)auxv->a_un.a_val) + 1;
           strcpy(target, (char *)auxv->a_un.a_val);
           offset = offset + len;
-          stack.pushq(guest_virtual);
+          vcpu->push(guest_virtual);
           break;
       }
-      stack.pushq(auxv->a_type);
+      vcpu->push(auxv->a_type);
     }
 
-    stack.pushq(0x0);
-    stack.pushq(AT_NULL);
+    vcpu->push(0x0);
+    vcpu->push(AT_NULL);
 
     return offset;
   }
 
-  off64_t Environment::push_str_copy(off64_t offset, std::string str) const {
+  off64_t Environment::push_str_copy(std::shared_ptr<struct kvm_vcpu> vcpu,
+      off64_t offset, std::string str) const {
     char *target = reinterpret_cast<char *>(region->base_address()) + offset;
     guestptr_t guest_virtual = region->guest_address() + offset;
     off64_t bytes = str.length() + 1;
 
     strcpy(target, str.c_str());
 
-    int err = stack.pushq(guest_virtual);
-    if(err) {
-      return err;
-    }
+    vcpu->push(guest_virtual);
     return bytes;
   }
 
-  int Environment::copy_and_push_str_arr_p(off64_t offset, char **str) const {
+  int Environment::copy_and_push_str_arr_p(std::shared_ptr<struct kvm_vcpu> vcpu,
+      off64_t offset, char **str) const {
     if(str == NULL) {
       return 0;
     }
@@ -166,10 +164,7 @@ namespace Elkvm {
       strcpy(target, str[i]);
 
       //and push the pointer for the vm
-      int err = stack.pushq(guest_virtual);
-      if(err) {
-        return err;
-      }
+      vcpu->push(guest_virtual);
 
       target = target + len;
       bytes += len;
@@ -180,35 +175,35 @@ namespace Elkvm {
   }
 
 
-int Environment::fill(struct elkvm_opts *opts, struct kvm_vm *vm) {
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
-  int err = kvm_vcpu_get_regs(vcpu);
+int Environment::fill(struct elkvm_opts *opts,
+    std::shared_ptr<struct kvm_vcpu> vcpu) {
+  int err = kvm_vcpu_get_regs(vcpu.get());
   assert(err == 0 && "error getting vcpu");
 
-  off64_t bytes = push_auxv(opts->environ);
+  off64_t bytes = push_auxv(vcpu, opts->environ);
   off64_t bytes_total = bytes;
 
-  Elkvm::stack.pushq(0);
-  bytes = copy_and_push_str_arr_p(bytes_total, opts->environ);
+  vcpu->push(0);
+  bytes = copy_and_push_str_arr_p(vcpu, bytes_total, opts->environ);
   bytes_total = bytes_total + bytes;
-  Elkvm::stack.pushq(0);
+  vcpu->push(0);
   assert(bytes > 0);
 
   /* followed by argv pointers */
-  bytes = copy_and_push_str_arr_p(bytes_total, opts->argv);
+  bytes = copy_and_push_str_arr_p(vcpu, bytes_total, opts->argv);
   bytes_total = bytes_total + bytes;
   assert(bytes > 0);
 
   /* if the binary is dynamically linked we need to ajdust some stuff */
   if(binary.is_dynamically_linked()) {
-    push_str_copy(bytes_total, binary.get_loader());
+    push_str_copy(vcpu, bytes_total, binary.get_loader());
     opts->argc++;
   }
 
   /* at last push argc on the stack */
-  Elkvm::stack.pushq(opts->argc);
+  vcpu->push(opts->argc);
 
-  err = kvm_vcpu_set_regs(vcpu);
+  err = kvm_vcpu_set_regs(vcpu.get());
   return err;
 }
 

@@ -1,5 +1,16 @@
 #include <inttypes.h>
 
+#include <memory>
+
+#include <region.h>
+
+int elkvm_tss_setup64(std::shared_ptr<struct kvm_vcpu> vcpu,
+    Elkvm::RegionManager &rm, std::shared_ptr<Elkvm::Region> r);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct elkvm_tss64 {
 	uint32_t reserved1;
 	uint64_t rsp0;
@@ -60,4 +71,7 @@ struct elkvm_tss32 {
 }__attribute__((packed));
 
 int elkvm_tss_setup32(struct elkvm_tss32 *, int);
-int elkvm_tss_setup64(struct kvm_vm *, struct elkvm_memory_region *);
+
+#ifdef __cplusplus
+}
+#endif

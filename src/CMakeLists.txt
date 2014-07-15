@@ -1,22 +1,22 @@
 SET( libelkvm_SRCS
-  debug.c
+  debug.cc
   elfloader.cc
   environ.cc
-  gdbstub.c
-  gdt.c
+  gdbstub.cc
+  gdt.cc
   heap.cc
-  idt.c
-  list/list.c
+  idt.cc
   mapping.cc
   pager.cc
   region.cc
   region_manager.cc
-  signal.c
+  signal.cc
   stack.cc
   syscall.cc
-  tss.c
+  tss.cc
   vcpu.cc
   vm.cc
+  vm_internals.cc
   )
 ADD_LIBRARY( elkvm SHARED ${libelkvm_SRCS} )
 

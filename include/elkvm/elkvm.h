@@ -29,15 +29,12 @@ struct linux_dirent {
     */
 };
 
-#include "pager-c.h"
-#include "region-c.h"
-#include "vcpu.h"
-#include "list.h"
-#include "elkvm-signal.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+  struct kvm_vcpu;
 
 #define VM_MODE_X86    1
 #define VM_MODE_PAGING 2
@@ -64,22 +61,10 @@ struct region_mapping {
 
 struct kvm_vm {
 	int fd;
-	struct vcpu_list *vcpus;
-	int run_struct_size;
-  list(struct elkvm_memory_region *, root_region);
 	const struct elkvm_handlers *syscall_handlers;
-  list(struct region_mapping *, mappings);
-
-  list(struct elkvm_memory_region *, heap);
-	struct elkvm_memory_region *gdt_region;
-	struct elkvm_memory_region *idt_region;
-  struct elkvm_memory_region *env_region;
-
-  struct elkvm_signals sigs;
-  struct elkvm_flat *sighandler_cleanup;
-  struct rlimit rlimits[RLIMIT_NLIMITS];
-
   int debug;
+
+  struct rlimit rlimits[RLIMIT_NLIMITS];
 };
 
 struct elkvm_handlers {
@@ -158,20 +143,24 @@ struct elkvm_handlers {
 
 /*
 	Create a new VM, with the given mode, cpu count, memory and syscall handlers
-	Return 0 on success, -1 on error
 */
-int elkvm_vm_create(struct elkvm_opts *, struct kvm_vm *, int mode, int cpus,
-		const struct elkvm_handlers *, const char *binary);
+struct kvm_vm *
+elkvm_vm_create(struct elkvm_opts *,
+    int mode,
+    unsigned cpus,
+		const struct elkvm_handlers * const,
+    const char *binary,
+    int debug);
+
+/*
+ * Runs all CPUS of the VM
+ */
+int elkvm_vm_run(struct kvm_vm *vm);
 
 /*
  * \brief Put the VM in debug mode
  */
 int elkvm_set_debug(struct kvm_vm *);
-
-/*
-	Returns the number of VCPUs in a VM
-*/
-int elkvm_vcpu_count(struct kvm_vm *);
 
 /*
  * \brief Emulates (skips) the VMCALL instruction
@@ -191,12 +180,6 @@ uint64_t elkvm_chunk_count(struct kvm_vm *);
 struct kvm_userspace_memory_region elkvm_get_chunk(struct kvm_vm *, int chunk);
 
 int elkvm_dump_valid_msrs(struct elkvm_opts *);
-
-/*
- * Print the locations of the system memory regions
- */
-void elkvm_print_regions(struct kvm_vm *);
-void elkvm_dump_region(struct elkvm_memory_region *);
 
 /**
  * \brief Initialize the gdbstub and wait for gdb

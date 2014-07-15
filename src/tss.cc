@@ -1,18 +1,21 @@
+#include <cstring>
+
 #include <elkvm.h>
-#include <stack-c.h>
+#include <elkvm-internal.h>
+#include <stack.h>
 #include <tss.h>
 
-#include <string.h>
+int elkvm_tss_setup64(std::shared_ptr<struct kvm_vcpu> vcpu, Elkvm::RegionManager &rm, std::shared_ptr<Elkvm::Region> r) {
+  guestptr_t guest_virtual =
+    rm.get_pager().map_kernel_page(
+			r->base_address(), 0);
+  assert(guest_virtual != 0x0 && "could not map tss");
 
-int elkvm_tss_setup64(struct kvm_vm *vm __attribute__((unused)),
-    struct elkvm_memory_region *tss_region) {
-
-	tss_region->guest_virtual = elkvm_pager_map_kernel_page(NULL,
-			tss_region->host_base_p, 0, 0);
-	struct elkvm_tss64 *tss = (struct elkvm_tss64 *)tss_region->host_base_p;
+  r->set_guest_addr(guest_virtual);
+	struct elkvm_tss64 *tss = (struct elkvm_tss64 *)r->base_address();
 	memset(tss, 0, sizeof(struct elkvm_tss64));
 
-	tss->ist1 = elkvm_get_kernel_stack_base();
+	tss->ist1 = vcpu->kernel_stack_base();
 	tss->rsp0 = 0xFFFFFFFFFFFFFFFF;
 	tss->rsp2 = 0x00007FFFFFFFFFFF;
 	return 0;
