@@ -569,19 +569,6 @@ namespace Elkvm {
   //namespace Elkvm
 }
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void *elkvm_pager_get_host_p(struct kvm_pager *pager __attribute__((unused)),
-    guestptr_t addr) {
-  return Elkvm::vmi->get_region_manager().get_pager().get_host_p(addr);
-}
-
-#ifdef __cplusplus
-}
-#endif
-
 guestptr_t page_begin(guestptr_t addr) {
   return (addr & ~(ELKVM_PAGESIZE-1));
 }
