@@ -18,10 +18,6 @@
 #include <syscall.h>
 #include <vcpu.h>
 
-namespace Elkvm {
-  extern std::unique_ptr<VMInternals> vmi;
-}
-
 int kvm_vcpu_initialize_regs(struct kvm_vcpu *vcpu, int mode) {
 	switch(mode) {
 		case VM_MODE_X86_64:
@@ -578,13 +574,13 @@ void kvm_vcpu_dump_code(struct kvm_vcpu *vcpu) {
 
 #ifdef HAVE_LIBUDIS86
 int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *vcpu, uint64_t guest_addr) {
-  assert(guest_addr != 0x0);
-	void *host_p = Elkvm::vmi->get_region_manager().get_pager().get_host_p(guest_addr);
-  assert(host_p != NULL);
-	size_t disassembly_size = 40;
-	ud_set_input_buffer(&vcpu->ud_obj, (const uint8_t *)host_p, disassembly_size);
-
-	return 0;
+//  assert(guest_addr != 0x0);
+//	void *host_p = Elkvm::vmi->get_region_manager().get_pager().get_host_p(guest_addr);
+//  assert(host_p != NULL);
+//	size_t disassembly_size = 40;
+//	ud_set_input_buffer(&vcpu->ud_obj, (const uint8_t *)host_p, disassembly_size);
+//
+//	return 0;
 }
 
 void elkvm_init_udis86(struct kvm_vcpu *vcpu, int mode) {

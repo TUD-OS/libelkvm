@@ -1,4 +1,6 @@
+#include <algorithm>
 #include <cstring>
+#include <vector>
 
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -11,7 +13,7 @@
 #include <vcpu.h>
 
 namespace Elkvm {
-  extern std::unique_ptr<VMInternals> vmi;
+  extern std::vector<VMInternals> vmi;
 
   VMInternals::VMInternals(int vmfd, int argc, char ** argv, char **environ,
       int run_struct_size,
@@ -152,8 +154,11 @@ namespace Elkvm {
   }
 
   VMInternals &get_vmi(struct kvm_vm *vm) {
-    return *vmi;
+    auto it = std::find(vmi.begin(), vmi.end(), *vm);
+    assert(it != vmi.end());
+    return *it;
   }
+
 
   unsigned get_hypercall_type(Elkvm::VMInternals &vmi,
       std::shared_ptr<struct kvm_vcpu> vcpu) {

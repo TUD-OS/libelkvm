@@ -14,10 +14,6 @@
 static int pending_signals[32];
 static int num_pending_signals = 0;
 
-namespace Elkvm {
-  extern std::shared_ptr<VMInternals> vmi;
-}
-
 void elkvm_signal_handler(int signum) {
 
   printf("\n============ LIBELKVM ===========\n");

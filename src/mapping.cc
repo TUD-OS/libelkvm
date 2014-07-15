@@ -7,8 +7,6 @@
 #include <region.h>
 
 namespace Elkvm {
-  extern std::vector<VMInternals> vmi;
-
   Mapping::Mapping(RegionManager &rm, guestptr_t guest_addr, size_t l, int pr, int f,
       int fdes, off_t off)
     : addr(guest_addr),

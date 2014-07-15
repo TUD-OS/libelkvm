@@ -21,10 +21,6 @@
 #include "elfloader.h"
 #include "region.h"
 
-namespace Elkvm {
-  extern std::unique_ptr<VMInternals> vmi;
-}
-
 int elkvm_handle_hypercall(Elkvm::VMInternals &vmi, std::shared_ptr<struct kvm_vcpu> vcpu) {
   int err = 0;
 

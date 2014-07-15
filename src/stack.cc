@@ -10,8 +10,6 @@
 #include "debug.h"
 
 namespace Elkvm {
-  extern std::unique_ptr<VMInternals> vmi;
-
   Stack::Stack(RegionManager &rm) : _rm(rm) {
     /* as the stack grows downward we can initialize its address at the base address
      * of the env region */

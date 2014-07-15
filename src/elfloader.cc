@@ -21,8 +21,6 @@
 #include <vcpu.h>
 
 namespace Elkvm {
-  extern std::unique_ptr<VMInternals> vmi;
-
   ElfBinary::ElfBinary(std::string pathname, RegionManager &rm, HeapManager &hm) :
     _rm(rm),
     _hm(hm)

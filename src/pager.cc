@@ -14,8 +14,6 @@
 #include <region.h>
 
 namespace Elkvm {
-  extern std::unique_ptr<VMInternals> vmi;
-
   PagerX86_64::PagerX86_64(int vmfd) :
   _vmfd(vmfd) {
     total_memsz = 0;

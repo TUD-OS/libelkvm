@@ -8,8 +8,6 @@
 #include <region.h>
 
 namespace Elkvm {
-  extern std::unique_ptr<VMInternals> vmi;
-
   RegionManager::RegionManager(int vmfd) : pager(vmfd) {
     auto sysregion = allocate_region(ELKVM_PAGER_MEMSIZE);
     pager.set_pml4(sysregion);
