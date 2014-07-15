@@ -272,7 +272,6 @@ namespace Elkvm {
       }
 
       assert(chunk->slot < KVM_MEMORY_SLOTS);
-      print(std::cout, *chunk);
       int err = ioctl(_vmfd, KVM_SET_USER_MEMORY_REGION, chunk.get());
       return err ? -errno : 0;
     //  if(err) {

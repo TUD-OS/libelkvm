@@ -22,12 +22,10 @@
 #include "region.h"
 
 int elkvm_handle_hypercall(Elkvm::VMInternals &vmi, std::shared_ptr<struct kvm_vcpu> vcpu) {
-  std::cout << __FILE__ << ":" << __LINE__ << std::endl;
 
   int err = 0;
 
   uint64_t call = Elkvm::get_hypercall_type(vmi, vcpu);
-  std::cout << __FILE__ << ":" << __LINE__ << std::endl;
   switch(call) {
     case ELKVM_HYPERCALL_SYSCALL:
 			err = elkvm_handle_syscall(vmi, vcpu.get());
@@ -229,13 +227,10 @@ long elkvm_do_read(Elkvm::VMInternals &vmi) {
 	uint64_t count;
 
 	elkvm_syscall3(vcpu, &fd, &buf_p, &count);
-  kvm_vcpu_dump_regs(vcpu.get());
 
   assert(buf_p != 0x0);
 	buf = reinterpret_cast<char *>(vmi.get_region_manager().get_pager().get_host_p(buf_p));
   Elkvm::RegionManager &rm = vmi.get_region_manager();
-  rm.dump_regions();
-  std::cout << "done\n";
 	buf = reinterpret_cast<char *>(rm.get_pager().get_host_p(buf_p));
 
   uint64_t bend_p = buf_p + count - 1;

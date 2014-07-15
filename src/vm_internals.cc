@@ -29,7 +29,6 @@ namespace Elkvm {
   {
     _vm = std::make_shared<struct kvm_vm>();
     _vm->fd = vmfd;
-    std::cout << "handlers(lib int): " << handlers << std::endl;
     _vm->syscall_handlers = handlers;
     _vm->debug = debug;
   }
@@ -163,10 +162,6 @@ namespace Elkvm {
 
   unsigned get_hypercall_type(Elkvm::VMInternals &vmi,
       std::shared_ptr<struct kvm_vcpu> vcpu) {
-  std::cout << __FILE__ << ":" << __LINE__ << std::endl;
-    std::cout << "pager: " << &(vmi.get_region_manager().get_pager()) << std::endl;
-    std::cout << "rm: " << &(vmi.get_region_manager()) << std::endl;
-  std::cout << __FILE__ << ":" << __LINE__ << std::endl;
     return vcpu->pop();
   }
 
