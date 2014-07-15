@@ -34,7 +34,7 @@ namespace Elkvm {
   int HeapManager::grow(guestptr_t newbrk) {
     assert(newbrk > curbrk);
     size_t sz = newbrk - curbrk;
-    Mapping m(curbrk, sz, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0);
+    Mapping m(_rm, curbrk, sz, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0);
     mappings.push_back(m);
     return m.map_self();
   }
@@ -72,7 +72,7 @@ namespace Elkvm {
   int HeapManager::init(std::shared_ptr<Region> data, size_t sz) {
     assert(mappings.empty() && "heap must not be initialized after use");
     /* XXX sz might be wrong here! */
-    mappings.emplace_back(data, data->guest_address(), sz, PROT_READ | PROT_WRITE,
+    mappings.emplace_back(_rm, data, data->guest_address(), sz, PROT_READ | PROT_WRITE,
         MAP_ANONYMOUS, 0, 0);
 
     curbrk = next_page(data->guest_address() + sz);

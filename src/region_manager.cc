@@ -202,7 +202,7 @@ namespace Elkvm {
         /* this mapping needs to be split! */
         it->slice(addr, length);
       }
-      mappings.emplace_back(addr, length, prot, flags, fd, off);
+      mappings.emplace_back(*this, addr, length, prot, flags, fd, off);
       Mapping &mapping = mappings.back();
       mapping.map_self();
 
@@ -222,7 +222,7 @@ namespace Elkvm {
   void RegionManager::free_mapping(Mapping &mapping) {
     auto it = std::find(mappings.begin(), mappings.end(), mapping);
     assert(it != mappings.end());
-    mappings.erase(it);
+    //mappings.erase(it);
   }
 
 

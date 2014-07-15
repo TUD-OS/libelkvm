@@ -615,7 +615,7 @@ long elkvm_do_mprotect(Elkvm::VMInternals &vmi) {
   if(mapping.get_length() != len) {
     /* we need to split this mapping */
     mapping.slice(addr, len);
-    Elkvm::Mapping new_mapping(addr, len, prot, mapping.get_flags(),
+    Elkvm::Mapping new_mapping(vmi.get_region_manager(), addr, len, prot, mapping.get_flags(),
         mapping.get_fd(), mapping.get_offset());
     new_mapping.map_self();
     vmi.get_region_manager().add_mapping(new_mapping);

@@ -5,8 +5,9 @@
 #include <iostream>
 #include <memory>
 
-#include "elkvm.h"
-#include "region.h"
+#include <elkvm.h>
+#include <region.h>
+#include <mapping.h>
 
 namespace Elkvm {
   class HeapManager {
