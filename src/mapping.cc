@@ -56,6 +56,22 @@ namespace Elkvm {
     return addr + length;
   }
 
+  void Mapping::move_guest_address(off64_t off) {
+    assert(off < length);
+    addr += off;
+    length -= off;
+    mapped_pages = pages_from_size(length);
+    host_p = reinterpret_cast<char *>(host_p) + off;
+    auto r = region->slice_begin(off);
+    _rm.add_free_region(r);
+  }
+
+  void Mapping::set_length(size_t len) {
+    assert(length >= len);
+    length = len;
+    mapped_pages = pages_from_size(length);
+  }
+
   void Mapping::modify(int pr, int fl, int filedes, off_t o) {
     mapped_pages = pages_from_size(length);
 
@@ -101,77 +117,6 @@ namespace Elkvm {
   bool Mapping::fits_address(guestptr_t a) const {
     return (region->guest_address()) <= a
         && (a < (region->guest_address() + region->size()));
-  }
-
-  void Mapping::slice(guestptr_t slice_base, size_t len) {
-    assert(contains_address(slice_base)
-        && "slice address must be contained in mapping");
-    if(slice_base == addr) {
-      slice_begin(len);
-      return;
-    }
-
-    /* slice_base is now always larger than host_p */
-    off_t off = slice_base - addr;
-
-    if(contains_address(slice_base + len)) {
-      /* slice_center also includes the case that the end of the sliced region
-       * is the end of this region */
-      slice_center(off, len);
-    } else {
-      /* slice_end is only needed, when we want to expand the new region beyond
-       * the end of this region */
-      slice_end(slice_base);
-    }
-  }
-
-  void Mapping::slice_center(off_t off, size_t len) {
-    assert(contains_address(reinterpret_cast<char *>(host_p) + off + len));
-    assert(0 <= off < length);
-
-    /* unmap the old stuff */
-    unsigned pages = pages_from_size(len);
-    _hm.unmap(*this, addr + off, pages);
-
-    region->slice_center(off, len);
-
-    if(length > off + len) {
-      size_t rem = length - off - len;
-      auto r = _rm.find_region(reinterpret_cast<char *>(host_p) + off + len);
-      /* There should be no need to process this mapping any further, because we
-       * feed it the split memory region, with the old data inside */
-      Mapping end(_hm, _rm, r, addr + off + len,
-          rem, prot, flags, fd, offset + off + len);
-      _hm.add_mapping(end);
-    }
-
-    length = off;
-    /* XXX only if the mapping is still fully mapped! */
-    mapped_pages = pages_from_size(length);
-  }
-
-  void Mapping::slice_begin(size_t len) {
-    unsigned pages = pages_from_size(len);
-    _hm.unmap(*this, addr, pages);
-
-    addr += len;
-    length -= len;
-    host_p = reinterpret_cast<char *>(host_p) + len;
-    auto r = region->slice_begin(len);
-    _rm.add_free_region(r);
-  }
-
-  void Mapping::slice_end(guestptr_t slice_base) {
-    assert(contains_address(slice_base));
-
-    /* unmap the old stuff */
-    _hm.unmap(*this, slice_base, pages_from_size((addr + length) - slice_base));
-
-    assert(((addr + length) - slice_base) < length);
-    length = length - ((addr + length) - slice_base);
-
-    /* TODO free part of the attached memory region */
-
   }
 
   int Mapping::fill() {

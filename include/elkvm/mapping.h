@@ -47,8 +47,10 @@ namespace Elkvm {
 
       void *base_address() const { return host_p; }
       guestptr_t guest_address() const { return addr; }
+      void move_guest_address(off64_t off);
       int get_fd() const { return fd; }
       size_t get_length() const { return length; }
+      void set_length(size_t len);
       off_t get_offset() const { return offset; }
       unsigned get_pages() const { return mapped_pages; }
       int get_prot() const { return prot; }
@@ -62,7 +64,6 @@ namespace Elkvm {
       struct region_mapping *c_mapping();
       void sync_back(struct region_mapping *mapping);
 
-      void slice(guestptr_t slice_base, size_t len);
       int fill();
 
       void modify(int pr, int fl, int filedes, off_t o);

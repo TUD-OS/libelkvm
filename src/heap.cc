@@ -27,7 +27,7 @@ namespace Elkvm {
 
     assert(m.guest_address() + m.get_length() > slice_base);
     size_t len = m.guest_address() + m.get_length() - slice_base;
-    m.slice(slice_base, len);
+    slice(m, slice_base, len);
     return 0;
   }
 
@@ -125,7 +125,7 @@ namespace Elkvm {
       if(it != mappings_for_mmap.end()) {
         /* TODO this should be done after we get back to the user! */
         /* this mapping needs to be split! */
-        it->slice(addr, length);
+        slice(*it, addr, length);
       }
       mappings_for_mmap.emplace_back(*this, _rm, addr, length, prot, flags, fd, off);
       Mapping &mapping = mappings_for_mmap.back();
@@ -224,6 +224,74 @@ namespace Elkvm {
     }
 
     return 0;
+  }
+
+  void HeapManager::slice(Mapping &m, guestptr_t slice_base, size_t len) {
+    assert(m.contains_address(slice_base)
+        && "slice address must be contained in mapping");
+    guestptr_t addr = m.guest_address();
+    if(slice_base == addr) {
+      slice_begin(m, len);
+      return;
+    }
+
+    /* slice_base is now always larger than host_p */
+    off_t off = slice_base - addr;
+
+    if(m.contains_address(slice_base + len)) {
+      /* slice_center also includes the case that the end of the sliced region
+       * is the end of this region */
+      slice_center(m, off, len);
+    } else {
+      /* slice_end is only needed, when we want to expand the new region beyond
+       * the end of this region */
+      slice_end(m, slice_base);
+    }
+  }
+
+  void HeapManager::slice_begin(Mapping &m, size_t len) {
+    unsigned pages = pages_from_size(len);
+    unmap(m, m.guest_address(), pages);
+    m.move_guest_address(len);
+  }
+
+  void HeapManager::slice_center(Mapping &m, off_t off, size_t len) {
+    assert(m.contains_address(reinterpret_cast<char *>(m.base_address()) + off
+          + len));
+    assert(0 <= off < m.get_length());
+
+    /* unmap the old stuff */
+    unsigned pages = pages_from_size(len);
+    unmap(m, m.guest_address() + off, pages);
+
+    m.get_region()->slice_center(off, len);
+
+    if(m.get_length() > off + len) {
+      size_t rem = m.get_length() - off - len;
+      auto r = _rm.find_region(reinterpret_cast<char *>(m.base_address()) + off
+          + len);
+      /* There should be no need to process this mapping any further, because we
+       * feed it the split memory region, with the old data inside */
+      Mapping end(*this, _rm, r, m.guest_address() + off + len,
+          rem, m.get_prot(), m.get_flags(), m.get_fd(), m.get_offset() + off + len);
+      add_mapping(end);
+    }
+
+    m.set_length(off);
+  }
+
+  void HeapManager::slice_end(Mapping &m, guestptr_t slice_base) {
+    assert(m.contains_address(slice_base));
+
+    /* unmap the old stuff */
+    unmap(m, slice_base, pages_from_size((m.guest_address() + m.get_length())
+          - slice_base));
+
+    assert(((m.guest_address() + m.get_length()) - slice_base) < m.get_length());
+    m.set_length(m.get_length() - ((m.guest_address() + m.get_length())
+          - slice_base));
+
+    /* TODO free part of the attached memory region */
   }
 
   //namespace Elkvm

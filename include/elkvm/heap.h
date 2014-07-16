@@ -45,6 +45,11 @@ namespace Elkvm {
       int map(Mapping &m) const;
       int unmap(Mapping &m);
       int unmap(Mapping &m, guestptr_t unmap_addr, unsigned pages);
+
+      void slice(Mapping &m, guestptr_t slice_base, size_t len);
+      void slice_begin(Mapping &m, size_t len);
+      void slice_center(Mapping &m, off_t off, size_t len);
+      void slice_end(Mapping &m, guestptr_t slice_base);
   };
 
   //namespace Elkvm
