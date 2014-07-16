@@ -29,8 +29,6 @@ namespace Elkvm {
       void slice_end(guestptr_t slice_base);
 
     public:
-      Mapping(RegionManager &_rm, guestptr_t guest_addr, size_t l, int pr, int f,
-          int fdes, off_t off);
       Mapping(RegionManager &_rm, std::shared_ptr<Region> r, guestptr_t guest_addr,
           size_t l, int pr, int f, int fdes, off_t off);
 

@@ -34,7 +34,8 @@ namespace Elkvm {
   int HeapManager::grow(guestptr_t newbrk) {
     assert(newbrk > curbrk);
     size_t sz = newbrk - curbrk;
-    Mapping m(_rm, curbrk, sz, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0);
+    std::shared_ptr<Region> r = _rm.allocate_region(sz);
+    Mapping m(_rm, r, curbrk, sz, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0);
     mappings_for_brk.push_back(m);
     return map(m);
   }
@@ -127,7 +128,8 @@ namespace Elkvm {
         /* this mapping needs to be split! */
         slice(*it, addr, length);
       }
-      mappings_for_mmap.emplace_back(_rm, addr, length, prot, flags, fd, off);
+      std::shared_ptr<Region> r = _rm.allocate_region(length);
+      mappings_for_mmap.emplace_back(_rm, r, addr, length, prot, flags, fd, off);
       Mapping &mapping = mappings_for_mmap.back();
       int err = map(mapping);
       assert(err == 0);

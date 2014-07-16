@@ -614,7 +614,8 @@ long elkvm_do_mprotect(Elkvm::VMInternals &vmi) {
   if(mapping.get_length() != len) {
     /* we need to split this mapping */
     vmi.get_heap_manager().slice(mapping, addr, len);
-    Elkvm::Mapping new_mapping(vmi.get_region_manager(),
+    std::shared_ptr<Elkvm::Region> r = vmi.get_region_manager().allocate_region(len);
+    Elkvm::Mapping new_mapping(vmi.get_region_manager(), r,
         addr, len, prot, mapping.get_flags(),
         mapping.get_fd(), mapping.get_offset());
     vmi.get_heap_manager().map(new_mapping);

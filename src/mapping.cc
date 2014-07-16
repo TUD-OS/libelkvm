@@ -7,28 +7,6 @@
 #include <region.h>
 
 namespace Elkvm {
-  Mapping::Mapping(RegionManager &rm, guestptr_t guest_addr,
-      size_t l, int pr, int f, int fdes, off_t off)
-    : addr(guest_addr),
-      length(l),
-      prot(pr),
-      flags(f),
-      fd(fdes),
-      offset(off),
-      _rm(rm)
-  {
-
-    region = _rm.allocate_region(length);
-    assert(!region->is_free());
-
-    host_p = region->base_address();
-    if(addr == 0x0) {
-      addr = reinterpret_cast<guestptr_t>(host_p);
-    }
-    region->set_guest_addr(addr);
-    mapped_pages = pages_from_size(length);
-  }
-
   Mapping::Mapping(RegionManager &rm, std::shared_ptr<Region> r,
       guestptr_t guest_addr, size_t l, int pr, int f, int fdes, off_t off) :
     addr(guest_addr),
@@ -41,7 +19,11 @@ namespace Elkvm {
     _rm(rm)
   {
       assert(region->size() >= length);
+
       host_p = region->base_address();
+      if(addr == 0x0) {
+        addr = reinterpret_cast<guestptr_t>(host_p);
+      }
       region->set_guest_addr(addr);
       assert(!region->is_free());
       mapped_pages = pages_from_size(length);
