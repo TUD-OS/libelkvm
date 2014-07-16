@@ -7,8 +7,6 @@
 
 namespace Elkvm {
 
-  class RegionManager;
-
   class Region {
     private:
       void *host_p;
@@ -16,14 +14,12 @@ namespace Elkvm {
       size_t rsize;
       bool free;
 
-      RegionManager &_rm;
     public:
-      Region(void *chunk_p, size_t size, RegionManager &rm) :
+      Region(void *chunk_p, size_t size) :
         host_p(chunk_p),
         addr(0),
         rsize(size),
-        free(true),
-        _rm(rm)
+        free(true)
     {}
       void *base_address() const { return host_p; }
       struct elkvm_memory_region *c_region() const;

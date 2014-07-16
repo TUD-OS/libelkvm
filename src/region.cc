@@ -64,7 +64,7 @@ namespace Elkvm {
     assert(rsize > pagesize_align(size));
 
     std::shared_ptr<Region> r =
-      std::make_shared<Region>(host_p, pagesize_align(size), _rm);
+      std::make_shared<Region>(host_p, pagesize_align(size));
 
     host_p = reinterpret_cast<char *>(host_p) + r->size();
     rsize  -= r->size();
@@ -84,13 +84,13 @@ namespace Elkvm {
 
     std::shared_ptr<Region> r = std::make_shared<Region>(
         reinterpret_cast<char *>(host_p) + off + len,
-        rsize - off - len, _rm);
+        rsize - off - len);
     r->set_guest_addr(addr + off);
 
     rsize = off;
 
     std::shared_ptr<Region> free_region = std::make_shared<Region>(
-          reinterpret_cast<char *>(host_p) + off, len, _rm);
+          reinterpret_cast<char *>(host_p) + off, len);
     
     return std::pair<std::shared_ptr<Region>, std::shared_ptr<Region>>(
         r, free_region);

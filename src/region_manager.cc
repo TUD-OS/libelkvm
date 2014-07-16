@@ -97,7 +97,7 @@ namespace Elkvm {
     }
 
     assert(grow_size <= 0x8000000 && grow_size > 0x400000);
-    freelists[15].push_back(std::make_shared<Region>(chunk_p, grow_size, *this));
+    freelists[15].push_back(std::make_shared<Region>(chunk_p, grow_size));
     return 0;
   }
 
