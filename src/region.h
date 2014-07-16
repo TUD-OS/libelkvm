@@ -53,7 +53,6 @@ namespace Elkvm {
     private:
       std::vector<std::shared_ptr<Region>> allocated_regions;
       std::array<std::vector<std::shared_ptr<Region>>, 16> freelists;
-      std::vector<Mapping> mappings;
 
       PagerX86_64 pager;
 
@@ -62,7 +61,6 @@ namespace Elkvm {
     public:
       RegionManager(int vmfd);
 
-      bool address_mapped(guestptr_t addr) const;
       bool address_valid(const void *host_p) const;
       bool host_address_mapped(const void * const) const;
       bool same_region(const void *p1, const void *p2) const;
@@ -79,15 +77,6 @@ namespace Elkvm {
 
       void dump_regions() const;
       void dump_mappings() const;
-
-      Mapping &find_mapping(void *host_p);
-      Mapping &find_mapping(guestptr_t addr);
-
-      Mapping &get_mapping(guestptr_t addr, size_t length, int prot, int flags,
-          int fd, off_t off);
-
-      void add_mapping(const Mapping &mapping);
-      void free_mapping(Mapping &mapping);
 
       /* XXX make this const */
       PagerX86_64 &get_pager() { return pager; }

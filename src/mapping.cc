@@ -7,77 +7,47 @@
 #include <region.h>
 
 namespace Elkvm {
-  Mapping::Mapping(RegionManager &rm, guestptr_t guest_addr, size_t l, int pr, int f,
-      int fdes, off_t off)
-    : addr(guest_addr),
-      length(l),
-      prot(pr),
-      flags(f),
-      fd(fdes),
-      offset(off),
-      _rm(rm) {
-
-    region = _rm.allocate_region(length);
-    assert(!region->is_free());
-
-    host_p = region->base_address();
-    if(addr == 0x0) {
-      addr = reinterpret_cast<guestptr_t>(host_p);
-    }
-    region->set_guest_addr(addr);
-    mapped_pages = pages_from_size(length);
-  }
-
-  Mapping::Mapping(RegionManager &rm, std::shared_ptr<Region> r, guestptr_t guest_addr, size_t l, int pr, int f,
-          int fdes, off_t off) :
+  Mapping::Mapping(std::shared_ptr<Region> r,
+      guestptr_t guest_addr, size_t l, int pr, int f, int fdes, off_t off) :
     addr(guest_addr),
     length(l),
     prot(pr),
     flags(f),
     fd(fdes),
     offset(off),
-    region(r),
-    _rm(rm) {
+    region(r)
+  {
       assert(region->size() >= length);
+
       host_p = region->base_address();
+      if(addr == 0x0) {
+        addr = reinterpret_cast<guestptr_t>(host_p);
+      }
       region->set_guest_addr(addr);
       assert(!region->is_free());
       mapped_pages = pages_from_size(length);
-  }
-
-  int Mapping::unmap_self() {
-    int err = _rm.get_pager().unmap_region(addr, mapped_pages);
-    _rm.free_region(region);
-    return err;
   }
 
   guestptr_t Mapping::grow_to_fill() {
     addr = region->guest_address();
     length = region->size();
     mapped_pages = pages_from_size(length);
-    map_self();
     return addr + length;
   }
 
-  int Mapping::map_self() {
-    if(!readable() && !writeable() && !executable()) {
-      _rm.get_pager().unmap_region(addr, mapped_pages);
-      mapped_pages = 0;
-      return 0;
-    }
+  std::shared_ptr<Region> Mapping::move_guest_address(off64_t off) {
+    assert(off < length);
+    addr += off;
+    length -= off;
+    mapped_pages = pages_from_size(length);
+    host_p = reinterpret_cast<char *>(host_p) + off;
+    return region->slice_begin(off);
+  }
 
-    ptopt_t opts = 0;
-    if(writeable()) {
-      opts |= PT_OPT_WRITE;
-    }
-    if(executable()) {
-      opts |= PT_OPT_EXEC;
-    }
-
-    /* add page table entries according to the options specified by the monitor */
-    int err = _rm.get_pager().map_region(host_p, addr, mapped_pages, opts);
-    assert(err == 0);
-    return err;
+  void Mapping::set_length(size_t len) {
+    assert(length >= len);
+    length = len;
+    mapped_pages = pages_from_size(length);
   }
 
   void Mapping::modify(int pr, int fl, int filedes, off_t o) {
@@ -85,7 +55,6 @@ namespace Elkvm {
 
     if(pr != prot) {
       prot = pr;
-      map_self();
     }
     if(flags != fl) {
       if(anonymous() && !(fl & MAP_ANONYMOUS)) {
@@ -111,29 +80,8 @@ namespace Elkvm {
     }
   }
 
-  int Mapping::mprotect(int pr) {
-    if(pr != prot) {
-      prot = pr;
-      return map_self();
-    }
-    return 0;
-  }
-
-  int Mapping::unmap(guestptr_t unmap_addr, unsigned pages) {
-    assert(contains_address(unmap_addr));
-    assert(pages <= mapped_pages);
-    assert(contains_address(unmap_addr + ((pages-1) * ELKVM_PAGESIZE)));
-
-    int err = _rm.get_pager().unmap_region(unmap_addr, pages);
-    assert(err == 0 && "could not unmap this mapping");
-    mapped_pages -= pages;
-
-    if(mapped_pages == 0) {
-      _rm.free_region(region);
-      _rm.free_mapping(*this);
-    }
-
-    return 0;
+  void Mapping::mprotect(int pr) {
+    prot = pr;
   }
 
   bool Mapping::contains_address(void *p) const {
@@ -147,77 +95,6 @@ namespace Elkvm {
   bool Mapping::fits_address(guestptr_t a) const {
     return (region->guest_address()) <= a
         && (a < (region->guest_address() + region->size()));
-  }
-
-  void Mapping::slice(guestptr_t slice_base, size_t len) {
-    assert(contains_address(slice_base)
-        && "slice address must be contained in mapping");
-    if(slice_base == addr) {
-      slice_begin(len);
-      return;
-    }
-
-    /* slice_base is now always larger than host_p */
-    off_t off = slice_base - addr;
-
-    if(contains_address(slice_base + len)) {
-      /* slice_center also includes the case that the end of the sliced region
-       * is the end of this region */
-      slice_center(off, len);
-    } else {
-      /* slice_end is only needed, when we want to expand the new region beyond
-       * the end of this region */
-      slice_end(slice_base);
-    }
-  }
-
-  void Mapping::slice_center(off_t off, size_t len) {
-    assert(contains_address(reinterpret_cast<char *>(host_p) + off + len));
-    assert(0 <= off < length);
-
-    /* unmap the old stuff */
-    unsigned pages = pages_from_size(len);
-    unmap(addr + off, pages);
-
-    region->slice_center(off, len);
-
-    if(length > off + len) {
-      size_t rem = length - off - len;
-      auto r = _rm.find_region(reinterpret_cast<char *>(host_p) + off + len);
-      /* There should be no need to process this mapping any further, because we
-       * feed it the split memory region, with the old data inside */
-      Mapping end(_rm, r, addr + off + len,
-          rem, prot, flags, fd, offset + off + len);
-      _rm.add_mapping(end);
-    }
-
-    length = off;
-    /* XXX only if the mapping is still fully mapped! */
-    mapped_pages = pages_from_size(length);
-  }
-
-  void Mapping::slice_begin(size_t len) {
-    unsigned pages = pages_from_size(len);
-    unmap(addr, pages);
-
-    addr += len;
-    length -= len;
-    host_p = reinterpret_cast<char *>(host_p) + len;
-    auto r = region->slice_begin(len);
-    _rm.add_free_region(r);
-  }
-
-  void Mapping::slice_end(guestptr_t slice_base) {
-    assert(contains_address(slice_base));
-
-    /* unmap the old stuff */
-    unmap(slice_base, pages_from_size((addr + length) - slice_base));
-
-    assert(((addr + length) - slice_base) < length);
-    length = length - ((addr + length) - slice_base);
-
-    /* TODO free part of the attached memory region */
-
   }
 
   int Mapping::fill() {

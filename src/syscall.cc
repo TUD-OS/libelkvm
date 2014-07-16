@@ -545,7 +545,7 @@ long elkvm_do_mmap(Elkvm::VMInternals &vmi) {
   /* create a mapping object with the data from the user, this will
    * also allocate the memory for this mapping */
   Elkvm::Mapping &mapping =
-    vmi.get_region_manager().get_mapping(addr, length, prot, flags, fd, off);
+    vmi.get_heap_manager().get_mapping(addr, length, prot, flags, fd, off);
 
 
   /* if a handler is specified, call the monitor for corrections etc. */
@@ -602,25 +602,27 @@ long elkvm_do_mprotect(Elkvm::VMInternals &vmi) {
   elkvm_syscall3(vcpu, &addr, &len, &prot);
 
   assert(page_aligned(addr) && "mprotect address must be page aligned");
-  if(!vmi.get_region_manager().address_mapped(addr)) {
+  if(!vmi.get_heap_manager().address_mapped(addr)) {
     vmi.get_region_manager().dump_regions();
     std::cout << "mprotect with invalid address: 0x" << std::hex
       << addr << std::endl;
     return -EINVAL;
   }
 
-  Elkvm::Mapping &mapping = vmi.get_region_manager().find_mapping(addr);
+  Elkvm::Mapping &mapping = vmi.get_heap_manager().find_mapping(addr);
   int err = 0;
   if(mapping.get_length() != len) {
     /* we need to split this mapping */
-    mapping.slice(addr, len);
-    Elkvm::Mapping new_mapping(vmi.get_region_manager(), addr, len, prot, mapping.get_flags(),
+    vmi.get_heap_manager().slice(mapping, addr, len);
+    std::shared_ptr<Elkvm::Region> r = vmi.get_region_manager().allocate_region(len);
+    Elkvm::Mapping new_mapping(r, addr, len, prot, mapping.get_flags(),
         mapping.get_fd(), mapping.get_offset());
-    new_mapping.map_self();
-    vmi.get_region_manager().add_mapping(new_mapping);
+    vmi.get_heap_manager().map(new_mapping);
+    vmi.get_heap_manager().add_mapping(new_mapping);
   } else {
     /* only modify this mapping */
-    err = mapping.mprotect(prot);
+    mapping.mprotect(prot);
+    err = vmi.get_heap_manager().map(mapping);
   }
 
   if(vmi.debug_mode()) {
@@ -650,8 +652,8 @@ long elkvm_do_munmap(Elkvm::VMInternals &vmi) {
   auto chunk = vmi.get_region_manager().get_pager().find_chunk_for_host_p(addr);
   assert(chunk != nullptr);
 
-  Elkvm::Mapping &mapping = vmi.get_region_manager().find_mapping(addr);
-  mapping.unmap(addr_p, pages_from_size(length));
+  Elkvm::Mapping &mapping = vmi.get_heap_manager().find_mapping(addr);
+  vmi.get_heap_manager().unmap(mapping, addr_p, pages_from_size(length));
 
   if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");

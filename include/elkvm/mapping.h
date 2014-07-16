@@ -9,7 +9,6 @@
 
 namespace Elkvm {
   class Region;
-  class RegionManager;
 
   class Mapping {
     private:
@@ -22,16 +21,13 @@ namespace Elkvm {
       int fd;
       off_t offset;
       std::shared_ptr<Region> region;
-      RegionManager &_rm;
 
       void slice_begin(size_t len);
       void slice_center(off_t off, size_t len);
       void slice_end(guestptr_t slice_base);
 
     public:
-      Mapping(RegionManager &rm, guestptr_t guest_addr, size_t l, int pr, int f,
-          int fdes, off_t off);
-      Mapping(RegionManager &rm, std::shared_ptr<Region> r, guestptr_t guest_addr,
+      Mapping(std::shared_ptr<Region> r, guestptr_t guest_addr,
           size_t l, int pr, int f, int fdes, off_t off);
 
       bool anonymous() const { return flags & MAP_ANONYMOUS; }
@@ -45,27 +41,27 @@ namespace Elkvm {
 
       void *base_address() const { return host_p; }
       guestptr_t guest_address() const { return addr; }
+      std::shared_ptr<Region> move_guest_address(off64_t off);
       int get_fd() const { return fd; }
       size_t get_length() const { return length; }
+      void set_length(size_t len);
       off_t get_offset() const { return offset; }
       unsigned get_pages() const { return mapped_pages; }
       int get_prot() const { return prot; }
       int get_flags() const { return flags; }
+      std::shared_ptr<Region> get_region() { return region; }
 
-      bool all_unmapped() { return mapped_pages == 0; }
+      bool all_unmapped() const { return mapped_pages == 0; }
+      void set_unmapped() { length = mapped_pages = 0; }
+      void pages_unmapped(unsigned pages) { mapped_pages -= pages; }
 
       struct region_mapping *c_mapping();
       void sync_back(struct region_mapping *mapping);
 
-      void slice(guestptr_t slice_base, size_t len);
       int fill();
 
-      int map_self();
-      int unmap_self();
-
       void modify(int pr, int fl, int filedes, off_t o);
-      int mprotect(int pr);
-      int unmap(guestptr_t unmap_addr, unsigned pages);
+      void mprotect(int pr);
   };
 
   std::ostream &print(std::ostream &, const Mapping &);
