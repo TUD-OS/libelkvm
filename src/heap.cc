@@ -138,6 +138,7 @@ namespace Elkvm {
     /* if we have an exact match, we only need to update this mapping's protection
      * and flags etc. and return the mapping object */
     it->modify(prot, flags, fd, off);
+    map(*it);
     return *it;
   }
 

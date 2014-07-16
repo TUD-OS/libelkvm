@@ -61,7 +61,6 @@ namespace Elkvm {
 
     if(pr != prot) {
       prot = pr;
-      _hm.map(*this);
     }
     if(flags != fl) {
       if(anonymous() && !(fl & MAP_ANONYMOUS)) {
