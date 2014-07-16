@@ -50,7 +50,10 @@ namespace Elkvm {
     }
 
     if(!mappings_for_brk.back().fits_address(newbrk-1)) {
-      curbrk = mappings_for_brk.back().grow_to_fill();
+      Mapping &m = mappings_for_brk.back();
+      curbrk = m.grow_to_fill();
+      map(m);
+
       int err = grow(newbrk);
       if(err) {
         return err;

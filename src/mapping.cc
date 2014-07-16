@@ -53,7 +53,6 @@ namespace Elkvm {
     addr = region->guest_address();
     length = region->size();
     mapped_pages = pages_from_size(length);
-    _hm.map(*this);
     return addr + length;
   }
 
