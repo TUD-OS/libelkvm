@@ -41,6 +41,8 @@ namespace Elkvm {
       void free_mapping(Mapping &mapping);
 
       void dump_mappings() const;
+
+      int unmap(Mapping &m) const;
   };
 
   //namespace Elkvm

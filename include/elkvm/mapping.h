@@ -53,6 +53,7 @@ namespace Elkvm {
       unsigned get_pages() const { return mapped_pages; }
       int get_prot() const { return prot; }
       int get_flags() const { return flags; }
+      std::shared_ptr<Region> get_region() { return region; }
 
       bool all_unmapped() { return mapped_pages == 0; }
 
@@ -63,7 +64,6 @@ namespace Elkvm {
       int fill();
 
       int map_self();
-      int unmap_self();
 
       void modify(int pr, int fl, int filedes, off_t o);
       int mprotect(int pr);

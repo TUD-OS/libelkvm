@@ -10,7 +10,7 @@
 namespace Elkvm {
   int HeapManager::shrink(guestptr_t newbrk) {
     while(newbrk <= mappings_for_brk.back().guest_address()) {
-      int err = mappings_for_brk.back().unmap_self();
+      int err = unmap(mappings_for_brk.back());
       assert(err == 0);
       mappings_for_brk.pop_back();
     }
@@ -176,6 +176,12 @@ namespace Elkvm {
     }
 
     std::cout << std::endl << std::endl;
+  }
+
+  int HeapManager::unmap(Mapping &m) const {
+    int err = _rm.get_pager().unmap_region(m.guest_address(), m.get_pages());
+    _rm.free_region(m.get_region());
+    return err;
   }
 
   //namespace Elkvm
