@@ -269,7 +269,9 @@ namespace Elkvm {
     unsigned pages = pages_from_size(len);
     unmap(m, m.guest_address() + off, pages);
 
-    m.get_region()->slice_center(off, len);
+    auto regions = m.get_region()->slice_center(off, len);
+    _rm.use_region(regions.first);
+    _rm.add_free_region(regions.second);
 
     if(m.get_length() > off + len) {
       size_t rem = m.get_length() - off - len;
