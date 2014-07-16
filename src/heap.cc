@@ -254,7 +254,8 @@ namespace Elkvm {
   void HeapManager::slice_begin(Mapping &m, size_t len) {
     unsigned pages = pages_from_size(len);
     unmap(m, m.guest_address(), pages);
-    m.move_guest_address(len);
+    std::shared_ptr<Region> r = m.move_guest_address(len);
+    _rm.add_free_region(r);
   }
 
   void HeapManager::slice_center(Mapping &m, off_t off, size_t len) {

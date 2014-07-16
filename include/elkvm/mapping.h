@@ -43,7 +43,7 @@ namespace Elkvm {
 
       void *base_address() const { return host_p; }
       guestptr_t guest_address() const { return addr; }
-      void move_guest_address(off64_t off);
+      std::shared_ptr<Region> move_guest_address(off64_t off);
       int get_fd() const { return fd; }
       size_t get_length() const { return length; }
       void set_length(size_t len);
