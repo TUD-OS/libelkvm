@@ -7,6 +7,7 @@
 #include <environ.h>
 #include <kvm.h>
 #include <region.h>
+#include <region_manager.h>
 #include <stack.h>
 
 namespace Elkvm {

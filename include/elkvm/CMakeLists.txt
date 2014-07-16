@@ -9,6 +9,7 @@ SET( libelkvm_MOC_HEADERS
   mapping.h
   mem_chunk.h
   pager.h
+  region_manager.h
   stack.h
   syscall.h
   tss.h

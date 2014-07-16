@@ -6,6 +6,8 @@
 #include <elkvm-internal.h>
 #include <elfloader.h>
 #include <heap.h>
+#include <region.h>
+#include <region_manager.h>
 
 namespace Elkvm {
   int HeapManager::shrink(guestptr_t newbrk) {

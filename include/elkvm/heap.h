@@ -4,9 +4,11 @@
 
 #include <iostream>
 #include <memory>
+#include <vector>
 
 #include <elkvm.h>
 #include <region.h>
+#include <region_manager.h>
 #include <mapping.h>
 
 namespace Elkvm {

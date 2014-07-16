@@ -6,6 +6,7 @@
 #include <elkvm-internal.h>
 #include <heap.h>
 #include <region.h>
+#include <region_manager.h>
 
 namespace Elkvm {
   RegionManager::RegionManager(int vmfd) : pager(vmfd) {

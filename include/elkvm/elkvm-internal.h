@@ -7,6 +7,7 @@
 #include <flats.h>
 #include <heap.h>
 #include <region.h>
+#include <region_manager.h>
 #include <stack.h>
 
 namespace Elkvm {

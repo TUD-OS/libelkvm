@@ -38,6 +38,7 @@
 #include <elkvm-internal.h>
 #include <debug.h>
 #include <pager.h>
+#include <region_manager.h>
 
 #define NEED_CPU_REG_SHORTCUTS 1
 
