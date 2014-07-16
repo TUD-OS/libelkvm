@@ -7,7 +7,7 @@
 #include <region.h>
 
 namespace Elkvm {
-  Mapping::Mapping(RegionManager &rm, std::shared_ptr<Region> r,
+  Mapping::Mapping(std::shared_ptr<Region> r,
       guestptr_t guest_addr, size_t l, int pr, int f, int fdes, off_t off) :
     addr(guest_addr),
     length(l),
@@ -15,8 +15,7 @@ namespace Elkvm {
     flags(f),
     fd(fdes),
     offset(off),
-    region(r),
-    _rm(rm)
+    region(r)
   {
       assert(region->size() >= length);
 
