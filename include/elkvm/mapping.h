@@ -57,6 +57,7 @@ namespace Elkvm {
 
       bool all_unmapped() const { return mapped_pages == 0; }
       void set_unmapped() { length = mapped_pages = 0; }
+      void pages_unmapped(unsigned pages) { mapped_pages -= pages; }
 
       struct region_mapping *c_mapping();
       void sync_back(struct region_mapping *mapping);
@@ -66,7 +67,6 @@ namespace Elkvm {
 
       void modify(int pr, int fl, int filedes, off_t o);
       int mprotect(int pr);
-      int unmap(guestptr_t unmap_addr, unsigned pages);
   };
 
   std::ostream &print(std::ostream &, const Mapping &);

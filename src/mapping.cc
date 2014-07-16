@@ -96,23 +96,6 @@ namespace Elkvm {
     return 0;
   }
 
-  int Mapping::unmap(guestptr_t unmap_addr, unsigned pages) {
-    assert(contains_address(unmap_addr));
-    assert(pages <= mapped_pages);
-    assert(contains_address(unmap_addr + ((pages-1) * ELKVM_PAGESIZE)));
-
-    int err = _rm.get_pager().unmap_region(unmap_addr, pages);
-    assert(err == 0 && "could not unmap this mapping");
-    mapped_pages -= pages;
-
-    if(mapped_pages == 0) {
-      _rm.free_region(region);
-      _hm.free_mapping(*this);
-    }
-
-    return 0;
-  }
-
   bool Mapping::contains_address(void *p) const {
     return (host_p <= p) && (p < (reinterpret_cast<char *>(host_p) + length));
   }
@@ -154,7 +137,7 @@ namespace Elkvm {
 
     /* unmap the old stuff */
     unsigned pages = pages_from_size(len);
-    unmap(addr + off, pages);
+    _hm.unmap(*this, addr + off, pages);
 
     region->slice_center(off, len);
 
@@ -175,7 +158,7 @@ namespace Elkvm {
 
   void Mapping::slice_begin(size_t len) {
     unsigned pages = pages_from_size(len);
-    unmap(addr, pages);
+    _hm.unmap(*this, addr, pages);
 
     addr += len;
     length -= len;
@@ -188,7 +171,7 @@ namespace Elkvm {
     assert(contains_address(slice_base));
 
     /* unmap the old stuff */
-    unmap(slice_base, pages_from_size((addr + length) - slice_base));
+    _hm.unmap(*this, slice_base, pages_from_size((addr + length) - slice_base));
 
     assert(((addr + length) - slice_base) < length);
     length = length - ((addr + length) - slice_base);

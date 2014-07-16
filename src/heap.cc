@@ -201,10 +201,25 @@ namespace Elkvm {
     return err;
   }
 
-  int HeapManager::unmap(Mapping &m) const {
-    int err = _rm.get_pager().unmap_region(m.guest_address(), m.get_pages());
-    _rm.free_region(m.get_region());
-    return err;
+  int HeapManager::unmap(Mapping &m) {
+    return unmap(m, m.guest_address(), m.get_pages());
+  }
+
+  int HeapManager::unmap(Mapping &m, guestptr_t unmap_addr, unsigned pages) {
+    assert(m.contains_address(unmap_addr));
+    assert(pages <= m.get_pages());
+    assert(m.contains_address(unmap_addr + ((pages-1) * ELKVM_PAGESIZE)));
+
+    int err = _rm.get_pager().unmap_region(unmap_addr, pages);
+    assert(err == 0 && "could not unmap this mapping");
+    m.pages_unmapped(pages);
+
+    if(m.get_pages() == 0) {
+      _rm.free_region(m.get_region());
+      free_mapping(m);
+    }
+
+    return 0;
   }
 
   //namespace Elkvm

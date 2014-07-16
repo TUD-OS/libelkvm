@@ -652,7 +652,7 @@ long elkvm_do_munmap(Elkvm::VMInternals &vmi) {
   assert(chunk != nullptr);
 
   Elkvm::Mapping &mapping = vmi.get_heap_manager().find_mapping(addr);
-  mapping.unmap(addr_p, pages_from_size(length));
+  vmi.get_heap_manager().unmap(mapping, addr_p, pages_from_size(length));
 
   if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
