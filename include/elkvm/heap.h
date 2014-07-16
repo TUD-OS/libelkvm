@@ -16,14 +16,14 @@ namespace Elkvm {
     private:
       std::vector<Mapping> mappings_for_brk;
       std::vector<Mapping> mappings_for_mmap;
-      RegionManager &_rm;
+      std::shared_ptr<RegionManager> _rm;
       guestptr_t curbrk;
 
       int grow(size_t sz);
       int shrink(guestptr_t newbrk);
 
     public:
-      HeapManager(RegionManager &rm) : _rm(rm) {}
+      HeapManager(std::shared_ptr<RegionManager> rm) : _rm(rm) {}
       int init(std::shared_ptr<Region> data, size_t sz);
       int brk(guestptr_t newbrk);
       guestptr_t get_brk() const { return curbrk; };

@@ -25,7 +25,7 @@ struct Elf_auxv {
 class ElfBinary {
   private:
     std::unique_ptr<ElfBinary> ldr;
-    RegionManager &_rm;
+    std::shared_ptr<RegionManager> _rm;
     HeapManager &_hm;
 
     int fd;
@@ -55,7 +55,9 @@ class ElfBinary {
     GElf_Phdr find_text_header();
 
   public:
-    ElfBinary(std::string pathname, RegionManager &rm, HeapManager &hm);
+    ElfBinary(std::string pathname, std::shared_ptr<RegionManager> rm,
+        HeapManager &hm);
+
     int load_binary(std::string pathname);
     guestptr_t get_entry_point();
     const struct Elf_auxv &get_auxv() const;

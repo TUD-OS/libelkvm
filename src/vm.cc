@@ -75,7 +75,7 @@ struct kvm_vm *elkvm_vm_create(struct elkvm_opts *opts, int mode,
   err = env.fill(opts, vcpu);
   assert(err == 0);
 
-	err = elkvm_gdt_setup(vmi.get_region_manager(), vcpu);
+	err = elkvm_gdt_setup(*vmi.get_region_manager(), vcpu);
   assert(err == 0);
 
 	struct elkvm_flat idth;
@@ -89,7 +89,7 @@ struct kvm_vm *elkvm_vm_create(struct elkvm_opts *opts, int mode,
 		return NULL;
 	}
 
-	err = elkvm_idt_setup(vmi.get_region_manager(), vcpu, &idth);
+	err = elkvm_idt_setup(*vmi.get_region_manager(), vcpu, &idth);
   assert(err == 0);
 
 	struct elkvm_flat sysenter;
@@ -169,7 +169,7 @@ int elkvm_cleanup(struct elkvm_opts *opts) {
 int elkvm_chunk_remap(struct kvm_vm *vm, int num, uint64_t newsize) {
   Elkvm::VMInternals &vmi = Elkvm::get_vmi(vm);
 
-  auto chunk = vmi.get_region_manager().get_pager().get_chunk(num);
+  auto chunk = vmi.get_region_manager()->get_pager().get_chunk(num);
   chunk->memory_size = 0;
 
 	int err = ioctl(vm->fd, KVM_SET_USER_MEMORY_REGION, chunk.get());
@@ -193,14 +193,14 @@ struct kvm_vcpu *elkvm_vcpu_get(struct kvm_vm *vm, int vcpu_id) {
 uint64_t elkvm_chunk_count(struct kvm_vm *vm __attribute__((unused))) {
   Elkvm::VMInternals &vmi = Elkvm::get_vmi(vm);
 
-  return vmi.get_region_manager().get_pager().chunk_count();
+  return vmi.get_region_manager()->get_pager().chunk_count();
 }
 
 struct kvm_userspace_memory_region elkvm_get_chunk(
     struct kvm_vm *vm __attribute__((unused)), int chunk) {
   Elkvm::VMInternals &vmi = Elkvm::get_vmi(vm);
 
-  return *vmi.get_region_manager().get_pager().get_chunk(chunk);
+  return *vmi.get_region_manager()->get_pager().get_chunk(chunk);
 }
 
 void elkvm_emulate_vmcall(struct kvm_vcpu *vcpu) {

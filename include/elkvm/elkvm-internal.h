@@ -17,8 +17,8 @@ namespace Elkvm {
       std::vector<std::shared_ptr<struct kvm_vcpu>> cpus;
       std::shared_ptr<struct kvm_vm> _vm;
 
+      std::shared_ptr<RegionManager> _rm;
       HeapManager hm;
-      RegionManager rm;
 
       int _vmfd;
       int _argc;
@@ -43,7 +43,7 @@ namespace Elkvm {
       int load_flat(struct elkvm_flat &flat, const std::string path,
           bool kernel);
 
-      RegionManager &get_region_manager() { return rm; }
+      std::shared_ptr<RegionManager> get_region_manager() { return _rm; }
       HeapManager &get_heap_manager() { return hm; }
       std::shared_ptr<struct kvm_vcpu> get_vcpu(int num) const;
       int get_vmfd() const { return _vmfd; }

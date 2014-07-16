@@ -11,15 +11,15 @@
 #include <stack.h>
 
 namespace Elkvm {
-  Environment::Environment(const ElfBinary &bin, RegionManager &rm) :
+  Environment::Environment(const ElfBinary &bin, std::shared_ptr<RegionManager> rm) :
     binary(bin)
   {
     /* for now the region to hold env etc. will be 12 pages large */
-    region = rm.allocate_region(12 * ELKVM_PAGESIZE);
+    region = rm->allocate_region(12 * ELKVM_PAGESIZE);
     assert(region != nullptr && "error getting memory for env");
     region->set_guest_addr(
         reinterpret_cast<guestptr_t>(region->base_address()));
-    int err = rm.get_pager().map_user_page(region->base_address(),
+    int err = rm->get_pager().map_user_page(region->base_address(),
         region->guest_address(), PT_OPT_WRITE);
     assert(err == 0 && "error mapping env region");
   }

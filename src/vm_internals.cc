@@ -19,8 +19,8 @@ namespace Elkvm {
       int run_struct_size,
       const struct elkvm_handlers * const handlers,
       int debug) :
-    rm(vmfd),
-    hm(rm),
+    _rm(std::make_shared<RegionManager>(vmfd)),
+    hm(_rm),
     _vmfd(vmfd),
     _argc(argc),
     _argv(argv),
@@ -35,7 +35,7 @@ namespace Elkvm {
 
   int VMInternals::add_cpu(int mode) {
     std::shared_ptr<struct kvm_vcpu> vcpu =
-      std::make_shared<struct kvm_vcpu>(rm);
+      std::make_shared<struct kvm_vcpu>(_rm);
 
     if(vcpu == NULL) {
       return -ENOMEM;
@@ -101,10 +101,10 @@ namespace Elkvm {
     }
 
     flat.size = stbuf.st_size;
-    std::shared_ptr<Elkvm::Region> region = rm.allocate_region(stbuf.st_size);
+    std::shared_ptr<Elkvm::Region> region = _rm->allocate_region(stbuf.st_size);
 
     if(kernel) {
-      guestptr_t addr = rm.get_pager().map_kernel_page(
+      guestptr_t addr = _rm->get_pager().map_kernel_page(
           region->base_address(),
           PT_OPT_EXEC);
       if(addr == 0x0) {
@@ -115,7 +115,7 @@ namespace Elkvm {
     } else {
       /* XXX this will break! */
       region->set_guest_addr(0x1000);
-      err = rm.get_pager().map_user_page(
+      err = _rm->get_pager().map_user_page(
           region->base_address(),
           region->guest_address(),
           PT_OPT_EXEC);

@@ -229,24 +229,21 @@ long elkvm_do_read(Elkvm::VMInternals &vmi) {
 	elkvm_syscall3(vcpu, &fd, &buf_p, &count);
 
   assert(buf_p != 0x0);
-	buf = reinterpret_cast<char *>(vmi.get_region_manager().get_pager().get_host_p(buf_p));
-  Elkvm::RegionManager &rm = vmi.get_region_manager();
-	buf = reinterpret_cast<char *>(rm.get_pager().get_host_p(buf_p));
+	buf = reinterpret_cast<char *>(vmi.get_region_manager()->get_pager().get_host_p(buf_p));
 
   uint64_t bend_p = buf_p + count - 1;
-  void *bend = vmi.get_region_manager().get_pager().get_host_p(bend_p);
+  void *bend = vmi.get_region_manager()->get_pager().get_host_p(bend_p);
   long result = 0;
 
-  if(!vmi.get_region_manager().same_region(buf, bend)) {
-    assert(vmi.get_region_manager().host_address_mapped(bend));
-    assert(rm.host_address_mapped(bend));
+  if(!vmi.get_region_manager()->same_region(buf, bend)) {
+    assert(vmi.get_region_manager()->host_address_mapped(bend));
     char *host_begin_mark = NULL;
     char *host_end_mark = buf;
     uint64_t mark_p = buf_p;
     ssize_t current_count = count;
     do {
-      host_begin_mark = reinterpret_cast<char *>(vmi.get_region_manager().get_pager().get_host_p(mark_p));
-      std::shared_ptr<Elkvm::Region> region = vmi.get_region_manager().find_region(host_begin_mark);
+      host_begin_mark = reinterpret_cast<char *>(vmi.get_region_manager()->get_pager().get_host_p(mark_p));
+      std::shared_ptr<Elkvm::Region> region = vmi.get_region_manager()->find_region(host_begin_mark);
       if(mark_p != buf_p) {
         assert(host_begin_mark == region->base_address());
       }
@@ -277,7 +274,7 @@ long elkvm_do_read(Elkvm::VMInternals &vmi) {
       mark_p += in_result;
       current_count -= in_result;
       result += in_result;
-    } while(!vmi.get_region_manager().same_region(host_begin_mark, bend));
+    } while(!vmi.get_region_manager()->same_region(host_begin_mark, bend));
     assert(current_count == 0);
 
   } else {
@@ -310,9 +307,9 @@ long elkvm_do_write(Elkvm::VMInternals &vmi) {
   elkvm_syscall3(vcpu, &fd, &buf_p, &count);
 
   assert(buf_p != 0x0);
-  buf = vmi.get_region_manager().get_pager().get_host_p(buf_p);
+  buf = vmi.get_region_manager()->get_pager().get_host_p(buf_p);
 
-  std::shared_ptr<Elkvm::Region> r = vmi.get_region_manager().find_region(buf);
+  std::shared_ptr<Elkvm::Region> r = vmi.get_region_manager()->find_region(buf);
   assert(r != nullptr);
 
   char *current_buf = reinterpret_cast<char *>(buf);
@@ -337,7 +334,7 @@ long elkvm_do_write(Elkvm::VMInternals &vmi) {
     }
     current_buf += result;
     remaining_count -= result;
-    r = vmi.get_region_manager().find_region(current_buf);
+    r = vmi.get_region_manager()->find_region(current_buf);
   }
   assert(r->contains_address(reinterpret_cast<char *>(buf) + count - 1));
 
@@ -374,7 +371,7 @@ long elkvm_do_open(Elkvm::VMInternals &vmi) {
 	elkvm_syscall3(vcpu, &pathname_p, &flags, &mode);
 
   assert(pathname_p != 0x0);
-	pathname = reinterpret_cast<char *>(vmi.get_region_manager().get_pager().get_host_p(pathname_p));
+	pathname = reinterpret_cast<char *>(vmi.get_region_manager()->get_pager().get_host_p(pathname_p));
 
 	long result = vmi.get_handlers()->open(pathname, (int)flags, (mode_t)mode);
 
@@ -425,9 +422,9 @@ long elkvm_do_stat(Elkvm::VMInternals &vmi) {
   elkvm_syscall2(vcpu, &path_p, &buf_p);
 
   assert(path_p != 0x0);
-  path = reinterpret_cast<char *>(vmi.get_region_manager().get_pager().get_host_p(path_p));
+  path = reinterpret_cast<char *>(vmi.get_region_manager()->get_pager().get_host_p(path_p));
   assert(buf_p != 0x0);
-  buf  = reinterpret_cast<struct stat *>(vmi.get_region_manager().get_pager().get_host_p(buf_p));
+  buf  = reinterpret_cast<struct stat *>(vmi.get_region_manager()->get_pager().get_host_p(buf_p));
 
   long result = vmi.get_handlers()->stat(path, buf);
   if(vmi.debug_mode()) {
@@ -454,7 +451,7 @@ long elkvm_do_fstat(Elkvm::VMInternals &vmi) {
   elkvm_syscall2(vcpu, &fd, &buf_p);
 
   assert(buf_p != 0x0);
-	buf = reinterpret_cast<struct stat *>(vmi.get_region_manager().get_pager().get_host_p(buf_p));
+	buf = reinterpret_cast<struct stat *>(vmi.get_region_manager()->get_pager().get_host_p(buf_p));
 
   if(vmi.debug_mode()) {
     printf("FSTAT file with fd %li buf at 0x%lx (%p)\n", fd, buf_p, buf);
@@ -482,9 +479,9 @@ long elkvm_do_lstat(Elkvm::VMInternals &vmi) {
   elkvm_syscall2(vcpu, &path_p, &buf_p);
 
   assert(path_p != 0x0);
-  path = reinterpret_cast<char *>(vmi.get_region_manager().get_pager().get_host_p(path_p));
+  path = reinterpret_cast<char *>(vmi.get_region_manager()->get_pager().get_host_p(path_p));
   assert(buf_p != 0x0);
-  buf  = reinterpret_cast<struct stat *>(vmi.get_region_manager().get_pager().get_host_p(buf_p));
+  buf  = reinterpret_cast<struct stat *>(vmi.get_region_manager()->get_pager().get_host_p(buf_p));
 
   long result = vmi.get_handlers()->lstat(path, buf);
   if(vmi.debug_mode()) {
@@ -603,7 +600,7 @@ long elkvm_do_mprotect(Elkvm::VMInternals &vmi) {
 
   assert(page_aligned(addr) && "mprotect address must be page aligned");
   if(!vmi.get_heap_manager().address_mapped(addr)) {
-    vmi.get_region_manager().dump_regions();
+    vmi.get_region_manager()->dump_regions();
     std::cout << "mprotect with invalid address: 0x" << std::hex
       << addr << std::endl;
     return -EINVAL;
@@ -614,7 +611,7 @@ long elkvm_do_mprotect(Elkvm::VMInternals &vmi) {
   if(mapping.get_length() != len) {
     /* we need to split this mapping */
     vmi.get_heap_manager().slice(mapping, addr, len);
-    std::shared_ptr<Elkvm::Region> r = vmi.get_region_manager().allocate_region(len);
+    std::shared_ptr<Elkvm::Region> r = vmi.get_region_manager()->allocate_region(len);
     Elkvm::Mapping new_mapping(r, addr, len, prot, mapping.get_flags(),
         mapping.get_fd(), mapping.get_offset());
     vmi.get_heap_manager().map(new_mapping);
@@ -646,10 +643,10 @@ long elkvm_do_munmap(Elkvm::VMInternals &vmi) {
   elkvm_syscall2(vcpu, &addr_p, &length);
 
   if(addr_p != 0x0) {
-    addr = vmi.get_region_manager().get_pager().get_host_p(addr_p);
+    addr = vmi.get_region_manager()->get_pager().get_host_p(addr_p);
   }
 
-  auto chunk = vmi.get_region_manager().get_pager().find_chunk_for_host_p(addr);
+  auto chunk = vmi.get_region_manager()->get_pager().find_chunk_for_host_p(addr);
   assert(chunk != nullptr);
 
   Elkvm::Mapping &mapping = vmi.get_heap_manager().find_mapping(addr);
@@ -716,10 +713,10 @@ long elkvm_do_sigaction(Elkvm::VMInternals &vmi) {
   struct sigaction *act = NULL;
   struct sigaction *oldact = NULL;
   if(act_p != 0x0) {
-    act = reinterpret_cast<struct sigaction *>(vmi.get_region_manager().get_pager().get_host_p(act_p));
+    act = reinterpret_cast<struct sigaction *>(vmi.get_region_manager()->get_pager().get_host_p(act_p));
   }
   if(oldact_p != 0x0) {
-    oldact = reinterpret_cast<struct sigaction *>(vmi.get_region_manager().get_pager().get_host_p(oldact_p));
+    oldact = reinterpret_cast<struct sigaction *>(vmi.get_region_manager()->get_pager().get_host_p(oldact_p));
   }
 
   int err = 0;
@@ -758,10 +755,10 @@ long elkvm_do_sigprocmask(Elkvm::VMInternals &vmi) {
   sigset_t *set = NULL;
   sigset_t *oldset = NULL;
   if(set_p != 0x0) {
-    set = reinterpret_cast<sigset_t *>(vmi.get_region_manager().get_pager().get_host_p(set_p));
+    set = reinterpret_cast<sigset_t *>(vmi.get_region_manager()->get_pager().get_host_p(set_p));
   }
   if(oldset_p != 0x0) {
-    oldset = reinterpret_cast<sigset_t *>(vmi.get_region_manager().get_pager().get_host_p(oldset_p));
+    oldset = reinterpret_cast<sigset_t *>(vmi.get_region_manager()->get_pager().get_host_p(oldset_p));
   }
 
   long result = vmi.get_handlers()->sigprocmask(how, set, oldset);
@@ -800,11 +797,11 @@ void elkvm_get_host_iov(Elkvm::VMInternals &vmi __attribute__((unused)),
   struct iovec *guest_iov = NULL;
   assert(iov_p != 0x0);
   guest_iov = reinterpret_cast<struct iovec *>
-    (vmi.get_region_manager().get_pager().get_host_p(iov_p));
+    (vmi.get_region_manager()->get_pager().get_host_p(iov_p));
 
   for(unsigned i = 0; i < iovcnt; i++) {
     assert(guest_iov[i].iov_base != NULL);
-    host_iov[i].iov_base = vmi.get_region_manager().get_pager().get_host_p(
+    host_iov[i].iov_base = vmi.get_region_manager()->get_pager().get_host_p(
         reinterpret_cast<guestptr_t>(guest_iov[i].iov_base));
     host_iov[i].iov_len  = guest_iov[i].iov_len;
   }
@@ -881,7 +878,7 @@ long elkvm_do_access(Elkvm::VMInternals &vmi) {
   elkvm_syscall2(vcpu, &path_p, &mode);
 
   assert(path_p != 0x0);
-  char *pathname = reinterpret_cast<char *>(vmi.get_region_manager().get_pager().get_host_p(path_p));
+  char *pathname = reinterpret_cast<char *>(vmi.get_region_manager()->get_pager().get_host_p(path_p));
   if(pathname == NULL) {
     return -EFAULT;
   }
@@ -915,7 +912,7 @@ long elkvm_do_pipe(Elkvm::VMInternals &vmi) {
 
   elkvm_syscall1(vcpu, &pipefd_p);
 
-  pipefd = reinterpret_cast<int *>(vmi.get_region_manager().get_pager().get_host_p(pipefd_p));
+  pipefd = reinterpret_cast<int *>(vmi.get_region_manager()->get_pager().get_host_p(pipefd_p));
   assert(pipefd != NULL);
 
   long result = vmi.get_handlers()->pipe(pipefd);
@@ -1017,10 +1014,10 @@ long elkvm_do_nanosleep(Elkvm::VMInternals &vmi) {
   struct timespec *rem = NULL;
 
   if(req_p != 0x0) {
-    req = reinterpret_cast<struct timespec *>(vmi.get_region_manager().get_pager().get_host_p(req_p));
+    req = reinterpret_cast<struct timespec *>(vmi.get_region_manager()->get_pager().get_host_p(req_p));
   }
   if(rem_p != 0x0) {
-    rem = reinterpret_cast<struct timespec *>(vmi.get_region_manager().get_pager().get_host_p(rem_p));
+    rem = reinterpret_cast<struct timespec *>(vmi.get_region_manager()->get_pager().get_host_p(rem_p));
   }
 
   long result = vmi.get_handlers()->nanosleep(req, rem);
@@ -1165,7 +1162,7 @@ long elkvm_do_uname(Elkvm::VMInternals &vmi) {
 	elkvm_syscall1(vcpu, &bufp);
 
   assert(bufp != 0x0);
-	buf = (struct utsname *)vmi.get_region_manager().get_pager().get_host_p(bufp);
+	buf = (struct utsname *)vmi.get_region_manager()->get_pager().get_host_p(bufp);
   assert(buf != NULL && "host buffer address cannot be NULL in uname");
 
 	long result = vmi.get_handlers()->uname(buf);
@@ -1238,7 +1235,7 @@ long elkvm_do_fcntl(Elkvm::VMInternals &vmi) {
     case F_SETLK:
     case F_SETLKW: {
       /* NULL statement */;
-      void *arg = vmi.get_region_manager().get_pager().get_host_p(arg_p);
+      void *arg = vmi.get_region_manager()->get_pager().get_host_p(arg_p);
       result = vmi.get_handlers()->fcntl(fd, cmd, arg);
       break;
                    }
@@ -1287,7 +1284,7 @@ long elkvm_do_truncate(Elkvm::VMInternals &vmi) {
 
   elkvm_syscall2(vcpu, &path_p, &length);
 
-  path = reinterpret_cast<char *>(vmi.get_region_manager().get_pager().get_host_p(path_p));
+  path = reinterpret_cast<char *>(vmi.get_region_manager()->get_pager().get_host_p(path_p));
   long result = vmi.get_handlers()->truncate(path, length);
   if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
@@ -1346,7 +1343,7 @@ long elkvm_do_getdents(Elkvm::VMInternals &vmi __attribute__((unused))) {
   struct linux_dirent *dirp = NULL;
   if(dirp_p != 0x0) {
     dirp = reinterpret_cast<struct linux_dirent *>(
-        vmi.get_region_manager().get_pager().get_host_p(dirp_p));
+        vmi.get_region_manager()->get_pager().get_host_p(dirp_p));
   }
 
   int res = vmi.get_handlers()->getdents(fd, dirp, count);
@@ -1380,7 +1377,7 @@ long elkvm_do_getcwd(Elkvm::VMInternals &vmi) {
 
   elkvm_syscall2(vcpu, &buf_p, &size);
 
-  buf = reinterpret_cast<char *>(vmi.get_region_manager().get_pager().get_host_p(buf_p));
+  buf = reinterpret_cast<char *>(vmi.get_region_manager()->get_pager().get_host_p(buf_p));
 
   char *result = vmi.get_handlers()->getcwd(buf, size);
   if(vmi.debug_mode()) {
@@ -1427,7 +1424,7 @@ long elkvm_do_mkdir(Elkvm::VMInternals &vmi) {
   elkvm_syscall2(vcpu, &pathname_p, &mode);
 
   assert(pathname_p != 0x0);
-  pathname = reinterpret_cast<char *>(vmi.get_region_manager().get_pager().get_host_p(pathname_p));
+  pathname = reinterpret_cast<char *>(vmi.get_region_manager()->get_pager().get_host_p(pathname_p));
   long result = vmi.get_handlers()->mkdir(pathname, mode);
   if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
@@ -1468,7 +1465,7 @@ long elkvm_do_unlink(Elkvm::VMInternals &vmi) {
   elkvm_syscall1(vcpu, &pathname_p);
 
   assert(pathname_p != 0x0);
-  pathname = reinterpret_cast<char *>(vmi.get_region_manager().get_pager().get_host_p(pathname_p));
+  pathname = reinterpret_cast<char *>(vmi.get_region_manager()->get_pager().get_host_p(pathname_p));
   long result = vmi.get_handlers()->unlink(pathname);
   if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
@@ -1503,8 +1500,8 @@ long elkvm_do_readlink(Elkvm::VMInternals &vmi) {
 
   elkvm_syscall3(vcpu, &path_p, &buf_p, &bufsiz);
 
-  path = reinterpret_cast<char *>(vmi.get_region_manager().get_pager().get_host_p(path_p));
-  buf  = reinterpret_cast<char *>(vmi.get_region_manager().get_pager().get_host_p(buf_p));
+  path = reinterpret_cast<char *>(vmi.get_region_manager()->get_pager().get_host_p(path_p));
+  buf  = reinterpret_cast<char *>(vmi.get_region_manager()->get_pager().get_host_p(buf_p));
   long result = vmi.get_handlers()->readlink(path, buf, bufsiz);
   if(vmi.debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
@@ -1557,10 +1554,10 @@ long elkvm_do_gettimeofday(Elkvm::VMInternals &vmi) {
   struct timezone *tz = NULL;
 
   if(tv_p != 0x0) {
-    tv = reinterpret_cast<struct timeval *>(vmi.get_region_manager().get_pager().get_host_p(tv_p));
+    tv = reinterpret_cast<struct timeval *>(vmi.get_region_manager()->get_pager().get_host_p(tv_p));
   }
   if(tz_p != 0x0) {
-    tz = reinterpret_cast<struct timezone *>(vmi.get_region_manager().get_pager().get_host_p(tz_p));
+    tz = reinterpret_cast<struct timezone *>(vmi.get_region_manager()->get_pager().get_host_p(tz_p));
   }
 
   long result = vmi.get_handlers()->gettimeofday(tv, tz);
@@ -1597,7 +1594,7 @@ long elkvm_do_getrlimit(Elkvm::VMInternals &vmi) {
 //  elkvm_syscall2(vcpu, &resource, &rlim_p);
 //
 //  assert(rlim_p != 0x0);
-//  rlim = reinterpret_cast<struct rlimit *>(vmi.get_region_manager().get_pager().get_host_p(rlim_p));
+//  rlim = reinterpret_cast<struct rlimit *>(vmi.get_region_manager()->get_pager().get_host_p(rlim_p));
 //
 //  memcpy(rlim, &vm->rlimits[resource], sizeof(struct rlimit));
 //  if(vmi.debug_mode()) {
@@ -1627,7 +1624,7 @@ long elkvm_do_getrusage(Elkvm::VMInternals &vmi) {
   assert(usage_p != 0x0);
   assert(who == RUSAGE_SELF);
 
-  usage = reinterpret_cast<struct rusage *>(vmi.get_region_manager().get_pager().get_host_p(usage_p));
+  usage = reinterpret_cast<struct rusage *>(vmi.get_region_manager()->get_pager().get_host_p(usage_p));
 
   long result = vmi.get_handlers()->getrusage(who, usage);
   if(vmi.debug_mode()) {
@@ -1656,7 +1653,7 @@ long elkvm_do_times(Elkvm::VMInternals &vmi) {
   elkvm_syscall1(vcpu, &buf_p);
   assert(buf_p != 0x0);
 
-  buf = reinterpret_cast<struct tms *>(vmi.get_region_manager().get_pager().get_host_p(buf_p));
+  buf = reinterpret_cast<struct tms *>(vmi.get_region_manager()->get_pager().get_host_p(buf_p));
   assert(buf != NULL);
 
   long result = vmi.get_handlers()->times(buf);
@@ -1878,11 +1875,11 @@ long elkvm_do_statfs(Elkvm::VMInternals &vmi __attribute__((unused))) {
   char *path = NULL;
   struct statfs *buf = NULL;
   if(path_p != 0x0) {
-    path = reinterpret_cast<char *>(vmi.get_region_manager().get_pager().get_host_p(path_p));
+    path = reinterpret_cast<char *>(vmi.get_region_manager()->get_pager().get_host_p(path_p));
   }
   if(buf_p != 0x0) {
     buf = reinterpret_cast<struct statfs *>(
-        vmi.get_region_manager().get_pager().get_host_p(buf_p));
+        vmi.get_region_manager()->get_pager().get_host_p(buf_p));
   }
 
   int res = vmi.get_handlers()->statfs(path, buf);
@@ -1992,7 +1989,7 @@ long elkvm_do_arch_prctl(Elkvm::VMInternals &vmi) {
 
   elkvm_syscall2(vcpu, &code, &user_addr);
   assert(user_addr != 0x0);
-  uint64_t *host_addr = reinterpret_cast<uint64_t *>(vmi.get_region_manager().get_pager().get_host_p(user_addr));
+  uint64_t *host_addr = reinterpret_cast<uint64_t *>(vmi.get_region_manager()->get_pager().get_host_p(user_addr));
   if(host_addr == NULL) {
     return -EFAULT;
   }
@@ -2217,7 +2214,7 @@ long elkvm_do_time(Elkvm::VMInternals &vmi) {
 
   time_t *time = NULL;
   if(time_p != 0x0) {
-    time = reinterpret_cast<time_t *>(vmi.get_region_manager().get_pager().get_host_p(time_p));
+    time = reinterpret_cast<time_t *>(vmi.get_region_manager()->get_pager().get_host_p(time_p));
   }
 
   long result = vmi.get_handlers()->time(time);
@@ -2251,13 +2248,13 @@ long elkvm_do_futex(Elkvm::VMInternals &vmi) {
   elkvm_syscall6(vcpu, &uaddr_p, &op, &val, &timeout_p, &uaddr2_p, &val3);
 
   if(uaddr_p != 0x0) {
-    uaddr = reinterpret_cast<int *>(vmi.get_region_manager().get_pager().get_host_p(uaddr_p));
+    uaddr = reinterpret_cast<int *>(vmi.get_region_manager()->get_pager().get_host_p(uaddr_p));
   }
   if(timeout_p != 0x0) {
-    timeout = reinterpret_cast<const struct timespec *>(vmi.get_region_manager().get_pager().get_host_p(timeout_p));
+    timeout = reinterpret_cast<const struct timespec *>(vmi.get_region_manager()->get_pager().get_host_p(timeout_p));
   }
   if(uaddr2_p != 0x0) {
-    uaddr2 = reinterpret_cast<int *>(vmi.get_region_manager().get_pager().get_host_p(uaddr2_p));
+    uaddr2 = reinterpret_cast<int *>(vmi.get_region_manager()->get_pager().get_host_p(uaddr2_p));
   }
 
   printf("FUTEX with uaddr %p (0x%lx) op %lu val %lu timeout %p (0x%lx)"
@@ -2396,7 +2393,7 @@ long elkvm_do_clock_gettime(Elkvm::VMInternals &vmi) {
   elkvm_syscall2(vcpu, &clk_id, &tp_p);
   assert(tp_p != 0x0);
 
-  tp = reinterpret_cast<struct timespec *>(vmi.get_region_manager().get_pager().get_host_p(tp_p));
+  tp = reinterpret_cast<struct timespec *>(vmi.get_region_manager()->get_pager().get_host_p(tp_p));
   assert(tp != NULL);
 
   long result = vmi.get_handlers()->clock_gettime(clk_id, tp);
@@ -2565,7 +2562,7 @@ long elkvm_do_openat(Elkvm::VMInternals &vmi __attribute__((unused))) {
   char *pathname = NULL;
   if(pathname_p != 0x0) {
     pathname = reinterpret_cast<char *>(
-        vmi.get_region_manager().get_pager().get_host_p(pathname_p));
+        vmi.get_region_manager()->get_pager().get_host_p(pathname_p));
   }
 
   int res = vmi.get_handlers()->openat((int)dirfd, pathname, (int)flags);
