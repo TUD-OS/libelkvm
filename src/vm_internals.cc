@@ -75,13 +75,11 @@ namespace Elkvm {
   }
 
   bool VMInternals::address_mapped(guestptr_t addr) const {
-    return rm.address_mapped(addr) && hm.contains_address(addr);
+    return hm.address_mapped(addr);
   }
 
   Mapping &VMInternals::find_mapping(guestptr_t addr) {
-    if(rm.address_mapped(addr)) {
-      return rm.find_mapping(addr);
-    } else if(hm.contains_address(addr)) {
+    if(hm.contains_address(addr)) {
       return hm.find_mapping(addr);
     }
     assert(false && "could not find mapping!");

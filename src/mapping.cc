@@ -7,15 +7,17 @@
 #include <region.h>
 
 namespace Elkvm {
-  Mapping::Mapping(RegionManager &rm, guestptr_t guest_addr, size_t l, int pr, int f,
-      int fdes, off_t off)
+  Mapping::Mapping(HeapManager &hm, RegionManager &rm, guestptr_t guest_addr,
+      size_t l, int pr, int f, int fdes, off_t off)
     : addr(guest_addr),
       length(l),
       prot(pr),
       flags(f),
       fd(fdes),
       offset(off),
-      _rm(rm) {
+      _hm(hm),
+      _rm(rm)
+  {
 
     region = _rm.allocate_region(length);
     assert(!region->is_free());
@@ -28,8 +30,8 @@ namespace Elkvm {
     mapped_pages = pages_from_size(length);
   }
 
-  Mapping::Mapping(RegionManager &rm, std::shared_ptr<Region> r, guestptr_t guest_addr, size_t l, int pr, int f,
-          int fdes, off_t off) :
+  Mapping::Mapping(HeapManager &hm, RegionManager &rm, std::shared_ptr<Region> r,
+      guestptr_t guest_addr, size_t l, int pr, int f, int fdes, off_t off) :
     addr(guest_addr),
     length(l),
     prot(pr),
@@ -37,7 +39,9 @@ namespace Elkvm {
     fd(fdes),
     offset(off),
     region(r),
-    _rm(rm) {
+    _hm(hm),
+    _rm(rm)
+  {
       assert(region->size() >= length);
       host_p = region->base_address();
       region->set_guest_addr(addr);
@@ -130,7 +134,7 @@ namespace Elkvm {
 
     if(mapped_pages == 0) {
       _rm.free_region(region);
-      _rm.free_mapping(*this);
+      _hm.free_mapping(*this);
     }
 
     return 0;
@@ -186,9 +190,9 @@ namespace Elkvm {
       auto r = _rm.find_region(reinterpret_cast<char *>(host_p) + off + len);
       /* There should be no need to process this mapping any further, because we
        * feed it the split memory region, with the old data inside */
-      Mapping end(_rm, r, addr + off + len,
+      Mapping end(_hm, _rm, r, addr + off + len,
           rem, prot, flags, fd, offset + off + len);
-      _rm.add_mapping(end);
+      _hm.add_mapping(end);
     }
 
     length = off;
