@@ -34,7 +34,7 @@ namespace Elkvm {
   int HeapManager::grow(guestptr_t newbrk) {
     assert(newbrk > curbrk);
     size_t sz = newbrk - curbrk;
-    Mapping m(*this, _rm, curbrk, sz, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0);
+    Mapping m(_rm, curbrk, sz, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0);
     mappings_for_brk.push_back(m);
     return map(m);
   }
@@ -127,7 +127,7 @@ namespace Elkvm {
         /* this mapping needs to be split! */
         slice(*it, addr, length);
       }
-      mappings_for_mmap.emplace_back(*this, _rm, addr, length, prot, flags, fd, off);
+      mappings_for_mmap.emplace_back(_rm, addr, length, prot, flags, fd, off);
       Mapping &mapping = mappings_for_mmap.back();
       int err = map(mapping);
       assert(err == 0);
@@ -161,7 +161,7 @@ namespace Elkvm {
   int HeapManager::init(std::shared_ptr<Region> data, size_t sz) {
     assert(mappings_for_brk.empty() && "heap must not be initialized after use");
     /* XXX sz might be wrong here! */
-    mappings_for_brk.emplace_back(*this, _rm, data, data->guest_address(), sz, PROT_READ | PROT_WRITE,
+    mappings_for_brk.emplace_back(_rm, data, data->guest_address(), sz, PROT_READ | PROT_WRITE,
         MAP_ANONYMOUS, 0, 0);
 
     curbrk = next_page(data->guest_address() + sz);
@@ -272,7 +272,7 @@ namespace Elkvm {
           + len);
       /* There should be no need to process this mapping any further, because we
        * feed it the split memory region, with the old data inside */
-      Mapping end(*this, _rm, r, m.guest_address() + off + len,
+      Mapping end(_rm, r, m.guest_address() + off + len,
           rem, m.get_prot(), m.get_flags(), m.get_fd(), m.get_offset() + off + len);
       add_mapping(end);
     }

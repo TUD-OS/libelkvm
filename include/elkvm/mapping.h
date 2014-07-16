@@ -10,7 +10,6 @@
 namespace Elkvm {
   class Region;
   class RegionManager;
-  class HeapManager;
 
   class Mapping {
     private:
@@ -23,7 +22,6 @@ namespace Elkvm {
       int fd;
       off_t offset;
       std::shared_ptr<Region> region;
-      HeapManager &_hm;
       RegionManager &_rm;
 
       void slice_begin(size_t len);
@@ -31,9 +29,9 @@ namespace Elkvm {
       void slice_end(guestptr_t slice_base);
 
     public:
-      Mapping(HeapManager &hm, RegionManager &_rm, guestptr_t guest_addr, size_t l, int pr, int f,
+      Mapping(RegionManager &_rm, guestptr_t guest_addr, size_t l, int pr, int f,
           int fdes, off_t off);
-      Mapping(HeapManager &hm, RegionManager &_rm, std::shared_ptr<Region> r, guestptr_t guest_addr,
+      Mapping(RegionManager &_rm, std::shared_ptr<Region> r, guestptr_t guest_addr,
           size_t l, int pr, int f, int fdes, off_t off);
 
       bool anonymous() const { return flags & MAP_ANONYMOUS; }
