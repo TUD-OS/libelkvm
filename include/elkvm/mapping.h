@@ -66,7 +66,7 @@ namespace Elkvm {
       int fill();
 
       void modify(int pr, int fl, int filedes, off_t o);
-      int mprotect(int pr);
+      void mprotect(int pr);
   };
 
   std::ostream &print(std::ostream &, const Mapping &);

@@ -621,7 +621,8 @@ long elkvm_do_mprotect(Elkvm::VMInternals &vmi) {
     vmi.get_heap_manager().add_mapping(new_mapping);
   } else {
     /* only modify this mapping */
-    err = mapping.mprotect(prot);
+    mapping.mprotect(prot);
+    err = vmi.get_heap_manager().map(mapping);
   }
 
   if(vmi.debug_mode()) {

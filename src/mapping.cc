@@ -86,12 +86,8 @@ namespace Elkvm {
     }
   }
 
-  int Mapping::mprotect(int pr) {
-    if(pr != prot) {
-      prot = pr;
-      return _hm.map(*this);
-    }
-    return 0;
+  void Mapping::mprotect(int pr) {
+    prot = pr;
   }
 
   bool Mapping::contains_address(void *p) const {
