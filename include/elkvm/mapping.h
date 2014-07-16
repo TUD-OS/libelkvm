@@ -55,15 +55,14 @@ namespace Elkvm {
       int get_flags() const { return flags; }
       std::shared_ptr<Region> get_region() { return region; }
 
-      bool all_unmapped() { return mapped_pages == 0; }
+      bool all_unmapped() const { return mapped_pages == 0; }
+      void set_unmapped() { length = mapped_pages = 0; }
 
       struct region_mapping *c_mapping();
       void sync_back(struct region_mapping *mapping);
 
       void slice(guestptr_t slice_base, size_t len);
       int fill();
-
-      int map_self();
 
       void modify(int pr, int fl, int filedes, off_t o);
       int mprotect(int pr);

@@ -53,29 +53,8 @@ namespace Elkvm {
     addr = region->guest_address();
     length = region->size();
     mapped_pages = pages_from_size(length);
-    map_self();
+    _hm.map(*this);
     return addr + length;
-  }
-
-  int Mapping::map_self() {
-    if(!readable() && !writeable() && !executable()) {
-      _rm.get_pager().unmap_region(addr, mapped_pages);
-      mapped_pages = 0;
-      return 0;
-    }
-
-    ptopt_t opts = 0;
-    if(writeable()) {
-      opts |= PT_OPT_WRITE;
-    }
-    if(executable()) {
-      opts |= PT_OPT_EXEC;
-    }
-
-    /* add page table entries according to the options specified by the monitor */
-    int err = _rm.get_pager().map_region(host_p, addr, mapped_pages, opts);
-    assert(err == 0);
-    return err;
   }
 
   void Mapping::modify(int pr, int fl, int filedes, off_t o) {
@@ -83,7 +62,7 @@ namespace Elkvm {
 
     if(pr != prot) {
       prot = pr;
-      map_self();
+      _hm.map(*this);
     }
     if(flags != fl) {
       if(anonymous() && !(fl & MAP_ANONYMOUS)) {
@@ -112,7 +91,7 @@ namespace Elkvm {
   int Mapping::mprotect(int pr) {
     if(pr != prot) {
       prot = pr;
-      return map_self();
+      return _hm.map(*this);
     }
     return 0;
   }

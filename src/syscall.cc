@@ -617,7 +617,7 @@ long elkvm_do_mprotect(Elkvm::VMInternals &vmi) {
     Elkvm::Mapping new_mapping(vmi.get_heap_manager(), vmi.get_region_manager(),
         addr, len, prot, mapping.get_flags(),
         mapping.get_fd(), mapping.get_offset());
-    new_mapping.map_self();
+    vmi.get_heap_manager().map(new_mapping);
     vmi.get_heap_manager().add_mapping(new_mapping);
   } else {
     /* only modify this mapping */

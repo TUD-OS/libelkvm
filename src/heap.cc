@@ -36,7 +36,7 @@ namespace Elkvm {
     size_t sz = newbrk - curbrk;
     Mapping m(*this, _rm, curbrk, sz, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0);
     mappings_for_brk.push_back(m);
-    return m.map_self();
+    return map(m);
   }
 
   int HeapManager::brk(guestptr_t newbrk) {
@@ -126,7 +126,8 @@ namespace Elkvm {
       }
       mappings_for_mmap.emplace_back(*this, _rm, addr, length, prot, flags, fd, off);
       Mapping &mapping = mappings_for_mmap.back();
-      mapping.map_self();
+      int err = map(mapping);
+      assert(err == 0);
 
       return mapping;
     }
@@ -176,6 +177,28 @@ namespace Elkvm {
     }
 
     std::cout << std::endl << std::endl;
+  }
+
+  int HeapManager::map(Mapping &m) const {
+    if(!m.readable() && !m.writeable() && !m.executable()) {
+      _rm.get_pager().unmap_region(m.guest_address(), m.get_pages());
+      m.set_unmapped();
+      return 0;
+    }
+
+    ptopt_t opts = 0;
+    if(m.writeable()) {
+      opts |= PT_OPT_WRITE;
+    }
+    if(m.executable()) {
+      opts |= PT_OPT_EXEC;
+    }
+
+    /* add page table entries according to the options specified by the monitor */
+    int err = _rm.get_pager().map_region(m.base_address(), m.guest_address(),
+        m.get_pages(), opts);
+    assert(err == 0);
+    return err;
   }
 
   int HeapManager::unmap(Mapping &m) const {
