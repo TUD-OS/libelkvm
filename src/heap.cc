@@ -136,6 +136,8 @@ namespace Elkvm {
       int err = map(mapping);
       assert(err == 0);
 
+      assert(!mapping.get_region()->is_free());
+      assert(_rm->find_region(mapping.base_address()) != nullptr);
       return mapping;
     }
 
@@ -143,6 +145,9 @@ namespace Elkvm {
      * and flags etc. and return the mapping object */
     it->modify(prot, flags, fd, off);
     map(*it);
+
+    assert(!it->get_region()->is_free());
+    assert(_rm->find_region(it->base_address()) != nullptr);
     return *it;
   }
 
@@ -187,11 +192,16 @@ namespace Elkvm {
     std::cout << std::endl << std::endl;
   }
 
-  int HeapManager::map(Mapping &m) const {
+  int HeapManager::map(Mapping &m) {
     if(!m.readable() && !m.writeable() && !m.executable()) {
       _rm->get_pager().unmap_region(m.guest_address(), m.get_pages());
       m.set_unmapped();
       return 0;
+    }
+
+    auto it = std::find(mappings_for_mmap.begin(), mappings_for_mmap.end(), m);
+    if(it == mappings_for_mmap.end()) {
+      mappings_for_mmap.push_back(m);
     }
 
     ptopt_t opts = 0;
@@ -203,8 +213,12 @@ namespace Elkvm {
     }
 
     /* add page table entries according to the options specified by the monitor */
+    assert(m.base_address() == m.get_region()->base_address());
     int err = _rm->get_pager().map_region(m.base_address(), m.guest_address(),
         m.get_pages(), opts);
+    if(m.get_region()->is_free()) {
+      _rm->use_region(m.get_region());
+    }
     assert(err == 0);
     return err;
   }

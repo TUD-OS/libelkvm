@@ -129,19 +129,33 @@ namespace Elkvm {
   }
 
   void Mapping::sync_back(struct region_mapping *mapping) {
-    /* TODO if the host_p is set we need to change pt entries
-     *      same for the guest_address */
     host_p = mapping->host_p;
     addr   = mapping->guest_virt;
+    region->set_guest_addr(addr);
     length = mapping->length;
-    /* TODO if prot changed we need to update pt entries as well */
+    mapped_pages = pages_from_size(length);
     prot  = mapping->prot;
-    flags = mapping->flags;
-    /* TODO if flags, fd or offset changed we need to refill the mapping */
-    fd   = mapping->fd;
-    offset = mapping->offset;
 
+    if(flags != mapping->flags || fd != mapping->fd || offset != mapping->offset) {
+      flags = mapping->flags;
+      fd   = mapping->fd;
+      offset = mapping->offset;
+      fill();
+    }
   }
+
+  int Mapping::diff(struct region_mapping *mapping) const {
+    assert(host_p == mapping->host_p && "changing the mapping's host address is not yet supported");
+    if(host_p != mapping->host_p
+        || addr != mapping->guest_virt
+        || length != mapping->length
+        || prot != mapping->prot) {
+      return 1;
+    }
+
+    return 0;
+  }
+
 
   std::ostream &print(std::ostream &os, const Mapping &mapping) {
     if(mapping.anonymous()) {

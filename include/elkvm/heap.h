@@ -44,7 +44,7 @@ namespace Elkvm {
 
       void dump_mappings() const;
 
-      int map(Mapping &m) const;
+      int map(Mapping &m);
       int unmap(Mapping &m);
       int unmap(Mapping &m, guestptr_t unmap_addr, unsigned pages);
 

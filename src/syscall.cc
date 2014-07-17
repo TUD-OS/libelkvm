@@ -551,7 +551,16 @@ long elkvm_do_mmap(Elkvm::VMInternals &vmi) {
     struct region_mapping *cm = mapping.c_mapping();
     result = vmi.get_handlers()->mmap_before(cm);
     /* write changes back to mapping obj */
+    const int remap = mapping.diff(cm);
+    if(remap) {
+      int err = vmi.get_heap_manager().unmap(mapping);
+      assert(err == 0 && "could not unmap mapping");
+    }
     mapping.sync_back(cm);
+    if(remap) {
+      int err = vmi.get_heap_manager().map(mapping);
+      assert(err == 0 && "could not map mapping");
+    }
     delete(cm);
   }
 
