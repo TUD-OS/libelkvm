@@ -389,6 +389,8 @@ int elkvm_vm_run(struct kvm_vm *vm) {
 			case KVM_EXIT_SHUTDOWN:
 				fprintf(stderr, "KVM VCPU did shutdown\n");
         is_running = 0;
+        kvm_vcpu_get_regs(vcpu.get());
+        kvm_vcpu_get_sregs(vcpu.get());
 				break;
 			case KVM_EXIT_DEBUG: {
         /* NO-OP */
