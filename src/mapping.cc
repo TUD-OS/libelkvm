@@ -153,6 +153,19 @@ namespace Elkvm {
     }
   }
 
+  int Mapping::diff(struct region_mapping *mapping) const {
+    printf("\n\nADDR: 0x%lx GV: 0x%lx\n\n", addr, mapping->guest_virt);
+    if(host_p != mapping->host_p
+        || addr != mapping->guest_virt
+        || length != mapping->length
+        || prot != mapping->prot) {
+      return 1;
+    }
+
+    return 0;
+  }
+
+
   std::ostream &print(std::ostream &os, const Mapping &mapping) {
     if(mapping.anonymous()) {
       os << "ANONYMOUS ";

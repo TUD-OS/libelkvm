@@ -57,6 +57,7 @@ namespace Elkvm {
 
       struct region_mapping *c_mapping();
       void sync_back(struct region_mapping *mapping);
+      int diff(struct region_mapping *mapping) const;
 
       int fill();
 
