@@ -6,6 +6,8 @@
 #include <elkvm-internal.h>
 #include <elfloader.h>
 #include <heap.h>
+#include <region.h>
+#include <region_manager.h>
 
 namespace Elkvm {
   int HeapManager::shrink(guestptr_t newbrk) {
@@ -34,7 +36,7 @@ namespace Elkvm {
   int HeapManager::grow(guestptr_t newbrk) {
     assert(newbrk > curbrk);
     size_t sz = newbrk - curbrk;
-    std::shared_ptr<Region> r = _rm.allocate_region(sz);
+    std::shared_ptr<Region> r = _rm->allocate_region(sz);
     Mapping m(r, curbrk, sz, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0);
     mappings_for_brk.push_back(m);
     return map(m);
@@ -128,7 +130,7 @@ namespace Elkvm {
         /* this mapping needs to be split! */
         slice(*it, addr, length);
       }
-      std::shared_ptr<Region> r = _rm.allocate_region(length);
+      std::shared_ptr<Region> r = _rm->allocate_region(length);
       mappings_for_mmap.emplace_back(r, addr, length, prot, flags, fd, off);
       Mapping &mapping = mappings_for_mmap.back();
       int err = map(mapping);
@@ -187,7 +189,7 @@ namespace Elkvm {
 
   int HeapManager::map(Mapping &m) const {
     if(!m.readable() && !m.writeable() && !m.executable()) {
-      _rm.get_pager().unmap_region(m.guest_address(), m.get_pages());
+      _rm->get_pager().unmap_region(m.guest_address(), m.get_pages());
       m.set_unmapped();
       return 0;
     }
@@ -201,7 +203,7 @@ namespace Elkvm {
     }
 
     /* add page table entries according to the options specified by the monitor */
-    int err = _rm.get_pager().map_region(m.base_address(), m.guest_address(),
+    int err = _rm->get_pager().map_region(m.base_address(), m.guest_address(),
         m.get_pages(), opts);
     assert(err == 0);
     return err;
@@ -216,12 +218,12 @@ namespace Elkvm {
     assert(pages <= m.get_pages());
     assert(m.contains_address(unmap_addr + ((pages-1) * ELKVM_PAGESIZE)));
 
-    int err = _rm.get_pager().unmap_region(unmap_addr, pages);
+    int err = _rm->get_pager().unmap_region(unmap_addr, pages);
     assert(err == 0 && "could not unmap this mapping");
     m.pages_unmapped(pages);
 
     if(m.get_pages() == 0) {
-      _rm.free_region(m.get_region());
+      _rm->free_region(m.get_region());
       free_mapping(m);
     }
 
@@ -255,7 +257,7 @@ namespace Elkvm {
     unsigned pages = pages_from_size(len);
     unmap(m, m.guest_address(), pages);
     std::shared_ptr<Region> r = m.move_guest_address(len);
-    _rm.add_free_region(r);
+    _rm->add_free_region(r);
   }
 
   void HeapManager::slice_center(Mapping &m, off_t off, size_t len) {
@@ -267,11 +269,13 @@ namespace Elkvm {
     unsigned pages = pages_from_size(len);
     unmap(m, m.guest_address() + off, pages);
 
-    m.get_region()->slice_center(off, len);
+    auto regions = m.get_region()->slice_center(off, len);
+    _rm->use_region(regions.first);
+    _rm->add_free_region(regions.second);
 
     if(m.get_length() > off + len) {
       size_t rem = m.get_length() - off - len;
-      auto r = _rm.find_region(reinterpret_cast<char *>(m.base_address()) + off
+      auto r = _rm->find_region(reinterpret_cast<char *>(m.base_address()) + off
           + len);
       /* There should be no need to process this mapping any further, because we
        * feed it the split memory region, with the old data inside */

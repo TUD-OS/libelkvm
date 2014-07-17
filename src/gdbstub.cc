@@ -38,6 +38,7 @@
 #include <elkvm-internal.h>
 #include <debug.h>
 #include <pager.h>
+#include <region_manager.h>
 
 #define NEED_CPU_REG_SHORTCUTS 1
 
@@ -339,7 +340,7 @@ static void debug_loop(struct kvm_vm *vm) {
         int len = strtoul(ebuf + 1, &ebuf, 16);
         hex2mem(ebuf + 1, mem, len);
 
-        void *host_p = vmi.get_region_manager().get_pager().get_host_p(addr);
+        void *host_p = vmi.get_region_manager()->get_pager().get_host_p(addr);
         memcpy(host_p, mem, len);
         struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
         vcpu->debug.control |= KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_USE_SW_BP;
@@ -370,7 +371,7 @@ static void debug_loop(struct kvm_vm *vm) {
         if(addr == 0x0) {
           put_reply("");
         } else {
-          void *host_p = vmi.get_region_manager().get_pager().get_host_p(addr);
+          void *host_p = vmi.get_region_manager()->get_pager().get_host_p(addr);
           if(host_p != NULL) {
             memcpy(obuf, host_p, len);
 
@@ -452,7 +453,7 @@ static void debug_loop(struct kvm_vm *vm) {
           /* in kernel mode, figure out the real stack and return that
            * this really helps with backtraces (hopefully) */
           guestptr_t *sf = reinterpret_cast<guestptr_t *>(
-              vmi.get_region_manager().get_pager().get_host_p(vcpu->regs.rsp + 24)
+              vmi.get_region_manager()->get_pager().get_host_p(vcpu->regs.rsp + 24)
               );
           guestptr_t real_rsp = *sf;
           PUTREG(buf, real_rsp, 8);
@@ -471,7 +472,7 @@ static void debug_loop(struct kvm_vm *vm) {
           /* in kernel mode, figure out the real stack and return that
            * this really helps with backtraces (hopefully) */
           guestptr_t *sf = reinterpret_cast<guestptr_t *>(
-              vmi.get_region_manager().get_pager().get_host_p(vcpu->regs.rsp)
+              vmi.get_region_manager()->get_pager().get_host_p(vcpu->regs.rsp)
               );
           guestptr_t real_rip = *sf;
           PUTREG(buf, real_rip, 8);

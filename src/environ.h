@@ -17,7 +17,7 @@ namespace Elkvm {
       const ElfBinary &binary;
 
     public:
-      Environment(const ElfBinary &bin, RegionManager &rm);
+      Environment(const ElfBinary &bin, std::shared_ptr<RegionManager> rm);
       off64_t push_auxv(std::shared_ptr<struct kvm_vcpu> vcpu, char **env_p);
 
       int copy_and_push_str_arr_p(std::shared_ptr<struct kvm_vcpu> vcpu,

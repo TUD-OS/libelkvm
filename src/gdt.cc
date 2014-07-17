@@ -9,6 +9,8 @@
 #include <elkvm-internal.h>
 #include <kvm.h>
 #include <gdt.h>
+#include <region.h>
+#include <region_manager.h>
 #include <tss.h>
 #include <vcpu.h>
 

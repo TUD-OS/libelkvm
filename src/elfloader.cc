@@ -18,10 +18,12 @@
 #include <heap.h>
 #include <pager.h>
 #include <region.h>
+#include <region_manager.h>
 #include <vcpu.h>
 
 namespace Elkvm {
-  ElfBinary::ElfBinary(std::string pathname, RegionManager &rm, HeapManager &hm) :
+  ElfBinary::ElfBinary(std::string pathname, std::shared_ptr<RegionManager> rm,
+      HeapManager &hm) :
     _rm(rm),
     _hm(hm)
   {
@@ -209,7 +211,7 @@ namespace Elkvm {
 
     size_t total_size = phdr.p_memsz + offset_in_page(load_addr);
     std::shared_ptr<Region> loadable_region =
-      _rm.allocate_region(total_size);
+      _rm->allocate_region(total_size);
     loadable_region->set_guest_addr(page_begin(load_addr));
 
     int err = load_program_header(phdr, loadable_region);
@@ -224,7 +226,7 @@ namespace Elkvm {
     }
 
     int pages = pages_from_size(total_size);
-    err = _rm.get_pager().map_region(loadable_region->base_address(),
+    err = _rm->get_pager().map_region(loadable_region->base_address(),
         loadable_region->guest_address(), pages, opts);
     assert(err == 0 && "could not create pt entries for loadable region");
 

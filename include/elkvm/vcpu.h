@@ -22,7 +22,7 @@ struct kvm_vcpu {
 	int singlestep;
   struct kvm_guest_debug debug;
 
-  kvm_vcpu(Elkvm::RegionManager &rm) : stack(rm) {}
+  kvm_vcpu(std::shared_ptr<Elkvm::RegionManager> rm) : stack(rm) {}
   uint64_t pop() { uint64_t val = stack.popq(regs.rsp); regs.rsp += 0x8; return val; }
   void push(uint64_t val) { regs.rsp -= 0x8; stack.pushq(regs.rsp, val); }
   guestptr_t kernel_stack_base() { return stack.kernel_base(); }

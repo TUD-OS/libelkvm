@@ -1,16 +1,11 @@
 #pragma once
 
-#include <array>
 #include <memory>
-#include <vector>
 
 #include <elkvm.h>
 #include <mapping.h>
-#include <pager.h>
 
 namespace Elkvm {
-
-  class RegionManager;
 
   class Region {
     private:
@@ -19,14 +14,12 @@ namespace Elkvm {
       size_t rsize;
       bool free;
 
-      RegionManager &_rm;
     public:
-      Region(void *chunk_p, size_t size, RegionManager &rm) :
+      Region(void *chunk_p, size_t size) :
         host_p(chunk_p),
         addr(0),
         rsize(size),
-        free(true),
-        _rm(rm)
+        free(true)
     {}
       void *base_address() const { return host_p; }
       struct elkvm_memory_region *c_region() const;
@@ -43,46 +36,13 @@ namespace Elkvm {
       void set_used() { free = false; }
       size_t size() const { return rsize; }
       std::shared_ptr<Region> slice_begin(const size_t size);
-      void slice_center(off_t off, size_t len);
+      std::pair<std::shared_ptr<Region>, std::shared_ptr<Region>>
+        slice_center(off_t off, size_t len);
   };
 
   std::ostream &print(std::ostream &, const Region &);
   bool operator==(const Region &, const Region &);
 
-  class RegionManager {
-    private:
-      std::vector<std::shared_ptr<Region>> allocated_regions;
-      std::array<std::vector<std::shared_ptr<Region>>, 16> freelists;
-
-      PagerX86_64 pager;
-
-      int add_chunk(size_t size);
-
-    public:
-      RegionManager(int vmfd);
-
-      bool address_valid(const void *host_p) const;
-      bool host_address_mapped(const void * const) const;
-      bool same_region(const void *p1, const void *p2) const;
-
-      void add_free_region(std::shared_ptr<Region> region);
-      std::shared_ptr<Region> allocate_region(size_t size);
-      void free_region(std::shared_ptr<Region> r);
-      void free_region(void *host_p, size_t sz);
-      void use_region(std::shared_ptr<Region> r);
-
-      std::shared_ptr<Region> find_free_region(size_t size);
-      std::shared_ptr<Region> find_region(const void *host_p) const;
-      std::shared_ptr<Region> find_region(guestptr_t addr) const;
-
-      void dump_regions() const;
-      void dump_mappings() const;
-
-      /* XXX make this const */
-      PagerX86_64 &get_pager() { return pager; }
-  };
-
-  std::array<std::vector<Region>, 16>::size_type get_freelist_idx(const size_t size);
 //namespace Elkvm
 }
 
