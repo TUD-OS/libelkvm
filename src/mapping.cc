@@ -131,6 +131,7 @@ namespace Elkvm {
   void Mapping::sync_back(struct region_mapping *mapping) {
     host_p = mapping->host_p;
     addr   = mapping->guest_virt;
+    region->set_guest_addr(addr);
     length = mapping->length;
     mapped_pages = pages_from_size(length);
     prot  = mapping->prot;
