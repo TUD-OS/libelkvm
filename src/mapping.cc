@@ -144,7 +144,7 @@ namespace Elkvm {
   }
 
   int Mapping::diff(struct region_mapping *mapping) const {
-    printf("\n\nADDR: 0x%lx GV: 0x%lx\n\n", addr, mapping->guest_virt);
+    assert(host_p == mapping->host_p && "changing the mapping's host address is not yet supported");
     if(host_p != mapping->host_p
         || addr != mapping->guest_virt
         || length != mapping->length

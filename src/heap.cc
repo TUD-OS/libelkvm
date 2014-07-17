@@ -136,6 +136,8 @@ namespace Elkvm {
       int err = map(mapping);
       assert(err == 0);
 
+      assert(!mapping.get_region()->is_free());
+      assert(_rm->find_region(mapping.base_address()) != nullptr);
       return mapping;
     }
 
@@ -143,6 +145,9 @@ namespace Elkvm {
      * and flags etc. and return the mapping object */
     it->modify(prot, flags, fd, off);
     map(*it);
+
+    assert(!it->get_region()->is_free());
+    assert(_rm->find_region(it->base_address()) != nullptr);
     return *it;
   }
 
@@ -203,6 +208,7 @@ namespace Elkvm {
     }
 
     /* add page table entries according to the options specified by the monitor */
+    assert(m.base_address() == m.get_region()->base_address());
     int err = _rm->get_pager().map_region(m.base_address(), m.guest_address(),
         m.get_pages(), opts);
     assert(err == 0);
