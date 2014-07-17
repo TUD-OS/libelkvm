@@ -129,22 +129,12 @@ namespace Elkvm {
   }
 
   void Mapping::sync_back(struct region_mapping *mapping) {
-    if(host_p != mapping->host_p) {
-      host_p = mapping->host_p;
-      assert(false && "remap not implemented!");
-    }
-    if(addr != mapping->guest_virt) {
-      addr   = mapping->guest_virt;
-      assert(false && "remap not implemented!");
-    }
-    if(length != mapping->length) {
-      length = mapping->length;
-      assert(false && "remap not implemented!");
-    }
-    if(prot != mapping->prot) {
-      prot  = mapping->prot;
-      assert(false && "remap not implemented!");
-    }
+    host_p = mapping->host_p;
+    addr   = mapping->guest_virt;
+    length = mapping->length;
+    mapped_pages = pages_from_size(length);
+    prot  = mapping->prot;
+
     if(flags != mapping->flags || fd != mapping->fd || offset != mapping->offset) {
       flags = mapping->flags;
       fd   = mapping->fd;
