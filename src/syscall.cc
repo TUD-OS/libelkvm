@@ -552,7 +552,7 @@ long elkvm_do_mmap(Elkvm::VMInternals &vmi) {
     result = vmi.get_handlers()->mmap_before(cm);
     /* write changes back to mapping obj */
     mapping.sync_back(cm);
-    free(cm);
+    delete(cm);
   }
 
   /* now do the standard actions not handled by the monitor
