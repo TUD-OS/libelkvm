@@ -26,17 +26,22 @@ namespace Elkvm {
 
   unsigned Environment::calc_auxv_num_and_set_auxv(char **env_p) {
     /* XXX this breaks, if we do not get the original envp */
+
+    /* traverse past the environment */
     char **auxv_p = env_p;
     while(*auxv_p != NULL) {
       auxv_p++;
     }
     auxv_p++;
 
+    /* now traverse past the elf auxiliary vector */
     auxv = (Elf64_auxv_t *)auxv_p;
 
     unsigned i;
     for(i = 0 ; auxv->a_type != AT_NULL; auxv++, i++);
 
+    /* auxv now ponts to the AT_NULL entry at the bottom (highest address)
+     * on the aux vector, we return the amount of entries - 1 */
     return i;
   }
 
