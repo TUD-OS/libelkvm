@@ -1998,14 +1998,11 @@ long elkvm_do_arch_prctl(Elkvm::VMInternals &vmi) {
 
   elkvm_syscall2(vcpu, &code, &user_addr);
   assert(user_addr != 0x0);
-  uint64_t *host_addr = reinterpret_cast<uint64_t *>(vmi.get_region_manager()->get_pager().get_host_p(user_addr));
-  if(host_addr == NULL) {
-    return -EFAULT;
-  }
 
-  if(vmi.debug_mode()) {
-    printf("ARCH PRCTL with code %i user_addr 0x%lx\n", (int)code, user_addr);
-  }
+  uint64_t *host_addr = reinterpret_cast<uint64_t *>(
+      vmi.get_region_manager()->get_pager().get_host_p(user_addr));
+  assert(host_addr != nullptr && "could not get host address in arch_prctl");
+
   switch(code) {
     case ARCH_SET_FS:
       vcpu->sregs.fs.base = user_addr;
@@ -2024,11 +2021,14 @@ long elkvm_do_arch_prctl(Elkvm::VMInternals &vmi) {
   }
 
   err = kvm_vcpu_set_sregs(vcpu.get());
-  if(err) {
-    return err;
+  if(vmi.debug_mode()) {
+    printf("\n============ LIBELKVM ===========\n");
+    printf("ARCH PRCTL with code %i user_addr 0x%lx (%p)\n",
+        (int)code, user_addr, host_addr);
+    printf("RESULT %li\n", err);
+    printf("=================================\n");
   }
-
-  return 0;
+  return err;
 }
 
 long elkvm_do_adjtimex(Elkvm::VMInternals &vmi __attribute__((unused))) {
