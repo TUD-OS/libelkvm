@@ -15,7 +15,7 @@ int elkvm_tss_setup64(std::shared_ptr<struct kvm_vcpu> vcpu, Elkvm::RegionManage
 	struct elkvm_tss64 *tss = (struct elkvm_tss64 *)r->base_address();
 	memset(tss, 0, sizeof(struct elkvm_tss64));
 
-	tss->ist1 = vcpu->kernel_stack_base();
+	tss->ist1 = vcpu->kernel_stack_base() + ELKVM_PAGESIZE;
 	tss->rsp0 = 0xFFFFFFFFFFFFFFFF;
 	tss->rsp2 = 0x00007FFFFFFFFFFF;
 	return 0;
