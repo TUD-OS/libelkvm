@@ -1,13 +1,13 @@
 #include <assert.h>
 #include <errno.h>
 
+#include <debug.h>
 #include <elkvm.h>
 #include <elkvm-internal.h>
 #include <environ.h>
 #include <pager.h>
 #include <stack.h>
 #include <vcpu.h>
-#include "debug.h"
 
 namespace Elkvm {
   Stack::Stack(std::shared_ptr<RegionManager> rm) : _rm(rm) {
@@ -100,8 +100,7 @@ namespace Elkvm {
 
   void dump_stack(VMInternals &vmi, struct kvm_vcpu *vcpu) {
     assert(vcpu->regs.rsp != 0x0);
-    /* XXX dump memory for stack here again! */
-    //elkvm_dump_memory(vmi, vcpu->regs.rsp);
+    dump_memory(vmi, vcpu->regs.rsp);
   }
 
 //namespace Elkvm
