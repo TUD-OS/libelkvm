@@ -16,6 +16,7 @@ namespace Elkvm {
       Elf64_auxv_t *auxv;
       const ElfBinary &binary;
 
+      void fix_auxv_dynamic_values(unsigned count);
     public:
       Environment(const ElfBinary &bin, std::shared_ptr<RegionManager> rm);
       off64_t push_auxv(std::shared_ptr<struct kvm_vcpu> vcpu, char **env_p);

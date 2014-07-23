@@ -45,47 +45,54 @@ namespace Elkvm {
     return i;
   }
 
+  void Environment::fix_auxv_dynamic_values(unsigned count) {
+    auto current_auxv = auxv;
+    short all_set = 0;
+
+    for(unsigned i= 0 ; i < count; current_auxv--, i++) {
+      /*
+       * if the binary is dynamically linked, we need to reset these types
+       * so the dynamic linker loads the correct values
+       */
+        switch(current_auxv->a_type) {
+          case AT_PHDR:
+            current_auxv->a_un.a_val = binary.get_auxv().at_phdr;
+            all_set |= 0x1;
+            break;
+          case AT_PHENT:
+            current_auxv->a_un.a_val = binary.get_auxv().at_phent;
+            all_set |= 0x2;
+            break;
+          case AT_PHNUM:
+            current_auxv->a_un.a_val = binary.get_auxv().at_phnum;
+            all_set |= 0x4;
+            break;
+          case AT_EXECFD:
+            /* TODO maybe this needs to be removed? */
+            break;
+          case AT_ENTRY:
+            current_auxv->a_un.a_val = binary.get_auxv().at_entry;
+            all_set |= 0x8;
+            break;
+          case AT_BASE:
+            current_auxv->a_un.a_val = binary.get_auxv().at_base;
+            all_set |= 0x10;
+            break;
+        }
+    }
+    assert(all_set == 0x1F && "elf auxv is complete");
+  }
+
   off64_t Environment::push_auxv(std::shared_ptr<struct kvm_vcpu> vcpu, char **env_p) {
     unsigned count = calc_auxv_num_and_set_auxv(env_p);
 
     off64_t offset = 0;
 
     if(binary.get_auxv().valid) {
-      short all_set = 0;
-      for(unsigned i= 0 ; i < count; auxv--, i++) {
-        /*
-         * if the binary is dynamically linked, we need to reset these types
-         * so the dynamic linker loads the correct values
-         */
-          switch(auxv->a_type) {
-            case AT_PHDR:
-              auxv->a_un.a_val = binary.get_auxv().at_phdr;
-              all_set |= 0x1;
-              break;
-            case AT_PHENT:
-              auxv->a_un.a_val = binary.get_auxv().at_phent;
-              all_set |= 0x2;
-              break;
-            case AT_PHNUM:
-              auxv->a_un.a_val = binary.get_auxv().at_phnum;
-              all_set |= 0x4;
-              break;
-            case AT_EXECFD:
-              /* TODO maybe this needs to be removed? */
-              break;
-            case AT_ENTRY:
-              auxv->a_un.a_val = binary.get_auxv().at_entry;
-              all_set |= 0x8;
-              break;
-            case AT_BASE:
-              auxv->a_un.a_val = binary.get_auxv().at_base;
-              all_set |= 0x10;
-              break;
-          }
-      }
-      assert(all_set == 0x1F && "elf auxv is complete");
-    } else {
-      for(unsigned i= 0 ; i < count; auxv--, i++) {
+      fix_auxv_dynamic_values(count);
+    }
+
+    for(unsigned i= 0 ; i < count; auxv--, i++) {
       switch(auxv->a_type) {
         case AT_NULL:
         case AT_IGNORE:
@@ -125,7 +132,6 @@ namespace Elkvm {
           break;
       }
       vcpu->push(auxv->a_type);
-    }
     }
 
     return offset;
