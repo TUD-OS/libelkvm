@@ -124,9 +124,6 @@ namespace Elkvm {
       vcpu->push(auxv->a_type);
     }
 
-    vcpu->push(0x0);
-    vcpu->push(AT_NULL);
-
     return offset;
   }
 
