@@ -6,7 +6,6 @@ option(libelkvm_generate_coverage "Generate coverage information for libelkvm's 
 include_directories ("${PROJECT_SOURCE_DIR}/include/elkvm" "${PROJECT_SOURCE_DIR}/src" )
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
 add_definitions(-Wall -Wextra)
 add_definitions(-D_PREFIX_="${CMAKE_INSTALL_PREFIX}")
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
@@ -18,7 +17,6 @@ endif()
 
 if(libelkvm_generate_coverage)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-arcs -ftest-coverage")
     set(CMAKE_EXE_LINKER_FLAGS="${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage -lgcov")
     include(lcov)
 endif()

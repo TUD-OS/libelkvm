@@ -9,10 +9,6 @@
 int elkvm_idt_setup(Elkvm::RegionManager &rm, std::shared_ptr<struct kvm_vcpu> vcpu,
     struct elkvm_flat *);
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 struct kvm_idt_entry {
 	uint16_t offset1;
 	uint16_t selector;
@@ -68,7 +64,3 @@ uint64_t idt_entry_offset(struct kvm_idt_entry *entry) {
 //0x14 - 0x1d are reserved
 #define IDT_ENTRY_SX  0x1e
 //0x1f is reserved
-
-#ifdef __cplusplus
-}
-#endif

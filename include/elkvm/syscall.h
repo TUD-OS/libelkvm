@@ -10,10 +10,6 @@
 #define NUM_SYSCALLS 313
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /*
  * \brief check what kind of syscall has been made by the guest
  * and call the appropriate handler func in the userspace binary
@@ -556,8 +552,3 @@ static struct {
   [__NR_openat]          = { elkvm_do_openat, "OPENAT" },
 
 };
-
-#ifdef __cplusplus
-}
-#endif
-

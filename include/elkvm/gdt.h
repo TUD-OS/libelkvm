@@ -7,10 +7,6 @@
 
 int elkvm_gdt_setup(Elkvm::RegionManager &rm, std::shared_ptr<struct kvm_vcpu> vcpu);
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 struct elkvm_gdt_segment_descriptor {
 	uint16_t limit1;
 	uint16_t base1;
@@ -57,7 +53,3 @@ static inline
 uint8_t gdt_flags(struct elkvm_gdt_segment_descriptor *entry) {
 	return entry->limit2_flags >> 4;
 }
-
-#ifdef __cplusplus
-}
-#endif

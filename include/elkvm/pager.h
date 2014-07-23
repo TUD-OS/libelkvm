@@ -9,10 +9,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define ELKVM_PAGER_MEMSIZE 16*1024*1024
 #define ELKVM_SYSTEM_MEMSIZE 16*1024*1024
 #define ELKVM_SYSTEM_MEMGROW 128*1024*1024
@@ -57,10 +53,6 @@ int pages_from_size(uint64_t size);
 int page_remain(guestptr_t addr);
 unsigned int offset_in_page(guestptr_t addr);
 uint64_t pagesize_align(uint64_t size);
-
-#ifdef __cplusplus
-}
-#endif
 
 namespace Elkvm {
 

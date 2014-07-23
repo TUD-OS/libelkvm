@@ -30,10 +30,6 @@ struct kvm_vcpu {
   void init_rsp() { regs.rsp = stack.user_base(); }
 };
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define VCPU_CR0_FLAG_PAGING            0x80000000
 #define VCPU_CR0_FLAG_CACHE_DISABLE     0x40000000
 #define VCPU_CR0_FLAG_NOT_WRITE_THROUGH 0x20000000
@@ -140,7 +136,3 @@ void print_segment(const char *name, struct kvm_segment seg)
 		(uint8_t) seg.type, seg.present, seg.dpl, seg.db, seg.s, seg.l,
 	 	seg.g, seg.avl);
 }
-
-#ifdef __cplusplus
-}
-#endif
