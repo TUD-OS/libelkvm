@@ -80,9 +80,7 @@ namespace Elkvm {
       }
       assert(all_set == 0x1F && "elf auxv is complete");
     } else {
-      for(unsigned i= 0 ; i < count; auxv--, i++);
-    }
-    for(unsigned i = 0 ; auxv->a_type != AT_NULL; auxv++, i++) {
+      for(unsigned i= 0 ; i < count; auxv--, i++) {
       switch(auxv->a_type) {
         case AT_NULL:
         case AT_IGNORE:
@@ -122,6 +120,7 @@ namespace Elkvm {
           break;
       }
       vcpu->push(auxv->a_type);
+    }
     }
 
     return offset;
