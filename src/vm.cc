@@ -128,8 +128,6 @@ struct kvm_vm *elkvm_vm_create(struct elkvm_opts *opts, int mode,
     assert(err == 0);
   }
 
-  Elkvm::dump_stack(vmi, vcpu.get());
-
 	return vm.get();
 }
 

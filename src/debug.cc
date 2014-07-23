@@ -16,7 +16,7 @@ namespace Elkvm {
     assert(host_p != NULL && "cannot dump unmapped memory");
 
     fprintf(stderr, " Host Address\tGuest Address\t\tValue\t\tValue\n");
-    for(int i = 0; i < 0x64; i++) {
+    for(int i = 0; i < 16; i++) {
       fprintf(stderr, " %p\t0x%016lx\t0x%016lx\t0x%016lx\n",
           host_p, addr,
           *host_p, *(host_p+1));
