@@ -9,7 +9,7 @@
 
 #include <memory>
 
-#define LD_LINUX_SO_BASE 0x7FFFF0000000
+#define LD_LINUX_SO_BASE 0x1000000
 
 namespace Elkvm {
 
