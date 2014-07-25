@@ -21,6 +21,8 @@ namespace Elkvm {
 
       int grow(size_t sz);
       int shrink(guestptr_t newbrk);
+      Mapping &create_mapping(guestptr_t addr, size_t length, int prot, int flags,
+          int fd, off_t off);
 
     public:
       HeapManager(std::shared_ptr<RegionManager> rm) : _rm(rm) {}

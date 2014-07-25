@@ -35,7 +35,7 @@ namespace Elkvm {
       assert(r != nullptr && "should have free region after allocation");
     }
 
-    if(r->size() > size) {
+    if(r->size() > pagesize_align(size)) {
       auto new_region = r->slice_begin(size);
       add_free_region(r);
       r = new_region;
@@ -96,8 +96,8 @@ namespace Elkvm {
       return err;
     }
 
-    assert(grow_size <= 0x8000000 && grow_size > 0x400000);
-    freelists[15].push_back(std::make_shared<Region>(chunk_p, grow_size));
+    auto idx = get_freelist_idx(grow_size);
+    freelists[idx].push_back(std::make_shared<Region>(chunk_p, grow_size));
     return 0;
   }
 
@@ -152,7 +152,7 @@ namespace Elkvm {
     allocated_regions.push_back(r);
   }
 
-  std::array<std::vector<Region>, 16>::size_type
+  std::array<std::vector<Region>, RegionManager::n_freelists>::size_type
   get_freelist_idx(const size_t size) {
     auto list_idx = 0;
     if(size <= 0x1000) {
@@ -187,10 +187,9 @@ namespace Elkvm {
       return list_idx = 14;
     } else if(size <= 0x8000000) {
       return list_idx = 15;
+    } else {
+      return list_idx = 16;
     }
-
-    assert(false && "request larger than ELKVM_GROW_SIZE");
-    /* TODO requests larger than ELKVM_GROW_SIZE */
   }
 
 //namespace Elkvm

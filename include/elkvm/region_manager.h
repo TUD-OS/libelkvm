@@ -9,9 +9,11 @@
 
 namespace Elkvm {
   class RegionManager {
+    public:
+      static const unsigned n_freelists = 17;
     private:
       std::vector<std::shared_ptr<Region>> allocated_regions;
-      std::array<std::vector<std::shared_ptr<Region>>, 16> freelists;
+      std::array<std::vector<std::shared_ptr<Region>>, n_freelists> freelists;
 
       PagerX86_64 pager;
 
@@ -41,7 +43,8 @@ namespace Elkvm {
       PagerX86_64 &get_pager() { return pager; }
   };
 
-  std::array<std::vector<Region>, 16>::size_type get_freelist_idx(const size_t size);
+  std::array<std::vector<Region>, RegionManager::n_freelists>::size_type
+    get_freelist_idx(const size_t size);
 
   //namespace Elkvm
 }
