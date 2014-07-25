@@ -615,6 +615,7 @@ long elkvm_do_mprotect(Elkvm::VMInternals &vmi) {
 
   assert(page_aligned(addr) && "mprotect address must be page aligned");
   if(!vmi.get_heap_manager().address_mapped(addr)) {
+    vmi.get_heap_manager().dump_mappings();
     vmi.get_region_manager()->dump_regions();
     std::cout << "mprotect with invalid address: 0x" << std::hex
       << addr << std::endl;
