@@ -160,9 +160,9 @@ namespace Elkvm {
     if(it == mappings_for_brk.end()) {
       it = std::find(mappings_for_mmap.begin(), mappings_for_mmap.end(), mapping);
       assert(it != mappings_for_mmap.end());
-      //mappings_for_mmap.erase(it);
+      mappings_for_mmap.erase(it);
     } else {
-      //mappings_for_brk.erase(it);
+      mappings_for_brk.erase(it);
     }
   }
 
