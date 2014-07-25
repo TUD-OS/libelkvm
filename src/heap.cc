@@ -114,41 +114,50 @@ namespace Elkvm {
 
   Mapping &HeapManager::get_mapping(guestptr_t addr, size_t length, int prot,
       int flags, int fd, off_t off) {
-    /* check if we already have a mapping for that address,
-     * if we do, we need to split the old mapping, and replace the contents
-     * with whatever the user requested,
-     * however if we have an exact match, we need to return that */
-    auto it = std::find_if(mappings_for_mmap.begin(), mappings_for_mmap.end(),
-        [addr, length, prot, flags, fd, off](const Mapping &m)
-        { return m.guest_address() == addr
-              && m.get_length() == length; });
-    if(it == mappings_for_mmap.end()) {
-      it = std::find_if(mappings_for_mmap.begin(), mappings_for_mmap.end(),
-          [addr](const Mapping &m) { return m.contains_address(addr); });
-      if(it != mappings_for_mmap.end()) {
-        /* TODO this should be done after we get back to the user! */
-        /* this mapping needs to be split! */
-        slice(*it, addr, length);
+    if(addr && (flags & MAP_FIXED)) {
+      /* check if we already have a mapping for that address,
+       * if we do, we need to split the old mapping, and replace the contents
+       * with whatever the user requested,
+       * however if we have an exact match, we need to return that */
+      auto it = std::find_if(mappings_for_mmap.begin(), mappings_for_mmap.end(),
+          [addr, length, prot, flags, fd, off](const Mapping &m)
+          { return m.guest_address() == addr
+                && m.get_length() == length; });
+      if(it == mappings_for_mmap.end()) {
+        it = std::find_if(mappings_for_mmap.begin(), mappings_for_mmap.end(),
+            [addr](const Mapping &m) { return m.contains_address(addr); });
+        if(it != mappings_for_mmap.end()) {
+          /* TODO this should be done after we get back to the user! */
+          /* this mapping needs to be split! */
+          slice(*it, addr, length);
+        }
+        return create_mapping(addr, length, prot, flags, fd, off);
       }
-      std::shared_ptr<Region> r = _rm->allocate_region(length);
-      mappings_for_mmap.emplace_back(r, addr, length, prot, flags, fd, off);
-      Mapping &mapping = mappings_for_mmap.back();
-      int err = map(mapping);
-      assert(err == 0);
 
-      assert(!mapping.get_region()->is_free());
-      assert(_rm->find_region(mapping.base_address()) != nullptr);
-      return mapping;
+      /* if we have an exact match, we only need to update this mapping's protection
+       * and flags etc. and return the mapping object */
+      it->modify(prot, flags, fd, off);
+      map(*it);
+
+      assert(!it->get_region()->is_free());
+      assert(_rm->find_region(it->base_address()) != nullptr);
+      return *it;
+    } else {
+      return create_mapping(0x0, length, prot, flags, fd, off);
     }
+  }
 
-    /* if we have an exact match, we only need to update this mapping's protection
-     * and flags etc. and return the mapping object */
-    it->modify(prot, flags, fd, off);
-    map(*it);
+  Mapping &HeapManager::create_mapping(guestptr_t addr, size_t length, int prot,
+      int flags, int fd, off_t off) {
+    std::shared_ptr<Region> r = _rm->allocate_region(length);
+    mappings_for_mmap.emplace_back(r, addr, length, prot, flags, fd, off);
+    Mapping &mapping = mappings_for_mmap.back();
+    int err = map(mapping);
+    assert(err == 0);
 
-    assert(!it->get_region()->is_free());
-    assert(_rm->find_region(it->base_address()) != nullptr);
-    return *it;
+    assert(!mapping.get_region()->is_free());
+    assert(_rm->find_region(mapping.base_address()) != nullptr);
+    return mapping;
   }
 
   void HeapManager::add_mapping(const Mapping &mapping) {
