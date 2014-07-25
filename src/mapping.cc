@@ -36,6 +36,7 @@ namespace Elkvm {
   }
 
   std::shared_ptr<Region> Mapping::move_guest_address(off64_t off) {
+    assert(off > 0);
     assert(off < length);
     addr += off;
     length -= off;
