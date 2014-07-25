@@ -35,7 +35,7 @@ namespace Elkvm {
       assert(r != nullptr && "should have free region after allocation");
     }
 
-    if(r->size() > size) {
+    if(r->size() > pagesize_align(size)) {
       auto new_region = r->slice_begin(size);
       add_free_region(r);
       r = new_region;
