@@ -106,7 +106,7 @@ namespace Elkvm {
     if(it == mappings_for_brk.end()) {
       it = std::find_if(mappings_for_mmap.begin(), mappings_for_mmap.end(),
           [addr](const Mapping &m) { return m.contains_address(addr); });
-      return it == mappings_for_mmap.end();
+      return it != mappings_for_mmap.end();
     } else {
       return true;
     }
