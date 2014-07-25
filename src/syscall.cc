@@ -662,9 +662,6 @@ long elkvm_do_munmap(Elkvm::VMInternals &vmi) {
     addr = vmi.get_region_manager()->get_pager().get_host_p(addr_p);
   }
 
-  auto chunk = vmi.get_region_manager()->get_pager().find_chunk_for_host_p(addr);
-  assert(chunk != nullptr);
-
   Elkvm::Mapping &mapping = vmi.get_heap_manager().find_mapping(addr);
   vmi.get_heap_manager().unmap(mapping, addr_p, pages_from_size(length));
 
