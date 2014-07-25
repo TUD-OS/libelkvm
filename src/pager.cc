@@ -383,8 +383,6 @@ namespace Elkvm {
           != (guest_physical & ~(ELKVM_PAGESIZE-1))) {
         return -1;
       }
-      /* TODO check if flags are the same */
-      return 0;
     }
 
     create_entry(pt_entry, guest_physical, opts);

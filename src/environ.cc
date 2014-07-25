@@ -90,48 +90,48 @@ namespace Elkvm {
 
     if(binary.get_auxv().valid) {
       fix_auxv_dynamic_values(count);
-    }
-
-    for(unsigned i= 0 ; i < count; auxv--, i++) {
-      switch(auxv->a_type) {
-        case AT_NULL:
-        case AT_IGNORE:
-        case AT_EXECFD:
-        case AT_PHDR:
-        case AT_PHENT:
-        case AT_PHNUM:
-        case AT_PAGESZ:
-        case AT_FLAGS:
-        case AT_ENTRY:
-        case AT_NOTELF:
-        case AT_UID:
-        case AT_EUID:
-        case AT_GID:
-        case AT_EGID:
-          /* not sure about this one, might be a pointer */
-        case AT_HWCAP:
-        case AT_CLKTCK:
-        case AT_SECURE:
-        case AT_BASE:
-        /*
-         * AT_BASE points to the base address of the dynamic linker
-         */
-          vcpu->push(auxv->a_un.a_val);
-          break;
-        case AT_PLATFORM:
-        case 25:
-        case 31:
-        case AT_SYSINFO_EHDR:
-          ;
-          char *target = reinterpret_cast<char *>(region->base_address()) + offset;
-          guestptr_t guest_virtual = region->guest_address() + offset;
-          int len = strlen((char *)auxv->a_un.a_val) + 1;
-          strcpy(target, (char *)auxv->a_un.a_val);
-          offset = offset + len;
-          vcpu->push(guest_virtual);
-          break;
+    } else {
+      for(unsigned i= 0 ; i < count; auxv--, i++) {
+        switch(auxv->a_type) {
+          case AT_NULL:
+          case AT_IGNORE:
+          case AT_EXECFD:
+          case AT_PHDR:
+          case AT_PHENT:
+          case AT_PHNUM:
+          case AT_PAGESZ:
+          case AT_FLAGS:
+          case AT_ENTRY:
+          case AT_NOTELF:
+          case AT_UID:
+          case AT_EUID:
+          case AT_GID:
+          case AT_EGID:
+            /* not sure about this one, might be a pointer */
+          case AT_HWCAP:
+          case AT_CLKTCK:
+          case AT_SECURE:
+          case AT_BASE:
+          /*
+           * AT_BASE points to the base address of the dynamic linker
+           */
+            vcpu->push(auxv->a_un.a_val);
+            break;
+          case AT_PLATFORM:
+          case 25:
+          case 31:
+          case AT_SYSINFO_EHDR:
+            ;
+            char *target = reinterpret_cast<char *>(region->base_address()) + offset;
+            guestptr_t guest_virtual = region->guest_address() + offset;
+            int len = strlen((char *)auxv->a_un.a_val) + 1;
+            strcpy(target, (char *)auxv->a_un.a_val);
+            offset = offset + len;
+            vcpu->push(guest_virtual);
+            break;
+        }
+        vcpu->push(auxv->a_type);
       }
-      vcpu->push(auxv->a_type);
     }
 
     return offset;
