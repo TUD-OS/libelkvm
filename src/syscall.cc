@@ -593,6 +593,7 @@ long elkvm_do_mmap(Elkvm::VMInternals &vmi) {
       printf(" MAP_FIXED");
     }
     printf("\n");
+    print(std::cout, mapping);
 
     printf("RESULT: %li\n", result);
     printf("=================================\n");
