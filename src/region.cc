@@ -16,7 +16,9 @@ namespace Elkvm {
     }
     stream << std::hex
       <<"REGION[" << &r << "] guest address: 0x" << r.guest_address()
-      << " host_p: " << r.base_address() << " size: 0x" << r.size() << std::endl;
+      << " host_p: " << r.base_address() << " size: 0x" << r.size()
+      << " last guest address: 0x" << r.guest_address() + r.size() - 1
+      << std::endl;
     return stream;
   }
 
