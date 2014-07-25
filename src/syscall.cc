@@ -95,6 +95,11 @@ int elkvm_handle_interrupt(Elkvm::VMInternals &vmi, struct kvm_vcpu *vcpu) {
     }
 
     uint32_t err_code = vcpu->pop();
+    void *hp = vmi.get_region_manager()->get_pager().get_host_p(vcpu->sregs.cr2);
+    Elkvm::dump_page_fault_info(vcpu->sregs.cr2, err_code, hp);
+    if(hp) {
+      vmi.get_region_manager()->get_pager().dump_page_tables();
+    }
     if(vcpu->check_pagefault(err_code, vmi.debug_mode())) {
       return 0;
     }
