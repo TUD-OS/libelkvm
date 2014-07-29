@@ -217,13 +217,7 @@ namespace Elkvm {
     int err = load_program_header(phdr, loadable_region);
     assert(err == 0 && "Error in ElfBinary::load_program_header");
 
-    ptopt_t opts = 0;
-    if(phdr.p_flags & PF_X) {
-      opts |= PT_OPT_EXEC;
-    }
-    if(phdr.p_flags & PF_W) {
-      opts |= PT_OPT_WRITE;
-    }
+    ptopt_t opts = get_pager_opts_from_phdr_flags(phdr.p_flags);
 
     int pages = pages_from_size(total_size);
     err = _rm->get_pager().map_region(loadable_region->base_address(),
@@ -404,6 +398,17 @@ namespace Elkvm {
 
   const struct Elf_auxv &ElfBinary::get_auxv() const {
     return auxv;
+  }
+
+  ptopt_t get_pager_opts_from_phdr_flags(int flags) {
+    ptopt_t opts = 0;
+    if(flags & PF_X) {
+      opts |= PT_OPT_EXEC;
+    }
+    if(flags & PF_W) {
+      opts |= PT_OPT_WRITE;
+    }
+    return opts;
   }
 
 //namespace Elkvm

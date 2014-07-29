@@ -65,6 +65,8 @@ class ElfBinary {
     std::string get_loader() const { return loader; }
 };
 
+ptopt_t get_pager_opts_from_phdr_flags(int flags);
+
 //namespace Elkvm
 }
 

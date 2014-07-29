@@ -3,47 +3,41 @@
 
 #include <elkvm/elkvm.h>
 #include <elkvm/pager.h>
+#include <elkvm/region_manager.h>
 
 namespace testing {
 
-class PagerTest : public Test {
+class Pager : public Test {
   protected:
-    PagerTest() {}
-    ~PagerTest() {}
+    Elkvm::PagerX86_64 pager;
 
-    virtual void SetUp() {
-      elkvm_region_setup(&vm);
-      vm.pager.vm = &vm;
-      vm.pager.host_pml4_p = reinterpret_cast<void *>(
-          vm.pager.system_chunk.userspace_addr + 0x1000);
-      vm.pager.host_next_free_tbl_p = reinterpret_cast<char *>(vm.pager.host_pml4_p)
-        + 0x1000;
-    }
-    virtual void TearDown() {
-      free(reinterpret_cast<char *>(vm.pager.host_pml4_p) - 0x1000);
-    }
-
-    struct kvm_vm vm;
+    Pager() : pager(5) {}
+    ~Pager() {}
 };
 
-TEST_F(PagerTest, test_create_entry) {
-  void *host_p = reinterpret_cast<void *>(vm.pager.system_chunk.userspace_addr
-      + 0xFEE);
-  guestptr_t guest_addr = reinterpret_cast<guestptr_t>(host_p) & 0xFFF;
-
-  int err = elkvm_pager_create_mapping(&vm.pager, host_p, guest_addr, 0);
-  ASSERT_EQ(err, 0);
-
-  void *host_created = elkvm_pager_get_host_p(&vm.pager, guest_addr);
-  ASSERT_EQ(host_p, host_created);
+TEST_F(Pager, DoesNotCreateAChunkWithUnalignedSize) {
+  void *x = nullptr;
+  int err = pager.create_mem_chunk(&x, 0x123);
+  ASSERT_EQ(err, -EIO);
+  ASSERT_EQ(x, nullptr);
 }
 
-TEST_F(PagerTest, test_create_invalid_entry) {
-  guestptr_t guest_addr = 0x4ee;
-  void *host_p = reinterpret_cast<void *>(vm.pager.system_chunk.userspace_addr);
+TEST_F(Pager, DISABLED_CreatesAnEntryWithTheGivenAddress) {
+  auto ch = pager.get_chunk(0);
+  void *host_p = reinterpret_cast<void *>(0x1042 + ch->userspace_addr);
+  guestptr_t guest_addr = 0xF042;
 
-  int err = elkvm_pager_create_mapping(&vm.pager, host_p, guest_addr, 0);
-  ASSERT_EQ(err, -EIO);
+  int err = pager.map_user_page(host_p, guest_addr, 0);
+  ASSERT_EQ(err, 0);
+
+  void *created_addr = pager.get_host_p(guest_addr);
+  ASSERT_EQ(host_p, created_addr);
+}
+
+TEST_F(Pager, DoesNotCreateAnUnalignedMapping) {
+  guestptr_t guest_addr = 0x4ee;
+  void *host_p = reinterpret_cast<void *>(0x10000 + ELKVM_SYSTEM_MEMSIZE);
+  ASSERT_EQ(pager.map_user_page(host_p, guest_addr, 0), -EIO);
 }
 
 
