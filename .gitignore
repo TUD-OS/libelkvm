@@ -7,3 +7,6 @@
 *.dirstamp
 
 include/elkvm/config.h
+
+CMakeCache.txt
+CMakeFiles/
