@@ -7,3 +7,4 @@
 *.dirstamp
 
 include/elkvm/config.h
+.ycm*
