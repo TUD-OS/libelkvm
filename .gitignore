@@ -9,3 +9,4 @@
 include/elkvm/config.h
 .ycm*
 build/
+tags
