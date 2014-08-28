@@ -10,7 +10,7 @@ namespace Elkvm {
   //namespace Elkvm
 }
 
-int elkvm_handle_debug(struct kvm_vm *);
+int elkvm_handle_debug(Elkvm::kvm_vm *);
 int elkvm_set_guest_debug(struct kvm_vcpu *vcpu);
 
 /**

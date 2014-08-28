@@ -253,7 +253,7 @@ static void write_signal(char* buf, int signal)
   buf[2] = 0;
 }
 
-static void debug_loop(struct kvm_vm *vm) {
+static void debug_loop(Elkvm::kvm_vm *vm) {
   Elkvm::VMInternals vmi = Elkvm::get_vmi(vm);
 
   char buffer[255];
@@ -641,7 +641,7 @@ static void wait_for_connect(int portn)
   printf("Connected to %ld.%ld.%ld.%ld\n", ip & 0xff, (ip >> 8) & 0xff, (ip >> 16) & 0xff, (ip >> 24) & 0xff);
 }
 
-void elkvm_gdbstub_init(struct kvm_vm *vm) {
+void elkvm_gdbstub_init(Elkvm::kvm_vm *vm) {
   int portn = 1234;
 
   /* Wait for connect */

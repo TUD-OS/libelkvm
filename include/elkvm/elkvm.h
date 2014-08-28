@@ -13,28 +13,19 @@
 #include <libelf.h>
 #include <linux/kvm.h>
 
-typedef uint64_t guestptr_t;
+#include <vector>
+#include <memory>
 
-struct linux_dirent {
-    unsigned long  d_ino;     /* Inode number */
-    unsigned long  d_off;     /* Offset to next linux_dirent */
-    unsigned short d_reclen;  /* Length of this linux_dirent */
-    char           d_name[];  /* Filename (null-terminated) */
-                              /* length is actually (d_reclen - 2 -
-                                 offsetof(struct linux_dirent, d_name)) */
-    /*
-    char           pad;       // Zero padding byte
-    char           d_type;    // File type (only since Linux
-                              // 2.6.4); offset is (d_reclen - 1)
-    */
-};
+#include <types.h>
+#include <heap.h>
+#include <region_manager.h>
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+//#ifdef __cplusplus
+//extern "C" {
+//#endif
 
-  struct kvm_vcpu;
+struct kvm_vcpu;
 
 #define VM_MODE_X86    1
 #define VM_MODE_PAGING 2
@@ -46,22 +37,12 @@ extern "C" {
 #define RES_PATH _PREFIX_ "/share/libelkvm"
 #endif
 
-struct elkvm_opts;
+namespace Elkvm {
 
-struct region_mapping {
-  void *host_p;
-  guestptr_t guest_virt;
-  size_t length;
-  unsigned mapped_pages;
-  int prot;
-  int flags;
-  int fd;
-  off_t offset;
-};
-
+struct elkvm_handlers;
 struct kvm_vm {
   int fd;
-  const struct elkvm_handlers *syscall_handlers;
+  const Elkvm::elkvm_handlers *syscall_handlers;
   int debug;
 
   struct rlimit rlimits[RLIMIT_NLIMITS];
@@ -137,30 +118,82 @@ struct elkvm_handlers {
    * called after a breakpoint has been hit, should return 1 to abort the program
    * 0 otherwise, if this is set to NULL elkvm will execute a simple debug shell
    */
-  int (*bp_callback)(struct kvm_vm *vm);
-
+  int (*bp_callback)(Elkvm::kvm_vm *vm);
 };
+
+
+struct elkvm_opts;
+
+class VMInternals {
+  private:
+    std::vector<std::shared_ptr<struct kvm_vcpu>> cpus;
+    std::shared_ptr<Elkvm::kvm_vm> _vm;
+
+    std::shared_ptr<RegionManager> _rm;
+    HeapManager hm;
+
+    int _vmfd;
+    int _argc;
+    char **_argv;
+    char **_environ;
+    int _run_struct_size;
+
+    elkvm_signals sigs;
+    elkvm_flat sighandler_cleanup;
+
+  public:
+    VMInternals(int fd, int argc, char **argv, char **environ,
+        int run_struct_size,
+        const Elkvm::elkvm_handlers * const handlers,
+        int debug);
+
+    int add_cpu(int mode);
+
+    bool address_mapped(guestptr_t addr) const;
+    Mapping &find_mapping(guestptr_t addr);
+
+    int load_flat(Elkvm::elkvm_flat &flat, const std::string path,
+        bool kernel);
+
+    std::shared_ptr<RegionManager> get_region_manager() { return _rm; }
+    HeapManager &get_heap_manager() { return hm; }
+    std::shared_ptr<struct kvm_vcpu> get_vcpu(int num) const;
+    int get_vmfd() const { return _vmfd; }
+    Elkvm::elkvm_flat &get_cleanup_flat();
+
+    const Elkvm::elkvm_handlers * get_handlers() const
+      { return _vm->syscall_handlers; }
+
+    std::shared_ptr<struct sigaction> get_sig_ptr(unsigned sig) const;
+    std::shared_ptr<Elkvm::kvm_vm> get_vm_ptr() const { return _vm; }
+
+    int debug_mode() const { return _vm->debug; }
+
+    int set_entry_point(guestptr_t rip);
+};
+
+} // namespace Elkvm
 
 /*
   Create a new VM, with the given mode, cpu count, memory and syscall handlers
 */
-struct kvm_vm *
-elkvm_vm_create(struct elkvm_opts *,
+Elkvm::kvm_vm *
+elkvm_vm_create(Elkvm::elkvm_opts *,
     int mode,
     unsigned cpus,
-    const struct elkvm_handlers * const,
+    const Elkvm::elkvm_handlers * const,
     const char *binary,
     int debug);
 
 /*
  * Runs all CPUS of the VM
  */
-int elkvm_vm_run(struct kvm_vm *vm);
+int elkvm_vm_run(Elkvm::kvm_vm *vm);
 
 /*
  * \brief Put the VM in debug mode
  */
-int elkvm_set_debug(struct kvm_vm *);
+int elkvm_set_debug(Elkvm::kvm_vm *);
 
 /*
  * \brief Emulates (skips) the VMCALL instruction
@@ -172,12 +205,12 @@ void elkvm_emulate_vmcall(struct kvm_vcpu *);
  *        with the newsize to a vm at the same memory slot.
  *        THIS WILL DELETE ALL DATA IN THE OLD CHUNK!
  */
-int elkvm_chunk_remap(struct kvm_vm *, int num, uint64_t newsize);
+int elkvm_chunk_remap(Elkvm::kvm_vm *, int num, uint64_t newsize);
 
-struct kvm_vcpu *elkvm_vcpu_get(struct kvm_vm *, int vcpu_id);
-uint64_t elkvm_chunk_count(struct kvm_vm *);
+struct kvm_vcpu *elkvm_vcpu_get(Elkvm::kvm_vm *, int vcpu_id);
+uint64_t elkvm_chunk_count(Elkvm::kvm_vm *);
 
-struct kvm_userspace_memory_region elkvm_get_chunk(struct kvm_vm *, int chunk);
+struct kvm_userspace_memory_region elkvm_get_chunk(Elkvm::kvm_vm *, int chunk);
 
 int elkvm_dump_valid_msrs(struct elkvm_opts *);
 
@@ -185,13 +218,13 @@ int elkvm_dump_valid_msrs(struct elkvm_opts *);
  * \brief Initialize the gdbstub and wait for gdb
  *        to connect
  */
-void elkvm_gdbstub_init(struct kvm_vm *vm);
+void elkvm_gdbstub_init(Elkvm::kvm_vm *vm);
 
 /**
  * \brief Enable VCPU debug mode
  */
 int elkvm_debug_enable(struct kvm_vcpu *vcpu);
 
-#ifdef __cplusplus
-}
-#endif
+//#ifdef __cplusplus
+//}
+//#endif

@@ -301,7 +301,7 @@ int kvm_vcpu_run(struct kvm_vcpu *vcpu) {
 	return 0;
 }
 
-int elkvm_vm_run(struct kvm_vm *vm) {
+int elkvm_vm_run(Elkvm::kvm_vm *vm) {
   Elkvm::VMInternals &vmi = Elkvm::get_vmi(vm);
 
 
