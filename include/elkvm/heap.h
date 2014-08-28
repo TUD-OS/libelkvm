@@ -25,7 +25,10 @@ namespace Elkvm {
           int fd, off_t off);
 
     public:
-      HeapManager(std::shared_ptr<RegionManager> rm) : _rm(rm) {}
+      HeapManager(std::shared_ptr<RegionManager> rm) :
+        _rm(rm),
+        curbrk(0x0)
+    {}
       int init(std::shared_ptr<Region> data, size_t sz);
       int brk(guestptr_t newbrk);
       guestptr_t get_brk() const { return curbrk; };

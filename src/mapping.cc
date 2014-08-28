@@ -162,11 +162,13 @@ namespace Elkvm {
       return length;
     }
 
+    assert(region != nullptr && "no region to grow into");
     if(sz >= region->size()) {
       length = region->size();
     } else {
       length = sz;
     }
+    mapped_pages = pages_from_size(length);
     return length;
   }
 

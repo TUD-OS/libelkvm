@@ -32,6 +32,7 @@ TEST_F(AMapping, DoesNotAcceptSmallerSizeOnGrow) {
 TEST_F(AMapping, GrowsToAnExpectedSize) {
   size_t sz = mut.grow(0x4000);
   ASSERT_THAT(sz, Eq(0x4000));
+  ASSERT_THAT(mut.get_pages(), Eq(4));
 }
 
 

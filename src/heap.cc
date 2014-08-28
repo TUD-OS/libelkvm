@@ -52,8 +52,8 @@ namespace Elkvm {
       return 0;
     }
 
-    if(!mappings_for_brk.back().fits_address(newbrk-1)) {
-      Mapping &m = mappings_for_brk.back();
+    Mapping &m = mappings_for_brk.back();
+    if(!m.fits_address(newbrk-1)) {
       curbrk = m.grow_to_fill();
       map(m);
 
@@ -61,8 +61,15 @@ namespace Elkvm {
       if(err) {
         return err;
       }
+      curbrk = newbrk;
+      return 0;
     }
 
+    auto sz = m.get_length();
+    auto growsz = newbrk - curbrk;
+    auto newsz = m.grow(sz + growsz);
+    assert(newsz == sz + growsz && "mapping could not grow by correct size");
+    map(m);
     curbrk = newbrk;
     return 0;
   }
