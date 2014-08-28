@@ -26,7 +26,7 @@ struct kvm_vcpu {
   uint64_t pop() { uint64_t val = stack.popq(regs.rsp); regs.rsp += 0x8; return val; }
   void push(uint64_t val) { regs.rsp -= 0x8; stack.pushq(regs.rsp, val); }
   guestptr_t kernel_stack_base() { return stack.kernel_base(); }
-  int check_pagefault(uint32_t err, bool debug) { return 0; }
+  int check_pagefault(uint32_t err, bool debug) { (void)err; (void)debug; return 0; }
   void init_rsp() { regs.rsp = stack.user_base(); }
 };
 
