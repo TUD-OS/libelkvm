@@ -29,7 +29,7 @@ namespace Elkvm {
   {
     _vm = std::make_shared<Elkvm::kvm_vm>();
     _vm->fd = vmfd;
-    _vm->syscall_handlers = handlers;
+    syscall_handlers = handlers;
     _vm->debug = debug;
   }
 

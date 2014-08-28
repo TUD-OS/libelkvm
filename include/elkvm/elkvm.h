@@ -21,10 +21,6 @@
 #include <region_manager.h>
 
 
-//#ifdef __cplusplus
-//extern "C" {
-//#endif
-
 struct kvm_vcpu;
 
 #define VM_MODE_X86    1
@@ -39,14 +35,14 @@ struct kvm_vcpu;
 
 namespace Elkvm {
 
-struct elkvm_handlers;
 struct kvm_vm {
   int fd;
-  const Elkvm::elkvm_handlers *syscall_handlers;
   int debug;
 
   struct rlimit rlimits[RLIMIT_NLIMITS];
 };
+
+class VMInternals;
 
 struct elkvm_handlers {
   long (*read) (int fd, void *buf, size_t count);
@@ -118,14 +114,14 @@ struct elkvm_handlers {
    * called after a breakpoint has been hit, should return 1 to abort the program
    * 0 otherwise, if this is set to NULL elkvm will execute a simple debug shell
    */
-  int (*bp_callback)(Elkvm::kvm_vm *vm);
+  int (*bp_callback)(Elkvm::VMInternals *vm);
 };
 
 
 struct elkvm_opts;
 
 class VMInternals {
-  private:
+  protected:
     std::vector<std::shared_ptr<struct kvm_vcpu>> cpus;
     std::shared_ptr<Elkvm::kvm_vm> _vm;
 
@@ -140,6 +136,7 @@ class VMInternals {
 
     elkvm_signals sigs;
     elkvm_flat sighandler_cleanup;
+    const Elkvm::elkvm_handlers *syscall_handlers;
 
   public:
     VMInternals(int fd, int argc, char **argv, char **environ,
@@ -162,7 +159,7 @@ class VMInternals {
     Elkvm::elkvm_flat &get_cleanup_flat();
 
     const Elkvm::elkvm_handlers * get_handlers() const
-      { return _vm->syscall_handlers; }
+      { return syscall_handlers; }
 
     std::shared_ptr<struct sigaction> get_sig_ptr(unsigned sig) const;
     std::shared_ptr<Elkvm::kvm_vm> get_vm_ptr() const { return _vm; }
@@ -225,6 +222,3 @@ void elkvm_gdbstub_init(Elkvm::kvm_vm *vm);
  */
 int elkvm_debug_enable(struct kvm_vcpu *vcpu);
 
-//#ifdef __cplusplus
-//}
-//#endif
