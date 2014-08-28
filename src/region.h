@@ -15,11 +15,11 @@ namespace Elkvm {
       bool free;
 
     public:
-      Region(void *chunk_p, size_t size) :
+      Region(void *chunk_p, size_t size, bool f = true) :
         host_p(chunk_p),
         addr(0),
         rsize(size),
-        free(true)
+        free(f)
     {}
       void *base_address() const { return host_p; }
       struct elkvm_memory_region *c_region() const;

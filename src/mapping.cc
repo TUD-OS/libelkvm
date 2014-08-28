@@ -157,6 +157,20 @@ namespace Elkvm {
     return 0;
   }
 
+  size_t Mapping::grow(size_t sz) {
+    if(sz <= length) {
+      return length;
+    }
+
+    assert(region != nullptr && "no region to grow into");
+    if(sz >= region->size()) {
+      length = region->size();
+    } else {
+      length = sz;
+    }
+    mapped_pages = pages_from_size(length);
+    return length;
+  }
 
   std::ostream &print(std::ostream &os, const Mapping &mapping) {
     if(mapping.anonymous()) {
