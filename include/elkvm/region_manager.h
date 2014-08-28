@@ -10,7 +10,7 @@
 namespace Elkvm {
   class RegionManager {
     public:
-      static const unsigned n_freelists = 17;
+      static const unsigned n_freelists = 17; // TODO make configurable constant
     private:
       std::vector<std::shared_ptr<Region>> allocated_regions;
       std::array<std::vector<std::shared_ptr<Region>>, n_freelists> freelists;

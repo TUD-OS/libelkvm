@@ -19,8 +19,8 @@
 #include <smmintrin.h>
 
 extern char **environ;
-struct elkvm_opts elkvm;
-struct kvm_vm vm;
+Elkvm::elkvm_opts elkvm;
+Elkvm::kvm_vm vm;
 bool inspect;
 
 long pass_read(int fd, void *buf, size_t count) {
@@ -204,7 +204,7 @@ int pass_openat(int dirfd, const char *pathname, int flags) {
   return openat(dirfd, pathname, flags);
 }
 
-struct elkvm_handlers example_handlers = {
+Elkvm::elkvm_handlers example_handlers = {
 	.read = pass_read,
 	.write = pass_write,
 	.open = pass_open,
@@ -316,7 +316,7 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 
-	struct kvm_vm *vm = elkvm_vm_create(&elkvm, VM_MODE_X86_64, 1, &example_handlers, binary, debug);
+	Elkvm::kvm_vm *vm = elkvm_vm_create(&elkvm, VM_MODE_X86_64, 1, &example_handlers, binary, debug);
   if(vm == NULL) {
     printf("ERROR creating VM: %i\n", errno);
     printf("  Msg: %s\n", strerror(errno));

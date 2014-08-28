@@ -11,6 +11,7 @@ SET( libelkvm_MOC_HEADERS
   pager.h
   region_manager.h
   stack.h
+  types.h
   syscall.h
   tss.h
   vcpu.h
@@ -22,5 +23,6 @@ install (FILES elkvm.h
   kvm.h
   pager.h
   stack.h
+  types.h
   vcpu.h
   DESTINATION include/elkvm)

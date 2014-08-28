@@ -8,8 +8,8 @@
 #include <elkvm.h>
 #include <elkvm-internal.h>
 #include <elkvm-signal.h>
-#include <flats.h>
 #include <stack.h>
+#include <vcpu.h>
 
 static int pending_signals[32];
 static int num_pending_signals = 0;

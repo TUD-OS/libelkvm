@@ -3,11 +3,11 @@
 #include <memory>
 
 #include <elkvm.h>
-#include <flats.h>
 #include <region.h>
+#include <types.h>
 
 int elkvm_idt_setup(Elkvm::RegionManager &rm, std::shared_ptr<struct kvm_vcpu> vcpu,
-    struct elkvm_flat *);
+    Elkvm::elkvm_flat *);
 
 struct kvm_idt_entry {
 	uint16_t offset1;
@@ -32,7 +32,7 @@ struct kvm_idt_entry {
 #define INTERRUPT_ENTRY_PRESENT 128
 
 
-void elkvm_idt_dump(struct kvm_vm *);
+void elkvm_idt_dump(Elkvm::kvm_vm *);
 
 static inline
 uint64_t idt_entry_offset(struct kvm_idt_entry *entry) {

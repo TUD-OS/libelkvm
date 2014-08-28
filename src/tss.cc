@@ -4,6 +4,7 @@
 #include <elkvm-internal.h>
 #include <stack.h>
 #include <tss.h>
+#include <vcpu.h>
 
 int elkvm_tss_setup64(std::shared_ptr<struct kvm_vcpu> vcpu, Elkvm::RegionManager &rm, std::shared_ptr<Elkvm::Region> r) {
   guestptr_t guest_virtual =

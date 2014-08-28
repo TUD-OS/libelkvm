@@ -28,7 +28,7 @@ namespace Elkvm {
   //namespace Elkvm
 }
 
-int elkvm_handle_debug(struct kvm_vm *vm) {
+int elkvm_handle_debug(Elkvm::kvm_vm *vm) {
   int handled = 0;
   if(vm->syscall_handlers->bp_callback != NULL) {
     handled = vm->syscall_handlers->bp_callback(vm);

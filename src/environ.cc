@@ -5,6 +5,7 @@
 #include <elfloader.h>
 #include <elkvm-internal.h>
 #include <environ.h>
+#include <vcpu.h>
 #include <kvm.h>
 #include <region.h>
 #include <region_manager.h>
@@ -183,7 +184,7 @@ namespace Elkvm {
   }
 
 
-int Environment::fill(struct elkvm_opts *opts,
+int Environment::fill(Elkvm::elkvm_opts *opts,
     std::shared_ptr<struct kvm_vcpu> vcpu) {
   int err = kvm_vcpu_get_regs(vcpu.get());
   assert(err == 0 && "error getting vcpu");

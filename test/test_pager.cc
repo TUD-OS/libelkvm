@@ -23,7 +23,7 @@ class PagerTest : public Test {
       free(reinterpret_cast<char *>(vm.pager.host_pml4_p) - 0x1000);
     }
 
-    struct kvm_vm vm;
+    Elkvm::kvm_vm vm;
 };
 
 TEST_F(PagerTest, test_create_entry) {

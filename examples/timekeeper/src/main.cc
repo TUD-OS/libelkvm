@@ -15,8 +15,8 @@
 #include <elkvm/stack.h>
 
 extern char **environ;
-struct elkvm_opts elkvm;
-struct kvm_vm vm;
+Elkvm::elkvm_opts elkvm;
+Elkvm::kvm_vm vm;
 bool inspect;
 
 long pass_read(int fd, void *buf, size_t count) {
@@ -123,7 +123,7 @@ long pass_time(time_t *t) {
 void pass_exit_group(int status) {
 }
 
-struct elkvm_handlers example_handlers = {
+Elkvm::elkvm_handlers example_handlers = {
 	.read = pass_read,
 	.write = pass_write,
 	.open = pass_open,
