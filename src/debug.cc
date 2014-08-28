@@ -28,10 +28,10 @@ namespace Elkvm {
   //namespace Elkvm
 }
 
-int elkvm_handle_debug(Elkvm::kvm_vm *vm) {
+int elkvm_handle_debug(Elkvm::VMInternals *vm) {
   int handled = 0;
-  if(vm->syscall_handlers->bp_callback != NULL) {
-    handled = vm->syscall_handlers->bp_callback(vm);
+  if(vm->get_handlers()->bp_callback != NULL) {
+    handled = vm->get_handlers()->bp_callback(vm);
   }
 
   return handled;
