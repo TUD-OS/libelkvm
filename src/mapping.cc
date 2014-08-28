@@ -157,6 +157,18 @@ namespace Elkvm {
     return 0;
   }
 
+  size_t Mapping::grow(size_t sz) {
+    if(sz <= length) {
+      return length;
+    }
+
+    if(sz >= region->size()) {
+      length = region->size();
+    } else {
+      length = sz;
+    }
+    return length;
+  }
 
   std::ostream &print(std::ostream &os, const Mapping &mapping) {
     if(mapping.anonymous()) {
