@@ -20,8 +20,8 @@ struct linux_dirent {
     unsigned long  d_off;     /* Offset to next linux_dirent */
     unsigned short d_reclen;  /* Length of this linux_dirent */
     char           d_name[];  /* Filename (null-terminated) */
-                      /* length is actually (d_reclen - 2 -
-                         offsetof(struct linux_dirent, d_name)) */
+                              /* length is actually (d_reclen - 2 -
+                                 offsetof(struct linux_dirent, d_name)) */
     /*
     char           pad;       // Zero padding byte
     char           d_type;    // File type (only since Linux
@@ -60,28 +60,28 @@ struct region_mapping {
 };
 
 struct kvm_vm {
-	int fd;
-	const struct elkvm_handlers *syscall_handlers;
+  int fd;
+  const struct elkvm_handlers *syscall_handlers;
   int debug;
 
   struct rlimit rlimits[RLIMIT_NLIMITS];
 };
 
 struct elkvm_handlers {
-	long (*read) (int fd, void *buf, size_t count);
-	long (*write) (int fd, void *buf, size_t count);
-	long (*open) (const char *pathname, int flags, mode_t mode);
-	long (*close) (int fd);
-	long (*stat) (const char *path, struct stat *buf);
-	long (*fstat) (int fd, struct stat *buf);
-	long (*lstat) (const char *path, struct stat *buf);
-	long (*poll) (struct pollfd *fds, nfds_t nfds, int timeout);
-	long (*lseek) (int fd, off_t offset, int whence);
+  long (*read) (int fd, void *buf, size_t count);
+  long (*write) (int fd, void *buf, size_t count);
+  long (*open) (const char *pathname, int flags, mode_t mode);
+  long (*close) (int fd);
+  long (*stat) (const char *path, struct stat *buf);
+  long (*fstat) (int fd, struct stat *buf);
+  long (*lstat) (const char *path, struct stat *buf);
+  long (*poll) (struct pollfd *fds, nfds_t nfds, int timeout);
+  long (*lseek) (int fd, off_t offset, int whence);
   /* TODO mmap should be well documented! */
   long (*mmap_before) (struct region_mapping *);
   long (*mmap_after) (struct region_mapping *);
-	long (*mprotect) (void *addr, size_t len, int prot);
-	long (*munmap) (struct region_mapping *mapping);
+  long (*mprotect) (void *addr, size_t len, int prot);
+  long (*munmap) (struct region_mapping *mapping);
   /* ... */
   long (*sigaction) (int signum, const struct sigaction *act,
       struct sigaction *oldact);
@@ -101,8 +101,8 @@ struct elkvm_handlers {
   /* ... */
   long (*geteuid)(void);
   long (*getegid)(void);
-	/* ... */
-	long (*uname) (struct utsname *buf);
+  /* ... */
+  long (*uname) (struct utsname *buf);
   long (*fcntl) (int fd, int cmd, ...);
   long (*truncate) (const char *path, off_t length);
   long (*ftruncate) (int fd, off_t length);
@@ -142,13 +142,13 @@ struct elkvm_handlers {
 };
 
 /*
-	Create a new VM, with the given mode, cpu count, memory and syscall handlers
+  Create a new VM, with the given mode, cpu count, memory and syscall handlers
 */
 struct kvm_vm *
 elkvm_vm_create(struct elkvm_opts *,
     int mode,
     unsigned cpus,
-		const struct elkvm_handlers * const,
+    const struct elkvm_handlers * const,
     const char *binary,
     int debug);
 
