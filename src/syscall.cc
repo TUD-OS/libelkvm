@@ -28,7 +28,7 @@ int elkvm_handle_hypercall(Elkvm::VMInternals &vmi, std::shared_ptr<struct kvm_v
   uint64_t call = Elkvm::get_hypercall_type(vmi, vcpu);
   switch(call) {
     case ELKVM_HYPERCALL_SYSCALL:
-			err = elkvm_handle_syscall(vmi, vcpu.get());
+      err = elkvm_handle_syscall(vmi, vcpu.get());
       break;
     case ELKVM_HYPERCALL_INTERRUPT:
       err = elkvm_handle_interrupt(vmi, vcpu.get());
@@ -42,9 +42,9 @@ int elkvm_handle_hypercall(Elkvm::VMInternals &vmi, std::shared_ptr<struct kvm_v
       return 1;
   }
 
-	if(err) {
-		return err;
-	}
+  if(err) {
+    return err;
+  }
 
   elkvm_emulate_vmcall(vcpu.get());
 
