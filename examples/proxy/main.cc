@@ -106,7 +106,7 @@ long pass_getegid() {
 }
 
 long pass_uname(struct utsname *buf) {
-	return uname(buf);
+  return uname(buf);
 }
 
 long pass_fcntl(int fd, int cmd, ...) {
@@ -205,17 +205,17 @@ int pass_openat(int dirfd, const char *pathname, int flags) {
 }
 
 Elkvm::elkvm_handlers example_handlers = {
-	.read = pass_read,
-	.write = pass_write,
-	.open = pass_open,
-	.close = pass_close,
-	.stat = pass_stat,
-	.fstat = pass_fstat,
-	.lstat = pass_lstat,
-	.poll = NULL,
-	.lseek = pass_lseek,
-	.mmap_before = NULL,
-	.mmap_after = NULL,
+  .read = pass_read,
+  .write = pass_write,
+  .open = pass_open,
+  .close = pass_close,
+  .stat = pass_stat,
+  .fstat = pass_fstat,
+  .lstat = pass_lstat,
+  .poll = NULL,
+  .lseek = pass_lseek,
+  .mmap_before = NULL,
+  .mmap_after = NULL,
   .mprotect = NULL,
   .munmap = pass_munmap,
   /* ... */
@@ -236,8 +236,8 @@ Elkvm::elkvm_handlers example_handlers = {
   .getgid  = pass_getgid,
   .geteuid = pass_geteuid,
   .getegid = pass_getegid,
-	/* ... */
-	.uname = pass_uname,
+  /* ... */
+  .uname = pass_uname,
   .fcntl = pass_fcntl,
   .truncate = pass_truncate,
   .ftruncate = pass_ftruncate,
@@ -304,19 +304,19 @@ int main(int argc, char **argv) {
   char **binargv = &argv[myopts];
   int binargc = argc - myopts;
 
-	err = elkvm_init(&elkvm, binargc, binargv, environ);
-	if(err) {
+  err = elkvm_init(&elkvm, binargc, binargv, environ);
+  if(err) {
     if(errno == -ENOENT) {
       printf("/dev/kvm seems not to exist. Check your KVM installation!\n");
     }
     if(errno == -EACCES) {
       printf("Access to /dev/kvm was denied. Check if you belong to the 'kvm' group!\n");
     }
-		printf("ERROR initializing VM errno: %i Msg: %s\n", -err, strerror(-err));
-		return -1;
-	}
+    printf("ERROR initializing VM errno: %i Msg: %s\n", -err, strerror(-err));
+    return -1;
+  }
 
-	Elkvm::kvm_vm *vm = elkvm_vm_create(&elkvm, VM_MODE_X86_64, 1, &example_handlers, binary, debug);
+  Elkvm::kvm_vm *vm = elkvm_vm_create(&elkvm, VM_MODE_X86_64, 1, &example_handlers, binary, debug);
   if(vm == NULL) {
     printf("ERROR creating VM: %i\n", errno);
     printf("  Msg: %s\n", strerror(errno));
@@ -337,19 +337,19 @@ int main(int argc, char **argv) {
     return 0;
   }
 
-	err = elkvm_vm_run(vm);
-	if(err) {
-		printf("ERROR running VCPU errno: %i Msg: %s\n", -err, strerror(-err));
-		return -1;
-	}
+  err = elkvm_vm_run(vm);
+  if(err) {
+    printf("ERROR running VCPU errno: %i Msg: %s\n", -err, strerror(-err));
+    return -1;
+  }
 
-	err = elkvm_cleanup(&elkvm);
-	if(err) {
-		printf("ERROR cleaning up errno: %i Msg: %s\n", -err, strerror(-err));
-		return -1;
-	}
+  err = elkvm_cleanup(&elkvm);
+  if(err) {
+    printf("ERROR cleaning up errno: %i Msg: %s\n", -err, strerror(-err));
+    return -1;
+  }
 
-	printf("DONE\n");
-	return 0;
+  printf("DONE\n");
+  return 0;
 }
 
