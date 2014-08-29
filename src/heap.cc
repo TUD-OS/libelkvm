@@ -16,7 +16,6 @@ namespace Elkvm {
       /* no need to call pop_back here, unmap does this for us */
       int err = unmap(mappings_for_brk.back());
       assert(err == 0);
-      mappings_for_brk.pop_back();
     }
   }
 
@@ -77,6 +76,7 @@ namespace Elkvm {
     assert(newsz == sz + growsz && "mapping could not grow by correct size");
     map(m);
     curbrk = newbrk;
+
     return 0;
   }
 
