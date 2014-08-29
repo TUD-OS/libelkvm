@@ -10,12 +10,18 @@
 #include <region_manager.h>
 
 namespace Elkvm {
-  int HeapManager::shrink(guestptr_t newbrk) {
-    while(newbrk <= mappings_for_brk.back().guest_address()) {
+
+  void HeapManager::free_unused_mappings(guestptr_t brk) {
+    while(brk <= mappings_for_brk.back().guest_address()) {
+      /* no need to call pop_back here, unmap does this for us */
       int err = unmap(mappings_for_brk.back());
       assert(err == 0);
       mappings_for_brk.pop_back();
     }
+  }
+
+  int HeapManager::shrink(guestptr_t newbrk) {
+    free_unused_mappings(newbrk);
 
     guestptr_t slice_base = newbrk;
     if(!page_aligned(newbrk)) {
