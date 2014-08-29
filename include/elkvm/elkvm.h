@@ -42,7 +42,7 @@ struct kvm_vm {
   struct rlimit rlimits[RLIMIT_NLIMITS];
 };
 
-class VMInternals;
+class VM;
 
 struct elkvm_handlers {
   long (*read) (int fd, void *buf, size_t count);
@@ -114,13 +114,13 @@ struct elkvm_handlers {
    * called after a breakpoint has been hit, should return 1 to abort the program
    * 0 otherwise, if this is set to NULL elkvm will execute a simple debug shell
    */
-  int (*bp_callback)(Elkvm::VMInternals *vm);
+  int (*bp_callback)(Elkvm::VM *vm);
 };
 
 
 struct elkvm_opts;
 
-class VMInternals {
+class VM {
   protected:
     std::vector<std::shared_ptr<struct kvm_vcpu>> cpus;
     std::shared_ptr<Elkvm::kvm_vm> _vm;
@@ -139,7 +139,7 @@ class VMInternals {
     const Elkvm::elkvm_handlers *syscall_handlers;
 
   public:
-    VMInternals(int fd, int argc, char **argv, char **environ,
+    VM(int fd, int argc, char **argv, char **environ,
         int run_struct_size,
         const Elkvm::elkvm_handlers * const handlers,
         int debug);

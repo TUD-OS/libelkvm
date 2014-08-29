@@ -21,7 +21,7 @@
 #include "elfloader.h"
 #include "region.h"
 
-int elkvm_handle_hypercall(Elkvm::VMInternals &vmi, std::shared_ptr<struct kvm_vcpu> vcpu) {
+int elkvm_handle_hypercall(Elkvm::VM &vmi, std::shared_ptr<struct kvm_vcpu> vcpu) {
 
   int err = 0;
 
@@ -54,7 +54,7 @@ int elkvm_handle_hypercall(Elkvm::VMInternals &vmi, std::shared_ptr<struct kvm_v
   return 0;
 }
 
-int elkvm_handle_interrupt(Elkvm::VMInternals &vmi, struct kvm_vcpu *vcpu) {
+int elkvm_handle_interrupt(Elkvm::VM &vmi, struct kvm_vcpu *vcpu) {
   uint64_t interrupt_vector = vcpu->pop();
 
   if(vmi.debug_mode()) {
@@ -148,7 +148,7 @@ int elkvm_handle_interrupt(Elkvm::VMInternals &vmi, struct kvm_vcpu *vcpu) {
 
    Syscalls of more than 6 arguments are not supported.  */
 
-int elkvm_handle_syscall(Elkvm::VMInternals &vmi, struct kvm_vcpu *vcpu) {
+int elkvm_handle_syscall(Elkvm::VM &vmi, struct kvm_vcpu *vcpu) {
 	uint64_t syscall_num = vcpu->regs.rax;
   if(vmi.debug_mode()) {
     fprintf(stderr, " SYSCALL %3lu detected\n", syscall_num);
@@ -219,7 +219,7 @@ void elkvm_syscall6(std::shared_ptr<struct kvm_vcpu> vcpu,
   *arg6 = vcpu->regs.r9;
 }
 
-long elkvm_do_read(Elkvm::VMInternals &vmi) {
+long elkvm_do_read(Elkvm::VM &vmi) {
 	if(vmi.get_handlers()->read == NULL) {
 		printf("READ handler not found\n");
 		return -ENOSYS;
@@ -297,7 +297,7 @@ long elkvm_do_read(Elkvm::VMInternals &vmi) {
 	return result;
 }
 
-long elkvm_do_write(Elkvm::VMInternals &vmi) {
+long elkvm_do_write(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->write == NULL) {
     printf("WRITE handler not found\n");
     return -ENOSYS;
@@ -361,7 +361,7 @@ long elkvm_do_write(Elkvm::VMInternals &vmi) {
   return total;
 }
 
-long elkvm_do_open(Elkvm::VMInternals &vmi) {
+long elkvm_do_open(Elkvm::VM &vmi) {
 	if(vmi.get_handlers()->open == NULL) {
 		printf("OPEN handler not found\n");
 		return -ENOSYS;
@@ -391,7 +391,7 @@ long elkvm_do_open(Elkvm::VMInternals &vmi) {
 	return result;
 }
 
-long elkvm_do_close(Elkvm::VMInternals &vmi) {
+long elkvm_do_close(Elkvm::VM &vmi) {
 	if(vmi.get_handlers()->close == NULL) {
 		printf("CLOSE handler not found\n");
 		return -ENOSYS;
@@ -413,7 +413,7 @@ long elkvm_do_close(Elkvm::VMInternals &vmi) {
 	return result;
 }
 
-long elkvm_do_stat(Elkvm::VMInternals &vmi) {
+long elkvm_do_stat(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->stat == NULL) {
     printf("STAT handler not found\n");
     return -ENOSYS;
@@ -443,7 +443,7 @@ long elkvm_do_stat(Elkvm::VMInternals &vmi) {
   return result;
 }
 
-long elkvm_do_fstat(Elkvm::VMInternals &vmi) {
+long elkvm_do_fstat(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->fstat == NULL) {
     printf("FSTAT handler not found\n");
     return -ENOSYS;
@@ -470,7 +470,7 @@ long elkvm_do_fstat(Elkvm::VMInternals &vmi) {
   return result;
 }
 
-long elkvm_do_lstat(Elkvm::VMInternals &vmi) {
+long elkvm_do_lstat(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->lstat == NULL) {
     printf("LSTAT handler not found\n");
     return -ENOSYS;
@@ -500,11 +500,11 @@ long elkvm_do_lstat(Elkvm::VMInternals &vmi) {
   return result;
 }
 
-long elkvm_do_poll(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_poll(Elkvm::VM &vmi __attribute__((unused))) {
 	return -ENOSYS;
 }
 
-long elkvm_do_lseek(Elkvm::VMInternals &vmi) {
+long elkvm_do_lseek(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->lseek == NULL) {
     printf("LSEEK handler not found\n");
     return -ENOSYS;
@@ -531,7 +531,7 @@ long elkvm_do_lseek(Elkvm::VMInternals &vmi) {
 
 }
 
-long elkvm_do_mmap(Elkvm::VMInternals &vmi) {
+long elkvm_do_mmap(Elkvm::VM &vmi) {
   /* obtain a region_mapping and fill this with a proposal
    * on how to do the mapping */
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
@@ -605,7 +605,7 @@ long elkvm_do_mmap(Elkvm::VMInternals &vmi) {
   return mapping.guest_address();
 }
 
-long elkvm_do_mprotect(Elkvm::VMInternals &vmi) {
+long elkvm_do_mprotect(Elkvm::VM &vmi) {
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   guestptr_t addr = 0;
@@ -650,7 +650,7 @@ long elkvm_do_mprotect(Elkvm::VMInternals &vmi) {
 	return err;
 }
 
-long elkvm_do_munmap(Elkvm::VMInternals &vmi) {
+long elkvm_do_munmap(Elkvm::VM &vmi) {
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   guestptr_t addr_p = 0;
@@ -679,7 +679,7 @@ long elkvm_do_munmap(Elkvm::VMInternals &vmi) {
 
 }
 
-long elkvm_do_brk(Elkvm::VMInternals &vmi) {
+long elkvm_do_brk(Elkvm::VM &vmi) {
   guestptr_t user_brk_req = 0;
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
   elkvm_syscall1(vcpu, &user_brk_req);
@@ -710,7 +710,7 @@ long elkvm_do_brk(Elkvm::VMInternals &vmi) {
   return vmi.get_heap_manager().get_brk();
 }
 
-long elkvm_do_sigaction(Elkvm::VMInternals &vmi) {
+long elkvm_do_sigaction(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->sigaction == NULL) {
     printf("SIGACTION handler not found\n");
     return -ENOSYS;
@@ -751,7 +751,7 @@ long elkvm_do_sigaction(Elkvm::VMInternals &vmi) {
   return err;
 }
 
-long elkvm_do_sigprocmask(Elkvm::VMInternals &vmi) {
+long elkvm_do_sigprocmask(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->sigprocmask == NULL) {
     printf("SIGPROCMASK handler not found\n");
     return -ENOSYS;
@@ -789,23 +789,23 @@ long elkvm_do_sigprocmask(Elkvm::VMInternals &vmi) {
   return result;
 }
 
-long elkvm_do_sigreturn(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_sigreturn(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_ioctl(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_ioctl(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_pread64(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_pread64(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_pwrite64(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_pwrite64(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-void elkvm_get_host_iov(Elkvm::VMInternals &vmi __attribute__((unused)),
+void elkvm_get_host_iov(Elkvm::VM &vmi __attribute__((unused)),
     uint64_t iov_p, uint64_t iovcnt, struct iovec *host_iov) {
   struct iovec *guest_iov = NULL;
   assert(iov_p != 0x0);
@@ -821,7 +821,7 @@ void elkvm_get_host_iov(Elkvm::VMInternals &vmi __attribute__((unused)),
 
 }
 
-long elkvm_do_readv(Elkvm::VMInternals &vmi) {
+long elkvm_do_readv(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->readv == NULL) {
     printf("READV handler not found\n");
     return -ENOSYS;
@@ -851,7 +851,7 @@ long elkvm_do_readv(Elkvm::VMInternals &vmi) {
   return result;
 }
 
-long elkvm_do_writev(Elkvm::VMInternals &vmi) {
+long elkvm_do_writev(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->writev == NULL) {
     printf("WRITEV handler not found\n");
     return -ENOSYS;
@@ -878,7 +878,7 @@ long elkvm_do_writev(Elkvm::VMInternals &vmi) {
   return result;
 }
 
-long elkvm_do_access(Elkvm::VMInternals &vmi) {
+long elkvm_do_access(Elkvm::VM &vmi) {
 	if(vmi.get_handlers()->access == NULL) {
     printf("ACCESS handler not found\n");
 		return -ENOSYS;
@@ -912,7 +912,7 @@ long elkvm_do_access(Elkvm::VMInternals &vmi) {
   return 0;
 }
 
-long elkvm_do_pipe(Elkvm::VMInternals &vmi) {
+long elkvm_do_pipe(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->pipe == NULL) {
     printf("PIPE handler not found\n");
     return -ENOSYS;
@@ -943,15 +943,15 @@ long elkvm_do_pipe(Elkvm::VMInternals &vmi) {
   return 0;
 }
 
-long elkvm_do_select(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_select(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_yield(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_sched_yield(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mremap(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_mremap(Elkvm::VM &vmi __attribute__((unused))) {
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
 
   guestptr_t old_address_p = 0x0;
@@ -995,31 +995,31 @@ long elkvm_do_mremap(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return vmi.get_heap_manager().remap(mapping, new_address_p, new_size, flags);
 }
 
-long elkvm_do_msync(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_msync(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mincore(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_mincore(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_madvise(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_madvise(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_shmget(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_shmget(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_shmat(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_shmat(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_shmctl(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_shmctl(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_dup(Elkvm::VMInternals &vmi) {
+long elkvm_do_dup(Elkvm::VM &vmi) {
 	if(vmi.get_handlers()->dup == NULL) {
     printf("DUP handler not found\n");
 		return -ENOSYS;
@@ -1043,15 +1043,15 @@ long elkvm_do_dup(Elkvm::VMInternals &vmi) {
   return -errno;
 }
 
-long elkvm_do_dup2(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_dup2(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_pause(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_pause(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_nanosleep(Elkvm::VMInternals &vmi) {
+long elkvm_do_nanosleep(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->nanosleep == NULL) {
     printf("NANOSLEEP handler not found\n");
     return -ENOSYS;
@@ -1084,19 +1084,19 @@ long elkvm_do_nanosleep(Elkvm::VMInternals &vmi) {
   return result;
 }
 
-long elkvm_do_getitimer(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_getitimer(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_alarm(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_alarm(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setitimer(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_setitimer(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getpid(Elkvm::VMInternals &vmi) {
+long elkvm_do_getpid(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->getpid == NULL) {
     return -ENOSYS;
   }
@@ -1112,99 +1112,99 @@ long elkvm_do_getpid(Elkvm::VMInternals &vmi) {
   return pid;
 }
 
-long elkvm_do_sendfile(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_sendfile(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_socket(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_socket(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_connect(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_connect(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_accept(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_accept(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sendto(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_sendto(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_recvfrom(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_recvfrom(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sendmsg(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_sendmsg(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_recvmsg(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_recvmsg(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_shutdown(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_shutdown(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_bind(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_bind(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_listen(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_listen(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getsockname(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_getsockname(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getpeername(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_getpeername(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_socketpair(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_socketpair(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setsockopt(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_setsockopt(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getsockopt(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_getsockopt(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_clone(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_clone(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fork(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_fork(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_vfork(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_vfork(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_execve(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_execve(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_exit(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_exit(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_wait4(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_wait4(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_kill(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_kill(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_uname(Elkvm::VMInternals &vmi) {
+long elkvm_do_uname(Elkvm::VM &vmi) {
 	if(vmi.get_handlers()->uname == NULL) {
 		return -ENOSYS;
 	}
@@ -1230,39 +1230,39 @@ long elkvm_do_uname(Elkvm::VMInternals &vmi) {
 	return result;
 }
 
-long elkvm_do_semget(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_semget(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_semop(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_semop(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_semctl(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_semctl(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_shmdt(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_shmdt(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_msgget(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_msgget(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_msgsnd(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_msgsnd(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_msgrcv(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_msgrcv(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_msgctl(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_msgctl(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fcntl(Elkvm::VMInternals &vmi) {
+long elkvm_do_fcntl(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->fcntl == NULL) {
     printf("FCNTL handler not found\n");
     return -ENOSYS;
@@ -1311,19 +1311,19 @@ long elkvm_do_fcntl(Elkvm::VMInternals &vmi) {
   return result;
 }
 
-long elkvm_do_flock(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_flock(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fsync(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_fsync(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fdatasync(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_fdatasync(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_truncate(Elkvm::VMInternals &vmi) {
+long elkvm_do_truncate(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->truncate == NULL) {
     printf("TRUNCATE handler not found\n");
     return -ENOSYS;
@@ -1352,7 +1352,7 @@ long elkvm_do_truncate(Elkvm::VMInternals &vmi) {
   return result;
 }
 
-long elkvm_do_ftruncate(Elkvm::VMInternals &vmi) {
+long elkvm_do_ftruncate(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->ftruncate == NULL) {
     printf("FTRUNCATE handler not found\n");
     return -ENOSYS;
@@ -1379,7 +1379,7 @@ long elkvm_do_ftruncate(Elkvm::VMInternals &vmi) {
   return result;
 }
 
-long elkvm_do_getdents(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_getdents(Elkvm::VM &vmi __attribute__((unused))) {
   if(vmi.get_handlers()->getdents == NULL) {
     std::cout << "GETDENTS handler not found\n";
     return -ENOSYS;
@@ -1416,7 +1416,7 @@ long elkvm_do_getdents(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return res;
 }
 
-long elkvm_do_getcwd(Elkvm::VMInternals &vmi) {
+long elkvm_do_getcwd(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->getcwd == NULL) {
     printf("GETCWD handler not found\n");
     return -ENOSYS;
@@ -1450,19 +1450,19 @@ long elkvm_do_getcwd(Elkvm::VMInternals &vmi) {
   }
 }
 
-long elkvm_do_chdir(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_chdir(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fchdir(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_fchdir(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_rename(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_rename(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mkdir(Elkvm::VMInternals &vmi) {
+long elkvm_do_mkdir(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->mkdir == NULL) {
     printf("MKDIR handler not found\n");
     return -ENOSYS;
@@ -1493,19 +1493,19 @@ long elkvm_do_mkdir(Elkvm::VMInternals &vmi) {
 
 }
 
-long elkvm_do_rmdir(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_rmdir(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_creat(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_creat(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_link(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_link(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_unlink(Elkvm::VMInternals &vmi) {
+long elkvm_do_unlink(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->unlink == NULL) {
     printf("UNLINK handler not found\n");
     return -ENOSYS;
@@ -1533,11 +1533,11 @@ long elkvm_do_unlink(Elkvm::VMInternals &vmi) {
   return result;
 }
 
-long elkvm_do_symlink(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_symlink(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_readlink(Elkvm::VMInternals &vmi) {
+long elkvm_do_readlink(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->readlink == NULL) {
     printf("READLINK handler not found\n");
     return -ENOSYS;
@@ -1569,31 +1569,31 @@ long elkvm_do_readlink(Elkvm::VMInternals &vmi) {
   return result;
 }
 
-long elkvm_do_chmod(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_chmod(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fchmod(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_fchmod(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_chown(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_chown(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fchown(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_fchown(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_lchown(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_lchown(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_umask(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_umask(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_gettimeofday(Elkvm::VMInternals &vmi) {
+long elkvm_do_gettimeofday(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->gettimeofday == NULL) {
     return -ENOSYS;
   }
@@ -1636,7 +1636,7 @@ long elkvm_do_gettimeofday(Elkvm::VMInternals &vmi) {
   return result;
 }
 
-long elkvm_do_getrlimit(Elkvm::VMInternals &vmi) {
+long elkvm_do_getrlimit(Elkvm::VM &vmi) {
   /* XXX implement again! */
   return -ENOSYS;
 //  uint64_t resource = 0x0;
@@ -1660,7 +1660,7 @@ long elkvm_do_getrlimit(Elkvm::VMInternals &vmi) {
 //  return 0;
 }
 
-long elkvm_do_getrusage(Elkvm::VMInternals &vmi) {
+long elkvm_do_getrusage(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->getrusage == NULL) {
     printf("GETRUSAGE handler not found\n");
     return -ENOSYS;
@@ -1689,11 +1689,11 @@ long elkvm_do_getrusage(Elkvm::VMInternals &vmi) {
   return result;
 }
 
-long elkvm_do_sysinfo(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_sysinfo(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_times(Elkvm::VMInternals &vmi) {
+long elkvm_do_times(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->times == NULL) {
     printf("TIMES handler not found\n");
     return -ENOSYS;
@@ -1729,11 +1729,11 @@ long elkvm_do_times(Elkvm::VMInternals &vmi) {
   }
 }
 
-long elkvm_do_ptrace(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_ptrace(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getuid(Elkvm::VMInternals &vmi) {
+long elkvm_do_getuid(Elkvm::VM &vmi) {
 	if(vmi.get_handlers()->getuid == NULL) {
 		printf("GETUID handler not found\n");
 		return -ENOSYS;
@@ -1747,11 +1747,11 @@ long elkvm_do_getuid(Elkvm::VMInternals &vmi) {
 	return result;
 }
 
-long elkvm_do_syslog(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_syslog(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getgid(Elkvm::VMInternals &vmi) {
+long elkvm_do_getgid(Elkvm::VM &vmi) {
 	if(vmi.get_handlers()->getgid == NULL) {
 		printf("GETGID handler not found\n");
 		return -ENOSYS;
@@ -1765,15 +1765,15 @@ long elkvm_do_getgid(Elkvm::VMInternals &vmi) {
 	return result;
 }
 
-long elkvm_do_setuid(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_setuid(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setgid(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_setgid(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_geteuid(Elkvm::VMInternals &vmi) {
+long elkvm_do_geteuid(Elkvm::VM &vmi) {
 	if(vmi.get_handlers()->geteuid == NULL) {
 		printf("GETEUID handler not found\n");
 		return -ENOSYS;
@@ -1787,7 +1787,7 @@ long elkvm_do_geteuid(Elkvm::VMInternals &vmi) {
 	return result;
 }
 
-long elkvm_do_getegid(Elkvm::VMInternals &vmi) {
+long elkvm_do_getegid(Elkvm::VM &vmi) {
 	if(vmi.get_handlers()->getegid == NULL) {
 		printf("GETEGID handler not found\n");
 		return -ENOSYS;
@@ -1801,119 +1801,119 @@ long elkvm_do_getegid(Elkvm::VMInternals &vmi) {
 	return result;
 }
 
-long elkvm_do_setpgid(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_setpgid(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getppid(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_getppid(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getpgrp(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_getpgrp(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setsid(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_setsid(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setreuid(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_setreuid(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setregid(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_setregid(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getgroups(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_getgroups(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setgroups(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_setgroups(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setresuid(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_setresuid(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getresuid(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_getresuid(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setresgid(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_setresgid(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getresgid(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_getresgid(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getpgid(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_getpgid(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setfsuid(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_setfsuid(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setfsgid(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_setfsgid(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getsid(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_getsid(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_capget(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_capget(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_capset(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_capset(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_rt_sigpending(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_rt_sigpending(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_rt_sigtimedwait(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_rt_sigtimedwait(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_rt_sigqueueinfo(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_rt_sigqueueinfo(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_rt_sigsuspend(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_rt_sigsuspend(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sigaltstack(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_sigaltstack(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_utime(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_utime(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mknod(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_mknod(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_uselib(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_uselib(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_personality(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_personality(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_ustat(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_ustat(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_statfs(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_statfs(Elkvm::VM &vmi __attribute__((unused))) {
   if(vmi.get_handlers()->statfs == NULL) {
     std::cout << "STATFS handler not found\n";
     return -ENOSYS;
@@ -1950,87 +1950,87 @@ long elkvm_do_statfs(Elkvm::VMInternals &vmi __attribute__((unused))) {
   return -errno;
 }
 
-long elkvm_do_fstatfs(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_fstatfs(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sysfs(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_sysfs(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getpriority(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_getpriority(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setpriority(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_setpriority(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_setparam(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_sched_setparam(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_getparam(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_sched_getparam(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_setscheduler(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_sched_setscheduler(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_getscheduler(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_sched_getscheduler(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_get_priority_max(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_sched_get_priority_max(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_get_priority_min(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_sched_get_priority_min(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_rr_get_interval(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_sched_rr_get_interval(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mlock(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_mlock(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_munlock(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_munlock(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mlockall(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_mlockall(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_munlockall(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_munlockall(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_vhangup(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_vhangup(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_modify_ldt(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_modify_ldt(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_pivot_root(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_pivot_root(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sysctl(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_sysctl(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_prctl(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_prctl(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_arch_prctl(Elkvm::VMInternals &vmi) {
+long elkvm_do_arch_prctl(Elkvm::VM &vmi) {
   uint64_t code = 0;
   uint64_t user_addr = 0;
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
@@ -2075,115 +2075,115 @@ long elkvm_do_arch_prctl(Elkvm::VMInternals &vmi) {
   return err;
 }
 
-long elkvm_do_adjtimex(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_adjtimex(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setrlimit(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_setrlimit(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_chroot(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_chroot(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sync(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_sync(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_acct(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_acct(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_settimeofday(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_settimeofday(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mount(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_mount(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_umount2(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_umount2(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_swapon(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_swapon(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_swapoff(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_swapoff(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_reboot(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_reboot(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sethostname(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_sethostname(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setdomainname(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_setdomainname(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_iopl(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_iopl(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_ioperm(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_ioperm(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_create_module(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_create_module(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_init_module(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_init_module(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_delete_module(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_delete_module(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_get_kernel_syms(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_get_kernel_syms(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_query_module(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_query_module(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_quotactl(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_quotactl(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_nfsservctl(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_nfsservctl(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getpmsg(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_getpmsg(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_putpmsg(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_putpmsg(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_afs_syscall(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_afs_syscall(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_tuxcall(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_tuxcall(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_security(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_security(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_gettid(Elkvm::VMInternals &vmi) {
+long elkvm_do_gettid(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->gettid == NULL) {
     printf("GETTID handler not found\n");
     return -ENOSYS;
@@ -2199,63 +2199,63 @@ long elkvm_do_gettid(Elkvm::VMInternals &vmi) {
   return result;
 }
 
-long elkvm_do_readahead(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_readahead(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_setxattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_setxattr(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_lsetxattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_lsetxattr(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fsetxattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_fsetxattr(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getxattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_getxattr(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_lgetxattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_lgetxattr(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fgetxattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_fgetxattr(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_listxattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_listxattr(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_llistxattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_llistxattr(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_flistxattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_flistxattr(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_removexattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_removexattr(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_lremovexattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_lremovexattr(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fremovexattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_fremovexattr(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_tkill(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_tkill(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_time(Elkvm::VMInternals &vmi) {
+long elkvm_do_time(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->time == NULL) {
     printf("TIME handler not found\n");
     return -ENOSYS;
@@ -2281,7 +2281,7 @@ long elkvm_do_time(Elkvm::VMInternals &vmi) {
   return result;
 }
 
-long elkvm_do_futex(Elkvm::VMInternals &vmi) {
+long elkvm_do_futex(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->futex == NULL) {
     printf("FUTEX handler not found\n");
     return -ENOSYS;
@@ -2330,107 +2330,107 @@ long elkvm_do_futex(Elkvm::VMInternals &vmi) {
 
 }
 
-long elkvm_do_sched_setaffinity(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_sched_setaffinity(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_sched_getaffinity(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_sched_getaffinity(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_set_thread_area(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_set_thread_area(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_io_setup(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_io_setup(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_io_destroy(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_io_destroy(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getevents(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_getevents(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_submit(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_submit(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_cancel(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_cancel(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_get_thread_area(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_get_thread_area(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_lookup_dcookie(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_lookup_dcookie(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_epoll_create(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_epoll_create(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_epoll_ctl_old(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_epoll_ctl_old(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_epoll_wait_old(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_epoll_wait_old(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_remap_file_pages(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_remap_file_pages(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getdents64(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_getdents64(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_set_tid_address(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_set_tid_address(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_restart_syscall(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_restart_syscall(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_semtimedop(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_semtimedop(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_fadive64(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_fadive64(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_timer_create(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_timer_create(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_timer_settime(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_timer_settime(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_timer_gettime(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_timer_gettime(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_timer_getoverrun(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_timer_getoverrun(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_timer_delete(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_timer_delete(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_clock_settime(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_clock_settime(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_clock_gettime(Elkvm::VMInternals &vmi) {
+long elkvm_do_clock_gettime(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->clock_gettime == NULL) {
     printf("CLOCK GETTIME handler not found\n");
     return -ENOSYS;
@@ -2460,15 +2460,15 @@ long elkvm_do_clock_gettime(Elkvm::VMInternals &vmi) {
   return result;
 }
 
-long elkvm_do_clock_getres(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_clock_getres(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_clock_nanosleep(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_clock_nanosleep(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_exit_group(Elkvm::VMInternals &vmi) {
+long elkvm_do_exit_group(Elkvm::VM &vmi) {
   uint64_t status = 0;
   elkvm_syscall1(vmi.get_vcpu(0), &status);
 
@@ -2477,15 +2477,15 @@ long elkvm_do_exit_group(Elkvm::VMInternals &vmi) {
   return -ENOSYS;
 }
 
-long elkvm_do_epoll_wait(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_epoll_wait(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_epoll_ctl(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_epoll_ctl(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_tgkill(Elkvm::VMInternals &vmi) {
+long elkvm_do_tgkill(Elkvm::VM &vmi) {
   if(vmi.get_handlers()->tgkill == NULL) {
     printf("TGKILL handler not found\n");
     return -ENOSYS;
@@ -2510,95 +2510,95 @@ long elkvm_do_tgkill(Elkvm::VMInternals &vmi) {
 
 }
 
-long elkvm_do_utimes(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_utimes(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_vserver(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_vserver(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mbind(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_mbind(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mpolicy(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_mpolicy(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_get_mempolicy(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_get_mempolicy(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mq_open(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_mq_open(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mq_unlink(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_mq_unlink(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mq_timedsend(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_mq_timedsend(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mq_timedreceive(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_mq_timedreceive(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_mq_notify(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_mq_notify(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_getsetattr(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_getsetattr(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_kexec_load(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_kexec_load(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_waitid(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_waitid(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_add_key(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_add_key(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_request_key(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_request_key(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_keyctl(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_keyctl(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_ioprio_set(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_ioprio_set(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_ioprio_get(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_ioprio_get(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_inotify_init(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_inotify_init(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_inotify_add_watch(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_inotify_add_watch(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_inotify_rm_watch(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_inotify_rm_watch(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_migrate_pages(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_migrate_pages(Elkvm::VM &vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_openat(Elkvm::VMInternals &vmi __attribute__((unused))) {
+long elkvm_do_openat(Elkvm::VM &vmi __attribute__((unused))) {
   if(vmi.get_handlers()->openat == NULL) {
     printf("OPENAT handler not found\n");
     return -ENOSYS;

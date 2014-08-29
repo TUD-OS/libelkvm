@@ -26,7 +26,7 @@ void elkvm_signal_handler(int signum) {
 
 }
 
-int elkvm_signal_register(Elkvm::VMInternals &vmi, int signum, struct sigaction *act,
+int elkvm_signal_register(Elkvm::VM &vmi, int signum, struct sigaction *act,
     struct sigaction *oldact) {
   assert(signum < _NSIG);
 
@@ -49,7 +49,7 @@ int elkvm_signal_register(Elkvm::VMInternals &vmi, int signum, struct sigaction 
   return 0;
 }
 
-int elkvm_signal_deliver(Elkvm::VMInternals &vmi) {
+int elkvm_signal_deliver(Elkvm::VM &vmi) {
   if(num_pending_signals <= 0) {
     return 0;
   }

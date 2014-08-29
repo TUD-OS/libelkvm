@@ -254,7 +254,7 @@ static void write_signal(char* buf, int signal)
 }
 
 static void debug_loop(Elkvm::kvm_vm *vm) {
-  Elkvm::VMInternals vmi = Elkvm::get_vmi(vm);
+  Elkvm::VM vmi = Elkvm::get_vmi(vm);
 
   char buffer[255];
   char obuf[1024];

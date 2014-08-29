@@ -9,7 +9,7 @@
 
 namespace Elkvm {
 
-  void dump_memory(VMInternals vmi, guestptr_t addr) {
+  void dump_memory(VM vmi, guestptr_t addr) {
     assert(addr != 0x0 && "cannot dump address NULL");
     uint64_t *host_p = reinterpret_cast<uint64_t *>(
         vmi.get_region_manager()->get_pager().get_host_p(addr));
@@ -28,7 +28,7 @@ namespace Elkvm {
   //namespace Elkvm
 }
 
-int elkvm_handle_debug(Elkvm::VMInternals *vm) {
+int elkvm_handle_debug(Elkvm::VM *vm) {
   int handled = 0;
   if(vm->get_handlers()->bp_callback != NULL) {
     handled = vm->get_handlers()->bp_callback(vm);
