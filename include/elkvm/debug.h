@@ -5,12 +5,12 @@
 #include <vcpu.h>
 
 namespace Elkvm {
-  void dump_memory(VMInternals vmi, guestptr_t addr);
+  void dump_memory(VM vmi, guestptr_t addr);
 
   //namespace Elkvm
 }
 
-int elkvm_handle_debug(Elkvm::VMInternals *);
+int elkvm_handle_debug(Elkvm::VM *);
 int elkvm_set_guest_debug(struct kvm_vcpu *vcpu);
 
 /**

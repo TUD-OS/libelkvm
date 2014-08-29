@@ -13,9 +13,9 @@
 #include <vcpu.h>
 
 namespace Elkvm {
-  extern std::vector<VMInternals> vmi;
+  extern std::vector<VM> vmi;
 
-  VMInternals::VMInternals(int vmfd, int argc, char ** argv, char **environ,
+  VM::VM(int vmfd, int argc, char ** argv, char **environ,
       int run_struct_size,
       const Elkvm::elkvm_handlers * const handlers,
       int debug) :
@@ -33,7 +33,7 @@ namespace Elkvm {
     _vm->debug = debug;
   }
 
-  int VMInternals::add_cpu(int mode) {
+  int VM::add_cpu(int mode) {
     std::shared_ptr<struct kvm_vcpu> vcpu =
       std::make_shared<struct kvm_vcpu>(_rm);
 
@@ -74,11 +74,11 @@ namespace Elkvm {
     return 0;
   }
 
-  bool VMInternals::address_mapped(guestptr_t addr) const {
+  bool VM::address_mapped(guestptr_t addr) const {
     return hm.address_mapped(addr);
   }
 
-  Mapping &VMInternals::find_mapping(guestptr_t addr) {
+  Mapping &VM::find_mapping(guestptr_t addr) {
     if(hm.contains_address(addr)) {
       return hm.find_mapping(addr);
     }
@@ -86,7 +86,7 @@ namespace Elkvm {
   }
 
 
-  int VMInternals::load_flat(Elkvm::elkvm_flat &flat, const std::string path,
+  int VM::load_flat(Elkvm::elkvm_flat &flat, const std::string path,
       bool kernel) {
     int fd = open(path.c_str(), O_RDONLY);
     if(fd < 0) {
@@ -135,35 +135,35 @@ namespace Elkvm {
     return 0;
   }
 
-  std::shared_ptr<struct kvm_vcpu> VMInternals::get_vcpu(int num) const {
+  std::shared_ptr<struct kvm_vcpu> VM::get_vcpu(int num) const {
     return cpus.at(num);
   }
 
-  Elkvm::elkvm_flat &VMInternals::get_cleanup_flat() {
+  Elkvm::elkvm_flat &VM::get_cleanup_flat() {
     return sighandler_cleanup;
   }
 
-  std::shared_ptr<struct sigaction> VMInternals::get_sig_ptr(unsigned sig) const {
+  std::shared_ptr<struct sigaction> VM::get_sig_ptr(unsigned sig) const {
     return std::make_shared<struct sigaction>(sigs.signals[sig]);
   }
 
-  bool operator==(const VMInternals &lhs, const Elkvm::kvm_vm &rhs) {
+  bool operator==(const VM &lhs, const Elkvm::kvm_vm &rhs) {
     return lhs.get_vmfd() == rhs.fd;
   }
 
-  VMInternals &get_vmi(Elkvm::kvm_vm *vm) {
+  VM &get_vmi(Elkvm::kvm_vm *vm) {
     auto it = std::find(vmi.begin(), vmi.end(), *vm);
     assert(it != vmi.end());
     return *it;
   }
 
 
-  unsigned get_hypercall_type(Elkvm::VMInternals &vmi,
+  unsigned get_hypercall_type(Elkvm::VM &vmi,
       std::shared_ptr<struct kvm_vcpu> vcpu) {
     return vcpu->pop();
   }
 
-  int VMInternals::set_entry_point(guestptr_t rip)
+  int VM::set_entry_point(guestptr_t rip)
   {
     return kvm_vcpu_set_rip(cpus.front().get(), rip);
   }

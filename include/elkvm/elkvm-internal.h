@@ -12,12 +12,12 @@
 
 namespace Elkvm {
 
-  bool operator==(const VMInternals &lhs, const Elkvm::kvm_vm &rhs);
-  VMInternals &get_vmi(Elkvm::kvm_vm *vm);
+  bool operator==(const VM &lhs, const Elkvm::kvm_vm &rhs);
+  VM &get_vmi(Elkvm::kvm_vm *vm);
 
-  unsigned get_hypercall_type(VMInternals &, std::shared_ptr<struct kvm_vcpu>);
+  unsigned get_hypercall_type(VM &, std::shared_ptr<struct kvm_vcpu>);
 
-  unsigned get_hypercall_type(VMInternals &, std::shared_ptr<struct kvm_vcpu>);
+  unsigned get_hypercall_type(VM &, std::shared_ptr<struct kvm_vcpu>);
   
   //namespace Elkvm
 }

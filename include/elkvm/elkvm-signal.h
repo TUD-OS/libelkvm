@@ -5,10 +5,6 @@
 
 #include <elkvm.h>
 
-namespace Elkvm {
-  class VMInternals;
-}
-
-int elkvm_signal_register(Elkvm::VMInternals &vmi, int signum, struct sigaction *act,
+int elkvm_signal_register(Elkvm::VM &vmi, int signum, struct sigaction *act,
     struct sigaction *oldact);
-int elkvm_signal_deliver(Elkvm::VMInternals &vmi);
+int elkvm_signal_deliver(Elkvm::VM &vmi);

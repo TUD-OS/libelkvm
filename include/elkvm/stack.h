@@ -13,7 +13,7 @@
 
 namespace Elkvm {
 
-  class VMInternals;
+  class VM;
   class Region;
   class RegionManager;
 
@@ -37,7 +37,7 @@ namespace Elkvm {
       guestptr_t user_base() const { return base; }
   };
 
-  void dump_stack(VMInternals &vmi, struct kvm_vcpu *vcpu);
+  void dump_stack(VM &vmi, struct kvm_vcpu *vcpu);
 
 //namespace Elkvm
 }

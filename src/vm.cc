@@ -23,7 +23,7 @@
 #include <pager.h>
 #include <vcpu.h>
 namespace Elkvm {
-  std::vector<VMInternals> vmi;
+  std::vector<VM> vmi;
 }
 
 Elkvm::kvm_vm *elkvm_vm_create(Elkvm::elkvm_opts *opts, int mode,
@@ -50,7 +50,7 @@ Elkvm::kvm_vm *elkvm_vm_create(Elkvm::elkvm_opts *opts, int mode,
         run_struct_size,
         handlers,
         debug);
-	  Elkvm::VMInternals &vmi = Elkvm::vmi.back();
+	  Elkvm::VM &vmi = Elkvm::vmi.back();
 
 	  for(unsigned i = 0; i < cpus; i++) {
 		err = vmi.add_cpu(mode);
@@ -166,7 +166,7 @@ int elkvm_cleanup(Elkvm::elkvm_opts *opts) {
 }
 
 int elkvm_chunk_remap(Elkvm::kvm_vm *vm, int num, uint64_t newsize) {
-  Elkvm::VMInternals &vmi = Elkvm::get_vmi(vm);
+  Elkvm::VM &vmi = Elkvm::get_vmi(vm);
 
   auto chunk = vmi.get_region_manager()->get_pager().get_chunk(num);
   chunk->memory_size = 0;
@@ -183,21 +183,21 @@ int elkvm_chunk_remap(Elkvm::kvm_vm *vm, int num, uint64_t newsize) {
 }
 
 struct kvm_vcpu *elkvm_vcpu_get(Elkvm::kvm_vm *vm, int vcpu_id) {
-  Elkvm::VMInternals &vmi = Elkvm::get_vmi(vm);
+  Elkvm::VM &vmi = Elkvm::get_vmi(vm);
 
   auto vcpu = vmi.get_vcpu(vcpu_id);
   return vcpu.get();
 }
 
 uint64_t elkvm_chunk_count(Elkvm::kvm_vm *vm __attribute__((unused))) {
-  Elkvm::VMInternals &vmi = Elkvm::get_vmi(vm);
+  Elkvm::VM &vmi = Elkvm::get_vmi(vm);
 
   return vmi.get_region_manager()->get_pager().chunk_count();
 }
 
 struct kvm_userspace_memory_region elkvm_get_chunk(
     Elkvm::kvm_vm *vm __attribute__((unused)), int chunk) {
-  Elkvm::VMInternals &vmi = Elkvm::get_vmi(vm);
+  Elkvm::VM &vmi = Elkvm::get_vmi(vm);
 
   return *vmi.get_region_manager()->get_pager().get_chunk(chunk);
 }
