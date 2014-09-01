@@ -992,9 +992,7 @@ long elkvm_do_mremap(Elkvm::VMInternals &vmi __attribute__((unused))) {
     std::cout << "=================================\n";
   }
 
-  vmi.get_heap_manager().remap(mapping, new_address_p, new_size, flags);
-
-  return 0;
+  return vmi.get_heap_manager().remap(mapping, new_address_p, new_size, flags);
 }
 
 long elkvm_do_msync(Elkvm::VMInternals &vmi __attribute__((unused))) {

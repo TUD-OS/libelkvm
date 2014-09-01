@@ -53,7 +53,7 @@ namespace Elkvm {
       void dump_mappings() const;
 
       int map(Mapping &m);
-      int remap(Mapping &m, guestptr_t new_address_p, size_t new_size, int flags);
+      guestptr_t remap(Mapping &m, guestptr_t new_address_p, size_t new_size, int flags);
       int unmap(Mapping &m);
       int unmap(Mapping &m, guestptr_t unmap_addr, unsigned pages);
 

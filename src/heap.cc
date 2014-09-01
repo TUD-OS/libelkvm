@@ -245,7 +245,7 @@ namespace Elkvm {
     return err;
   }
 
-  int
+  guestptr_t
   HeapManager::remap(Mapping &m, guestptr_t new_address_p, size_t new_size, int flags) {
     /* 2 simple cases:
      *   1) the mapping gets smaller, just make it so
@@ -263,16 +263,24 @@ namespace Elkvm {
 
     if(new_size < m.get_length()) {
       unmap_to_new_size(m, new_size);
-      return 0;
+      return m.guest_address();
     }
 
     if(m.fits_address(m.guest_address() + new_size - 1)) {
       m.grow(new_size);
+      return m.guest_address();
     }
 
-    assert(false && "mremap with unsupported parameters called");
+    /* XXX this only works once, subsequent mremaps won't find the new mapping
+     * and trigger an error in map() */
+    guestptr_t last_valid_address = m.grow_to_fill();
+    size_t diff = new_size - m.get_length();
+    auto r = _rm->allocate_region(diff);
+    Mapping new_mapping(r, last_valid_address, diff, m.get_prot(), m.get_flags(),
+        m.get_fd(), m.get_offset() + m.get_length());
+    map(new_mapping);
 
-    return -ENOSYS;
+    return m.guest_address();;
   }
 
   void HeapManager::unmap_to_new_size(Mapping &m, size_t new_size) {
