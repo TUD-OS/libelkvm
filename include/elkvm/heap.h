@@ -23,6 +23,7 @@ namespace Elkvm {
       int shrink(guestptr_t newbrk);
       Mapping &create_mapping(guestptr_t addr, size_t length, int prot, int flags,
           int fd, off_t off);
+      void unmap_to_new_size(Mapping &m, size_t new_size);
 
       void free_unused_mappings(guestptr_t brk);
 
@@ -52,6 +53,7 @@ namespace Elkvm {
       void dump_mappings() const;
 
       int map(Mapping &m);
+      int remap(Mapping &m, guestptr_t new_address_p, size_t new_size, int flags);
       int unmap(Mapping &m);
       int unmap(Mapping &m, guestptr_t unmap_addr, unsigned pages);
 

@@ -245,6 +245,43 @@ namespace Elkvm {
     return err;
   }
 
+  int
+  HeapManager::remap(Mapping &m, guestptr_t new_address_p, size_t new_size, int flags) {
+    /* 2 simple cases:
+     *   1) the mapping gets smaller, just make it so
+     *   2) the mapping gets larger but still fits into the region, just make it so
+     * hard case:
+     *   the mapping gets larger and will not fit into the region,
+     *   we can get a new mapping, copy everything over and be done
+     *   or we can get a new mapping and map it so that virtual memory still
+     *   fits.
+     * MREMAP_FIXED case:
+     *   check if there is an old mapping at this point and unmap if so
+     *   then remap to this location.
+     */
+    assert(!(flags & MREMAP_FIXED) && "MREMAP_FIXED not supported right now");
+
+    if(new_size < m.get_length()) {
+      unmap_to_new_size(m, new_size);
+      return 0;
+    }
+
+    if(m.fits_address(m.guest_address() + new_size - 1)) {
+      m.grow(new_size);
+    }
+
+    assert(false && "mremap with unsupported parameters called");
+
+    return -ENOSYS;
+  }
+
+  void HeapManager::unmap_to_new_size(Mapping &m, size_t new_size) {
+      size_t diff = m.get_length() - new_size;
+      guestptr_t unmap_addr = m.guest_address() + diff;
+      unsigned pages = pages_from_size(diff);
+      unmap(m, unmap_addr, pages);
+  }
+
   int HeapManager::unmap(Mapping &m) {
     return unmap(m, m.guest_address(), m.get_pages());
   }
