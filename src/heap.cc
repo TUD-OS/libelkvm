@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <algorithm>
+#include <cstring>
 #include <iostream>
 
 #include <elkvm.h>
@@ -243,6 +244,58 @@ namespace Elkvm {
     }
     assert(err == 0);
     return err;
+  }
+
+  guestptr_t
+  HeapManager::remap(Mapping &m, guestptr_t new_address_p, size_t new_size, int flags) {
+    /* 2 simple cases:
+     *   1) the mapping gets smaller, just make it so
+     *   2) the mapping gets larger but still fits into the region, just make it so
+     * hard case:
+     *   the mapping gets larger and will not fit into the region,
+     *   we can get a new mapping, copy everything over and be done
+     *   or we can get a new mapping and map it so that virtual memory still
+     *   fits.
+     * MREMAP_FIXED case:
+     *   check if there is an old mapping at this point and unmap if so
+     *   then remap to this location.
+     */
+    assert(!(flags & MREMAP_FIXED) && "MREMAP_FIXED not supported right now");
+
+    if(new_size < m.get_length()) {
+      unmap_to_new_size(m, new_size);
+      return m.guest_address();
+    }
+
+    if(m.fits_address(m.guest_address() + new_size - 1)) {
+      m.grow(new_size);
+      return m.guest_address();
+    }
+
+    return create_resized_mapping(m, new_size);
+  }
+
+  void HeapManager::unmap_to_new_size(Mapping &m, size_t new_size) {
+      size_t diff = m.get_length() - new_size;
+      guestptr_t unmap_addr = m.guest_address() + new_size;
+      unsigned pages = pages_from_size(diff);
+      unmap(m, unmap_addr, pages);
+  }
+
+  guestptr_t HeapManager::create_resized_mapping(Mapping &m, size_t new_size) {
+    Mapping &new_mapping = get_mapping(0x0, new_size, m.get_prot(), m.get_flags(),
+        m.get_fd(), m.get_offset());
+
+    std::memcpy(new_mapping.base_address(), m.base_address(), m.get_length());
+    map(new_mapping);
+
+    /* unmap invalidates the ref to m AND new_mapping!
+     * so we need to get the correct guest address of the new mapping here
+     * and return that after the unmap */
+    guestptr_t addr = new_mapping.guest_address();
+    unmap(m);
+
+    return addr;
   }
 
   int HeapManager::unmap(Mapping &m) {

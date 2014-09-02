@@ -952,7 +952,47 @@ long elkvm_do_sched_yield(Elkvm::VMInternals &vmi __attribute__((unused))) {
 }
 
 long elkvm_do_mremap(Elkvm::VMInternals &vmi __attribute__((unused))) {
-  return -ENOSYS;
+  std::shared_ptr<struct kvm_vcpu> vcpu = vmi.get_vcpu(0);
+
+  guestptr_t old_address_p = 0x0;
+  void *old_address = NULL;
+  uint64_t old_size = 0;
+  uint64_t new_size = 0;
+  uint64_t flags = 0;
+  guestptr_t new_address_p = 0x0;
+  void *new_address = NULL;
+
+  elkvm_syscall5(vcpu, &old_address_p, &old_size, &new_size, &flags, &new_address_p);
+
+  if(old_address_p != 0x0) {
+    old_address = vmi.get_region_manager()->get_pager().get_host_p(old_address_p);
+  }
+  if(new_address_p != 0x0) {
+    new_address = vmi.get_region_manager()->get_pager().get_host_p(new_address_p);
+  }
+
+  Elkvm::Mapping &mapping = vmi.get_heap_manager().find_mapping(old_address);
+  if(vmi.debug_mode()) {
+    std::cout << "\n============ LIBELKVM ===========\n";
+    std::cout << "MREMAP reguested with old address: 0x"
+      << std::hex << old_address_p << " (" << old_address <<") size: 0x"
+      << old_size << std::endl;
+    std::cout << "       ";
+    if(flags & MREMAP_FIXED) {
+      std::cout << "new address: 0x"
+      << new_address_p << " (" << new_address << ") ";
+    }
+    std::cout << "size: 0x" << new_size
+      << " flags:";
+    std::cout << ((flags & MREMAP_MAYMOVE) ? " MREMAP_MAYMOVE" : "");
+    std::cout << ((flags & MREMAP_FIXED)   ? " MREMAP_FIXED"   : "");
+    std::cout << std::endl;
+
+    print(std::cout, mapping);
+    std::cout << "=================================\n";
+  }
+
+  return vmi.get_heap_manager().remap(mapping, new_address_p, new_size, flags);
 }
 
 long elkvm_do_msync(Elkvm::VMInternals &vmi __attribute__((unused))) {
