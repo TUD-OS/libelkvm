@@ -277,7 +277,7 @@ namespace Elkvm {
 
   void HeapManager::unmap_to_new_size(Mapping &m, size_t new_size) {
       size_t diff = m.get_length() - new_size;
-      guestptr_t unmap_addr = m.guest_address() + diff;
+      guestptr_t unmap_addr = m.guest_address() + new_size;
       unsigned pages = pages_from_size(diff);
       unmap(m, unmap_addr, pages);
   }
