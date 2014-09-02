@@ -24,6 +24,7 @@ namespace Elkvm {
       Mapping &create_mapping(guestptr_t addr, size_t length, int prot, int flags,
           int fd, off_t off);
       void unmap_to_new_size(Mapping &m, size_t new_size);
+      guestptr_t create_resized_mapping(Mapping &m, size_t new_size);
 
       void free_unused_mappings(guestptr_t brk);
 

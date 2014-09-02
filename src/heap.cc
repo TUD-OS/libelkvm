@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <algorithm>
+#include <cstring>
 #include <iostream>
 
 #include <elkvm.h>
@@ -271,16 +272,7 @@ namespace Elkvm {
       return m.guest_address();
     }
 
-    /* XXX this only works once, subsequent mremaps won't find the new mapping
-     * and trigger an error in map() */
-    guestptr_t last_valid_address = m.grow_to_fill();
-    size_t diff = new_size - m.get_length();
-    auto r = _rm->allocate_region(diff);
-    Mapping new_mapping(r, last_valid_address, diff, m.get_prot(), m.get_flags(),
-        m.get_fd(), m.get_offset() + m.get_length());
-    map(new_mapping);
-
-    return m.guest_address();;
+    return create_resized_mapping(m, new_size);
   }
 
   void HeapManager::unmap_to_new_size(Mapping &m, size_t new_size) {
@@ -288,6 +280,22 @@ namespace Elkvm {
       guestptr_t unmap_addr = m.guest_address() + diff;
       unsigned pages = pages_from_size(diff);
       unmap(m, unmap_addr, pages);
+  }
+
+  guestptr_t HeapManager::create_resized_mapping(Mapping &m, size_t new_size) {
+    Mapping &new_mapping = get_mapping(0x0, new_size, m.get_prot(), m.get_flags(),
+        m.get_fd(), m.get_offset());
+
+    std::memcpy(new_mapping.base_address(), m.base_address(), m.get_length());
+    map(new_mapping);
+
+    /* unmap invalidates the ref to m AND new_mapping!
+     * so we need to get the correct guest address of the new mapping here
+     * and return that after the unmap */
+    guestptr_t addr = new_mapping.guest_address();
+    unmap(m);
+
+    return addr;
   }
 
   int HeapManager::unmap(Mapping &m) {
