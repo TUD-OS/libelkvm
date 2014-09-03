@@ -549,6 +549,7 @@ void kvm_vcpu_dump_regs(struct kvm_vcpu *vcpu) {
 }
 
 void kvm_vcpu_dump_code_at(struct kvm_vcpu *vcpu, uint64_t guest_addr) {
+  (void)vcpu; (void)guest_addr;
 #ifdef HAVE_LIBUDIS86
   int err = kvm_vcpu_get_next_code_byte(vcpu, guest_addr);
   if(err) {

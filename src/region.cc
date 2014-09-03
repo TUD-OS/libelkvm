@@ -82,7 +82,8 @@ namespace Elkvm {
     Region::slice_center(off_t off, size_t len) {
 
     assert(contains_address(reinterpret_cast<char *>(host_p) + off + len));
-    assert(0 < off <= rsize);
+    assert(0 < off);
+    assert((unsigned)off <= rsize);
 
     std::shared_ptr<Region> r = std::make_shared<Region>(
         reinterpret_cast<char *>(host_p) + off + len,
@@ -93,7 +94,7 @@ namespace Elkvm {
 
     std::shared_ptr<Region> free_region = std::make_shared<Region>(
           reinterpret_cast<char *>(host_p) + off, len);
-    
+
     return std::pair<std::shared_ptr<Region>, std::shared_ptr<Region>>(
         r, free_region);
   }
