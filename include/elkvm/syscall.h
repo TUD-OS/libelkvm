@@ -19,7 +19,7 @@ void elkvm_syscall4(struct kvm_vcpu *, uint64_t *, uint64_t *,
 void elkvm_syscall5(struct kvm_vcpu *, uint64_t *, uint64_t *,
  uint64_t *, uint64_t *, uint64_t *);
 void elkvm_syscall6(struct kvm_vcpu *, uint64_t *, uint64_t *,
-		uint64_t *, uint64_t *, uint64_t *, uint64_t *);
+    uint64_t *, uint64_t *, uint64_t *, uint64_t *);
 
 
 long elkvm_do_read(Elkvm::VM *);
@@ -282,22 +282,24 @@ long elkvm_do_migrate_pages(Elkvm::VM *);
 long elkvm_do_openat(Elkvm::VM *);
 
 static struct {
-	long (*func)(Elkvm::VM *);
-	const char *name;
-} elkvm_syscalls[NUM_SYSCALLS] = {
-	[__NR_read]			      = { elkvm_do_read, "READ" },
-	[__NR_write] 		      = { elkvm_do_write, "WRITE"},
-	[__NR_open]  		      = { elkvm_do_open, "OPEN"},
-	[__NR_close] 		      = { elkvm_do_close, "CLOSE" },
-	[__NR_stat]  		      = { elkvm_do_stat, "STAT" },
-	[__NR_fstat] 		      = { elkvm_do_fstat, "FSTAT" },
-	[__NR_lstat] 		      = { elkvm_do_lstat, "LSTAT" },
-	[__NR_poll]  		      = { elkvm_do_poll, "POLL" },
-	[__NR_lseek] 		      = { elkvm_do_lseek, "LSEEK" },
-	[__NR_mmap]  		      = { elkvm_do_mmap, "MMAP" },
-	[__NR_mprotect]       = { elkvm_do_mprotect, "MPROTECT" },
-	[__NR_munmap]         = { elkvm_do_munmap, "MUNMAP" },
-	[__NR_brk]            = { elkvm_do_brk, "BRK" },
+  long (*func)(Elkvm::VM *);
+  const char *name;
+} elkvm_syscalls[NUM_SYSCALLS]
+__attribute__((used))
+  = {
+  [__NR_read]            = { elkvm_do_read, "READ" },
+  [__NR_write]           = { elkvm_do_write, "WRITE"},
+  [__NR_open]            = { elkvm_do_open, "OPEN"},
+  [__NR_close]           = { elkvm_do_close, "CLOSE" },
+  [__NR_stat]            = { elkvm_do_stat, "STAT" },
+  [__NR_fstat]           = { elkvm_do_fstat, "FSTAT" },
+  [__NR_lstat]           = { elkvm_do_lstat, "LSTAT" },
+  [__NR_poll]            = { elkvm_do_poll, "POLL" },
+  [__NR_lseek]           = { elkvm_do_lseek, "LSEEK" },
+  [__NR_mmap]            = { elkvm_do_mmap, "MMAP" },
+  [__NR_mprotect]       = { elkvm_do_mprotect, "MPROTECT" },
+  [__NR_munmap]         = { elkvm_do_munmap, "MUNMAP" },
+  [__NR_brk]            = { elkvm_do_brk, "BRK" },
   [__NR_rt_sigaction]   = { elkvm_do_sigaction, "SIGACTION" },
   [__NR_rt_sigprocmask] = { elkvm_do_sigprocmask, "SIGPROCMASK" },
   [__NR_rt_sigreturn]   = { elkvm_do_sigreturn, "SIGRETURN" },
