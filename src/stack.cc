@@ -98,9 +98,9 @@ namespace Elkvm {
     return false;
   }
 
-  void dump_stack(VM &vmi, struct kvm_vcpu *vcpu) {
+  void Elkvm::VM::dump_stack(struct kvm_vcpu *vcpu) {
     assert(vcpu->regs.rsp != 0x0);
-    dump_memory(vmi, vcpu->regs.rsp);
+    dump_memory(vcpu->regs.rsp);
   }
 
 //namespace Elkvm

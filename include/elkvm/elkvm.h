@@ -35,13 +35,6 @@ struct kvm_vcpu;
 
 namespace Elkvm {
 
-struct kvm_vm {
-  int fd;
-  int debug;
-
-  struct rlimit rlimits[RLIMIT_NLIMITS];
-};
-
 class VM;
 
 struct elkvm_handlers {
@@ -123,7 +116,21 @@ struct elkvm_opts;
 class VM {
   protected:
     std::vector<std::shared_ptr<struct kvm_vcpu>> cpus;
-    std::shared_ptr<Elkvm::kvm_vm> _vm;
+
+    /*
+     * Debugging enabled in VM?
+     */
+    bool _debug;
+
+    /*
+     * TODO: This is the stuff that should be in a KVM-specific
+     *       subclass if we ever decide to have alternative
+     *       virtualization environments
+     */
+    struct {
+      int fd;
+      struct rlimit rlimits[RLIMIT_NLIMITS];
+    } _vm;
 
     std::shared_ptr<RegionManager> _rm;
     HeapManager hm;
@@ -162,19 +169,43 @@ class VM {
       { return syscall_handlers; }
 
     std::shared_ptr<struct sigaction> get_sig_ptr(unsigned sig) const;
-    std::shared_ptr<Elkvm::kvm_vm> get_vm_ptr() const { return _vm; }
 
-    int debug_mode() const { return _vm->debug; }
+    int debug_mode() const { return _debug; }
+
+    /*
+     * \brief Put the VM in debug mode
+     */
+    void set_debug(bool on = true) { _debug = on; }
 
     int set_entry_point(guestptr_t rip);
+
+    /*
+     * Initialize the VM's rlimits.
+     * TODO: move to KVM subclass
+     */
+    void init_rlimits();
+    
+    /*
+     * Dump the current stack frame for the vCPU.
+     *
+     * TODOL should be part of the VCPU class.
+     */
+    void dump_stack(struct kvm_vcpu *vcpu);
+    
+
+    /*
+     * Dump guest memory at given address.
+     */
+    void dump_memory(guestptr_t ptr);
 };
 
 } // namespace Elkvm
 
 /*
-  Create a new VM, with the given mode, cpu count, memory and syscall handlers
-*/
-Elkvm::kvm_vm *
+ * Create a new VM, with the given mode, cpu count, memory and syscall
+ * handlers
+ */
+std::shared_ptr<Elkvm::VM>
 elkvm_vm_create(Elkvm::elkvm_opts *,
     int mode,
     unsigned cpus,
@@ -185,12 +216,7 @@ elkvm_vm_create(Elkvm::elkvm_opts *,
 /*
  * Runs all CPUS of the VM
  */
-int elkvm_vm_run(Elkvm::kvm_vm *vm);
-
-/*
- * \brief Put the VM in debug mode
- */
-int elkvm_set_debug(Elkvm::kvm_vm *);
+int elkvm_vm_run(std::shared_ptr<Elkvm::VM> vm);
 
 /*
  * \brief Emulates (skips) the VMCALL instruction
@@ -202,12 +228,12 @@ void elkvm_emulate_vmcall(struct kvm_vcpu *);
  *        with the newsize to a vm at the same memory slot.
  *        THIS WILL DELETE ALL DATA IN THE OLD CHUNK!
  */
-int elkvm_chunk_remap(Elkvm::kvm_vm *, int num, uint64_t newsize);
+int elkvm_chunk_remap(std::shared_ptr<Elkvm::VM> , int num, uint64_t newsize);
 
-struct kvm_vcpu *elkvm_vcpu_get(Elkvm::kvm_vm *, int vcpu_id);
-uint64_t elkvm_chunk_count(Elkvm::kvm_vm *);
+struct kvm_vcpu *elkvm_vcpu_get(std::shared_ptr<Elkvm::VM> , int vcpu_id);
+uint64_t elkvm_chunk_count(std::shared_ptr<Elkvm::VM> );
 
-struct kvm_userspace_memory_region elkvm_get_chunk(Elkvm::kvm_vm *, int chunk);
+struct kvm_userspace_memory_region elkvm_get_chunk(std::shared_ptr<Elkvm::VM> , int chunk);
 
 int elkvm_dump_valid_msrs(struct elkvm_opts *);
 
@@ -215,7 +241,7 @@ int elkvm_dump_valid_msrs(struct elkvm_opts *);
  * \brief Initialize the gdbstub and wait for gdb
  *        to connect
  */
-void elkvm_gdbstub_init(Elkvm::kvm_vm *vm);
+void elkvm_gdbstub_init(std::shared_ptr<Elkvm::VM> vm);
 
 /**
  * \brief Enable VCPU debug mode
