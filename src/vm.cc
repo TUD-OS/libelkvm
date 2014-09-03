@@ -167,35 +167,20 @@ int elkvm_cleanup(Elkvm::elkvm_opts *opts) {
   return 0;
 }
 
-int elkvm_chunk_remap(std::shared_ptr<Elkvm::VM> vm, int num, uint64_t newsize) {
+int Elkvm::VM::chunk_remap(int num, size_t newsize) {
 
-  auto chunk = vm->get_region_manager()->get_pager().get_chunk(num);
+  auto chunk = get_region_manager()->get_pager().get_chunk(num);
   chunk->memory_size = 0;
 
-  int err = ioctl(vm->get_vmfd(), KVM_SET_USER_MEMORY_REGION, chunk.get());
+  int err = ioctl(get_vmfd(), KVM_SET_USER_MEMORY_REGION, chunk.get());
   assert(err == 0);
   free((void *)chunk->userspace_addr);
   chunk->memory_size = newsize;
   err = posix_memalign(((void **)&chunk->userspace_addr), ELKVM_PAGESIZE, chunk->memory_size);
   assert(err == 0);
-  err = ioctl(vm->get_vmfd(), KVM_SET_USER_MEMORY_REGION, chunk.get());
+  err = ioctl(get_vmfd(), KVM_SET_USER_MEMORY_REGION, chunk.get());
   assert(err == 0);
   return 0;
-}
-
-struct kvm_vcpu *elkvm_vcpu_get(std::shared_ptr<Elkvm::VM> vm, int vcpu_id) {
-  auto vcpu = vm->get_vcpu(vcpu_id);
-  return vcpu.get();
-}
-
-uint64_t elkvm_chunk_count(std::shared_ptr<Elkvm::VM> vm __attribute__((unused))) {
-  return vm->get_region_manager()->get_pager().chunk_count();
-}
-
-struct kvm_userspace_memory_region elkvm_get_chunk(
-                          std::shared_ptr<Elkvm::VM> vm __attribute__((unused)),
-                          int chunk) {
-  return *vm->get_region_manager()->get_pager().get_chunk(chunk);
 }
 
 void elkvm_emulate_vmcall(struct kvm_vcpu *vcpu) {

@@ -184,14 +184,14 @@ class VM {
      * TODO: move to KVM subclass
      */
     void init_rlimits();
-    
+
     /*
      * Dump the current stack frame for the vCPU.
      *
      * TODOL should be part of the VCPU class.
      */
     void dump_stack(struct kvm_vcpu *vcpu);
-    
+
 
     /*
      * Dump guest memory at given address.
@@ -203,14 +203,42 @@ class VM {
      */
     int run();
 
+    /*
+     * Handle VM events
+     */
     int handle_syscall(struct kvm_vcpu*);
     int handle_interrupt(struct kvm_vcpu*);
     int handle_hypercall(std::shared_ptr<struct kvm_vcpu>);
 
+    /*
+     * Signal management
+     */
     int signal_deliver();
     int signal_register(int signum,
                         struct sigaction *act,
                         struct sigaction *oldact);
+
+    /*
+     * Memory stuff
+     */
+    uint64_t chunk_count()
+    { return get_region_manager()->get_pager().chunk_count(); }
+
+    /*
+     * \brief Deletes (frees) the chunk with number num and hands a new chunk
+     *        with the newsize to a vm at the same memory slot.
+     *        THIS WILL DELETE ALL DATA IN THE OLD CHUNK!
+     */
+    int chunk_remap(int num, size_t newsize);
+    
+    struct kvm_userspace_memory_region get_chunk(int chunk)
+    { return *get_region_manager()->get_pager().get_chunk(chunk); }
+
+    /*
+     * Get vCPU for given ID.
+     */
+    struct kvm_vcpu* vcpu_get(int id)
+    { return get_vcpu(id).get(); }
 };
 
 } // namespace Elkvm
@@ -231,19 +259,6 @@ elkvm_vm_create(Elkvm::elkvm_opts *,
  * \brief Emulates (skips) the VMCALL instruction
  */
 void elkvm_emulate_vmcall(struct kvm_vcpu *);
-
-/*
- * \brief Deletes (frees) the chunk with number num and hands a new chunk
- *        with the newsize to a vm at the same memory slot.
- *        THIS WILL DELETE ALL DATA IN THE OLD CHUNK!
- */
-int elkvm_chunk_remap(std::shared_ptr<Elkvm::VM> , int num, uint64_t newsize);
-
-struct kvm_vcpu *elkvm_vcpu_get(std::shared_ptr<Elkvm::VM> , int vcpu_id);
-uint64_t elkvm_chunk_count(std::shared_ptr<Elkvm::VM> );
-
-struct kvm_userspace_memory_region elkvm_get_chunk(std::shared_ptr<Elkvm::VM> , int chunk);
-
 int elkvm_dump_valid_msrs(struct elkvm_opts *);
 
 /**
