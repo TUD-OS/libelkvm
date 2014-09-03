@@ -20,7 +20,6 @@
 
 extern char **environ;
 Elkvm::elkvm_opts elkvm;
-Elkvm::kvm_vm vm;
 bool inspect;
 
 long pass_read(int fd, void *buf, size_t count) {
@@ -316,15 +315,17 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  Elkvm::kvm_vm *vm = elkvm_vm_create(&elkvm, VM_MODE_X86_64, 1, &example_handlers, binary, debug);
-  if(vm == NULL) {
+  std::shared_ptr<Elkvm::VM> vm =
+        elkvm_vm_create(&elkvm, VM_MODE_X86_64, 1, &example_handlers,
+                        binary, debug);
+  if(vm == nullptr) {
     printf("ERROR creating VM: %i\n", errno);
     printf("  Msg: %s\n", strerror(errno));
     return EXIT_FAILURE;
   }
 
   if(debug) {
-    err = elkvm_set_debug(vm);
+	vm->set_debug(true);
     if(err) {
       printf("ERROR putting VM in debug mode errno: %i Msg: %s\n", -err, strerror(-err));
       return -1;

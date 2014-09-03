@@ -117,7 +117,6 @@ void kvm_vcpu_dump_code_at(struct kvm_vcpu *vcpu, uint64_t guest_addr);
  */
 int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *, uint64_t guest_addr);
 
-void elkvm_idt_dump_isr(Elkvm::kvm_vm *, int);
 void elkvm_init_udis86(struct kvm_vcpu *, int mode);
 #endif
 
@@ -125,7 +124,7 @@ static inline
 __attribute__((used))
 void print_dtable(const char *name, struct kvm_dtable dtable)
 {
-  fprintf(stderr, " %s                 %016llx  %08hx\n",
+  fprintf(stderr, " %s                 %016lx  %08hx\n",
           name, (uint64_t) dtable.base, (uint16_t) dtable.limit);
 }
 
@@ -133,7 +132,7 @@ static inline
 __attribute__((used))
 void print_segment(const char *name, struct kvm_segment seg)
 {
-  fprintf(stderr, " %s       %04hx      %016llx  %08x  %02hhx    %x %x   %x  %x %x %x %x\n",
+  fprintf(stderr, " %s       %04hx      %016lx  %08x  %02hhx    %x %x   %x  %x %x %x %x\n",
           name, (uint16_t) seg.selector, (uint64_t) seg.base, (uint32_t) seg.limit,
           (uint8_t) seg.type, seg.present, seg.dpl, seg.db, seg.s, seg.l,
           seg.g, seg.avl);

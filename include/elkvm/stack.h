@@ -37,7 +37,7 @@ namespace Elkvm {
       guestptr_t user_base() const { return base; }
   };
 
-  void dump_stack(VM &vmi, struct kvm_vcpu *vcpu);
+  //void dump_stack(VM &vmi, struct kvm_vcpu *vcpu);
 
 //namespace Elkvm
 }

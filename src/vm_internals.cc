@@ -19,6 +19,7 @@ namespace Elkvm {
       int run_struct_size,
       const Elkvm::elkvm_handlers * const handlers,
       int debug) :
+    _debug(debug == 1),
     _rm(std::make_shared<RegionManager>(vmfd)),
     hm(_rm),
     _vmfd(vmfd),
@@ -27,10 +28,9 @@ namespace Elkvm {
     _environ(environ),
     _run_struct_size(run_struct_size)
   {
-    _vm = std::make_shared<Elkvm::kvm_vm>();
-    _vm->fd = vmfd;
+    //_vm = std::make_shared<Elkvm::kvm_vm>();
+    _vm.fd = vmfd;
     syscall_handlers = handlers;
-    _vm->debug = debug;
   }
 
   int VM::add_cpu(int mode) {
@@ -147,22 +147,27 @@ namespace Elkvm {
     return std::make_shared<struct sigaction>(sigs.signals[sig]);
   }
 
-  bool operator==(const VM &lhs, const Elkvm::kvm_vm &rhs) {
-    return lhs.get_vmfd() == rhs.fd;
+  // TODO: needed?
+  bool operator==(const VM &lhs, const VM &rhs) {
+    return lhs.get_vmfd() == rhs.get_vmfd();
   }
 
+#if 0
   VM &get_vmi(Elkvm::kvm_vm *vm) {
     auto it = std::find(vmi.begin(), vmi.end(), *vm);
     assert(it != vmi.end());
     return *it;
   }
+#endif
 
-
-  unsigned get_hypercall_type(Elkvm::VM &vmi,
-      std::shared_ptr<struct kvm_vcpu> vcpu) {
+  /* TODO: Should be a function of the vCPU */
+  unsigned get_hypercall_type(std::shared_ptr<Elkvm::VM> vm,
+                              std::shared_ptr<struct kvm_vcpu> vcpu)
+  {
     return vcpu->pop();
   }
 
+  /* TODO: Should be a function of the vCPU */
   int VM::set_entry_point(guestptr_t rip)
   {
     return kvm_vcpu_set_rip(cpus.front().get(), rip);

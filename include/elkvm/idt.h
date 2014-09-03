@@ -10,17 +10,17 @@ int elkvm_idt_setup(Elkvm::RegionManager &rm, std::shared_ptr<struct kvm_vcpu> v
     Elkvm::elkvm_flat *);
 
 struct kvm_idt_entry {
-	uint16_t offset1;
-	uint16_t selector;
-	/*
-	 * in long mode lower three bits of idx are
-	 * used for ist index
-	 */
-	uint8_t idx;
-	uint8_t flags;
-	uint16_t offset2;
-	uint32_t offset3;
-	uint32_t reserved;
+    uint16_t offset1;
+    uint16_t selector;
+    /*
+     * in long mode lower three bits of idx are
+     * used for ist index
+     */
+    uint8_t idx;
+    uint8_t flags;
+    uint16_t offset2;
+    uint32_t offset3;
+    uint32_t reserved;
 }__attribute__((packed));
 
 #define IT_CALL_GATE      0xC
@@ -31,13 +31,10 @@ struct kvm_idt_entry {
 
 #define INTERRUPT_ENTRY_PRESENT 128
 
-
-void elkvm_idt_dump(Elkvm::kvm_vm *);
-
 static inline
 uint64_t idt_entry_offset(struct kvm_idt_entry *entry) {
-		return entry->offset1 | ((uint64_t)entry->offset2 << 16) | 
-			((uint64_t)entry->offset3 << 32);
+        return entry->offset1 | ((uint64_t)entry->offset2 << 16) |
+            ((uint64_t)entry->offset3 << 32);
 }
 
 
