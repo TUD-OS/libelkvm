@@ -295,7 +295,7 @@ static void debug_loop(std::shared_ptr<Elkvm::VM> vm) {
           vcpu->regs.rip = new_rip;
         }
 
-        elkvm_vm_run(vm);
+        vm->run();
 
         //if (buffer[1] != 0)
         //{
@@ -317,7 +317,7 @@ static void debug_loop(std::shared_ptr<Elkvm::VM> vm) {
 
         struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
         elkvm_debug_singlestep(vcpu);
-        elkvm_vm_run(vm);
+        vm->run();
         elkvm_debug_singlestep_off(vcpu);
 
         buf[0] = 'S';
@@ -650,5 +650,5 @@ void elkvm_gdbstub_init(std::shared_ptr<Elkvm::VM> vm) {
   debug_loop(vm);
 
   /* CPU loop */
-  elkvm_vm_run(vm);
+  vm->run();
 }

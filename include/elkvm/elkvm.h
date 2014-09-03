@@ -197,6 +197,20 @@ class VM {
      * Dump guest memory at given address.
      */
     void dump_memory(guestptr_t ptr);
+
+    /*
+     * Runs all CPUS of the VM
+     */
+    int run();
+
+    int handle_syscall(struct kvm_vcpu*);
+    int handle_interrupt(struct kvm_vcpu*);
+    int handle_hypercall(std::shared_ptr<struct kvm_vcpu>);
+
+    int signal_deliver();
+    int signal_register(int signum,
+                        struct sigaction *act,
+                        struct sigaction *oldact);
 };
 
 } // namespace Elkvm
@@ -212,11 +226,6 @@ elkvm_vm_create(Elkvm::elkvm_opts *,
     const Elkvm::elkvm_handlers * const,
     const char *binary,
     int debug);
-
-/*
- * Runs all CPUS of the VM
- */
-int elkvm_vm_run(std::shared_ptr<Elkvm::VM> vm);
 
 /*
  * \brief Emulates (skips) the VMCALL instruction
