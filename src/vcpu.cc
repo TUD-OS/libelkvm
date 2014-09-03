@@ -301,7 +301,7 @@ int kvm_vcpu_run(struct kvm_vcpu *vcpu) {
   return 0;
 }
 
-int elkvm_vm_run(std::shared_ptr<Elkvm::VM> vm) {
+int Elkvm::VM::run() {
 
   int is_running = 1;
 //  if(vcpu->singlestep) {
@@ -312,7 +312,7 @@ int elkvm_vm_run(std::shared_ptr<Elkvm::VM> vm) {
 //    kvm_pager_dump_page_tables(&vcpu->vm->pager);
 //  }
 
-  std::shared_ptr<struct kvm_vcpu> vcpu = vm->get_vcpu(0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = get_vcpu(0);
   int err = 0;
   while(is_running) {
 
@@ -350,7 +350,7 @@ int elkvm_vm_run(std::shared_ptr<Elkvm::VM> vm) {
           kvm_vcpu_dump_regs(vcpu.get());
           kvm_vcpu_dump_code(vcpu.get());
         }
-         err = elkvm_handle_hypercall(vm, vcpu);
+        err = handle_hypercall(vcpu);
         if(err == ELKVM_HYPERCALL_EXIT) {
           is_running = 0;
         } else if(err) {
@@ -430,7 +430,7 @@ int elkvm_vm_run(std::shared_ptr<Elkvm::VM> vm) {
     if(  vcpu->run_struct->exit_reason == KVM_EXIT_MMIO ||
         vcpu->run_struct->exit_reason == KVM_EXIT_SHUTDOWN) {
       kvm_vcpu_dump_regs(vcpu.get());
-      vm->dump_stack(vcpu.get());
+      dump_stack(vcpu.get());
       kvm_vcpu_dump_code(vcpu.get());
     }
 

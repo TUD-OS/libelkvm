@@ -26,16 +26,16 @@ void elkvm_signal_handler(int signum) {
 
 }
 
-int elkvm_signal_register(std::shared_ptr<Elkvm::VM> vmi, int signum, struct sigaction *act,
+int Elkvm::VM::signal_register(int signum, struct sigaction *act,
     struct sigaction *oldact) {
   assert(signum < _NSIG);
 
   if(oldact != NULL) {
-    memcpy(oldact, vmi->get_sig_ptr(signum).get(), sizeof(struct sigaction));
+    memcpy(oldact, get_sig_ptr(signum).get(), sizeof(struct sigaction));
   }
 
   if(act != NULL) {
-    memcpy(vmi->get_sig_ptr(signum).get(), act, sizeof(struct sigaction));
+    memcpy(get_sig_ptr(signum).get(), act, sizeof(struct sigaction));
 
     struct sigaction sa;
     sa.sa_handler = elkvm_signal_handler;
@@ -49,12 +49,12 @@ int elkvm_signal_register(std::shared_ptr<Elkvm::VM> vmi, int signum, struct sig
   return 0;
 }
 
-int elkvm_signal_deliver(std::shared_ptr<Elkvm::VM> vmi) {
+int Elkvm::VM::signal_deliver() {
   if(num_pending_signals <= 0) {
     return 0;
   }
 
-  std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
+  std::shared_ptr<struct kvm_vcpu> vcpu = get_vcpu(0);
   assert(vcpu != nullptr);
 
   num_pending_signals--;
@@ -64,10 +64,10 @@ int elkvm_signal_deliver(std::shared_ptr<Elkvm::VM> vmi) {
   vcpu->push(vcpu->regs.rax);
 
   /* push signal handler cleanup asm addr onto stack */
-  vcpu->push(vmi->get_cleanup_flat().region->guest_address());
+  vcpu->push(get_cleanup_flat().region->guest_address());
 
   /* setup the signal handler stack frame and pass the signal number as arg */
-  vcpu->push((uint64_t) vmi->get_sig_ptr(signum)->sa_handler);
+  vcpu->push((uint64_t) get_sig_ptr(signum)->sa_handler);
   vcpu->regs.rdi = signum;
 
   return 0;

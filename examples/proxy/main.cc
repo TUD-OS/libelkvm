@@ -338,7 +338,7 @@ int main(int argc, char **argv) {
     return 0;
   }
 
-  err = elkvm_vm_run(vm);
+  err = vm->run();
   if(err) {
     printf("ERROR running VCPU errno: %i Msg: %s\n", -err, strerror(-err));
     return -1;
