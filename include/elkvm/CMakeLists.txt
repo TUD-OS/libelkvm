@@ -1,6 +1,5 @@
 SET( libelkvm_MOC_HEADERS
   config.h
-  elkvm-signal.h
   elkvm.h
   gdt.h
   heap.h
@@ -19,7 +18,6 @@ SET( libelkvm_MOC_HEADERS
 
 install (FILES elkvm.h
   config.h
-  elkvm-signal.h
   kvm.h
   pager.h
   stack.h

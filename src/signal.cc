@@ -7,7 +7,6 @@
 
 #include <elkvm.h>
 #include <elkvm-internal.h>
-#include <elkvm-signal.h>
 #include <stack.h>
 #include <vcpu.h>
 
