@@ -255,11 +255,11 @@ class VM {
  */
 std::shared_ptr<Elkvm::VM>
 elkvm_vm_create(Elkvm::elkvm_opts *,
-    int mode,
-    unsigned cpus,
-    const Elkvm::elkvm_handlers * const,
-    const char *binary,
-    int debug);
+                const char *binary,
+                unsigned cpus = 1,
+                const Elkvm::elkvm_handlers * const = &Elkvm::default_handlers,
+                int mode = VM_MODE_X86_64,
+                bool debug = false);
 
 /*
  * \brief Emulates (skips) the VMCALL instruction

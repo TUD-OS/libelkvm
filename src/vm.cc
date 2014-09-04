@@ -27,9 +27,12 @@ namespace Elkvm {
 }
 
 std::shared_ptr<Elkvm::VM>
-elkvm_vm_create(Elkvm::elkvm_opts *opts, int mode,
-    unsigned cpus, const Elkvm::elkvm_handlers * const handlers,
-    const char *binary, int debug) {
+elkvm_vm_create(Elkvm::elkvm_opts *opts,
+                const char *binary,
+                unsigned cpus,
+                const Elkvm::elkvm_handlers * const handlers,
+                int mode,
+                bool debug) {
 
   int err = 0;
 

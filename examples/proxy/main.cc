@@ -60,10 +60,7 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  std::shared_ptr<Elkvm::VM> vm =
-        elkvm_vm_create(&elkvm, VM_MODE_X86_64, 1,
-                        &Elkvm::default_handlers,
-                        binary, debug);
+  std::shared_ptr<Elkvm::VM> vm = elkvm_vm_create(&elkvm, binary);
   if(vm == nullptr) {
     printf("ERROR creating VM: %i\n", errno);
     printf("  Msg: %s\n", strerror(errno));
