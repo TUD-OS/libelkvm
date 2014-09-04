@@ -10,15 +10,15 @@
 #define NUM_SYSCALLS 313
 
 
-void elkvm_syscall1(struct kvm_vcpu *, uint64_t *);
-void elkvm_syscall2(struct kvm_vcpu *, uint64_t *, uint64_t *);
-void elkvm_syscall3(struct kvm_vcpu *, uint64_t *, uint64_t *,
+void elkvm_unpack_syscall1(struct kvm_vcpu *, uint64_t *);
+void elkvm_unpack_syscall2(struct kvm_vcpu *, uint64_t *, uint64_t *);
+void elkvm_unpack_syscall3(struct kvm_vcpu *, uint64_t *, uint64_t *,
  uint64_t *);
-void elkvm_syscall4(struct kvm_vcpu *, uint64_t *, uint64_t *,
+void elkvm_unpack_syscall4(struct kvm_vcpu *, uint64_t *, uint64_t *,
  uint64_t *, uint64_t *);
-void elkvm_syscall5(struct kvm_vcpu *, uint64_t *, uint64_t *,
+void elkvm_unpack_syscall5(struct kvm_vcpu *, uint64_t *, uint64_t *,
  uint64_t *, uint64_t *, uint64_t *);
-void elkvm_syscall6(struct kvm_vcpu *, uint64_t *, uint64_t *,
+void elkvm_unpack_syscall6(struct kvm_vcpu *, uint64_t *, uint64_t *,
     uint64_t *, uint64_t *, uint64_t *, uint64_t *);
 
 
