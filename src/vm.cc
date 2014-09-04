@@ -30,6 +30,7 @@ std::shared_ptr<Elkvm::VM>
 elkvm_vm_create(Elkvm::elkvm_opts *opts,
                 const char *binary,
                 unsigned cpus,
+                const Elkvm::hypercall_handlers * const hyp,
                 const Elkvm::elkvm_handlers * const handlers,
                 int mode,
                 bool debug) {
@@ -52,6 +53,7 @@ elkvm_vm_create(Elkvm::elkvm_opts *opts,
         opts->argv,
         opts->environ,
         run_struct_size,
+        hyp,
         handlers,
         debug);
   std::shared_ptr<Elkvm::VM> vmi(&Elkvm::vmi.back());

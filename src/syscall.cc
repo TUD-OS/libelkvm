@@ -293,6 +293,12 @@ int Elkvm::VM::handle_hypercall(std::shared_ptr<struct kvm_vcpu> vcpu) {
   int err = 0;
 
   uint64_t call = Elkvm::get_hypercall_type(vcpu);
+  const Elkvm::hypercall_handlers *hyphandlers = get_hyp_handlers();
+
+  if (hyphandlers->pre_handler) {
+      hyphandlers->pre_handler(this, vcpu, call);
+  }
+
   switch(call) {
     case ELKVM_HYPERCALL_SYSCALL:
       err = handle_syscall(vcpu.get());
@@ -311,6 +317,10 @@ int Elkvm::VM::handle_hypercall(std::shared_ptr<struct kvm_vcpu> vcpu) {
 
   if(err) {
     return err;
+  }
+
+  if (hyphandlers->post_handler) {
+      hyphandlers->post_handler(this, vcpu, call);
   }
 
   elkvm_emulate_vmcall(vcpu.get());
@@ -349,7 +359,7 @@ int Elkvm::VM::handle_interrupt(struct kvm_vcpu *vcpu) {
   }
 
   /* page fault */
-	if(interrupt_vector == 0x0e) {
+  if(interrupt_vector == 0x0e) {
     int err = kvm_vcpu_get_sregs(vcpu);
     if(err) {
       return err;
@@ -372,9 +382,9 @@ int Elkvm::VM::handle_interrupt(struct kvm_vcpu *vcpu) {
     }
 
     return 1;
-	}
+  }
 
-	return 1;
+  return 1;
 }
 
 /* Taken from uClibc/libc/sysdeps/linux/x86_64/bits/syscalls.h
@@ -416,92 +426,92 @@ int Elkvm::VM::handle_interrupt(struct kvm_vcpu *vcpu) {
    Syscalls of more than 6 arguments are not supported.  */
 
 int Elkvm::VM::handle_syscall(struct kvm_vcpu *vcpu) {
-	uint64_t syscall_num = vcpu->regs.rax;
+  uint64_t syscall_num = vcpu->regs.rax;
   if(debug_mode()) {
     fprintf(stderr, " SYSCALL %3lu detected\n", syscall_num);
   }
 
-	long result;
-	if(syscall_num > NUM_SYSCALLS) {
+  long result;
+  if(syscall_num > NUM_SYSCALLS) {
     fprintf(stderr, "\tINVALID syscall_num: %lu\n", syscall_num);
-		result = -ENOSYS;
-	} else {
+    result = -ENOSYS;
+  } else {
     if(debug_mode()) {
       fprintf(stderr, "(%s)\n", elkvm_syscalls[syscall_num].name);
     }
-		result = elkvm_syscalls[syscall_num].func(this);
+    result = elkvm_syscalls[syscall_num].func(this);
     if(syscall_num == __NR_exit_group) {
       return ELKVM_HYPERCALL_EXIT;
     }
-	}
-	/* binary expects syscall result in rax */
-	vcpu->regs.rax = result;
+  }
+  /* binary expects syscall result in rax */
+  vcpu->regs.rax = result;
 
-	return 0;
+  return 0;
 }
 
 void elkvm_unpack_syscall1(std::shared_ptr<struct kvm_vcpu> vcpu, uint64_t *arg) {
-	*arg = vcpu->regs.rdi;
+  *arg = vcpu->regs.rdi;
 }
 
 void elkvm_unpack_syscall2(std::shared_ptr<struct kvm_vcpu> vcpu,
-		uint64_t *arg1, uint64_t *arg2) {
-	*arg1 = vcpu->regs.rdi;
-	*arg2 = vcpu->regs.rsi;
+    uint64_t *arg1, uint64_t *arg2) {
+  *arg1 = vcpu->regs.rdi;
+  *arg2 = vcpu->regs.rsi;
 }
 
 void elkvm_unpack_syscall3(std::shared_ptr<struct kvm_vcpu> vcpu,
-		uint64_t *arg1, uint64_t *arg2, uint64_t *arg3) {
-	*arg1 = vcpu->regs.rdi;
-	*arg2 = vcpu->regs.rsi;
-	*arg3 = vcpu->regs.rdx;
+    uint64_t *arg1, uint64_t *arg2, uint64_t *arg3) {
+  *arg1 = vcpu->regs.rdi;
+  *arg2 = vcpu->regs.rsi;
+  *arg3 = vcpu->regs.rdx;
 }
 
 void elkvm_unpack_syscall4(std::shared_ptr<struct kvm_vcpu> vcpu,
-		uint64_t *arg1, uint64_t *arg2, uint64_t *arg3, uint64_t *arg4) {
-	*arg1 = vcpu->regs.rdi;
-	*arg2 = vcpu->regs.rsi;
-	*arg3 = vcpu->regs.rdx;
+    uint64_t *arg1, uint64_t *arg2, uint64_t *arg3, uint64_t *arg4) {
+  *arg1 = vcpu->regs.rdi;
+  *arg2 = vcpu->regs.rsi;
+  *arg3 = vcpu->regs.rdx;
   *arg4 = vcpu->regs.r10;
 }
 
 void elkvm_unpack_syscall5(std::shared_ptr<struct kvm_vcpu> vcpu,
-		uint64_t *arg1, uint64_t *arg2, uint64_t *arg3, uint64_t *arg4,
+    uint64_t *arg1, uint64_t *arg2, uint64_t *arg3, uint64_t *arg4,
     uint64_t *arg5) {
-	*arg1 = vcpu->regs.rdi;
-	*arg2 = vcpu->regs.rsi;
-	*arg3 = vcpu->regs.rdx;
+  *arg1 = vcpu->regs.rdi;
+  *arg2 = vcpu->regs.rsi;
+  *arg3 = vcpu->regs.rdx;
   *arg4 = vcpu->regs.r10;
   *arg5 = vcpu->regs.r8;
 }
 
 void elkvm_unpack_syscall6(std::shared_ptr<struct kvm_vcpu> vcpu,
-		uint64_t *arg1, uint64_t *arg2, uint64_t *arg3, uint64_t *arg4,
+    uint64_t *arg1, uint64_t *arg2, uint64_t *arg3, uint64_t *arg4,
     uint64_t *arg5, uint64_t *arg6) {
-	*arg1 = vcpu->regs.rdi;
-	*arg2 = vcpu->regs.rsi;
-	*arg3 = vcpu->regs.rdx;
+  *arg1 = vcpu->regs.rdi;
+  *arg2 = vcpu->regs.rsi;
+  *arg3 = vcpu->regs.rdx;
   *arg4 = vcpu->regs.r10;
   *arg5 = vcpu->regs.r8;
   *arg6 = vcpu->regs.r9;
 }
 
 long elkvm_do_read(Elkvm::VM * vmi) {
-	if(vmi->get_handlers()->read == NULL) {
-		printf("READ handler not found\n");
-		return -ENOSYS;
-	}
+  if(vmi->get_handlers()->read == NULL) {
+    printf("READ handler not found\n");
+    return -ENOSYS;
+  }
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-	uint64_t fd;
-	uint64_t buf_p = 0x0;
-	char *buf;
-	uint64_t count;
+  uint64_t fd;
+  uint64_t buf_p = 0x0;
+  char *buf;
+  uint64_t count;
 
-	elkvm_unpack_syscall3(vcpu, &fd, &buf_p, &count);
+  elkvm_unpack_syscall3(vcpu, &fd, &buf_p, &count);
 
   assert(buf_p != 0x0);
-	buf = reinterpret_cast<char *>(vmi->get_region_manager()->get_pager().get_host_p(buf_p));
+  buf = reinterpret_cast<char *>(vmi->get_region_manager()->get_pager().get_host_p(buf_p));
 
   uint64_t bend_p = buf_p + count - 1;
   void *bend = vmi->get_region_manager()->get_pager().get_host_p(bend_p);
@@ -561,7 +571,7 @@ long elkvm_do_read(Elkvm::VM * vmi) {
     printf("=================================\n");
   }
 
-	return result;
+  return result;
 }
 
 long elkvm_do_write(Elkvm::VM * vmi) {
@@ -629,55 +639,55 @@ long elkvm_do_write(Elkvm::VM * vmi) {
 }
 
 long elkvm_do_open(Elkvm::VM * vmi) {
-	if(vmi->get_handlers()->open == NULL) {
-		printf("OPEN handler not found\n");
-		return -ENOSYS;
-	}
+  if(vmi->get_handlers()->open == NULL) {
+    printf("OPEN handler not found\n");
+    return -ENOSYS;
+  }
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-	uint64_t pathname_p = 0x0;
-	char *pathname = NULL;
-	uint64_t flags = 0x0;
-	uint64_t mode = 0x0;
+  uint64_t pathname_p = 0x0;
+  char *pathname = NULL;
+  uint64_t flags = 0x0;
+  uint64_t mode = 0x0;
 
-	elkvm_unpack_syscall3(vcpu, &pathname_p, &flags, &mode);
+  elkvm_unpack_syscall3(vcpu, &pathname_p, &flags, &mode);
 
   assert(pathname_p != 0x0);
-	pathname = reinterpret_cast<char *>(vmi->get_region_manager()->get_pager().get_host_p(pathname_p));
+  pathname = reinterpret_cast<char *>(vmi->get_region_manager()->get_pager().get_host_p(pathname_p));
 
-	long result = vmi->get_handlers()->open(pathname, (int)flags, (mode_t)mode);
+  long result = vmi->get_handlers()->open(pathname, (int)flags, (mode_t)mode);
 
   if(vmi->debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("OPEN file %s with flags %i and mode %x\n", pathname,
-			(int)flags, (mode_t)mode);
+      (int)flags, (mode_t)mode);
     printf("RESULT: %li\n", result);
     printf("=================================\n");
   }
 
-	return result;
+  return result;
 }
 
 long elkvm_do_close(Elkvm::VM * vmi) {
-	if(vmi->get_handlers()->close == NULL) {
-		printf("CLOSE handler not found\n");
-		return -ENOSYS;
-	}
+  if(vmi->get_handlers()->close == NULL) {
+    printf("CLOSE handler not found\n");
+    return -ENOSYS;
+  }
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-	uint64_t fd = 0;
-	elkvm_unpack_syscall1(vcpu, &fd);
+  uint64_t fd = 0;
+  elkvm_unpack_syscall1(vcpu, &fd);
 
   if(vmi->debug_mode()) {
     printf("CLOSE file with fd: %li\n", fd);
   }
-	long result = vmi->get_handlers()->close((int)fd);
+  long result = vmi->get_handlers()->close((int)fd);
 
   if(vmi->debug_mode()) {
     printf("RESULT: %li\n", result);
   }
 
-	return result;
+  return result;
 }
 
 long elkvm_do_stat(Elkvm::VM * vmi) {
@@ -723,7 +733,7 @@ long elkvm_do_fstat(Elkvm::VM * vmi) {
   elkvm_unpack_syscall2(vcpu, &fd, &buf_p);
 
   assert(buf_p != 0x0);
-	buf = reinterpret_cast<struct stat *>(vmi->get_region_manager()->get_pager().get_host_p(buf_p));
+  buf = reinterpret_cast<struct stat *>(vmi->get_region_manager()->get_pager().get_host_p(buf_p));
 
   if(vmi->debug_mode()) {
     printf("FSTAT file with fd %li buf at 0x%lx (%p)\n", fd, buf_p, buf);
@@ -768,7 +778,7 @@ long elkvm_do_lstat(Elkvm::VM * vmi) {
 }
 
 long elkvm_do_poll(Elkvm::VM * vmi __attribute__((unused))) {
-	return -ENOSYS;
+  return -ENOSYS;
 }
 
 long elkvm_do_lseek(Elkvm::VM * vmi) {
@@ -914,7 +924,7 @@ long elkvm_do_mprotect(Elkvm::VM * vmi) {
     printf("=================================\n");
   }
 
-	return err;
+  return err;
 }
 
 long elkvm_do_munmap(Elkvm::VM * vmi) {
@@ -1146,10 +1156,10 @@ long elkvm_do_writev(Elkvm::VM * vmi) {
 }
 
 long elkvm_do_access(Elkvm::VM * vmi) {
-	if(vmi->get_handlers()->access == NULL) {
+  if(vmi->get_handlers()->access == NULL) {
     printf("ACCESS handler not found\n");
-		return -ENOSYS;
-	}
+    return -ENOSYS;
+  }
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
   uint64_t path_p;
@@ -1287,10 +1297,10 @@ long elkvm_do_shmctl(Elkvm::VM * vmi __attribute__((unused))) {
 }
 
 long elkvm_do_dup(Elkvm::VM * vmi) {
-	if(vmi->get_handlers()->dup == NULL) {
+  if(vmi->get_handlers()->dup == NULL) {
     printf("DUP handler not found\n");
-		return -ENOSYS;
-	}
+    return -ENOSYS;
+  }
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
   uint64_t oldfd;
@@ -1472,29 +1482,29 @@ long elkvm_do_kill(Elkvm::VM * vmi __attribute__((unused))) {
 }
 
 long elkvm_do_uname(Elkvm::VM * vmi) {
-	if(vmi->get_handlers()->uname == NULL) {
-		return -ENOSYS;
-	}
+  if(vmi->get_handlers()->uname == NULL) {
+    return -ENOSYS;
+  }
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-	struct utsname *buf = NULL;
-	uint64_t bufp = 0;
-	elkvm_unpack_syscall1(vcpu, &bufp);
+  struct utsname *buf = NULL;
+  uint64_t bufp = 0;
+  elkvm_unpack_syscall1(vcpu, &bufp);
 
   assert(bufp != 0x0);
-	buf = (struct utsname *)vmi->get_region_manager()->get_pager().get_host_p(bufp);
+  buf = (struct utsname *)vmi->get_region_manager()->get_pager().get_host_p(bufp);
   assert(buf != NULL && "host buffer address cannot be NULL in uname");
 
-	long result = vmi->get_handlers()->uname(buf);
+  long result = vmi->get_handlers()->uname(buf);
   if(vmi->debug_mode()) {
     printf("\n============ LIBELKVM ===========\n");
     printf("UNAME buf at: 0x%lx (%p)\n", bufp, buf);
     printf("syname: %s nodename: %s release: %s version: %s machine: %s\n",
-			buf->sysname, buf->nodename, buf->release, buf->version, buf->machine);
+      buf->sysname, buf->nodename, buf->release, buf->version, buf->machine);
     printf("RESULT: %li\n", result);
     printf("=================================\n");
   }
-	return result;
+  return result;
 }
 
 long elkvm_do_semget(Elkvm::VM * vmi __attribute__((unused))) {
@@ -2001,17 +2011,17 @@ long elkvm_do_ptrace(Elkvm::VM * vmi __attribute__((unused))) {
 }
 
 long elkvm_do_getuid(Elkvm::VM * vmi) {
-	if(vmi->get_handlers()->getuid == NULL) {
-		printf("GETUID handler not found\n");
-		return -ENOSYS;
-	}
+  if(vmi->get_handlers()->getuid == NULL) {
+    printf("GETUID handler not found\n");
+    return -ENOSYS;
+  }
 
-	long result = vmi->get_handlers()->getuid();
+  long result = vmi->get_handlers()->getuid();
   if(vmi->debug_mode()) {
     printf("GETUID RESULT: %li\n", result);
   }
 
-	return result;
+  return result;
 }
 
 long elkvm_do_syslog(Elkvm::VM * vmi __attribute__((unused))) {
@@ -2019,17 +2029,17 @@ long elkvm_do_syslog(Elkvm::VM * vmi __attribute__((unused))) {
 }
 
 long elkvm_do_getgid(Elkvm::VM * vmi) {
-	if(vmi->get_handlers()->getgid == NULL) {
-		printf("GETGID handler not found\n");
-		return -ENOSYS;
-	}
+  if(vmi->get_handlers()->getgid == NULL) {
+    printf("GETGID handler not found\n");
+    return -ENOSYS;
+  }
 
-	long result = vmi->get_handlers()->getgid();
+  long result = vmi->get_handlers()->getgid();
   if(vmi->debug_mode()) {
     printf("GETGID RESULT: %li\n", result);
   }
 
-	return result;
+  return result;
 }
 
 long elkvm_do_setuid(Elkvm::VM * vmi __attribute__((unused))) {
@@ -2041,31 +2051,31 @@ long elkvm_do_setgid(Elkvm::VM * vmi __attribute__((unused))) {
 }
 
 long elkvm_do_geteuid(Elkvm::VM * vmi) {
-	if(vmi->get_handlers()->geteuid == NULL) {
-		printf("GETEUID handler not found\n");
-		return -ENOSYS;
-	}
+  if(vmi->get_handlers()->geteuid == NULL) {
+    printf("GETEUID handler not found\n");
+    return -ENOSYS;
+  }
 
-	long result = vmi->get_handlers()->geteuid();
+  long result = vmi->get_handlers()->geteuid();
   if(vmi->debug_mode()) {
     printf("GETEUID RESULT: %li\n", result);
   }
 
-	return result;
+  return result;
 }
 
 long elkvm_do_getegid(Elkvm::VM * vmi) {
-	if(vmi->get_handlers()->getegid == NULL) {
-		printf("GETEGID handler not found\n");
-		return -ENOSYS;
-	}
+  if(vmi->get_handlers()->getegid == NULL) {
+    printf("GETEGID handler not found\n");
+    return -ENOSYS;
+  }
 
-	long result = vmi->get_handlers()->getegid();
+  long result = vmi->get_handlers()->getegid();
   if(vmi->debug_mode()) {
     printf("GETEGID RESULT: %li\n", result);
   }
 
-	return result;
+  return result;
 }
 
 long elkvm_do_setpgid(Elkvm::VM * vmi __attribute__((unused))) {

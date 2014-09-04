@@ -196,7 +196,8 @@ int pass_openat(int dirfd, const char *pathname, int flags) {
   return openat(dirfd, pathname, flags);
 }
 
-Elkvm::elkvm_handlers Elkvm::default_handlers = {
+Elkvm::elkvm_handlers
+Elkvm::default_handlers = {
   .read = pass_read,
   .write = pass_write,
   .open = pass_open,
@@ -256,3 +257,10 @@ Elkvm::elkvm_handlers Elkvm::default_handlers = {
 
   .bp_callback = NULL,
 };
+
+Elkvm::hypercall_handlers
+Elkvm::hypercall_null = {
+	.pre_handler = NULL,
+	.post_handler = NULL,
+};
+

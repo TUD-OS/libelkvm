@@ -37,6 +37,33 @@ namespace Elkvm {
 
 class VM;
 
+/*
+ * Functions to be called upon a hypercall from a VM.
+ *
+ * pre_handler() is called before ELKVM does any processing
+ *               of the event.
+ * post_handler() is called after ELKVM's event processing,
+ *               but BEFORE signals are potentially delivered to the VM.
+ *
+ * ELVKM provides a default implementation (Elkvm::hypercall_null) that
+ * performs no interception at all.
+ */
+struct hypercall_handlers {
+    long (*pre_handler) (Elkvm::VM* vm,
+                         std::shared_ptr<struct kvm_vcpu> vcpu,
+                         int eventtype);
+    long (*post_handler) (Elkvm::VM* vm,
+                          std::shared_ptr<struct kvm_vcpu> vcpu,
+                          int eventtype);
+};
+
+/*
+ * Functions that implement system calls. A monitor can overwrite
+ * one or more of these pointers in order to implement its own version
+ * of a system call. ELKVM provides a default implementation
+ * (Elkvm::default_handlers) that will simply redirect every system call to
+ * the underlying host kernel.
+ */
 struct elkvm_handlers {
   long (*read) (int fd, void *buf, size_t count);
   long (*write) (int fd, void *buf, size_t count);
@@ -111,11 +138,14 @@ struct elkvm_handlers {
 };
 
 /*
- * Defines a default set of system call handlers that simply
- * redirects system calls to the kernel according to the unpacked
- * parameters.
+ * Default set of system call handlers that simply redirects system calls to
+ * the kernel according to the unpacked parameters.
  */
 extern struct elkvm_handlers default_handlers;
+/*
+ * Default set of hypercall handlers that performs no hypercall intercaption.
+ */
+extern struct hypercall_handlers hypercall_null;
 
 struct elkvm_opts;
 
@@ -149,11 +179,13 @@ class VM {
 
     elkvm_signals sigs;
     elkvm_flat sighandler_cleanup;
+    const Elkvm::hypercall_handlers *hypercall_handlers;
     const Elkvm::elkvm_handlers *syscall_handlers;
 
   public:
     VM(int fd, int argc, char **argv, char **environ,
         int run_struct_size,
+        const Elkvm::hypercall_handlers * const hyp_handlers,
         const Elkvm::elkvm_handlers * const handlers,
         int debug);
 
@@ -172,7 +204,10 @@ class VM {
     Elkvm::elkvm_flat &get_cleanup_flat();
 
     const Elkvm::elkvm_handlers * get_handlers() const
-      { return syscall_handlers; }
+    { return syscall_handlers; }
+
+    const Elkvm::hypercall_handlers* get_hyp_handlers() const
+    { return this->hypercall_handlers; }
 
     std::shared_ptr<struct sigaction> get_sig_ptr(unsigned sig) const;
 
@@ -257,6 +292,7 @@ std::shared_ptr<Elkvm::VM>
 elkvm_vm_create(Elkvm::elkvm_opts *,
                 const char *binary,
                 unsigned cpus = 1,
+                const Elkvm::hypercall_handlers * const = &Elkvm::hypercall_null,
                 const Elkvm::elkvm_handlers * const = &Elkvm::default_handlers,
                 int mode = VM_MODE_X86_64,
                 bool debug = false);

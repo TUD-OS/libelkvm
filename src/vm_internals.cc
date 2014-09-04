@@ -17,6 +17,7 @@ namespace Elkvm {
 
   VM::VM(int vmfd, int argc, char ** argv, char **environ,
       int run_struct_size,
+      const Elkvm::hypercall_handlers * const hyp_handlers,
       const Elkvm::elkvm_handlers * const handlers,
       int debug) :
     _debug(debug == 1),
@@ -28,9 +29,9 @@ namespace Elkvm {
     _environ(environ),
     _run_struct_size(run_struct_size)
   {
-    //_vm = std::make_shared<Elkvm::kvm_vm>();
     _vm.fd = vmfd;
-    syscall_handlers = handlers;
+    hypercall_handlers = hyp_handlers;
+    syscall_handlers   = handlers;
   }
 
   int VM::add_cpu(int mode) {
