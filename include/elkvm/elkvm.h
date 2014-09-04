@@ -110,6 +110,12 @@ struct elkvm_handlers {
   int (*bp_callback)(Elkvm::VM *vm);
 };
 
+/*
+ * Defines a default set of system call handlers that simply
+ * redirects system calls to the kernel according to the unpacked
+ * parameters.
+ */
+extern struct elkvm_handlers default_handlers;
 
 struct elkvm_opts;
 
@@ -230,7 +236,7 @@ class VM {
      *        THIS WILL DELETE ALL DATA IN THE OLD CHUNK!
      */
     int chunk_remap(int num, size_t newsize);
-    
+
     struct kvm_userspace_memory_region get_chunk(int chunk)
     { return *get_region_manager()->get_pager().get_chunk(chunk); }
 
