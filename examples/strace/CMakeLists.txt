@@ -1,0 +1,5 @@
+set( strace_SRC main.cc )
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4")
+include_directories("${PROJECT_SOURCE_DIR}/include")
+add_executable( strace ${strace_SRC})
+target_link_libraries( strace elkvm )
