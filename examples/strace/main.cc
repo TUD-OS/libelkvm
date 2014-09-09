@@ -4,6 +4,7 @@
 
 #include <elkvm/elkvm.h>
 #include <elkvm/kvm.h>
+#include <elkvm/syscall.h>
 
 extern char **environment;
 
@@ -12,7 +13,12 @@ strace_pre_handler(Elkvm::VM* vm,
                    std::shared_ptr<struct kvm_vcpu> vcpu,
                    int eventtype)
 {
-  std::cout << "syscall_pre" << std::endl;
+  if (eventtype != ELKVM_HYPERCALL_SYSCALL)
+    return 0;
+
+  std::cout << "[ELKVM] System call start: 0x" << std::hex
+            << vcpu->regs.rax << std::endl;
+
   return 0;
 }
 
@@ -22,7 +28,11 @@ strace_post_handler(Elkvm::VM* vm,
                     std::shared_ptr<struct kvm_vcpu> vcpu,
                     int eventtype)
 {
-  std::cout << "syscall_post" << std::endl;
+  if (eventtype != ELKVM_HYPERCALL_SYSCALL)
+    return 0;
+
+  std::cout << "[ELKVM] System call return: 0x" << std::hex
+            << vcpu->regs.rax << std::endl;
   return 0;
 }
 
