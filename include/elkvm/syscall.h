@@ -9,18 +9,91 @@
 #define ELKVM_HYPERCALL_EXIT      0x42
 #define NUM_SYSCALLS 313
 
+/*
+ * Interface for a platform-specific binary interface.
+ * The ABI specifies where the syscall parameters come from.
+ */
+template <typename SYSCALL_TYPE>
+class ABI
+{
+  public:
+    typedef SYSCALL_TYPE paramtype;
 
-void elkvm_unpack_syscall1(struct kvm_vcpu *, uint64_t *);
-void elkvm_unpack_syscall2(struct kvm_vcpu *, uint64_t *, uint64_t *);
-void elkvm_unpack_syscall3(struct kvm_vcpu *, uint64_t *, uint64_t *,
- uint64_t *);
-void elkvm_unpack_syscall4(struct kvm_vcpu *, uint64_t *, uint64_t *,
- uint64_t *, uint64_t *);
-void elkvm_unpack_syscall5(struct kvm_vcpu *, uint64_t *, uint64_t *,
- uint64_t *, uint64_t *, uint64_t *);
-void elkvm_unpack_syscall6(struct kvm_vcpu *, uint64_t *, uint64_t *,
-    uint64_t *, uint64_t *, uint64_t *, uint64_t *);
+    /*
+     * Get n-th system call parameter from ABI register set.
+     */
+    static paramtype get_parameter(struct kvm_vpu* vcpu, unsigned pos);
+    static paramtype get_parameter(std::shared_ptr<struct kvm_vpu> vcpu, unsigned pos);
 
+    /*
+     * Set the ABI-specific syscall return register to value.
+     */
+    static void set_syscall_return(struct kvm_vcpu *vcpu, paramtype value);
+};
+
+class X86_64_ABI : public ABI <uint64_t>
+{
+  public:
+    static ABI::paramtype
+    get_parameter(std::shared_ptr<struct kvm_vcpu > vcpu, unsigned pos)
+    {
+      // no more than 6 params
+      assert(pos <= 6);
+
+      switch(pos) {
+        case 0:
+          return vcpu->regs.rax;
+        case 1:
+          return vcpu->regs.rdi;
+        case 2:
+          return vcpu->regs.rsi;
+        case 3:
+          return vcpu->regs.rdx;
+        case 4:
+          return vcpu->regs.r10;
+        case 5:
+          return vcpu->regs.r8;
+        case 6:
+          return vcpu->regs.r9;
+      }
+      return ~0ULL;
+    }
+
+    static ABI::paramtype
+    get_parameter(struct kvm_vcpu *vcpu, unsigned pos)
+    {
+      // no more than 6 params
+      assert(pos <= 6);
+
+      switch(pos) {
+        case 0:
+          return vcpu->regs.rax;
+        case 1:
+          return vcpu->regs.rdi;
+        case 2:
+          return vcpu->regs.rsi;
+        case 3:
+          return vcpu->regs.rdx;
+        case 4:
+          return vcpu->regs.r10;
+        case 5:
+          return vcpu->regs.r8;
+        case 6:
+          return vcpu->regs.r9;
+      }
+      return ~0ULL;
+    }
+
+
+    static void
+    set_syscall_return(struct kvm_vcpu *vcpu, paramtype value)
+    {
+        vcpu->regs.rax = value;
+    }
+};
+
+// XXX: this needs to be adjusted for other platforms
+typedef X86_64_ABI CURRENT_ABI;
 
 long elkvm_do_read(Elkvm::VM *);
 long elkvm_do_write(Elkvm::VM *);
