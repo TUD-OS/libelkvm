@@ -21,6 +21,11 @@
 #include "elfloader.h"
 #include "region.h"
 
+// XXX: this needs to be adjusted for other platforms
+typedef X86_64_ABI CURRENT_ABI;
+
+// XXX: this should be the same for all platforms, we
+//      just need to include proper unistd.h
 static struct {
   long (*func)(Elkvm::VM *);
   const char *name;
@@ -425,8 +430,9 @@ int Elkvm::VM::handle_interrupt(struct kvm_vcpu *vcpu) {
 
    Syscalls of more than 6 arguments are not supported.  */
 
-int Elkvm::VM::handle_syscall(struct kvm_vcpu *vcpu) {
-  uint64_t syscall_num = vcpu->regs.rax;
+int Elkvm::VM::handle_syscall(struct kvm_vcpu *vcpu)
+{
+  CURRENT_ABI::paramtype syscall_num = CURRENT_ABI::get_parameter(vcpu, 0);
   if(debug_mode()) {
     fprintf(stderr, " SYSCALL %3lu detected\n", syscall_num);
   }
@@ -445,55 +451,80 @@ int Elkvm::VM::handle_syscall(struct kvm_vcpu *vcpu) {
     }
   }
   /* binary expects syscall result in rax */
-  vcpu->regs.rax = result;
+  CURRENT_ABI::set_syscall_return(vcpu, result);
 
   return 0;
 }
 
-void elkvm_unpack_syscall1(std::shared_ptr<struct kvm_vcpu> vcpu, uint64_t *arg) {
-  *arg = vcpu->regs.rdi;
+static void
+elkvm_unpack_syscall1(std::shared_ptr<struct kvm_vcpu> vcpu,
+                      CURRENT_ABI::paramtype *arg) {
+  *arg = CURRENT_ABI::get_parameter(vcpu, 1);
 }
 
-void elkvm_unpack_syscall2(std::shared_ptr<struct kvm_vcpu> vcpu,
-    uint64_t *arg1, uint64_t *arg2) {
-  *arg1 = vcpu->regs.rdi;
-  *arg2 = vcpu->regs.rsi;
+static void
+elkvm_unpack_syscall2(std::shared_ptr<struct kvm_vcpu> vcpu,
+                      CURRENT_ABI::paramtype *arg1,
+                      CURRENT_ABI::paramtype *arg2)
+{
+  *arg1 = CURRENT_ABI::get_parameter(vcpu, 1);
+  *arg2 = CURRENT_ABI::get_parameter(vcpu, 2);
 }
 
-void elkvm_unpack_syscall3(std::shared_ptr<struct kvm_vcpu> vcpu,
-    uint64_t *arg1, uint64_t *arg2, uint64_t *arg3) {
-  *arg1 = vcpu->regs.rdi;
-  *arg2 = vcpu->regs.rsi;
-  *arg3 = vcpu->regs.rdx;
+static void
+elkvm_unpack_syscall3(std::shared_ptr<struct kvm_vcpu> vcpu,
+                      CURRENT_ABI::paramtype *arg1,
+                      CURRENT_ABI::paramtype *arg2,
+                      CURRENT_ABI::paramtype *arg3)
+{
+  *arg1 = CURRENT_ABI::get_parameter(vcpu, 1);
+  *arg2 = CURRENT_ABI::get_parameter(vcpu, 2);
+  *arg3 = CURRENT_ABI::get_parameter(vcpu, 3);
 }
 
-void elkvm_unpack_syscall4(std::shared_ptr<struct kvm_vcpu> vcpu,
-    uint64_t *arg1, uint64_t *arg2, uint64_t *arg3, uint64_t *arg4) {
-  *arg1 = vcpu->regs.rdi;
-  *arg2 = vcpu->regs.rsi;
-  *arg3 = vcpu->regs.rdx;
-  *arg4 = vcpu->regs.r10;
+static void
+elkvm_unpack_syscall4(std::shared_ptr<struct kvm_vcpu> vcpu,
+                      CURRENT_ABI::paramtype *arg1,
+                      CURRENT_ABI::paramtype *arg2,
+                      CURRENT_ABI::paramtype *arg3,
+                      CURRENT_ABI::paramtype *arg4)
+{
+  *arg1 = CURRENT_ABI::get_parameter(vcpu, 1);
+  *arg2 = CURRENT_ABI::get_parameter(vcpu, 2);
+  *arg3 = CURRENT_ABI::get_parameter(vcpu, 3);
+  *arg4 = CURRENT_ABI::get_parameter(vcpu, 4);
 }
 
-void elkvm_unpack_syscall5(std::shared_ptr<struct kvm_vcpu> vcpu,
-    uint64_t *arg1, uint64_t *arg2, uint64_t *arg3, uint64_t *arg4,
-    uint64_t *arg5) {
-  *arg1 = vcpu->regs.rdi;
-  *arg2 = vcpu->regs.rsi;
-  *arg3 = vcpu->regs.rdx;
-  *arg4 = vcpu->regs.r10;
-  *arg5 = vcpu->regs.r8;
+static void
+elkvm_unpack_syscall5(std::shared_ptr<struct kvm_vcpu> vcpu,
+                      CURRENT_ABI::paramtype *arg1,
+                      CURRENT_ABI::paramtype *arg2,
+                      CURRENT_ABI::paramtype *arg3,
+                      CURRENT_ABI::paramtype *arg4,
+                      CURRENT_ABI::paramtype *arg5)
+{
+  *arg1 = CURRENT_ABI::get_parameter(vcpu, 1);
+  *arg2 = CURRENT_ABI::get_parameter(vcpu, 2);
+  *arg3 = CURRENT_ABI::get_parameter(vcpu, 3);
+  *arg4 = CURRENT_ABI::get_parameter(vcpu, 4);
+  *arg5 = CURRENT_ABI::get_parameter(vcpu, 5);
 }
 
-void elkvm_unpack_syscall6(std::shared_ptr<struct kvm_vcpu> vcpu,
-    uint64_t *arg1, uint64_t *arg2, uint64_t *arg3, uint64_t *arg4,
-    uint64_t *arg5, uint64_t *arg6) {
-  *arg1 = vcpu->regs.rdi;
-  *arg2 = vcpu->regs.rsi;
-  *arg3 = vcpu->regs.rdx;
-  *arg4 = vcpu->regs.r10;
-  *arg5 = vcpu->regs.r8;
-  *arg6 = vcpu->regs.r9;
+static void
+elkvm_unpack_syscall6(std::shared_ptr<struct kvm_vcpu> vcpu,
+                      CURRENT_ABI::paramtype *arg1,
+                      CURRENT_ABI::paramtype *arg2,
+                      CURRENT_ABI::paramtype *arg3,
+                      CURRENT_ABI::paramtype *arg4,
+                      CURRENT_ABI::paramtype *arg5,
+                      CURRENT_ABI::paramtype *arg6)
+{
+  *arg1 = CURRENT_ABI::get_parameter(vcpu, 1);
+  *arg2 = CURRENT_ABI::get_parameter(vcpu, 2);
+  *arg3 = CURRENT_ABI::get_parameter(vcpu, 3);
+  *arg4 = CURRENT_ABI::get_parameter(vcpu, 4);
+  *arg5 = CURRENT_ABI::get_parameter(vcpu, 5);
+  *arg6 = CURRENT_ABI::get_parameter(vcpu, 6);
 }
 
 long elkvm_do_read(Elkvm::VM * vmi) {
@@ -503,10 +534,10 @@ long elkvm_do_read(Elkvm::VM * vmi) {
   }
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t fd;
-  uint64_t buf_p = 0x0;
+  CURRENT_ABI::paramtype fd;
+  CURRENT_ABI::paramtype buf_p = 0x0;
   char *buf;
-  uint64_t count;
+  CURRENT_ABI::paramtype count;
 
   elkvm_unpack_syscall3(vcpu, &fd, &buf_p, &count);
 
@@ -581,10 +612,10 @@ long elkvm_do_write(Elkvm::VM * vmi) {
   }
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t fd = 0x0;
+  CURRENT_ABI::paramtype fd = 0x0;
   guestptr_t buf_p = 0x0;
   void *buf;
-  uint64_t count = 0x0;
+  CURRENT_ABI::paramtype count = 0x0;
 
   elkvm_unpack_syscall3(vcpu, &fd, &buf_p, &count);
 
@@ -645,10 +676,10 @@ long elkvm_do_open(Elkvm::VM * vmi) {
   }
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t pathname_p = 0x0;
+  CURRENT_ABI::paramtype pathname_p = 0x0;
   char *pathname = NULL;
-  uint64_t flags = 0x0;
-  uint64_t mode = 0x0;
+  CURRENT_ABI::paramtype flags = 0x0;
+  CURRENT_ABI::paramtype mode = 0x0;
 
   elkvm_unpack_syscall3(vcpu, &pathname_p, &flags, &mode);
 
@@ -675,7 +706,7 @@ long elkvm_do_close(Elkvm::VM * vmi) {
   }
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t fd = 0;
+  CURRENT_ABI::paramtype fd = 0;
   elkvm_unpack_syscall1(vcpu, &fd);
 
   if(vmi->debug_mode()) {
@@ -697,8 +728,8 @@ long elkvm_do_stat(Elkvm::VM * vmi) {
   }
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t path_p = 0;
-  uint64_t buf_p = 0;
+  CURRENT_ABI::paramtype path_p = 0;
+  CURRENT_ABI::paramtype buf_p = 0;
   char *path = NULL;
   struct stat *buf;
   elkvm_unpack_syscall2(vcpu, &path_p, &buf_p);
@@ -727,8 +758,8 @@ long elkvm_do_fstat(Elkvm::VM * vmi) {
   }
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t fd = 0;
-  uint64_t buf_p = 0;
+  CURRENT_ABI::paramtype fd = 0;
+  CURRENT_ABI::paramtype buf_p = 0;
   struct stat *buf = NULL;
   elkvm_unpack_syscall2(vcpu, &fd, &buf_p);
 
@@ -754,8 +785,8 @@ long elkvm_do_lstat(Elkvm::VM * vmi) {
   }
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t path_p = 0;
-  uint64_t buf_p = 0;
+  CURRENT_ABI::paramtype path_p = 0;
+  CURRENT_ABI::paramtype buf_p = 0;
   char *path = NULL;
   struct stat *buf;
   elkvm_unpack_syscall2(vcpu, &path_p, &buf_p);
@@ -787,9 +818,9 @@ long elkvm_do_lseek(Elkvm::VM * vmi) {
     return -ENOSYS;
   }
 
-  uint64_t fd;
-  uint64_t off;
-  uint64_t whence;
+  CURRENT_ABI::paramtype fd;
+  CURRENT_ABI::paramtype off;
+  CURRENT_ABI::paramtype whence;
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
   elkvm_unpack_syscall3(vcpu, &fd, &off, &whence);
@@ -812,12 +843,12 @@ long elkvm_do_mmap(Elkvm::VM * vmi) {
   /* obtain a region_mapping and fill this with a proposal
    * on how to do the mapping */
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
-  guestptr_t addr = 0x0;
-  uint64_t length = 0x0;
-  uint64_t prot   = 0x0;
-  uint64_t flags  = 0x0;
-  uint64_t fd     = 0;
-  uint64_t off    = 0;
+  guestptr_t addr               = 0x0;
+  CURRENT_ABI::paramtype length = 0x0;
+  CURRENT_ABI::paramtype prot   = 0x0;
+  CURRENT_ABI::paramtype flags  = 0x0;
+  CURRENT_ABI::paramtype fd     = 0;
+  CURRENT_ABI::paramtype off    = 0;
 
   elkvm_unpack_syscall6(vcpu, &addr, &length, &prot, &flags, &fd, &off);
 
@@ -886,8 +917,8 @@ long elkvm_do_mprotect(Elkvm::VM * vmi) {
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
   guestptr_t addr = 0;
-  uint64_t len = 0;
-  uint64_t prot = 0;
+  CURRENT_ABI::paramtype len = 0;
+  CURRENT_ABI::paramtype prot = 0;
   elkvm_unpack_syscall3(vcpu, &addr, &len, &prot);
 
   assert(page_aligned(addr) && "mprotect address must be page aligned");
@@ -932,7 +963,7 @@ long elkvm_do_munmap(Elkvm::VM * vmi) {
 
   guestptr_t addr_p = 0;
   void *addr = NULL;
-  uint64_t length = 0;
+  CURRENT_ABI::paramtype length = 0;
   elkvm_unpack_syscall2(vcpu, &addr_p, &length);
 
   if(addr_p != 0x0) {
@@ -994,9 +1025,9 @@ long elkvm_do_sigaction(Elkvm::VM * vmi) {
   }
 
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
-  uint64_t signum;
-  uint64_t act_p;
-  uint64_t oldact_p;
+  CURRENT_ABI::paramtype signum;
+  CURRENT_ABI::paramtype act_p;
+  CURRENT_ABI::paramtype oldact_p;
 
   elkvm_unpack_syscall3(vcpu, &signum, &act_p, &oldact_p);
 
@@ -1036,9 +1067,9 @@ long elkvm_do_sigprocmask(Elkvm::VM * vmi) {
 
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t how;
-  uint64_t set_p;
-  uint64_t oldset_p;
+  CURRENT_ABI::paramtype how;
+  CURRENT_ABI::paramtype set_p;
+  CURRENT_ABI::paramtype oldset_p;
 
   elkvm_unpack_syscall3(vcpu, &how, &set_p, &oldset_p);
 
@@ -1105,9 +1136,9 @@ long elkvm_do_readv(Elkvm::VM * vmi) {
   }
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t fd = 0;
-  uint64_t iov_p = 0;
-  uint64_t iovcnt = 0;
+  CURRENT_ABI::paramtype fd = 0;
+  CURRENT_ABI::paramtype iov_p = 0;
+  CURRENT_ABI::paramtype iovcnt = 0;
 
   elkvm_unpack_syscall3(vcpu, &fd, &iov_p, &iovcnt);
 
@@ -1135,9 +1166,9 @@ long elkvm_do_writev(Elkvm::VM * vmi) {
   }
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t fd = 0;
-  uint64_t iov_p = 0;
-  uint64_t iovcnt = 0;
+  CURRENT_ABI::paramtype fd = 0;
+  CURRENT_ABI::paramtype iov_p = 0;
+  CURRENT_ABI::paramtype iovcnt = 0;
 
   elkvm_unpack_syscall3(vcpu, &fd, &iov_p, &iovcnt);
 
@@ -1162,8 +1193,8 @@ long elkvm_do_access(Elkvm::VM * vmi) {
   }
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t path_p;
-  uint64_t mode;
+  CURRENT_ABI::paramtype path_p;
+  CURRENT_ABI::paramtype mode;
 
   elkvm_unpack_syscall2(vcpu, &path_p, &mode);
 
@@ -1197,7 +1228,7 @@ long elkvm_do_pipe(Elkvm::VM * vmi) {
 
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t pipefd_p = 0x0;
+  CURRENT_ABI::paramtype pipefd_p = 0x0;
   int *pipefd = NULL;
 
   elkvm_unpack_syscall1(vcpu, &pipefd_p);
@@ -1233,9 +1264,9 @@ long elkvm_do_mremap(Elkvm::VM *vmi __attribute__((unused))) {
 
   guestptr_t old_address_p = 0x0;
   void *old_address = NULL;
-  uint64_t old_size = 0;
-  uint64_t new_size = 0;
-  uint64_t flags = 0;
+  CURRENT_ABI::paramtype old_size = 0;
+  CURRENT_ABI::paramtype new_size = 0;
+  CURRENT_ABI::paramtype flags = 0;
   guestptr_t new_address_p = 0x0;
   void *new_address = NULL;
 
@@ -1303,7 +1334,7 @@ long elkvm_do_dup(Elkvm::VM * vmi) {
   }
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t oldfd;
+  CURRENT_ABI::paramtype oldfd;
 
   elkvm_unpack_syscall1(vcpu, &oldfd);
 
@@ -1336,8 +1367,8 @@ long elkvm_do_nanosleep(Elkvm::VM * vmi) {
 
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t req_p;
-  uint64_t rem_p;
+  CURRENT_ABI::paramtype req_p;
+  CURRENT_ABI::paramtype rem_p;
   elkvm_unpack_syscall2(vcpu, &req_p, &rem_p);
 
   struct timespec *req = NULL;
@@ -1488,7 +1519,7 @@ long elkvm_do_uname(Elkvm::VM * vmi) {
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
   struct utsname *buf = NULL;
-  uint64_t bufp = 0;
+  CURRENT_ABI::paramtype bufp = 0;
   elkvm_unpack_syscall1(vcpu, &bufp);
 
   assert(bufp != 0x0);
@@ -1547,13 +1578,13 @@ long elkvm_do_fcntl(Elkvm::VM * vmi) {
 
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t fd = 0;
-  uint64_t cmd = 0;
+  CURRENT_ABI::paramtype fd = 0;
+  CURRENT_ABI::paramtype cmd = 0;
   /*
    * depending on the value of cmd arg is either an int or a pointer
    * to a struct flock or a pointer to a struct f_owner_ex
    */
-  uint64_t arg_p = 0;
+  CURRENT_ABI::paramtype arg_p = 0;
 
   elkvm_unpack_syscall3(vcpu, &fd, &cmd, &arg_p);
 
@@ -1608,8 +1639,8 @@ long elkvm_do_truncate(Elkvm::VM * vmi) {
 
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t path_p = 0;
-  uint64_t length;
+  CURRENT_ABI::paramtype path_p = 0;
+  CURRENT_ABI::paramtype length;
   char *path = NULL;
 
   elkvm_unpack_syscall2(vcpu, &path_p, &length);
@@ -1637,8 +1668,8 @@ long elkvm_do_ftruncate(Elkvm::VM * vmi) {
 
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t fd = 0;
-  uint64_t length;
+  CURRENT_ABI::paramtype fd = 0;
+  CURRENT_ABI::paramtype length;
 
   elkvm_unpack_syscall2(vcpu, &fd, &length);
 
@@ -1664,9 +1695,9 @@ long elkvm_do_getdents(Elkvm::VM * vmi __attribute__((unused))) {
 
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t fd = 0;
+  CURRENT_ABI::paramtype fd = 0;
   guestptr_t dirp_p = 0x0;
-  uint64_t count = 0;
+  CURRENT_ABI::paramtype count = 0;
 
   elkvm_unpack_syscall3(vcpu, &fd, &dirp_p, &count);
 
@@ -1701,8 +1732,8 @@ long elkvm_do_getcwd(Elkvm::VM * vmi) {
 
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t buf_p = 0;
-  uint64_t size = 0;
+  CURRENT_ABI::paramtype buf_p = 0;
+  CURRENT_ABI::paramtype size = 0;
   char *buf = NULL;
 
   elkvm_unpack_syscall2(vcpu, &buf_p, &size);
@@ -1747,8 +1778,8 @@ long elkvm_do_mkdir(Elkvm::VM * vmi) {
 
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t pathname_p = 0;
-  uint64_t mode = 0;
+  CURRENT_ABI::paramtype pathname_p = 0;
+  CURRENT_ABI::paramtype mode = 0;
   char *pathname = NULL;
 
   elkvm_unpack_syscall2(vcpu, &pathname_p, &mode);
@@ -1789,7 +1820,7 @@ long elkvm_do_unlink(Elkvm::VM * vmi) {
   }
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t pathname_p = 0;
+  CURRENT_ABI::paramtype pathname_p = 0;
   char *pathname = NULL;
 
   elkvm_unpack_syscall1(vcpu, &pathname_p);
@@ -1822,9 +1853,9 @@ long elkvm_do_readlink(Elkvm::VM * vmi) {
 
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t path_p = 0;
-  uint64_t buf_p = 0;
-  uint64_t bufsiz = 0;
+  CURRENT_ABI::paramtype path_p = 0;
+  CURRENT_ABI::paramtype buf_p = 0;
+  CURRENT_ABI::paramtype bufsiz = 0;
   char *path = NULL;
   char *buf = NULL;
 
@@ -1875,8 +1906,8 @@ long elkvm_do_gettimeofday(Elkvm::VM * vmi) {
     return -ENOSYS;
   }
 
-  uint64_t tv_p = 0;
-  uint64_t tz_p = 0;
+  CURRENT_ABI::paramtype tv_p = 0;
+  CURRENT_ABI::paramtype tz_p = 0;
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
   elkvm_unpack_syscall2(vcpu, &tv_p, &tz_p);
 
@@ -1916,8 +1947,8 @@ long elkvm_do_gettimeofday(Elkvm::VM * vmi) {
 long elkvm_do_getrlimit(Elkvm::VM *) {
   /* XXX implement again! */
   return -ENOSYS;
-//  uint64_t resource = 0x0;
-//  uint64_t rlim_p = 0x0;
+//  CURRENT_ABI::paramtype resource = 0x0;
+//  CURRENT_ABI::paramtype rlim_p = 0x0;
 //  struct rlimit *rlim = NULL;
 //
 //  std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
@@ -1945,8 +1976,8 @@ long elkvm_do_getrusage(Elkvm::VM * vmi) {
 
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t who = 0;
-  uint64_t usage_p = 0x0;
+  CURRENT_ABI::paramtype who = 0;
+  CURRENT_ABI::paramtype usage_p = 0x0;
   struct rusage *usage = NULL;
 
   elkvm_unpack_syscall2(vcpu, &who, &usage_p);
@@ -1977,7 +2008,7 @@ long elkvm_do_times(Elkvm::VM * vmi) {
   }
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t buf_p = 0x0;
+  CURRENT_ABI::paramtype buf_p = 0x0;
   struct tms *buf = NULL;
 
   elkvm_unpack_syscall1(vcpu, &buf_p);
@@ -2308,8 +2339,8 @@ long elkvm_do_prctl(Elkvm::VM * vmi __attribute__((unused))) {
 }
 
 long elkvm_do_arch_prctl(Elkvm::VM * vmi) {
-  uint64_t code = 0;
-  uint64_t user_addr = 0;
+  CURRENT_ABI::paramtype code = 0;
+  CURRENT_ABI::paramtype user_addr = 0;
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
   int err = kvm_vcpu_get_sregs(vcpu.get());
@@ -2320,7 +2351,7 @@ long elkvm_do_arch_prctl(Elkvm::VM * vmi) {
   elkvm_unpack_syscall2(vcpu, &code, &user_addr);
   assert(user_addr != 0x0);
 
-  uint64_t *host_addr = reinterpret_cast<uint64_t *>(
+  CURRENT_ABI::paramtype *host_addr = reinterpret_cast<CURRENT_ABI::paramtype *>(
       vmi->get_region_manager()->get_pager().get_host_p(user_addr));
   assert(host_addr != nullptr && "could not get host address in arch_prctl");
 
@@ -2538,7 +2569,7 @@ long elkvm_do_time(Elkvm::VM * vmi) {
     return -ENOSYS;
   }
 
-  uint64_t time_p = 0;
+  CURRENT_ABI::paramtype time_p = 0;
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
   elkvm_unpack_syscall1(vcpu, &time_p);
 
@@ -2564,12 +2595,12 @@ long elkvm_do_futex(Elkvm::VM * vmi) {
     return -ENOSYS;
   }
 
-  uint64_t uaddr_p = 0x0;
-  uint64_t op = 0;
-  uint64_t val = 0;
-  uint64_t timeout_p = 0x0;
-  uint64_t uaddr2_p = 0x0;
-  uint64_t val3 = 0;
+  CURRENT_ABI::paramtype uaddr_p   = 0x0;
+  CURRENT_ABI::paramtype op        = 0;
+  CURRENT_ABI::paramtype val       = 0;
+  CURRENT_ABI::paramtype timeout_p = 0x0;
+  CURRENT_ABI::paramtype uaddr2_p  = 0x0;
+  CURRENT_ABI::paramtype val3      = 0;
   int *uaddr = NULL;
   const struct timespec *timeout = NULL;
   int *uaddr2 = NULL;
@@ -2713,8 +2744,8 @@ long elkvm_do_clock_gettime(Elkvm::VM * vmi) {
     return -ENOSYS;
   }
 
-  uint64_t clk_id = 0x0;
-  uint64_t tp_p = 0x0;
+  CURRENT_ABI::paramtype clk_id = 0x0;
+  CURRENT_ABI::paramtype tp_p = 0x0;
   struct timespec *tp = NULL;
 
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
@@ -2746,7 +2777,7 @@ long elkvm_do_clock_nanosleep(Elkvm::VM * vmi __attribute__((unused))) {
 }
 
 long elkvm_do_exit_group(Elkvm::VM * vmi) {
-  uint64_t status = 0;
+  CURRENT_ABI::paramtype status = 0;
   elkvm_unpack_syscall1(vmi->get_vcpu(0), &status);
 
   vmi->get_handlers()->exit_group(status);
@@ -2770,9 +2801,9 @@ long elkvm_do_tgkill(Elkvm::VM * vmi) {
 
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t tgid = 0x0;
-  uint64_t tid = 0x0;
-  uint64_t sig = 0x0;
+  CURRENT_ABI::paramtype tgid = 0x0;
+  CURRENT_ABI::paramtype tid = 0x0;
+  CURRENT_ABI::paramtype sig = 0x0;
 
   elkvm_unpack_syscall3(vcpu, &tgid, &tid, &sig);
 
@@ -2883,9 +2914,9 @@ long elkvm_do_openat(Elkvm::VM * vmi __attribute__((unused))) {
 
   std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
-  uint64_t dirfd = 0;
+  CURRENT_ABI::paramtype dirfd = 0;
   guestptr_t pathname_p = 0x0;
-  uint64_t flags = 0;
+  CURRENT_ABI::paramtype flags = 0;
 
   elkvm_unpack_syscall3(vcpu, &dirfd, &pathname_p, &flags);
 
