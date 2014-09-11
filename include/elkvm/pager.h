@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <types.h>
+#include <elkvm/types.h>
 
 #define ELKVM_PAGER_MEMSIZE 16*1024*1024
 #define ELKVM_SYSTEM_MEMSIZE 16*1024*1024

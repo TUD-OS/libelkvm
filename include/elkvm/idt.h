@@ -2,9 +2,9 @@
 
 #include <memory>
 
-#include <elkvm.h>
-#include <region.h>
-#include <types.h>
+#include <elkvm/elkvm.h>
+#include <elkvm/region.h>
+#include <elkvm/types.h>
 
 int elkvm_idt_setup(Elkvm::RegionManager &rm, std::shared_ptr<struct kvm_vcpu> vcpu,
     Elkvm::elkvm_flat *);

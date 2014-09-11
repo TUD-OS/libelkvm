@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vcpu.h"
+#include <elkvm/vcpu.h>
 #include <asm/unistd_64.h>
 
 #define ELKVM_HYPERCALL_SYSCALL   1

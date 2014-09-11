@@ -5,7 +5,7 @@
 
 #include <sys/mman.h>
 
-#include <types.h>
+#include <elkvm/types.h>
 
 namespace Elkvm {
   class Region;

@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include <region.h>
+#include <elkvm/region.h>
 
 int elkvm_tss_setup64(std::shared_ptr<struct kvm_vcpu> vcpu,
     Elkvm::RegionManager &rm, std::shared_ptr<Elkvm::Region> r);

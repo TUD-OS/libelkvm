@@ -4,8 +4,8 @@
 #include <memory>
 #include <vector>
 
-#include <pager.h>
-#include <region.h>
+#include <elkvm/pager.h>
+#include <elkvm/region.h>
 
 namespace Elkvm {
   class RegionManager {

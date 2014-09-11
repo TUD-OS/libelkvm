@@ -3,9 +3,7 @@
 #include <memory>
 #include <vector>
 
-#include <environ.h>
-//#include <region.h>
-//#include <region_manager.h>
+#include <elkvm/environ.h>
 
 /* 64bit Linux puts the Stack at 47bits */
 #define LINUX_64_STACK_BASE 0x800000000000

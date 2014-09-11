@@ -3,11 +3,11 @@
 #if 1
 #include <vector>
 
-#include <elfloader.h>
-#include <heap.h>
-#include <region.h>
-#include <region_manager.h>
-#include <stack.h>
+#include <elkvm/elfloader.h>
+#include <elkvm/heap.h>
+#include <elkvm/region.h>
+#include <elkvm/region_manager.h>
+#include <elkvm/stack.h>
 
 namespace Elkvm {
 

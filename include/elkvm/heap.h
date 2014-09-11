@@ -6,10 +6,10 @@
 #include <memory>
 #include <vector>
 
-#include <elkvm.h>
-#include <region.h>
-#include <region_manager.h>
-#include <mapping.h>
+#include <elkvm/elkvm.h>
+#include <elkvm/region.h>
+#include <elkvm/region_manager.h>
+#include <elkvm/mapping.h>
 
 namespace Elkvm {
   class HeapManager {

@@ -8,7 +8,7 @@
 #include <udis86.h>
 #endif
 
-#include <stack.h>
+#include <elkvm/stack.h>
 
 struct kvm_vcpu {
   int fd;
