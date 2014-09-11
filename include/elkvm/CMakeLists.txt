@@ -1,6 +1,7 @@
 SET( libelkvm_MOC_HEADERS
     config.h
     debug.h
+    elfloader.h
     elkvm.h
     elkvm-internal.h
     environ.h

@@ -4,7 +4,7 @@
 
 #include <gelf.h>
 
-//#include "elfloader.h"
+#include <elkvm/elfloader.h>
 #include <elkvm/region.h>
 
 namespace Elkvm {
