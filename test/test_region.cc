@@ -1,7 +1,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "../src/region.h"
+#include <elkvm/region.h>
 
 namespace testing {
   class MockRegionManager {
