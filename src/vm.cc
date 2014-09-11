@@ -12,16 +12,16 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <elkvm.h>
-#include <elkvm-internal.h>
-#include <debug.h>
-#include <environ.h>
-#include <elfloader.h>
-#include <gdt.h>
-#include <idt.h>
-#include <kvm.h>
-#include <pager.h>
-#include <vcpu.h>
+#include <elkvm/elkvm.h>
+#include <elkvm/elkvm-internal.h>
+#include <elkvm/debug.h>
+#include <elkvm/environ.h>
+#include "elfloader.h"
+#include <elkvm/gdt.h>
+#include <elkvm/idt.h>
+#include <elkvm/kvm.h>
+#include <elkvm/pager.h>
+#include <elkvm/vcpu.h>
 namespace Elkvm {
   std::vector<VM> vmi;
 }

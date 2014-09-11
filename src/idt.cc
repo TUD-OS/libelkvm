@@ -7,13 +7,13 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
-#include <elkvm.h>
-#include <elkvm-internal.h>
-#include <kvm.h>
-#include <idt.h>
-#include <pager.h>
-#include <region.h>
-#include <vcpu.h>
+#include <elkvm/elkvm.h>
+#include <elkvm/elkvm-internal.h>
+#include <elkvm/kvm.h>
+#include <elkvm/idt.h>
+#include <elkvm/pager.h>
+#include <elkvm/region.h>
+#include <elkvm/vcpu.h>
 
 int elkvm_idt_setup(Elkvm::RegionManager &rm, 
     std::shared_ptr<kvm_vcpu> vcpu,

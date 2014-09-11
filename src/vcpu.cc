@@ -8,15 +8,15 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-#include "debug.h"
-#include <elkvm.h>
-#include <elkvm-internal.h>
-#include <gdt.h>
-#include <idt.h>
-#include <region.h>
-#include <stack.h>
-#include <syscall.h>
-#include <vcpu.h>
+#include <elkvm/debug.h>
+#include <elkvm/elkvm.h>
+#include <elkvm/elkvm-internal.h>
+#include <elkvm/gdt.h>
+#include <elkvm/idt.h>
+#include <elkvm/region.h>
+#include <elkvm/stack.h>
+#include <elkvm/syscall.h>
+#include <elkvm/vcpu.h>
 
 int kvm_vcpu_initialize_regs(struct kvm_vcpu *vcpu, int mode) {
   switch(mode) {

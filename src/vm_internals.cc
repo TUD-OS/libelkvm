@@ -7,10 +7,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <elkvm.h>
-#include <elkvm-internal.h>
-#include <pager.h>
-#include <vcpu.h>
+#include <elkvm/elkvm.h>
+#include <elkvm/elkvm-internal.h>
+#include <elkvm/pager.h>
+#include <elkvm/vcpu.h>
 
 namespace Elkvm {
   extern std::vector<VM> vmi;

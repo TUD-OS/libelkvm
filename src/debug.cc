@@ -3,9 +3,9 @@
 #include <stdio.h>
 #include <sys/ioctl.h>
 
-#include <elkvm.h>
-#include <elkvm-internal.h>
-#include <debug.h>
+#include <elkvm/elkvm.h>
+#include <elkvm/elkvm-internal.h>
+#include <elkvm/debug.h>
 
 void Elkvm::VM::dump_memory(guestptr_t addr) {
   assert(addr != 0x0 && "cannot dump address NULL");

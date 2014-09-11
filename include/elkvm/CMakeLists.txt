@@ -1,26 +1,24 @@
 SET( libelkvm_MOC_HEADERS
-  config.h
-  elkvm.h
-  gdt.h
-  heap.h
-  idt.h
-  kvm.h
-  mapping.h
-  mem_chunk.h
-  pager.h
-  region_manager.h
-  stack.h
-  types.h
-  syscall.h
-  tss.h
-  vcpu.h
-  )
+    config.h
+    debug.h
+    elkvm.h
+    elkvm-internal.h
+    environ.h
+    gdt.h
+    heap.h
+    idt.h
+    kvm.h
+    mapping.h
+    pager.h
+    region.h
+    region_manager.h
+    stack.h
+    syscall.h
+    tss.h
+    types.h
+    vcpu.h
+)
 
-install (FILES elkvm.h
-  config.h
-  kvm.h
-  pager.h
-  stack.h
-  types.h
-  vcpu.h
+install (FILES 
+  ${libelkvm_MOC_HEADERS}
   DESTINATION include/elkvm)

@@ -11,15 +11,15 @@
 #include <sys/vfs.h>
 #include <unistd.h>
 
-#include <elkvm.h>
-#include <elkvm-internal.h>
-#include <heap.h>
-#include <mapping.h>
-#include <syscall.h>
-#include <vcpu.h>
+#include <elkvm/elkvm.h>
+#include <elkvm/elkvm-internal.h>
+#include <elkvm/heap.h>
+#include <elkvm/mapping.h>
+#include <elkvm/syscall.h>
+#include <elkvm/vcpu.h>
+#include <elkvm/region.h>
 
 #include "elfloader.h"
-#include "region.h"
 
 // XXX: this should be the same for all platforms, we
 //      just need to include proper unistd.h

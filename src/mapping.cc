@@ -1,10 +1,10 @@
 #include <cstring>
 #include <vector>
 
-#include <elkvm.h>
-#include <elkvm-internal.h>
-#include <mapping.h>
-#include <region.h>
+#include <elkvm/elkvm.h>
+#include <elkvm/elkvm-internal.h>
+#include <elkvm/mapping.h>
+#include <elkvm/region.h>
 
 namespace Elkvm {
   Mapping::Mapping(std::shared_ptr<Region> r,

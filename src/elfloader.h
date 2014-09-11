@@ -3,9 +3,9 @@
 #include <gelf.h>
 #include <libelf.h>
 
-#include <elkvm.h>
-#include <heap.h>
-#include <region.h>
+#include <elkvm/elkvm.h>
+#include <elkvm/heap.h>
+#include <elkvm/region.h>
 
 #include <memory>
 

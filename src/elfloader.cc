@@ -11,15 +11,15 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <elfloader.h>
-#include <elkvm.h>
-#include <elkvm-internal.h>
-#include <kvm.h>
-#include <heap.h>
-#include <pager.h>
-#include <region.h>
-#include <region_manager.h>
-#include <vcpu.h>
+#include "elfloader.h"
+#include <elkvm/elkvm.h>
+#include <elkvm/elkvm-internal.h>
+#include <elkvm/kvm.h>
+#include <elkvm/heap.h>
+#include <elkvm/pager.h>
+#include <elkvm/region.h>
+#include <elkvm/region_manager.h>
+#include <elkvm/vcpu.h>
 
 namespace Elkvm {
   ElfBinary::ElfBinary(std::string pathname, std::shared_ptr<RegionManager> rm,

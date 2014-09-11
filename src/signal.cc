@@ -5,10 +5,10 @@
 #include <assert.h>
 #include <signal.h>
 
-#include <elkvm.h>
-#include <elkvm-internal.h>
-#include <stack.h>
-#include <vcpu.h>
+#include <elkvm/elkvm.h>
+#include <elkvm/elkvm-internal.h>
+#include <elkvm/stack.h>
+#include <elkvm/vcpu.h>
 
 static int pending_signals[32];
 static int num_pending_signals = 0;

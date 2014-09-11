@@ -4,9 +4,9 @@
 #include <inttypes.h>
 #include <stdio.h>
 
-#include <elkvm.h>
-#include <elkvm-internal.h>
-#include <region.h>
+#include <elkvm/elkvm.h>
+#include <elkvm/elkvm-internal.h>
+#include <elkvm/region.h>
 
 namespace Elkvm {
 

@@ -3,10 +3,10 @@
 #include <memory>
 #include <iostream>
 
-#include <elkvm-internal.h>
-#include <heap.h>
-#include <region.h>
-#include <region_manager.h>
+#include <elkvm/elkvm-internal.h>
+#include <elkvm/heap.h>
+#include <elkvm/region.h>
+#include <elkvm/region_manager.h>
 
 namespace Elkvm {
   RegionManager::RegionManager(int vmfd) : pager(vmfd) {

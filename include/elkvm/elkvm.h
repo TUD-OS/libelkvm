@@ -16,9 +16,9 @@
 #include <vector>
 #include <memory>
 
-#include <types.h>
-#include <heap.h>
-#include <region_manager.h>
+#include <elkvm/types.h>
+#include <elkvm/heap.h>
+#include <elkvm/region_manager.h>
 
 
 struct kvm_vcpu;

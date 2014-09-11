@@ -2,14 +2,14 @@
 
 #include <gelf.h>
 
-#include <elfloader.h>
-#include <elkvm-internal.h>
-#include <environ.h>
-#include <vcpu.h>
-#include <kvm.h>
-#include <region.h>
-#include <region_manager.h>
-#include <stack.h>
+#include "elfloader.h"
+#include <elkvm/elkvm-internal.h>
+#include <elkvm/environ.h>
+#include <elkvm/vcpu.h>
+#include <elkvm/kvm.h>
+#include <elkvm/region.h>
+#include <elkvm/region_manager.h>
+#include <elkvm/stack.h>
 
 namespace Elkvm {
   Environment::Environment(const ElfBinary &bin, std::shared_ptr<RegionManager> rm) :

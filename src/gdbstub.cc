@@ -34,11 +34,11 @@
 #include <signal.h>
 #include <netdb.h>
 
-#include <elkvm.h>
-#include <elkvm-internal.h>
-#include <debug.h>
-#include <pager.h>
-#include <region_manager.h>
+#include <elkvm/elkvm.h>
+#include <elkvm/elkvm-internal.h>
+#include <elkvm/debug.h>
+#include <elkvm/pager.h>
+#include <elkvm/region_manager.h>
 
 #define NEED_CPU_REG_SHORTCUTS 1
 

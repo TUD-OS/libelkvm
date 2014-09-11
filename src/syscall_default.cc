@@ -12,8 +12,8 @@
 #include <sys/vfs.h>
 #include <time.h>
 
-#include <elkvm.h>
-#include <syscall.h>
+#include <elkvm/elkvm.h>
+#include <elkvm/syscall.h>
 
 long pass_read(int fd, void *buf, size_t count) {
   return read(fd, buf, count);

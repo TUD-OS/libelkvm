@@ -1,13 +1,13 @@
 #include <assert.h>
 #include <errno.h>
 
-#include <debug.h>
-#include <elkvm.h>
-#include <elkvm-internal.h>
-#include <environ.h>
-#include <pager.h>
-#include <stack.h>
-#include <vcpu.h>
+#include <elkvm/debug.h>
+#include <elkvm/elkvm.h>
+#include <elkvm/elkvm-internal.h>
+#include <elkvm/environ.h>
+#include <elkvm/pager.h>
+#include <elkvm/stack.h>
+#include <elkvm/vcpu.h>
 
 namespace Elkvm {
   Stack::Stack(std::shared_ptr<RegionManager> rm) : _rm(rm) {
