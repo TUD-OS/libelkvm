@@ -3,9 +3,12 @@ cmake_minimum_required(VERSION 2.8)
 option(libelkvm_build_tests "Build all of libelkvm's unit tests." OFF)
 option(libelkvm_generate_coverage "Generate coverage information for libelkvm's unit tests" OFF)
 
+find_package(Boost 1.54.0 REQUIRED
+             COMPONENTS log)
+
 include_directories ("${PROJECT_SOURCE_DIR}/include/elkvm" "${PROJECT_SOURCE_DIR}/src" )
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11 -DBOOST_LOG_DYN_LINK")
 add_definitions(-Wall -Wextra)
 add_definitions(-D_PREFIX_="${CMAKE_INSTALL_PREFIX}")
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)

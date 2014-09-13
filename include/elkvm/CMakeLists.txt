@@ -4,6 +4,7 @@ SET( libelkvm_MOC_HEADERS
     elfloader.h
     elkvm.h
     elkvm-internal.h
+    elkvm-log.h
     environ.h
     gdt.h
     heap.h
