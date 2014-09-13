@@ -3,7 +3,6 @@
 #include <memory>
 #include <iostream>
 
-#include <elkvm/elkvm-internal.h>
 #include <elkvm/heap.h>
 #include <elkvm/region.h>
 #include <elkvm/region_manager.h>

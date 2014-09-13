@@ -6,7 +6,6 @@
 #include <memory>
 #include <vector>
 
-#include <elkvm/elkvm.h>
 #include <elkvm/region.h>
 #include <elkvm/region_manager.h>
 #include <elkvm/mapping.h>

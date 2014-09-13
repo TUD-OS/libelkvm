@@ -3,7 +3,6 @@
 #if 1
 #include <vector>
 
-#include <elkvm/elfloader.h>
 #include <elkvm/heap.h>
 #include <elkvm/region.h>
 #include <elkvm/region_manager.h>
