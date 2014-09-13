@@ -431,7 +431,7 @@ int Elkvm::VM::handle_syscall(struct kvm_vcpu *vcpu)
 {
   CURRENT_ABI::paramtype syscall_num = CURRENT_ABI::get_parameter(vcpu, 0);
   if(debug_mode()) {
-    fprintf(stderr, " SYSCALL %3lu detected\n", syscall_num);
+    fprintf(stderr, " SYSCALL %3lu detected ", syscall_num);
   }
 
   long result;
