@@ -246,7 +246,7 @@ namespace Elkvm {
      * Padding in the end may contain file information
      */
 
-  if(!page_aligned((uint64_t)region->base_address())) {
+  if(!page_aligned<guestptr_t>((uint64_t)region->base_address())) {
     return -EIO;
   }
 

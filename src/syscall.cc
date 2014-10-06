@@ -613,7 +613,7 @@ long elkvm_do_mprotect(Elkvm::VMInternals &vmi) {
   uint64_t prot = 0;
   elkvm_syscall3(vcpu, &addr, &len, &prot);
 
-  assert(page_aligned(addr) && "mprotect address must be page aligned");
+  assert(page_aligned<guestptr_t>(addr) && "mprotect address must be page aligned");
   if(!vmi.get_heap_manager().address_mapped(addr)) {
     vmi.get_heap_manager().dump_mappings();
     vmi.get_region_manager()->dump_regions();

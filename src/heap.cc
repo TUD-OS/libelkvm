@@ -24,7 +24,7 @@ namespace Elkvm {
     free_unused_mappings(newbrk);
 
     guestptr_t slice_base = newbrk;
-    if(!page_aligned(newbrk)) {
+    if(!page_aligned<guestptr_t>(newbrk)) {
       slice_base = next_page(slice_base);
     }
 
