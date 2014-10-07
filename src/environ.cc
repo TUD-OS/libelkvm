@@ -10,6 +10,10 @@
 #include <elkvm/region.h>
 #include <elkvm/region_manager.h>
 #include <elkvm/stack.h>
+#include <elkvm/elkvm-log.h>
+
+// the global logger object (see elkvm-log.h)
+ElkvmLog globalElkvmLogger;
 
 namespace Elkvm {
   Environment::Environment(const ElfBinary &bin, std::shared_ptr<RegionManager> rm) :
