@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <list>
 
 #include <errno.h>
 #include <fcntl.h>
@@ -14,6 +15,7 @@
 
 #include <elkvm/elkvm.h>
 #include <elkvm/elkvm-internal.h>
+#include <elkvm/elkvm-log.h>
 #include <elkvm/debug.h>
 #include <elkvm/environ.h>
 #include "elfloader.h"
@@ -23,7 +25,7 @@
 #include <elkvm/pager.h>
 #include <elkvm/vcpu.h>
 namespace Elkvm {
-  std::vector<VM> vmi;
+  std::list<VM> vmi;
 }
 
 std::shared_ptr<Elkvm::VM>
@@ -59,7 +61,7 @@ elkvm_vm_create(Elkvm::elkvm_opts *opts,
   std::shared_ptr<Elkvm::VM> vmi(&Elkvm::vmi.back());
 
   for(unsigned i = 0; i < cpus; i++) {
-  err = vmi->add_cpu(mode);
+    err = vmi->add_cpu(mode);
     if(err) {
     errno = -err;
       return NULL;
