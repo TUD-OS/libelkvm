@@ -53,6 +53,11 @@ long allow_sigaction(int signum __attribute__((unused)),
   return 1;
 }
 
+long pass_sigprocmask(int how, const sigset_t *set, sigset_t *old)
+{
+	return sigprocmask(how, set, old);
+}
+
 long pass_munmap(struct region_mapping *mapping) {
   return munmap(mapping->host_p, mapping->length);
 }
@@ -75,6 +80,11 @@ long pass_pipe(int pipefds[2]) {
 
 long pass_dup(int oldfd) {
   return dup(oldfd);
+}
+
+long pass_nanosleep(const struct timespec* req, struct timespec* rem)
+{
+  return nanosleep(req, rem);
 }
 
 long pass_getpid() {
@@ -213,7 +223,7 @@ Elkvm::default_handlers = {
   .munmap = pass_munmap,
   /* ... */
   .sigaction = allow_sigaction,
-  .sigprocmask = NULL,
+  .sigprocmask = pass_sigprocmask,
   /* ... */
   .readv = pass_readv,
   .writev = pass_writev,
@@ -221,7 +231,7 @@ Elkvm::default_handlers = {
   .pipe = pass_pipe,
   .dup = pass_dup,
   /* ... */
-  .nanosleep = NULL,
+  .nanosleep = pass_nanosleep,
   /* ... */
   .getpid = pass_getpid,
   /* ... */
