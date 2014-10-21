@@ -5,7 +5,7 @@
 
 #include <elkvm/elkvm.h>
 #include <elkvm/elkvm-internal.h>
-#include "elfloader.h"
+#include <elkvm/elfloader.h>
 #include <elkvm/heap.h>
 #include <elkvm/region.h>
 #include <elkvm/region_manager.h>

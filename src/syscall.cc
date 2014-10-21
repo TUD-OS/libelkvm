@@ -13,14 +13,13 @@
 
 #include <elkvm/elkvm.h>
 #include <elkvm/elkvm-internal.h>
+#include <elkvm/elfloader.h>
 #include <elkvm/heap.h>
 #include <elkvm/mapping.h>
 #include <elkvm/syscall.h>
 #include <elkvm/vcpu.h>
 #include <elkvm/region.h>
 #include <elkvm/elkvm-log.h>
-
-#include "elfloader.h"
 
 #define LOG_GUEST_HOST(guest, host) (void*)guest << " (" << (void*)host << ")"
 
