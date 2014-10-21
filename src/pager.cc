@@ -7,11 +7,11 @@
 #include <stdlib.h>
 #include <sys/ioctl.h>
 
-#include <elkvm.h>
-#include <elkvm-internal.h>
-#include <pager.h>
-#include <vcpu.h>
-#include <region.h>
+#include <elkvm/elkvm.h>
+#include <elkvm/elkvm-internal.h>
+#include <elkvm/pager.h>
+#include <elkvm/vcpu.h>
+#include <elkvm/region.h>
 
 namespace Elkvm {
   PagerX86_64::PagerX86_64(int vmfd) :

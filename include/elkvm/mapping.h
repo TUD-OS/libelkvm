@@ -3,9 +3,9 @@
 #include <iostream>
 #include <memory>
 
-#include <elkvm.h>
-
 #include <sys/mman.h>
+
+#include <elkvm/types.h>
 
 namespace Elkvm {
   class Region;

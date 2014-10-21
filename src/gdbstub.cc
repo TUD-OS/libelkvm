@@ -34,11 +34,11 @@
 #include <signal.h>
 #include <netdb.h>
 
-#include <elkvm.h>
-#include <elkvm-internal.h>
-#include <debug.h>
-#include <pager.h>
-#include <region_manager.h>
+#include <elkvm/elkvm.h>
+#include <elkvm/elkvm-internal.h>
+#include <elkvm/debug.h>
+#include <elkvm/pager.h>
+#include <elkvm/region_manager.h>
 
 #define NEED_CPU_REG_SHORTCUTS 1
 
@@ -253,13 +253,11 @@ static void write_signal(char* buf, int signal)
   buf[2] = 0;
 }
 
-static void debug_loop(struct kvm_vm *vm) {
-  Elkvm::VMInternals vmi = Elkvm::get_vmi(vm);
-
+static void debug_loop(std::shared_ptr<Elkvm::VM> vm) {
   char buffer[255];
   char obuf[1024];
   int ne = 0;
-  struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+  struct kvm_vcpu *vcpu = vm->vcpu_get(0);
 
   while (ne == 0)
   {
@@ -297,7 +295,7 @@ static void debug_loop(struct kvm_vm *vm) {
           vcpu->regs.rip = new_rip;
         }
 
-        elkvm_vm_run(vm);
+        vm->run();
 
         //if (buffer[1] != 0)
         //{
@@ -317,9 +315,9 @@ static void debug_loop(struct kvm_vm *vm) {
       {
         char buf[255];
 
-        struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+        struct kvm_vcpu *vcpu = vm->vcpu_get(0);
         elkvm_debug_singlestep(vcpu);
-        elkvm_vm_run(vm);
+        vm->run();
         elkvm_debug_singlestep_off(vcpu);
 
         buf[0] = 'S';
@@ -340,9 +338,9 @@ static void debug_loop(struct kvm_vm *vm) {
         int len = strtoul(ebuf + 1, &ebuf, 16);
         hex2mem(ebuf + 1, mem, len);
 
-        void *host_p = vmi.get_region_manager()->get_pager().get_host_p(addr);
+        void *host_p = vm->get_region_manager()->get_pager().get_host_p(addr);
         memcpy(host_p, mem, len);
-        struct kvm_vcpu *vcpu = elkvm_vcpu_get(vm, 0);
+        struct kvm_vcpu *vcpu = vm->vcpu_get(0);
         vcpu->debug.control |= KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_USE_SW_BP;
         int err = elkvm_set_guest_debug(vcpu);
         assert(err == 0 && "could not set guest debug mode");
@@ -371,7 +369,7 @@ static void debug_loop(struct kvm_vm *vm) {
         if(addr == 0x0) {
           put_reply("");
         } else {
-          void *host_p = vmi.get_region_manager()->get_pager().get_host_p(addr);
+          void *host_p = vm->get_region_manager()->get_pager().get_host_p(addr);
           if(host_p != NULL) {
             memcpy(obuf, host_p, len);
 
@@ -453,7 +451,7 @@ static void debug_loop(struct kvm_vm *vm) {
           /* in kernel mode, figure out the real stack and return that
            * this really helps with backtraces (hopefully) */
           guestptr_t *sf = reinterpret_cast<guestptr_t *>(
-              vmi.get_region_manager()->get_pager().get_host_p(vcpu->regs.rsp + 24)
+              vm->get_region_manager()->get_pager().get_host_p(vcpu->regs.rsp + 24)
               );
           guestptr_t real_rsp = *sf;
           PUTREG(buf, real_rsp, 8);
@@ -472,7 +470,7 @@ static void debug_loop(struct kvm_vm *vm) {
           /* in kernel mode, figure out the real stack and return that
            * this really helps with backtraces (hopefully) */
           guestptr_t *sf = reinterpret_cast<guestptr_t *>(
-              vmi.get_region_manager()->get_pager().get_host_p(vcpu->regs.rsp)
+              vm->get_region_manager()->get_pager().get_host_p(vcpu->regs.rsp)
               );
           guestptr_t real_rip = *sf;
           PUTREG(buf, real_rip, 8);
@@ -641,7 +639,7 @@ static void wait_for_connect(int portn)
   printf("Connected to %ld.%ld.%ld.%ld\n", ip & 0xff, (ip >> 8) & 0xff, (ip >> 16) & 0xff, (ip >> 24) & 0xff);
 }
 
-void elkvm_gdbstub_init(struct kvm_vm *vm) {
+void elkvm_gdbstub_init(std::shared_ptr<Elkvm::VM> vm) {
   int portn = 1234;
 
   /* Wait for connect */
@@ -652,5 +650,5 @@ void elkvm_gdbstub_init(struct kvm_vm *vm) {
   debug_loop(vm);
 
   /* CPU loop */
-  elkvm_vm_run(vm);
+  vm->run();
 }

@@ -13,28 +13,15 @@
 #include <libelf.h>
 #include <linux/kvm.h>
 
-typedef uint64_t guestptr_t;
+#include <vector>
+#include <memory>
 
-struct linux_dirent {
-    unsigned long  d_ino;     /* Inode number */
-    unsigned long  d_off;     /* Offset to next linux_dirent */
-    unsigned short d_reclen;  /* Length of this linux_dirent */
-    char           d_name[];  /* Filename (null-terminated) */
-                      /* length is actually (d_reclen - 2 -
-                         offsetof(struct linux_dirent, d_name)) */
-    /*
-    char           pad;       // Zero padding byte
-    char           d_type;    // File type (only since Linux
-                              // 2.6.4); offset is (d_reclen - 1)
-    */
-};
+#include <elkvm/types.h>
+#include <elkvm/heap.h>
+#include <elkvm/region_manager.h>
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-  struct kvm_vcpu;
+struct kvm_vcpu;
 
 #define VM_MODE_X86    1
 #define VM_MODE_PAGING 2
@@ -46,42 +33,52 @@ extern "C" {
 #define RES_PATH _PREFIX_ "/share/libelkvm"
 #endif
 
-struct elkvm_opts;
+namespace Elkvm {
 
-struct region_mapping {
-  void *host_p;
-  guestptr_t guest_virt;
-  size_t length;
-  unsigned mapped_pages;
-  int prot;
-  int flags;
-  int fd;
-  off_t offset;
+class VM;
+
+/*
+ * Functions to be called upon a hypercall from a VM.
+ *
+ * pre_handler() is called before ELKVM does any processing
+ *               of the event.
+ * post_handler() is called after ELKVM's event processing,
+ *               but BEFORE signals are potentially delivered to the VM.
+ *
+ * ELVKM provides a default implementation (Elkvm::hypercall_null) that
+ * performs no interception at all.
+ */
+struct hypercall_handlers {
+    long (*pre_handler) (Elkvm::VM* vm,
+                         std::shared_ptr<struct kvm_vcpu> vcpu,
+                         int eventtype);
+    long (*post_handler) (Elkvm::VM* vm,
+                          std::shared_ptr<struct kvm_vcpu> vcpu,
+                          int eventtype);
 };
 
-struct kvm_vm {
-	int fd;
-	const struct elkvm_handlers *syscall_handlers;
-  int debug;
-
-  struct rlimit rlimits[RLIMIT_NLIMITS];
-};
-
+/*
+ * Functions that implement system calls. A monitor can overwrite
+ * one or more of these pointers in order to implement its own version
+ * of a system call. ELKVM provides a default implementation
+ * (Elkvm::default_handlers) that will simply redirect every system call to
+ * the underlying host kernel.
+ */
 struct elkvm_handlers {
-	long (*read) (int fd, void *buf, size_t count);
-	long (*write) (int fd, void *buf, size_t count);
-	long (*open) (const char *pathname, int flags, mode_t mode);
-	long (*close) (int fd);
-	long (*stat) (const char *path, struct stat *buf);
-	long (*fstat) (int fd, struct stat *buf);
-	long (*lstat) (const char *path, struct stat *buf);
-	long (*poll) (struct pollfd *fds, nfds_t nfds, int timeout);
-	long (*lseek) (int fd, off_t offset, int whence);
+  long (*read) (int fd, void *buf, size_t count);
+  long (*write) (int fd, void *buf, size_t count);
+  long (*open) (const char *pathname, int flags, mode_t mode);
+  long (*close) (int fd);
+  long (*stat) (const char *path, struct stat *buf);
+  long (*fstat) (int fd, struct stat *buf);
+  long (*lstat) (const char *path, struct stat *buf);
+  long (*poll) (struct pollfd *fds, nfds_t nfds, int timeout);
+  long (*lseek) (int fd, off_t offset, int whence);
   /* TODO mmap should be well documented! */
   long (*mmap_before) (struct region_mapping *);
   long (*mmap_after) (struct region_mapping *);
-	long (*mprotect) (void *addr, size_t len, int prot);
-	long (*munmap) (struct region_mapping *mapping);
+  long (*mprotect) (void *addr, size_t len, int prot);
+  long (*munmap) (struct region_mapping *mapping);
   /* ... */
   long (*sigaction) (int signum, const struct sigaction *act,
       struct sigaction *oldact);
@@ -101,8 +98,8 @@ struct elkvm_handlers {
   /* ... */
   long (*geteuid)(void);
   long (*getegid)(void);
-	/* ... */
-	long (*uname) (struct utsname *buf);
+  /* ... */
+  long (*uname) (struct utsname *buf);
   long (*fcntl) (int fd, int cmd, ...);
   long (*truncate) (const char *path, off_t length);
   long (*ftruncate) (int fd, off_t length);
@@ -137,61 +134,183 @@ struct elkvm_handlers {
    * called after a breakpoint has been hit, should return 1 to abort the program
    * 0 otherwise, if this is set to NULL elkvm will execute a simple debug shell
    */
-  int (*bp_callback)(struct kvm_vm *vm);
-
+  int (*bp_callback)(Elkvm::VM *vm);
 };
 
 /*
-	Create a new VM, with the given mode, cpu count, memory and syscall handlers
-*/
-struct kvm_vm *
-elkvm_vm_create(struct elkvm_opts *,
-    int mode,
-    unsigned cpus,
-		const struct elkvm_handlers * const,
-    const char *binary,
-    int debug);
+ * Default set of system call handlers that simply redirects system calls to
+ * the kernel according to the unpacked parameters.
+ */
+extern struct elkvm_handlers default_handlers;
+/*
+ * Default set of hypercall handlers that performs no hypercall intercaption.
+ */
+extern struct hypercall_handlers hypercall_null;
+
+struct elkvm_opts;
+
+class VM {
+  protected:
+    std::vector<std::shared_ptr<struct kvm_vcpu>> cpus;
+
+    /*
+     * Debugging enabled in VM?
+     */
+    bool _debug;
+
+    /*
+     * TODO: This is the stuff that should be in a KVM-specific
+     *       subclass if we ever decide to have alternative
+     *       virtualization environments
+     */
+    struct {
+      int fd;
+      struct rlimit rlimits[RLIMIT_NLIMITS];
+    } _vm;
+
+    std::shared_ptr<RegionManager> _rm;
+    HeapManager hm;
+
+    int _vmfd;
+    int _argc;
+    char **_argv;
+    char **_environ;
+    int _run_struct_size;
+
+    elkvm_signals sigs;
+    elkvm_flat sighandler_cleanup;
+    const Elkvm::hypercall_handlers *hypercall_handlers;
+    const Elkvm::elkvm_handlers *syscall_handlers;
+
+  public:
+    VM(int fd, int argc, char **argv, char **environ,
+        int run_struct_size,
+        const Elkvm::hypercall_handlers * const hyp_handlers,
+        const Elkvm::elkvm_handlers * const handlers,
+        int debug);
+
+    int add_cpu(int mode);
+
+    bool address_mapped(guestptr_t addr) const;
+    Mapping &find_mapping(guestptr_t addr);
+
+    int load_flat(Elkvm::elkvm_flat &flat, const std::string path,
+        bool kernel);
+
+    std::shared_ptr<RegionManager> get_region_manager() { return _rm; }
+    HeapManager &get_heap_manager() { return hm; }
+    std::shared_ptr<struct kvm_vcpu> get_vcpu(int num) const;
+    int get_vmfd() const { return _vmfd; }
+    Elkvm::elkvm_flat &get_cleanup_flat();
+
+    const Elkvm::elkvm_handlers * get_handlers() const
+    { return syscall_handlers; }
+
+    const Elkvm::hypercall_handlers* get_hyp_handlers() const
+    { return this->hypercall_handlers; }
+
+    std::shared_ptr<struct sigaction> get_sig_ptr(unsigned sig) const;
+
+    int debug_mode() const { return _debug; }
+
+    /*
+     * \brief Put the VM in debug mode
+     */
+    void set_debug(bool on = true) { _debug = on; }
+
+    int set_entry_point(guestptr_t rip);
+
+    /*
+     * Initialize the VM's rlimits.
+     * TODO: move to KVM subclass
+     */
+    void init_rlimits();
+
+    /*
+     * Dump the current stack frame for the vCPU.
+     *
+     * TODOL should be part of the VCPU class.
+     */
+    void dump_stack(struct kvm_vcpu *vcpu);
+
+
+    /*
+     * Dump guest memory at given address.
+     */
+    void dump_memory(guestptr_t ptr);
+
+    /*
+     * Runs all CPUS of the VM
+     */
+    int run();
+
+    /*
+     * Handle VM events
+     */
+    int handle_syscall(struct kvm_vcpu*);
+    int handle_interrupt(struct kvm_vcpu*);
+    int handle_hypercall(std::shared_ptr<struct kvm_vcpu>);
+
+    /*
+     * Signal management
+     */
+    int signal_deliver();
+    int signal_register(int signum,
+                        struct sigaction *act,
+                        struct sigaction *oldact);
+
+    /*
+     * Memory stuff
+     */
+    uint64_t chunk_count()
+    { return get_region_manager()->get_pager().chunk_count(); }
+
+    /*
+     * \brief Deletes (frees) the chunk with number num and hands a new chunk
+     *        with the newsize to a vm at the same memory slot.
+     *        THIS WILL DELETE ALL DATA IN THE OLD CHUNK!
+     */
+    int chunk_remap(int num, size_t newsize);
+
+    struct kvm_userspace_memory_region get_chunk(int chunk)
+    { return *get_region_manager()->get_pager().get_chunk(chunk); }
+
+    /*
+     * Get vCPU for given ID.
+     */
+    struct kvm_vcpu* vcpu_get(int id)
+    { return get_vcpu(id).get(); }
+};
+
+} // namespace Elkvm
 
 /*
- * Runs all CPUS of the VM
+ * Create a new VM, with the given mode, cpu count, memory and syscall
+ * handlers
  */
-int elkvm_vm_run(struct kvm_vm *vm);
-
-/*
- * \brief Put the VM in debug mode
- */
-int elkvm_set_debug(struct kvm_vm *);
+std::shared_ptr<Elkvm::VM>
+elkvm_vm_create(Elkvm::elkvm_opts *,
+                const char *binary,
+                unsigned cpus = 1,
+                const Elkvm::hypercall_handlers * const = &Elkvm::hypercall_null,
+                const Elkvm::elkvm_handlers * const = &Elkvm::default_handlers,
+                int mode = VM_MODE_X86_64,
+                bool debug = false);
 
 /*
  * \brief Emulates (skips) the VMCALL instruction
  */
 void elkvm_emulate_vmcall(struct kvm_vcpu *);
-
-/*
- * \brief Deletes (frees) the chunk with number num and hands a new chunk
- *        with the newsize to a vm at the same memory slot.
- *        THIS WILL DELETE ALL DATA IN THE OLD CHUNK!
- */
-int elkvm_chunk_remap(struct kvm_vm *, int num, uint64_t newsize);
-
-struct kvm_vcpu *elkvm_vcpu_get(struct kvm_vm *, int vcpu_id);
-uint64_t elkvm_chunk_count(struct kvm_vm *);
-
-struct kvm_userspace_memory_region elkvm_get_chunk(struct kvm_vm *, int chunk);
-
 int elkvm_dump_valid_msrs(struct elkvm_opts *);
 
 /**
  * \brief Initialize the gdbstub and wait for gdb
  *        to connect
  */
-void elkvm_gdbstub_init(struct kvm_vm *vm);
+void elkvm_gdbstub_init(std::shared_ptr<Elkvm::VM> vm);
 
 /**
  * \brief Enable VCPU debug mode
  */
 int elkvm_debug_enable(struct kvm_vcpu *vcpu);
 
-#ifdef __cplusplus
-}
-#endif

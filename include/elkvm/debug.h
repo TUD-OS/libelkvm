@@ -1,16 +1,10 @@
 #pragma once
 
-#include <elkvm.h>
-#include <elkvm-internal.h>
-#include <vcpu.h>
+#include <elkvm/elkvm.h>
+#include <elkvm/elkvm-internal.h>
+#include <elkvm/vcpu.h>
 
-namespace Elkvm {
-  void dump_memory(VMInternals vmi, guestptr_t addr);
-
-  //namespace Elkvm
-}
-
-int elkvm_handle_debug(struct kvm_vm *);
+int elkvm_handle_debug(Elkvm::VM *);
 int elkvm_set_guest_debug(struct kvm_vcpu *vcpu);
 
 /**

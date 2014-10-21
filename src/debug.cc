@@ -3,35 +3,29 @@
 #include <stdio.h>
 #include <sys/ioctl.h>
 
-#include <elkvm.h>
-#include <elkvm-internal.h>
-#include <debug.h>
+#include <elkvm/elkvm.h>
+#include <elkvm/elkvm-internal.h>
+#include <elkvm/debug.h>
 
-namespace Elkvm {
+void Elkvm::VM::dump_memory(guestptr_t addr) {
+  assert(addr != 0x0 && "cannot dump address NULL");
+  uint64_t *host_p = reinterpret_cast<uint64_t *>(
+  get_region_manager()->get_pager().get_host_p(addr));
+  assert(host_p != NULL && "cannot dump unmapped memory");
 
-  void dump_memory(VMInternals vmi, guestptr_t addr) {
-    assert(addr != 0x0 && "cannot dump address NULL");
-    uint64_t *host_p = reinterpret_cast<uint64_t *>(
-        vmi.get_region_manager()->get_pager().get_host_p(addr));
-    assert(host_p != NULL && "cannot dump unmapped memory");
-
-    fprintf(stderr, " Host Address\tGuest Address\t\tValue\t\tValue\n");
-    for(int i = 0; i < 16; i++) {
-      fprintf(stderr, " %p\t0x%016lx\t0x%016lx\t0x%016lx\n",
-          host_p, addr,
-          *host_p, *(host_p+1));
-      addr  += 0x10;
-      host_p+=2;
-    }
+  fprintf(stderr, " Host Address\tGuest Address\t\tValue\t\tValue\n");
+  for(int i = 0; i < 16; i++) {
+    fprintf(stderr, " %p\t0x%016lx\t0x%016lx\t0x%016lx\n",
+            host_p, addr, *host_p, *(host_p+1));
+    addr  += 0x10;
+    host_p+=2;
   }
-
-  //namespace Elkvm
 }
 
-int elkvm_handle_debug(struct kvm_vm *vm) {
+int elkvm_handle_debug(Elkvm::VM *vm) {
   int handled = 0;
-  if(vm->syscall_handlers->bp_callback != NULL) {
-    handled = vm->syscall_handlers->bp_callback(vm);
+  if(vm->get_handlers()->bp_callback != NULL) {
+    handled = vm->get_handlers()->bp_callback(vm);
   }
 
   return handled;

@@ -5,14 +5,14 @@
 #include <errno.h>
 #include <stdio.h>
 
-#include <elkvm.h>
-#include <elkvm-internal.h>
-#include <kvm.h>
-#include <gdt.h>
-#include <region.h>
-#include <region_manager.h>
-#include <tss.h>
-#include <vcpu.h>
+#include <elkvm/elkvm.h>
+#include <elkvm/elkvm-internal.h>
+#include <elkvm/kvm.h>
+#include <elkvm/gdt.h>
+#include <elkvm/region.h>
+#include <elkvm/region_manager.h>
+#include <elkvm/tss.h>
+#include <elkvm/vcpu.h>
 
 int elkvm_gdt_setup(Elkvm::RegionManager &rm, std::shared_ptr<struct kvm_vcpu> vcpu) {
   std::shared_ptr<Elkvm::Region> gdt_region =

@@ -2,8 +2,7 @@
 
 #include <memory>
 
-#include <elkvm.h>
-#include <mapping.h>
+#include <elkvm/mapping.h>
 
 namespace Elkvm {
 

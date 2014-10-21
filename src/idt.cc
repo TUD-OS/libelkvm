@@ -7,18 +7,17 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
-#include <elkvm.h>
-#include <elkvm-internal.h>
-#include <kvm.h>
-#include <idt.h>
-#include <pager.h>
-#include <region.h>
-#include <vcpu.h>
-#include "flats.h"
+#include <elkvm/elkvm.h>
+#include <elkvm/elkvm-internal.h>
+#include <elkvm/kvm.h>
+#include <elkvm/idt.h>
+#include <elkvm/pager.h>
+#include <elkvm/region.h>
+#include <elkvm/vcpu.h>
 
 int elkvm_idt_setup(Elkvm::RegionManager &rm, 
     std::shared_ptr<kvm_vcpu> vcpu,
-    struct elkvm_flat *default_handler) {
+    Elkvm::elkvm_flat *default_handler) {
   std::shared_ptr<Elkvm::Region> idt_region =
     rm.allocate_region(
 			256 * sizeof(struct kvm_idt_entry));

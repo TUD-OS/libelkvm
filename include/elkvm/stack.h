@@ -3,9 +3,7 @@
 #include <memory>
 #include <vector>
 
-#include <environ.h>
-#include <region.h>
-#include <region_manager.h>
+#include <elkvm/environ.h>
 
 /* 64bit Linux puts the Stack at 47bits */
 #define LINUX_64_STACK_BASE 0x800000000000
@@ -13,7 +11,9 @@
 
 namespace Elkvm {
 
-  class VMInternals;
+  class VM;
+  class Region;
+  class RegionManager;
 
   class Stack {
     private:
@@ -35,7 +35,7 @@ namespace Elkvm {
       guestptr_t user_base() const { return base; }
   };
 
-  void dump_stack(VMInternals &vmi, struct kvm_vcpu *vcpu);
+  //void dump_stack(VM &vmi, struct kvm_vcpu *vcpu);
 
 //namespace Elkvm
 }

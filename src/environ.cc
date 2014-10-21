@@ -2,13 +2,18 @@
 
 #include <gelf.h>
 
-#include <elfloader.h>
-#include <elkvm-internal.h>
-#include <environ.h>
-#include <kvm.h>
-#include <region.h>
-#include <region_manager.h>
-#include <stack.h>
+#include "elfloader.h"
+#include <elkvm/elkvm-internal.h>
+#include <elkvm/environ.h>
+#include <elkvm/vcpu.h>
+#include <elkvm/kvm.h>
+#include <elkvm/region.h>
+#include <elkvm/region_manager.h>
+#include <elkvm/stack.h>
+#include <elkvm/elkvm-log.h>
+
+// the global logger object (see elkvm-log.h)
+ElkvmLog globalElkvmLogger;
 
 namespace Elkvm {
   Environment::Environment(const ElfBinary &bin, std::shared_ptr<RegionManager> rm) :
@@ -183,7 +188,7 @@ namespace Elkvm {
   }
 
 
-int Environment::fill(struct elkvm_opts *opts,
+int Environment::fill(Elkvm::elkvm_opts *opts,
     std::shared_ptr<struct kvm_vcpu> vcpu) {
   int err = kvm_vcpu_get_regs(vcpu.get());
   assert(err == 0 && "error getting vcpu");

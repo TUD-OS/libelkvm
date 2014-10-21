@@ -7,6 +7,7 @@ extern "C" {
 #define KVM_EXPECT_VERSION 12
 #define KVM_DEV_PATH "/dev/kvm"
 
+namespace Elkvm {
 struct elkvm_opts {
 	int argc;
 	char **argv;
@@ -14,9 +15,10 @@ struct elkvm_opts {
 	int fd;
 	int run_struct_size;
 };
+} // namespace Elkvm
 
-int elkvm_init(struct elkvm_opts *, int, char **, char **);
-int elkvm_cleanup(struct elkvm_opts *);
+int elkvm_init(Elkvm::elkvm_opts *, int, char **, char **);
+int elkvm_cleanup(Elkvm::elkvm_opts *);
 
 #ifdef __cplusplus
 }

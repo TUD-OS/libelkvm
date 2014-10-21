@@ -9,6 +9,7 @@ ELKVM uses cmake as a build system, you can build it in any directory you like t
 In that directory you need to run the following:
 
 cmake PATH_TO_ELKVM_TOPLEVEL_DIRECTORY
+make -C include install
 make
 make install
 ldconfig

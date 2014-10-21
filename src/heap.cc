@@ -3,12 +3,12 @@
 #include <cstring>
 #include <iostream>
 
-#include <elkvm.h>
-#include <elkvm-internal.h>
-#include <elfloader.h>
-#include <heap.h>
-#include <region.h>
-#include <region_manager.h>
+#include <elkvm/elkvm.h>
+#include <elkvm/elkvm-internal.h>
+#include "elfloader.h"
+#include <elkvm/heap.h>
+#include <elkvm/region.h>
+#include <elkvm/region_manager.h>
 
 namespace Elkvm {
 
@@ -352,7 +352,8 @@ namespace Elkvm {
   void HeapManager::slice_center(Mapping &m, off_t off, size_t len) {
     assert(m.contains_address(reinterpret_cast<char *>(m.base_address()) + off
           + len));
-    assert(0 <= off < m.get_length());
+    assert(0 <= off);
+	assert(off < (off_t)m.get_length());
 
     /* unmap the old stuff */
     unsigned pages = pages_from_size(len);

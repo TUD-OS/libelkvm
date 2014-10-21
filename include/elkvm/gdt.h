@@ -2,8 +2,8 @@
 
 #include <memory>
 
-#include <region.h>
-#include <vcpu.h>
+#include <elkvm/region.h>
+#include <elkvm/vcpu.h>
 
 int elkvm_gdt_setup(Elkvm::RegionManager &rm, std::shared_ptr<struct kvm_vcpu> vcpu);
 
