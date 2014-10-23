@@ -13,14 +13,13 @@
 
 #include <elkvm/elkvm.h>
 #include <elkvm/elkvm-internal.h>
+#include <elkvm/elfloader.h>
 #include <elkvm/heap.h>
 #include <elkvm/mapping.h>
 #include <elkvm/syscall.h>
 #include <elkvm/vcpu.h>
 #include <elkvm/region.h>
 #include <elkvm/elkvm-log.h>
-
-#include "elfloader.h"
 
 #define LOG_GUEST_HOST(guest, host) (void*)guest << " (" << (void*)host << ")"
 
@@ -918,7 +917,7 @@ long elkvm_do_mprotect(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype prot = 0;
   elkvm_unpack_syscall3(vcpu, &addr, &len, &prot);
 
-  assert(page_aligned(addr) && "mprotect address must be page aligned");
+  assert(page_aligned<guestptr_t>(addr) && "mprotect address must be page aligned");
   if(!vmi->get_heap_manager().address_mapped(addr)) {
     vmi->get_heap_manager().dump_mappings();
     vmi->get_region_manager()->dump_regions();

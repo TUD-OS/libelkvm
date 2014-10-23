@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "elfloader.h"
+#include <elkvm/elfloader.h>
 #include <elkvm/elkvm.h>
 #include <elkvm/elkvm-internal.h>
 #include <elkvm/kvm.h>
@@ -246,7 +246,7 @@ namespace Elkvm {
      * Padding in the end may contain file information
      */
 
-  if(!page_aligned((uint64_t)region->base_address())) {
+  if(!page_aligned<guestptr_t>((uint64_t)region->base_address())) {
     return -EIO;
   }
 

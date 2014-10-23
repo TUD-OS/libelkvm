@@ -18,7 +18,7 @@
 #include <elkvm/elkvm-log.h>
 #include <elkvm/debug.h>
 #include <elkvm/environ.h>
-#include "elfloader.h"
+#include <elkvm/elfloader.h>
 #include <elkvm/gdt.h>
 #include <elkvm/idt.h>
 #include <elkvm/kvm.h>

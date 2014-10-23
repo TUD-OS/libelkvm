@@ -49,7 +49,10 @@ bool address_in_region(struct kvm_userspace_memory_region *r, void *host_addr);
 bool guest_address_in_region(struct kvm_userspace_memory_region *r,
     uint64_t guest_physical);
 guestptr_t page_begin(guestptr_t addr);
-bool page_aligned(guestptr_t addr);
+
+template<typename T>
+bool page_aligned(T addr);
+
 guestptr_t next_page(guestptr_t addr);
 int pages_from_size(uint64_t size);
 int page_remain(guestptr_t addr);
@@ -94,7 +97,7 @@ namespace Elkvm {
       std::vector<std::shared_ptr<struct kvm_userspace_memory_region *>>::size_type
         chunk_count() const { return chunks.size(); }
 
-      int create_mem_chunk(void **host_p, int chunk_size);
+      int create_mem_chunk(void **host_p, size_t chunk_size);
       void dump_page_tables() const;
       void dump_table(ptentry_t *host_p, int level) const;
 

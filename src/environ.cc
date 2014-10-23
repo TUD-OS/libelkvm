@@ -2,7 +2,7 @@
 
 #include <gelf.h>
 
-#include "elfloader.h"
+#include <elkvm/elfloader.h>
 #include <elkvm/elkvm-internal.h>
 #include <elkvm/environ.h>
 #include <elkvm/vcpu.h>

@@ -77,9 +77,9 @@ namespace Elkvm {
     *host_entry_p |= PT_BIT_PRESENT;
   }
 
-  int PagerX86_64::create_mem_chunk(void **host_p, int chunk_size) {
+  int PagerX86_64::create_mem_chunk(void **host_p, size_t chunk_size) {
     /* keep sizes page aligned */
-    if((chunk_size & ~(HOST_PAGESIZE - 1)) != chunk_size) {
+    if(!page_aligned<size_t>(chunk_size)) {
       return -EIO;
     }
 
@@ -541,7 +541,8 @@ guestptr_t page_begin(guestptr_t addr) {
   return (addr & ~(ELKVM_PAGESIZE-1));
 }
 
-bool page_aligned(guestptr_t addr) {
+template<typename T>
+bool page_aligned(T addr) {
   return ((addr & ~(ELKVM_PAGESIZE-1)) == addr);
 }
 

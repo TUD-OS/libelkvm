@@ -5,7 +5,7 @@
 
 #include <elkvm/elkvm.h>
 #include <elkvm/elkvm-internal.h>
-#include "elfloader.h"
+#include <elkvm/elfloader.h>
 #include <elkvm/heap.h>
 #include <elkvm/region.h>
 #include <elkvm/region_manager.h>
@@ -24,7 +24,7 @@ namespace Elkvm {
     free_unused_mappings(newbrk);
 
     guestptr_t slice_base = newbrk;
-    if(!page_aligned(newbrk)) {
+    if(!page_aligned<guestptr_t>(newbrk)) {
       slice_base = next_page(slice_base);
     }
 
