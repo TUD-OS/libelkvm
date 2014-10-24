@@ -121,6 +121,7 @@ int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *, uint64_t guest_addr);
 void elkvm_init_udis86(struct kvm_vcpu *, int mode);
 #endif
 
+void print_flags(uint64_t flags);
 void print_dtable(const std::string name, struct kvm_dtable dtable);
 void print_segment(const std::string name, struct kvm_segment seg);
 
