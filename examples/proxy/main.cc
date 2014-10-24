@@ -1,3 +1,4 @@
+#include <fstream>
 #include <cstring>
 #include <elkvm/elkvm.h>
 #include <elkvm/elkvm-log.h>
@@ -59,6 +60,9 @@ enum {
   NAMEBUFSIZE = 256,
 };
 
+/*
+ * Stop a process by attaching with ptrace().
+ */
 static bool
 stop_pid(int pid)
 {
@@ -68,6 +72,11 @@ stop_pid(int pid)
         return false;
     }
 
+    /*
+     * Now we have to wait until the process is stopped with
+     * SIGSTOP. In the meantime other signals may precede and
+     * need to be reinjected into the target.
+     */
     int status = 0;
     do {
         err = waitpid(pid, &status, 0);
@@ -82,12 +91,20 @@ stop_pid(int pid)
             }
         }
     } while (!WIFSTOPPED(status));
+
     INFO() << "Halted PID " << pid;
     return true;
 }
 
+/*
+ * Determine the binary that is executed in process PID.
+ */
 void binary_for_pid(int pid, char **binary)
 {
+  /*
+   * General idea: read /proc/<pid>/exe to determine the
+   * running binary.
+   */
   std::stringstream exe;
   struct stat statbuf;
 
@@ -117,10 +134,85 @@ void binary_for_pid(int pid, char **binary)
   *binary = buf;
 }
 
-
-static void
-memory_map_for_pid(int pid)
+struct Permissions
 {
+    bool readable;
+    bool writable;
+    bool exec;
+
+    void init(char const *str) {
+        assert(strlen(str) > 3); // at least r, w, x chars
+        if (str[1] == 'r')
+            readable = true;
+        if (str[2] == 'w')
+            writable = true;
+        if (str[3] == 'x')
+            exec = true;
+    }
+
+    Permissions(char const* str)
+        : readable(false), writable(false), exec(false)
+    {
+        init(str);
+    }
+};
+
+struct Mapping
+{
+    guestptr_t  start;
+    guestptr_t  end;
+    Permissions perm;
+
+    size_t size() const
+    {
+        return end - start;
+    }
+
+    Mapping(guestptr_t _start, guestptr_t _end, char const *_perm)
+        : start(_start), end(_end), perm(_perm)
+    { }
+};
+
+/*
+ * Figure out which memory regions are mapped in process PID.
+ */
+static void
+memory_map_for_pid(int pid, std::list<Mapping>& regions)
+{
+  /*
+   * Approach: parse /proc/<pid>/maps.
+   */
+  std::stringstream map;
+  map << "/proc/" << pid << "/maps";
+  INFO() << "Parsing regions in " << map.str();
+
+  std::ifstream mapfile(map.str());
+  if (!mapfile.good()) {
+      INFO() << "Error opening map file";
+  }
+
+  do {
+      guestptr_t start, stop;
+      std::string perms;
+      char dummy[256];
+
+      mapfile >> std::hex >> start;
+      mapfile >> dummy[0];
+      mapfile >> std::hex >> stop;
+      mapfile >> perms;
+      mapfile.getline(dummy, 256);
+      //INFO() << std::hex << start << " -- " << stop << "(" << perms << ")";
+      mapfile.peek(); // peek another char to find potential EOF
+
+      regions.emplace_back(start, stop, perms.c_str());
+  } while (!mapfile.eof());
+
+  INFO() << "Found " << regions.size() << " regions.";
+  unsigned sum = 0;
+  for (Mapping const& m : regions) {
+      sum += m.size();
+  }
+  INFO() << "Totally in use: " << sum << " Bytes.";
 }
 
 static void detach_pid(int pid)
@@ -140,8 +232,10 @@ std::shared_ptr<Elkvm::VM> attach_vm(int pid)
   binary_for_pid(pid, &binaryname);
   INFO() << "Binary name is: " << LOG_MAGENTA << binaryname << LOG_RESET;
 
-  memory_map_for_pid(pid);
+  std::list<Mapping> regions;
+  memory_map_for_pid(pid, regions);
 
+  delete [] binaryname;
   detach_pid(pid);
 
   return nullptr;
@@ -191,7 +285,7 @@ int main(int argc, char **argv) {
     ERROR() << "No VM created yet.";
     abort();
   }
-  
+
   if(debug) {
     vm->set_debug(true);
   }
