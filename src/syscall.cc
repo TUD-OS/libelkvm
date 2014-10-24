@@ -899,8 +899,7 @@ long elkvm_do_mmap(Elkvm::VM * vmi) {
 
   if(vmi->debug_mode()) {
     DBG() << "MMAP addr " << (void*)addr
-        << " len " << std::dec << length
-        << " (0x" << std::hex << length << ")"
+        << " len " << LOG_DEC_HEX(len)
         << " prot " << prot << " flags " << flags << " ";
     if(!(flags & MAP_ANONYMOUS)) {
       DBG() << " -> fd " << fd << " offs " << off << " ";
