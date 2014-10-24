@@ -8,6 +8,7 @@
 #include <smmintrin.h>
 
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/stat.h>
 #include <sys/ptrace.h>
 #include <unistd.h>
@@ -66,6 +67,21 @@ stop_pid(int pid)
         perror("ptrace attach");
         return false;
     }
+
+    int status = 0;
+    do {
+        err = waitpid(pid, &status, 0);
+        if (err == -1) {
+          perror("waitpid");
+        }
+        if (WSTOPSIG(status) != SIGSTOP) {
+            INFO() << "Not stopped. Injecting signal " << WSTOPSIG(status);
+            err = ptrace(PTRACE_CONT, pid, 0, WSTOPSIG(status));
+            if (err) {
+              perror("ptrace continue");
+            }
+        }
+    } while (!WIFSTOPPED(status));
     INFO() << "Halted PID " << pid;
     return true;
 }
