@@ -142,19 +142,17 @@ struct Permissions
 
     void init(char const *str) {
         assert(strlen(str) > 3); // at least r, w, x chars
-        if (str[1] == 'r')
+        if (str[0] == 'r')
             readable = true;
-        if (str[2] == 'w')
+        if (str[1] == 'w')
             writable = true;
-        if (str[3] == 'x')
+        if (str[2] == 'x')
             exec = true;
     }
 
     Permissions(char const* str)
         : readable(false), writable(false), exec(false)
-    {
-        init(str);
-    }
+    { init(str); }
 };
 
 struct Mapping
@@ -207,10 +205,14 @@ memory_map_for_pid(int pid, std::list<Mapping>& regions)
       regions.emplace_back(start, stop, perms.c_str());
   } while (!mapfile.eof());
 
-  INFO() << "Found " << regions.size() << " regions.";
+  INFO() << "Found " << regions.size() << " regions:";
   unsigned sum = 0;
   for (Mapping const& m : regions) {
       sum += m.size();
+      INFO() << "    [" << std::hex << m.start << " - " << m.end << "] "
+             << (m.perm.readable ? "r" : "-")
+             << (m.perm.writable ? "w" : "-")
+             << (m.perm.exec ? "x" : "-");
   }
   INFO() << "Totally in use: " << sum << " Bytes.";
 }
@@ -263,7 +265,6 @@ int main(int argc, char **argv) {
         break;
       case 'a':
         attach_pid = strtol(optarg, 0, 10);
-        DBG() << "PID " << attach_pid;
         myopts++;
         break;
     }
