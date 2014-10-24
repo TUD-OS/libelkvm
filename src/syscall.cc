@@ -547,6 +547,18 @@ void dbg_log_result<int>(int res) {
   }
 }
 
+void dbg_log_read(const Elkvm::VM &vm, const int fd, const guestptr_t buf_p,
+    const void *buf, const size_t parcount, const size_t count,
+    const size_t result) {
+  if(vm.debug_mode()) {
+    DBG() << "READ from fd: " << fd
+        << " with size " << LOG_DEC_HEX(parcount) << " of "
+        << LOG_DEC_HEX(count)
+        << " buf @ " << LOG_GUEST_HOST(buf_p, buf)
+        << "RESULT " << result << std::hex << "(" << result << ")";
+  }
+}
+
   //namespace Elkvm
 }
 
@@ -717,7 +729,7 @@ long elkvm_do_close(Elkvm::VM * vmi) {
   long result = vmi->get_handlers()->close((int)fd);
 
   if(vmi->debug_mode()) {
-    DBG() << "CLOSE file with fd: " << fd << "\n";
+    DBG() << "CLOSE file with fd: " << fd;
     Elkvm::dbg_log_result<int>(result);
   }
 
