@@ -432,7 +432,8 @@ int Elkvm::VM::handle_syscall(struct kvm_vcpu *vcpu)
 {
   CURRENT_ABI::paramtype syscall_num = CURRENT_ABI::get_parameter(vcpu, 0);
   if(debug_mode()) {
-    DBG() << "SYSCALL " << syscall_num << " detected.";
+    DBG() << "SYSCALL " << syscall_num << " detected"
+      << " (" << elkvm_syscalls[syscall_num].name << ")";
   }
 
   long result;
@@ -440,9 +441,6 @@ int Elkvm::VM::handle_syscall(struct kvm_vcpu *vcpu)
     ERROR() << "\tINVALID syscall_num: " << syscall_num << "\n";
     result = -ENOSYS;
   } else {
-    if(debug_mode()) {
-      DBG() << elkvm_syscalls[syscall_num].name;
-    }
     result = elkvm_syscalls[syscall_num].func(this);
     if(syscall_num == __NR_exit_group) {
       return ELKVM_HYPERCALL_EXIT;
@@ -575,11 +573,9 @@ long elkvm_do_read(Elkvm::VM * vmi) {
         return result + in_result;
       }
       if(vmi->debug_mode()) {
-        DBG() << "============ LIBELKVM ===========";
         DBG() << "READ from fd: " << fd << " with size " << newcount << " of "
               << count << " buf @ " << (void*)buf_p << "(" << (void*)buf << ")";
         DBG() << "RESULT " << result << std::hex << "(" << result << ")";
-        DBG() << "=================================";
       }
 
       mark_p += in_result;
@@ -593,11 +589,9 @@ long elkvm_do_read(Elkvm::VM * vmi) {
   }
 
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "READ from fd: " << fd << " with size " << count
           << " buf @ " << (void*)buf_p << "(" << (void*)buf << ")";
     DBG() << "RESULT " <<  result;
-    DBG() << "=================================";
   }
 
   return result;
@@ -635,13 +629,11 @@ long elkvm_do_write(Elkvm::VM * vmi) {
     total += result;
 
     if(vmi->debug_mode()) {
-      DBG() << "============ LIBELKVM ===========";
       DBG() << "SPLIT WRITE to fd: " << fd << " with size " << count
             << " buf " << (void*)buf_p << "(" << (void*)buf << ")" << LOG_RESET;
       DBG() << "current buf: " << (void*)current_buf
             << " remaining bytes: " << remaining_count << LOG_RESET;
       DBG() << "RESULT " <<  result;
-      DBG() << "=================================";
     }
     current_buf += result;
     remaining_count -= result;
@@ -657,11 +649,9 @@ long elkvm_do_write(Elkvm::VM * vmi) {
   total += result;
 
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "SPLIT WRITE to fd: " << fd << " with size " << count
           << " buf " << (void*)buf_p << "(" << (void*)buf << ")" << LOG_RESET;
     DBG() << "RESULT " <<  result;
-    DBG() << "=================================";
   }
 
   return total;
@@ -687,11 +677,9 @@ long elkvm_do_open(Elkvm::VM * vmi) {
   long result = vmi->get_handlers()->open(pathname, (int)flags, (mode_t)mode);
 
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "OPEN file " << pathname << " with flags " << std::hex
           << flags << " and mode " << mode << std::dec;
     DBG() << "RESULT: " << result;
-    DBG() << "=================================";
   }
 
   return result;
@@ -739,10 +727,8 @@ long elkvm_do_stat(Elkvm::VM * vmi) {
 
   long result = vmi->get_handlers()->stat(path, buf);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "STAT file " << path << " with buf at: " << (void*)buf_p << "(" << (void*)buf << ")";
     DBG() << "RESULT: " << result;
-    DBG() << "=================================";
   }
 
   return result;
@@ -795,11 +781,9 @@ long elkvm_do_lstat(Elkvm::VM * vmi) {
 
   long result = vmi->get_handlers()->lstat(path, buf);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "LSTAT file " << path << " with buf at " << (void*) buf_p
           << " (" << (void*)buf << ")";
     DBG() << "RESULT: " << result;
-    DBG() << "=================================";
   }
 
   return result;
@@ -824,10 +808,8 @@ long elkvm_do_lseek(Elkvm::VM * vmi) {
 
   long result = vmi->get_handlers()->lseek(fd, off, whence);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "LSEEK fd " << fd << " offset " << off << " whence " << whence;
     DBG() << "RESULT: " << result;
-    DBG() << "=================================";
 
   }
   return result;
@@ -887,7 +869,6 @@ long elkvm_do_mmap(Elkvm::VM * vmi) {
   }
 
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "MMAP addr " << (void*)addr << " len " << length
           << " (0x" << std::hex << length << ")"
           << " prot " << prot << " flags " << flags << " ";
@@ -900,7 +881,6 @@ long elkvm_do_mmap(Elkvm::VM * vmi) {
     print(std::cout, mapping);
 
     DBG() << "RESULT: " << result;
-    DBG() << "=================================";
   }
   if(result < 0) {
     return -errno;
@@ -943,12 +923,10 @@ long elkvm_do_mprotect(Elkvm::VM * vmi) {
   }
 
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "MPROTEXT requested with address " << (void*)addr
           << " len " << len << " prot " << std::hex << prot << std::dec;
     print(std::cout, mapping);
     DBG() << "RESULT: " << err;
-    DBG() << "=================================";
   }
 
   return err;
@@ -970,13 +948,11 @@ long elkvm_do_munmap(Elkvm::VM * vmi) {
   vmi->get_heap_manager().unmap(mapping, addr_p, pages_from_size(length));
 
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "MUNMAP requested with address " << (void*)addr_p
           << " (" << (void*)addr << " len " << length;
     if(!mapping.all_unmapped()) {
       print(std::cout, mapping);
     }
-    DBG() << "=================================";
   }
 
   return 0;
@@ -989,7 +965,6 @@ long elkvm_do_brk(Elkvm::VM * vmi) {
   elkvm_unpack_syscall1(vcpu, &user_brk_req);
 
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "BRK requested with address: " << (void*)user_brk_req
           << " current brk " << (void*)vmi->get_heap_manager().get_brk();
   }
@@ -997,7 +972,6 @@ long elkvm_do_brk(Elkvm::VM * vmi) {
   /* if the requested brk address is 0 just return the current brk address */
   if(user_brk_req == 0) {
     if(vmi->debug_mode()) {
-      DBG() << "=================================";
     }
     return vmi->get_heap_manager().get_brk();
   }
@@ -1006,7 +980,6 @@ long elkvm_do_brk(Elkvm::VM * vmi) {
   if(vmi->debug_mode()) {
     DBG() << "BRK done: err: " << err << " (" << strerror(err) << ") "
           << "new brk @ " << (void*)vmi->get_heap_manager().get_brk();
-    DBG() << "=================================";
   }
   if(err) {
     return err;
@@ -1042,13 +1015,11 @@ long elkvm_do_sigaction(Elkvm::VM * vmi) {
   }
 
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "SIGACTION with signum " << signum << " act " << (void*)act_p
           << " (" << (void*)act << ") oldact " << (void*)oldact_p << " (" << (void*)oldact << ")";
     if(err != 0) {
       DBG() << "ERROR: " << errno;
     }
-    DBG() << "=================================";
 
   }
 
@@ -1080,7 +1051,6 @@ long elkvm_do_sigprocmask(Elkvm::VM * vmi) {
 
   long result = vmi->get_handlers()->sigprocmask(how, set, oldset);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "RT SIGPROCMASK with how: " << how << " (" << (void*)&how << ") "
           << "set: " << (void*)set_p << " (" << (void*)set << ") "
           << "oldset: " << (void*)oldset_p << " (" << (void*)oldset;
@@ -1088,7 +1058,6 @@ long elkvm_do_sigprocmask(Elkvm::VM * vmi) {
     if(result < 0) {
       DBG () << "ERROR No: " << errno << " Msg: " << strerror(errno);
     }
-    DBG() << "=================================";
 
   }
   return result;
@@ -1144,14 +1113,12 @@ long elkvm_do_readv(Elkvm::VM * vmi) {
 
   long result = vmi->get_handlers()->readv(fd, host_iov, iovcnt);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "READV with df " << fd << " (@ " << (void*)&fd
           << ") iov @ " << (void*)iov_p << " count: " << iovcnt;
     DBG() << "RESULT: " << result;
     if(result < 0) {
       ERROR() << "ERROR No: " << errno << " Msg: " << strerror(errno);
     }
-    DBG() << "=================================";
   }
   return result;
 }
@@ -1174,11 +1141,9 @@ long elkvm_do_writev(Elkvm::VM * vmi) {
 
   long result = vmi->get_handlers()->writev(fd, host_iov, iovcnt);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "WRITEV with fd: " << fd << " iov @ " << (void*)iov_p
           << " iovcnt " << iovcnt;
     DBG() << "RESULT: " << result;
-    DBG() << "=================================";
   }
   return result;
 }
@@ -1203,11 +1168,9 @@ long elkvm_do_access(Elkvm::VM * vmi) {
 
   long result = vmi->get_handlers()->access(pathname, mode);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "ACCESS with pathname: " << pathname << " (" << (void*)path_p
           << ") mode " << mode;
     DBG() << "RESULT: " << result;
-    DBG() << "=================================";
   }
 
   if(result) {
@@ -1235,10 +1198,8 @@ long elkvm_do_pipe(Elkvm::VM * vmi) {
 
   long result = vmi->get_handlers()->pipe(pipefd);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "PIPE with pipefds at: " << pipefd << std::hex << "(" << pipefd << ")" << std::dec;
     DBG() << "RESULT: " << result;
-    DBG() << "=================================";
   }
   if(result) {
     return -errno;
@@ -1277,7 +1238,6 @@ long elkvm_do_mremap(Elkvm::VM *vmi __attribute__((unused))) {
 
   Elkvm::Mapping &mapping = vmi->get_heap_manager().find_mapping(old_address);
   if(vmi->debug_mode()) {
-    INFO() <<"============ LIBELKVM ===========";
     INFO() <<"MREMAP reguested with old address: 0x"
       << std::hex << old_address_p << " (" << old_address <<") size: 0x"
       << old_size << std::endl;
@@ -1293,7 +1253,6 @@ long elkvm_do_mremap(Elkvm::VM *vmi __attribute__((unused))) {
     INFO() <<std::endl;
 
     print(std::cout, mapping);
-    INFO() <<"=================================";
   }
 
   return vmi->get_heap_manager().remap(mapping, new_address_p, new_size, flags);
@@ -1378,10 +1337,8 @@ long elkvm_do_nanosleep(Elkvm::VM * vmi) {
 
   long result = vmi->get_handlers()->nanosleep(req, rem);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "NANOSLEEP";
     DBG() << "RESULT: " << result;
-    DBG() << "=================================";
   }
 
   return result;
@@ -1406,10 +1363,8 @@ long elkvm_do_getpid(Elkvm::VM * vmi) {
 
   long pid = vmi->get_handlers()->getpid();
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "GETPID";
     DBG() << "RESULT: " << pid << "\n";
-    DBG() << "=================================";
   }
 
   return pid;
@@ -1523,13 +1478,11 @@ long elkvm_do_uname(Elkvm::VM * vmi) {
 
   long result = vmi->get_handlers()->uname(buf);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "UNAME buf at: " << (void*)bufp << " (" << (void*)buf << ")";
     DBG() << "sysname " << buf->sysname << " nodename " << buf->nodename
           << " release " << buf->release << " version " << buf->version
           << " machine " << buf->machine;
     DBG() << "RESULT: " << result;
-    DBG() << "=================================";
   }
   return result;
 }
@@ -1602,13 +1555,11 @@ long elkvm_do_fcntl(Elkvm::VM * vmi) {
   }
 
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "FCNTL with fd: " << fd << " cmd: " << cmd << " arg_p: " << (void*)arg_p;
     DBG() << "RESULT: " << result;
     if(result < 0) {
       ERROR() << "ERROR No: " << errno << " Msg: " << strerror(errno);
     }
-    DBG() << "=================================";
   }
 
   return result;
@@ -1643,14 +1594,12 @@ long elkvm_do_truncate(Elkvm::VM * vmi) {
   path = reinterpret_cast<char *>(vmi->get_region_manager()->get_pager().get_host_p(path_p));
   long result = vmi->get_handlers()->truncate(path, length);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "TRUNCATE with path at: " << (void*)path << " (" << path << ") "
           << " length " << length;
     DBG() << "RESULT: " << result;
     if(result < 0) {
       ERROR() << "ERROR No: " << errno << " Msg: " << strerror(errno);
     }
-    DBG() << "=================================";
   }
   return result;
 }
@@ -1670,13 +1619,11 @@ long elkvm_do_ftruncate(Elkvm::VM * vmi) {
 
   long result = vmi->get_handlers()->ftruncate(fd, length);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "FTRUNCATE with fd: " << fd << " len " << length;
     DBG() << "RESULT: " << result;
     if(result < 0) {
       ERROR() << "ERROR No: " << errno << " Msg: " << strerror(errno);
     }
-    DBG() << "=================================";
   }
   return result;
 }
@@ -1703,14 +1650,12 @@ long elkvm_do_getdents(Elkvm::VM * vmi __attribute__((unused))) {
 
   int res = vmi->get_handlers()->getdents(fd, dirp, count);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "GETDENTS with fd: " << fd << " dirp " << (void*)dirp_p
           << " (" << (void*)dirp << ") count " << count;
     DBG() << "RESULT: " << res << "\n";
     if(res < 0) {
       ERROR() << "ERROR No: " << errno << " Msg: " << strerror(errno);
     }
-    DBG() << "=================================";
   }
   if(res < 0) {
     return -errno;
@@ -1736,13 +1681,11 @@ long elkvm_do_getcwd(Elkvm::VM * vmi) {
 
   char *result = vmi->get_handlers()->getcwd(buf, size);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "GETCWD with buf at: " << (void*)buf_p << " (" << (void*)buf << ") size " << size;
     DBG() << "RESULT: " << result;
     if(result == NULL) {
       ERROR() << "ERROR No: " << errno << " Msg: " << strerror(errno);
     }
-    DBG() << "=================================";
   }
   if(result == NULL) {
     return errno;
@@ -1781,14 +1724,12 @@ long elkvm_do_mkdir(Elkvm::VM * vmi) {
   pathname = reinterpret_cast<char *>(vmi->get_region_manager()->get_pager().get_host_p(pathname_p));
   long result = vmi->get_handlers()->mkdir(pathname, mode);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "MKDIR with pathname at: " << (void*)pathname
           << " (" << pathname << ") mode " << mode;
     DBG() << "RESULT: " << result;
     if(result < 0) {
       ERROR() << "ERROR No: " << errno << " Msg: " << strerror(errno);
     }
-    DBG() << "=================================";
   }
   return result;
 
@@ -1822,13 +1763,11 @@ long elkvm_do_unlink(Elkvm::VM * vmi) {
   pathname = reinterpret_cast<char *>(vmi->get_region_manager()->get_pager().get_host_p(pathname_p));
   long result = vmi->get_handlers()->unlink(pathname);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "UNLINK with pathname at: " << (void*)pathname << " (" << pathname << ")";
     DBG() << "RESULT: " << result;
     if(result < 0) {
       ERROR() << "ERROR No: " << errno << " Msg: " << strerror(errno);
     }
-    DBG() << "=================================";
   }
   return result;
 }
@@ -1857,14 +1796,12 @@ long elkvm_do_readlink(Elkvm::VM * vmi) {
   buf  = reinterpret_cast<char *>(vmi->get_region_manager()->get_pager().get_host_p(buf_p));
   long result = vmi->get_handlers()->readlink(path, buf, bufsiz);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "READLINK with path at: " << (void*)path << " (" << path << ") buf at "
           << (void*)buf << " bufsize " << bufsiz;
     DBG() << "RESULT: " << result;
     if(result < 0) {
       ERROR() << "ERROR No: " << errno << " Msg: " << strerror(errno);
     }
-    DBG() << "=================================";
   }
   return result;
 }
@@ -1915,7 +1852,6 @@ long elkvm_do_gettimeofday(Elkvm::VM * vmi) {
 
   long result = vmi->get_handlers()->gettimeofday(tv, tz);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "GETTIMEOFDAY with timeval: " << LOG_GUEST_HOST(tv_p, tv) << LOG_GUEST_HOST(tz_p, tz);
     DBG() << "RESULT: " << result;
     if(result == 0) {
@@ -1928,7 +1864,6 @@ long elkvm_do_gettimeofday(Elkvm::VM * vmi) {
     } else {
       ERROR() << "ERROR No: " << errno << " Msg: " << strerror(errno);
     }
-    DBG() << "=================================";
   }
 
   return result;
@@ -1949,10 +1884,8 @@ long elkvm_do_getrlimit(Elkvm::VM *) {
 //
 //  memcpy(rlim, &vm->rlimits[resource], sizeof(struct rlimit));
 //  if(vmi->debug_mode()) {
-//    DBG() << "============ LIBELKVM ===========";
 //    printf("GETRLIMIT with resource: %li rlim: 0x%lx (%p)\n",
 //        resource, rlim_p, rlim);
-//    DBG() << "=================================";
 //  }
 //
 //  return 0;
@@ -1979,9 +1912,7 @@ long elkvm_do_getrusage(Elkvm::VM * vmi) {
 
   long result = vmi->get_handlers()->getrusage(who, usage);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "RUSAGE with who: " << who << " usage: " << LOG_GUEST_HOST(usage, usage_p);
-    DBG() << "=================================";
   }
   return result;
 }
@@ -2008,7 +1939,6 @@ long elkvm_do_times(Elkvm::VM * vmi) {
 
   long result = vmi->get_handlers()->times(buf);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "TIMES with buf " << LOG_GUEST_HOST(buf_p, buf);
     DBG() << "Result: " << result;
     if(result >= 0) {
@@ -2017,7 +1947,6 @@ long elkvm_do_times(Elkvm::VM * vmi) {
             << " cutime: " << buf->tms_cutime
             << " cstime: " << buf->tms_cstime;
     }
-    DBG() << "=================================";
   }
 
   if(result == -1) {
@@ -2235,11 +2164,9 @@ long elkvm_do_statfs(Elkvm::VM * vmi __attribute__((unused))) {
 
   int res = vmi->get_handlers()->statfs(path, buf);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "STATFS path " << LOG_GUEST_HOST(path_p, path)
           << " buf " << LOG_GUEST_HOST(buf_p, buf);
     DBG() << "RESULT: " << res << "\n";
-    DBG() << "=================================";
   }
 
   if(res == 0) {
@@ -2364,10 +2291,8 @@ long elkvm_do_arch_prctl(Elkvm::VM * vmi) {
 
   err = kvm_vcpu_set_sregs(vcpu.get());
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "ARCH PRCTL with code " << code << " user_addr " << LOG_GUEST_HOST(user_addr, host_addr);
     DBG() << "RESULT " << err;
-    DBG() << "=================================";
   }
   return err;
 }
@@ -2488,10 +2413,8 @@ long elkvm_do_gettid(Elkvm::VM * vmi) {
 
   long result = vmi->get_handlers()->gettid();
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "GETTID";
     DBG() << "RESULT: " << result;
-    DBG() << "=================================";
   }
   return result;
 }
@@ -2569,10 +2492,8 @@ long elkvm_do_time(Elkvm::VM * vmi) {
 
   long result = vmi->get_handlers()->time(time);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "TIME with arg " << LOG_GUEST_HOST(time_p, time);
     DBG() << "RESULT: " << result;
-    DBG() << "=================================";
   }
 
   return result;
@@ -2612,12 +2533,10 @@ long elkvm_do_futex(Elkvm::VM * vmi) {
         << " uaddr2 " << LOG_GUEST_HOST(uaddr2, uaddr2_p) << " uaddr3 " << (void*)val3;
   long result = vmi->get_handlers()->futex(uaddr, op, val, timeout, uaddr2, val3);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "FUTEX with uaddr " << LOG_GUEST_HOST(uaddr, uaddr_p)
           << " op " << op << " val " << val << " timeout " << LOG_GUEST_HOST(timeout, timeout_p)
           << " uaddr2 " << LOG_GUEST_HOST(uaddr2, uaddr2_p) << " uaddr3 " << (void*)val3;
     DBG() << "RESULT: " << result;
-    DBG() << "=================================";
   }
 
   if(result) {
@@ -2748,10 +2667,8 @@ long elkvm_do_clock_gettime(Elkvm::VM * vmi) {
 
   long result = vmi->get_handlers()->clock_gettime(clk_id, tp);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "CLOCK GETTIME with clk_id " << clk_id << " tp " << LOG_GUEST_HOST(tp_p, tp);
     DBG() << "RESULT: " << result;
-    DBG() << "=================================";
   }
   return result;
 }
@@ -2797,10 +2714,8 @@ long elkvm_do_tgkill(Elkvm::VM * vmi) {
 
   long result = vmi->get_handlers()->tgkill(tgid, tid, sig);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "TGKILL with tgid " << tgid << " tid " << tid << " sig " << sig;
     DBG() << "RESULT: " << result;
-    DBG() << "=================================";
   }
   return result;
 
@@ -2916,11 +2831,9 @@ long elkvm_do_openat(Elkvm::VM * vmi __attribute__((unused))) {
 
   int res = vmi->get_handlers()->openat((int)dirfd, pathname, (int)flags);
   if(vmi->debug_mode()) {
-    DBG() << "============ LIBELKVM ===========";
     DBG() << "OPENAT with dirfd " << dirfd << " pathname " << LOG_GUEST_HOST(pathname_p, pathname)
           << " flags " << flags;
     DBG() << "RESULT: " << res << "\n";
-    DBG() << "=================================";
   }
 
   if(res < 0) {
