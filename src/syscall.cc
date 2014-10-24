@@ -22,7 +22,7 @@
 #include <elkvm/elkvm-log.h>
 
 #define LOG_GUEST_HOST(guest, host) (void*)guest << " (" << (void*)host << ")"
-#define LOG_DEC_HEX(val) std::dec << val << " (" << std::hex << val << ")"
+#define LOG_DEC_HEX(val) std::dec << val << " (" << std::hex << "0x" << val << ")"
 
 // XXX: this should be the same for all platforms, we
 //      just need to include proper unistd.h
