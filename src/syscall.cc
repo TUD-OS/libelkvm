@@ -339,7 +339,8 @@ int Elkvm::VM::handle_interrupt(struct kvm_vcpu *vcpu) {
   uint64_t interrupt_vector = vcpu->pop();
 
   if(debug_mode()) {
-    DBG() << " INTERRUPT with vector " << std::hex << interrupt_vector << std::dec << " detected";
+    DBG() << " INTERRUPT with vector " << std::hex << "0x" << interrupt_vector
+      << " detected";
     kvm_vcpu_get_sregs(vcpu);
     kvm_vcpu_dump_regs(vcpu);
     dump_stack(vcpu);
@@ -395,7 +396,7 @@ int Elkvm::VM::handle_syscall(struct kvm_vcpu *vcpu)
 {
   CURRENT_ABI::paramtype syscall_num = CURRENT_ABI::get_parameter(vcpu, 0);
   if(debug_mode()) {
-    DBG() << "SYSCALL " << syscall_num << " detected"
+    DBG() << "SYSCALL " << std::dec << syscall_num << " detected"
       << " (" << elkvm_syscalls[syscall_num].name << ")";
   }
 
@@ -503,7 +504,7 @@ void dbg_log_result<char *>(char *res) {
 
 template<>
 void dbg_log_result<int>(int res) {
-  DBG() << "\tresult: " << res;
+  DBG() << "\tresult: " << std::dec << res;
   if(res < 0) {
     DBG() << "\terrno: " << std::dec << errno << " msg: " << strerror(errno);
   }
@@ -514,10 +515,10 @@ void dbg_log_read(const Elkvm::VM &vm, const int fd, const guestptr_t buf_p,
     const size_t result) {
   if(vm.debug_mode()) {
     DBG() << "READ from fd: " << fd
-        << " with size " << LOG_DEC_HEX(parcount) << " of "
-        << LOG_DEC_HEX(count)
-        << " buf @ " << LOG_GUEST_HOST(buf_p, buf)
-        << "RESULT " << result << std::hex << "(" << result << ")";
+          << " with size " << LOG_DEC_HEX(parcount) << " of "
+          << LOG_DEC_HEX(count)
+          << " buf @ " << LOG_GUEST_HOST(buf_p, buf);
+    dbg_log_result(result);
   }
 }
 
@@ -861,10 +862,10 @@ long elkvm_do_mmap(Elkvm::VM * vmi) {
 
   if(vmi->debug_mode()) {
     DBG() << "MMAP addr " << (void*)addr
-        << " len " << LOG_DEC_HEX(len)
+        << " len " << LOG_DEC_HEX(length)
         << " prot " << prot << " flags " << flags << " ";
     if(!(flags & MAP_ANONYMOUS)) {
-      DBG() << " -> fd " << fd << " offs " << off << " ";
+      DBG() << " -> fd " << std::dec << fd << " offs 0x" << std::hex << off;
     }
     if(flags & MAP_FIXED) {
       DBG() << " -> MAP_FIXED ";
