@@ -1,9 +1,13 @@
+#include <string>
+
 #include <errno.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <iostream>
+#include <iomanip>
+#include <cstdbool>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <stropts.h>
 #include <sys/mman.h>
 #include <unistd.h>
@@ -546,6 +550,32 @@ void kvm_vcpu_dump_regs(struct kvm_vcpu *vcpu) {
   fprintf(stderr, "\n");
 
   return;
+}
+
+void print_segment(const std::string name, struct kvm_segment seg)
+{
+  std::cerr << " " << name
+    << std::hex
+    << "       " << std::setw(4) << std::setfill('0') << seg.selector
+    << "      "  << std::setw(16) << std::setfill('0') << seg.base
+    << "  "      << std::setw(8) << std::setfill('0') << seg.limit
+    << "  "      << std::setw(2) << std::setfill('0') << static_cast<unsigned>(seg.type)
+    << "    " << static_cast<unsigned>(seg.present)
+    << " "    << static_cast<unsigned>(seg.dpl)
+    << "   "  << static_cast<unsigned>(seg.db)
+    << "  "   << static_cast<unsigned>(seg.s)
+    << " "    << static_cast<unsigned>(seg.l)
+    << " "    << static_cast<unsigned>(seg.g)
+    << " "    << static_cast<unsigned>(seg.avl) << std::endl;
+}
+
+void print_dtable(const std::string name, struct kvm_dtable dtable)
+{
+  std::cerr << " " << name
+    << std::hex
+    << "                 " << std::setw(16) << std::setfill('0') << dtable.base
+    << "  " << std::setw(8) << std::setfill('0') << dtable.limit
+    << std::endl;
 }
 
 void kvm_vcpu_dump_code_at(struct kvm_vcpu *vcpu, uint64_t guest_addr) {
