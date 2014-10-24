@@ -524,6 +524,32 @@ elkvm_unpack_syscall6(std::shared_ptr<struct kvm_vcpu> vcpu,
   *arg6 = CURRENT_ABI::get_parameter(vcpu, 6);
 }
 
+namespace Elkvm {
+
+template<typename T>
+void dbg_log_result(T res) {
+  DBG() << "\tresult: " << res;
+}
+
+template<>
+void dbg_log_result<char *>(char *res) {
+  DBG() << "\tresult: " << res;
+  if(res == nullptr) {
+    DBG() << "\terrno: " << std::dec << errno << " msg: " << strerror(errno);
+  }
+}
+
+template<>
+void dbg_log_result<int>(int res) {
+  DBG() << "\tresult: " << res;
+  if(res < 0) {
+    DBG() << "\terrno: " << std::dec << errno << " msg: " << strerror(errno);
+  }
+}
+
+  //namespace Elkvm
+}
+
 long elkvm_do_read(Elkvm::VM * vmi) {
   if(vmi->get_handlers()->read == NULL) {
     ERROR() << "READ handler not found" << LOG_RESET << "\n";
@@ -573,11 +599,7 @@ long elkvm_do_read(Elkvm::VM * vmi) {
       if(in_result < newcount) {
         return result + in_result;
       }
-      if(vmi->debug_mode()) {
-        DBG() << "READ from fd: " << fd << " with size " << newcount << " of "
-              << count << " buf @ " << (void*)buf_p << "(" << (void*)buf << ")";
-        DBG() << "RESULT " << result << std::hex << "(" << result << ")";
-      }
+      Elkvm::dbg_log_read(*vmi, fd, buf_p, buf, newcount, count, result);
 
       mark_p += in_result;
       current_count -= in_result;
@@ -589,11 +611,7 @@ long elkvm_do_read(Elkvm::VM * vmi) {
     result = vmi->get_handlers()->read((int)fd, buf, (size_t)count);
   }
 
-  if(vmi->debug_mode()) {
-    DBG() << "READ from fd: " << fd << " with size " << count
-          << " buf @ " << (void*)buf_p << "(" << (void*)buf << ")";
-    DBG() << "RESULT " <<  result;
-  }
+  Elkvm::dbg_log_read(*vmi, fd, buf_p, buf, count, count, result);
 
   return result;
 }
@@ -680,7 +698,7 @@ long elkvm_do_open(Elkvm::VM * vmi) {
   if(vmi->debug_mode()) {
     DBG() << "OPEN file " << pathname << " with flags " << std::hex
           << flags << " and mode " << mode << std::dec;
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
   }
 
   return result;
@@ -696,13 +714,11 @@ long elkvm_do_close(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype fd = 0;
   elkvm_unpack_syscall1(vcpu, &fd);
 
-  if(vmi->debug_mode()) {
-    ERROR() << "CLOSE file with fd: " << fd << "\n";
-  }
   long result = vmi->get_handlers()->close((int)fd);
 
   if(vmi->debug_mode()) {
-    DBG() << "RESULT: " << result;
+    DBG() << "CLOSE file with fd: " << fd << "\n";
+    Elkvm::dbg_log_result<int>(result);
   }
 
   return result;
@@ -729,7 +745,7 @@ long elkvm_do_stat(Elkvm::VM * vmi) {
   long result = vmi->get_handlers()->stat(path, buf);
   if(vmi->debug_mode()) {
     DBG() << "STAT file " << path << " with buf at: " << (void*)buf_p << "(" << (void*)buf << ")";
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
   }
 
   return result;
@@ -751,12 +767,12 @@ long elkvm_do_fstat(Elkvm::VM * vmi) {
   buf = reinterpret_cast<struct stat *>(vmi->get_region_manager()->get_pager().get_host_p(buf_p));
 
   if(vmi->debug_mode()) {
-    DBG() << "FSTAT file with fd " << fd << " buf at " << (void*)buf_p << " (" << (void*)buf << ")";
+    DBG() << "FSTAT file with fd " << fd << " buf at " << LOG_GUEST_HOST(buf_p, buf);
   }
   long result = vmi->get_handlers()->fstat(fd, buf);
 
   if(vmi->debug_mode()) {
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
   }
 
   return result;
@@ -784,7 +800,7 @@ long elkvm_do_lstat(Elkvm::VM * vmi) {
   if(vmi->debug_mode()) {
     DBG() << "LSTAT file " << path << " with buf at " << (void*) buf_p
           << " (" << (void*)buf << ")";
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
   }
 
   return result;
@@ -810,7 +826,7 @@ long elkvm_do_lseek(Elkvm::VM * vmi) {
   long result = vmi->get_handlers()->lseek(fd, off, whence);
   if(vmi->debug_mode()) {
     DBG() << "LSEEK fd " << fd << " offset " << off << " whence " << whence;
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
 
   }
   return result;
@@ -870,9 +886,10 @@ long elkvm_do_mmap(Elkvm::VM * vmi) {
   }
 
   if(vmi->debug_mode()) {
-    DBG() << "MMAP addr " << (void*)addr << " len " << length
-          << " (0x" << std::hex << length << ")"
-          << " prot " << prot << " flags " << flags << " ";
+    DBG() << "MMAP addr " << (void*)addr
+        << " len " << std::dec << length
+        << " (0x" << std::hex << length << ")"
+        << " prot " << prot << " flags " << flags << " ";
     if(!(flags & MAP_ANONYMOUS)) {
       DBG() << " -> fd " << fd << " offs " << off << " ";
     }
@@ -881,7 +898,7 @@ long elkvm_do_mmap(Elkvm::VM * vmi) {
     }
     print(std::cout, mapping);
 
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
   }
   if(result < 0) {
     return -errno;
@@ -972,8 +989,6 @@ long elkvm_do_brk(Elkvm::VM * vmi) {
 
   /* if the requested brk address is 0 just return the current brk address */
   if(user_brk_req == 0) {
-    if(vmi->debug_mode()) {
-    }
     return vmi->get_heap_manager().get_brk();
   }
 
@@ -1055,7 +1070,7 @@ long elkvm_do_sigprocmask(Elkvm::VM * vmi) {
     DBG() << "RT SIGPROCMASK with how: " << how << " (" << (void*)&how << ") "
           << "set: " << (void*)set_p << " (" << (void*)set << ") "
           << "oldset: " << (void*)oldset_p << " (" << (void*)oldset;
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
     if(result < 0) {
       DBG () << "ERROR No: " << errno << " Msg: " << strerror(errno);
     }
@@ -1116,7 +1131,7 @@ long elkvm_do_readv(Elkvm::VM * vmi) {
   if(vmi->debug_mode()) {
     DBG() << "READV with df " << fd << " (@ " << (void*)&fd
           << ") iov @ " << (void*)iov_p << " count: " << iovcnt;
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
     if(result < 0) {
       ERROR() << "ERROR No: " << errno << " Msg: " << strerror(errno);
     }
@@ -1144,7 +1159,7 @@ long elkvm_do_writev(Elkvm::VM * vmi) {
   if(vmi->debug_mode()) {
     DBG() << "WRITEV with fd: " << fd << " iov @ " << (void*)iov_p
           << " iovcnt " << iovcnt;
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
   }
   return result;
 }
@@ -1171,7 +1186,7 @@ long elkvm_do_access(Elkvm::VM * vmi) {
   if(vmi->debug_mode()) {
     DBG() << "ACCESS with pathname: " << pathname << " (" << (void*)path_p
           << ") mode " << mode;
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
   }
 
   if(result) {
@@ -1200,7 +1215,7 @@ long elkvm_do_pipe(Elkvm::VM * vmi) {
   long result = vmi->get_handlers()->pipe(pipefd);
   if(vmi->debug_mode()) {
     DBG() << "PIPE with pipefds at: " << pipefd << std::hex << "(" << pipefd << ")" << std::dec;
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
   }
   if(result) {
     return -errno;
@@ -1339,7 +1354,7 @@ long elkvm_do_nanosleep(Elkvm::VM * vmi) {
   long result = vmi->get_handlers()->nanosleep(req, rem);
   if(vmi->debug_mode()) {
     DBG() << "NANOSLEEP";
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
   }
 
   return result;
@@ -1483,7 +1498,7 @@ long elkvm_do_uname(Elkvm::VM * vmi) {
     DBG() << "sysname " << buf->sysname << " nodename " << buf->nodename
           << " release " << buf->release << " version " << buf->version
           << " machine " << buf->machine;
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
   }
   return result;
 }
@@ -1557,7 +1572,7 @@ long elkvm_do_fcntl(Elkvm::VM * vmi) {
 
   if(vmi->debug_mode()) {
     DBG() << "FCNTL with fd: " << fd << " cmd: " << cmd << " arg_p: " << (void*)arg_p;
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
     if(result < 0) {
       ERROR() << "ERROR No: " << errno << " Msg: " << strerror(errno);
     }
@@ -1597,7 +1612,7 @@ long elkvm_do_truncate(Elkvm::VM * vmi) {
   if(vmi->debug_mode()) {
     DBG() << "TRUNCATE with path at: " << (void*)path << " (" << path << ") "
           << " length " << length;
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
     if(result < 0) {
       ERROR() << "ERROR No: " << errno << " Msg: " << strerror(errno);
     }
@@ -1621,7 +1636,7 @@ long elkvm_do_ftruncate(Elkvm::VM * vmi) {
   long result = vmi->get_handlers()->ftruncate(fd, length);
   if(vmi->debug_mode()) {
     DBG() << "FTRUNCATE with fd: " << fd << " len " << length;
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
     if(result < 0) {
       ERROR() << "ERROR No: " << errno << " Msg: " << strerror(errno);
     }
@@ -1683,7 +1698,7 @@ long elkvm_do_getcwd(Elkvm::VM * vmi) {
   char *result = vmi->get_handlers()->getcwd(buf, size);
   if(vmi->debug_mode()) {
     DBG() << "GETCWD with buf at: " << (void*)buf_p << " (" << (void*)buf << ") size " << size;
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<char *>(result);
     if(result == NULL) {
       ERROR() << "ERROR No: " << errno << " Msg: " << strerror(errno);
     }
@@ -1727,7 +1742,7 @@ long elkvm_do_mkdir(Elkvm::VM * vmi) {
   if(vmi->debug_mode()) {
     DBG() << "MKDIR with pathname at: " << (void*)pathname
           << " (" << pathname << ") mode " << mode;
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
     if(result < 0) {
       ERROR() << "ERROR No: " << errno << " Msg: " << strerror(errno);
     }
@@ -1765,7 +1780,7 @@ long elkvm_do_unlink(Elkvm::VM * vmi) {
   long result = vmi->get_handlers()->unlink(pathname);
   if(vmi->debug_mode()) {
     DBG() << "UNLINK with pathname at: " << (void*)pathname << " (" << pathname << ")";
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
     if(result < 0) {
       ERROR() << "ERROR No: " << errno << " Msg: " << strerror(errno);
     }
@@ -1799,7 +1814,7 @@ long elkvm_do_readlink(Elkvm::VM * vmi) {
   if(vmi->debug_mode()) {
     DBG() << "READLINK with path at: " << (void*)path << " (" << path << ") buf at "
           << (void*)buf << " bufsize " << bufsiz;
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
     if(result < 0) {
       ERROR() << "ERROR No: " << errno << " Msg: " << strerror(errno);
     }
@@ -1854,7 +1869,7 @@ long elkvm_do_gettimeofday(Elkvm::VM * vmi) {
   long result = vmi->get_handlers()->gettimeofday(tv, tz);
   if(vmi->debug_mode()) {
     DBG() << "GETTIMEOFDAY with timeval: " << LOG_GUEST_HOST(tv_p, tv) << LOG_GUEST_HOST(tz_p, tz);
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
     if(result == 0) {
       if(tv != NULL) {
         DBG()<< "timeval: tv_sec: " << tv->tv_sec << " tv_usec: " << tv->tv_usec;
@@ -1969,7 +1984,7 @@ long elkvm_do_getuid(Elkvm::VM * vmi) {
 
   long result = vmi->get_handlers()->getuid();
   if(vmi->debug_mode()) {
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
   }
 
   return result;
@@ -1987,7 +2002,7 @@ long elkvm_do_getgid(Elkvm::VM * vmi) {
 
   long result = vmi->get_handlers()->getgid();
   if(vmi->debug_mode()) {
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
   }
 
   return result;
@@ -2009,7 +2024,7 @@ long elkvm_do_geteuid(Elkvm::VM * vmi) {
 
   long result = vmi->get_handlers()->geteuid();
   if(vmi->debug_mode()) {
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
   }
 
   return result;
@@ -2023,7 +2038,7 @@ long elkvm_do_getegid(Elkvm::VM * vmi) {
 
   long result = vmi->get_handlers()->getegid();
   if(vmi->debug_mode()) {
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
   }
 
   return result;
@@ -2415,7 +2430,7 @@ long elkvm_do_gettid(Elkvm::VM * vmi) {
   long result = vmi->get_handlers()->gettid();
   if(vmi->debug_mode()) {
     DBG() << "GETTID";
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
   }
   return result;
 }
@@ -2494,7 +2509,7 @@ long elkvm_do_time(Elkvm::VM * vmi) {
   long result = vmi->get_handlers()->time(time);
   if(vmi->debug_mode()) {
     DBG() << "TIME with arg " << LOG_GUEST_HOST(time_p, time);
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
   }
 
   return result;
@@ -2537,7 +2552,7 @@ long elkvm_do_futex(Elkvm::VM * vmi) {
     DBG() << "FUTEX with uaddr " << LOG_GUEST_HOST(uaddr, uaddr_p)
           << " op " << op << " val " << val << " timeout " << LOG_GUEST_HOST(timeout, timeout_p)
           << " uaddr2 " << LOG_GUEST_HOST(uaddr2, uaddr2_p) << " uaddr3 " << (void*)val3;
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
   }
 
   if(result) {
@@ -2669,7 +2684,7 @@ long elkvm_do_clock_gettime(Elkvm::VM * vmi) {
   long result = vmi->get_handlers()->clock_gettime(clk_id, tp);
   if(vmi->debug_mode()) {
     DBG() << "CLOCK GETTIME with clk_id " << clk_id << " tp " << LOG_GUEST_HOST(tp_p, tp);
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
   }
   return result;
 }
@@ -2716,7 +2731,7 @@ long elkvm_do_tgkill(Elkvm::VM * vmi) {
   long result = vmi->get_handlers()->tgkill(tgid, tid, sig);
   if(vmi->debug_mode()) {
     DBG() << "TGKILL with tgid " << tgid << " tid " << tid << " sig " << sig;
-    DBG() << "RESULT: " << result;
+    Elkvm::dbg_log_result<int>(result);
   }
   return result;
 
