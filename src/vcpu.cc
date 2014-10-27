@@ -498,45 +498,47 @@ void kvm_vcpu_dump_msr(struct kvm_vcpu *vcpu, uint32_t msr) {
 void kvm_vcpu_dump_regs(struct kvm_vcpu *vcpu) {
   std::cerr << std::endl << " Registers:" << std::endl;
   std::cerr << " ----------\n";
-  std::cerr << " rip: " << std::hex << std::setw(16) << std::setfill('0') << vcpu->regs.rip
-     << "   rsp: " << std::hex << std::setw(16) << std::setfill('0') << vcpu->regs.rsp
-     << "   flags: " << std::hex << std::setw(16) << std::setfill('0') << vcpu->regs.rflags;
+
+  std::cerr << PRINT_REGISTER("rip", vcpu->regs.rip)
+            << PRINT_REGISTER("  rsp", vcpu->regs.rsp)
+            << PRINT_REGISTER("  flags", vcpu->regs.rflags)
+            << std::endl;
 
   print_flags(vcpu->regs.rflags);
 
-  std::cerr << " rax: " << std::hex << std::setw(16) << std::setfill('0') << vcpu->regs.rax
-     << "   rbx: " << std::hex << std::setw(16) << std::setfill('0') << vcpu->regs.rbx
-     << "   rcx: " << std::hex << std::setw(16) << std::setfill('0') << vcpu->regs.rcx
-     << std::endl;
+  std::cerr << PRINT_REGISTER("rax", vcpu->regs.rax)
+            << PRINT_REGISTER("  rbx", vcpu->regs.rbx)
+            << PRINT_REGISTER("  rcx", vcpu->regs.rcx)
+            << std::endl;
 
-  std::cerr << " rdx: " << std::hex << std::setw(16) << std::setfill('0') << vcpu->regs.rdx
-     << "   rsi: " << std::hex << std::setw(16) << std::setfill('0') << vcpu->regs.rsi
-     << "   rdi: " << std::hex << std::setw(16) << std::setfill('0') << vcpu->regs.rdi
-     << std::endl;
+  std::cerr << PRINT_REGISTER("rdx", vcpu->regs.rdx)
+            << PRINT_REGISTER("  rsi", vcpu->regs.rsi)
+            << PRINT_REGISTER("  rdi", vcpu->regs.rdi)
+            << std::endl;
 
-  std::cerr << " rbp: " << std::hex << std::setw(16) << std::setfill('0') << vcpu->regs.rbp
-     << "    r8: " << std::hex << std::setw(16) << std::setfill('0') << vcpu->regs.r8
-     << "    r9: " << std::hex << std::setw(16) << std::setfill('0') << vcpu->regs.r9
-     << std::endl;
+  std::cerr << PRINT_REGISTER("rbp", vcpu->regs.rbp)
+            << PRINT_REGISTER("   r8", vcpu->regs.r8)
+            << PRINT_REGISTER("   r9", vcpu->regs.r9)
+            << std::endl;
 
-  std::cerr << " r10: " << std::hex << std::setw(16) << std::setfill('0') << vcpu->regs.r10
-     << "   r11: " << std::hex << std::setw(16) << std::setfill('0') << vcpu->regs.r11
-     << "   r12: " << std::hex << std::setw(16) << std::setfill('0') << vcpu->regs.r12
-     << std::endl;
+  std::cerr << PRINT_REGISTER("r10", vcpu->regs.r10)
+            << PRINT_REGISTER("  r11", vcpu->regs.r11)
+            << PRINT_REGISTER("  r12", vcpu->regs.r12)
+            << std::endl;
 
-  std::cerr << " r13: " << std::hex << std::setw(16) << std::setfill('0') << vcpu->regs.r13
-     << "   r14: " << std::hex << std::setw(16) << std::setfill('0') << vcpu->regs.r14
-     << "   r15: " << std::hex << std::setw(16) << std::setfill('0') << vcpu->regs.r15
-     << std::endl;
+  std::cerr << PRINT_REGISTER("r13", vcpu->regs.r13)
+            << PRINT_REGISTER("  r14", vcpu->regs.r14)
+            << PRINT_REGISTER("  r15", vcpu->regs.r15)
+            << std::endl;
 
-  std::cerr << " cr0: " << std::hex << std::setw(16) << std::setfill('0') << vcpu->sregs.cr0
-     << "   cr2: " << std::hex << std::setw(16) << std::setfill('0') << vcpu->sregs.cr2
-     << "   cr3: " << std::hex << std::setw(16) << std::setfill('0') << vcpu->sregs.cr3
-     << std::endl;
+  std::cerr << PRINT_REGISTER("cr0", vcpu->sregs.cr0)
+            << PRINT_REGISTER("  cr2", vcpu->sregs.cr2)
+            << PRINT_REGISTER("  cr3", vcpu->sregs.cr3)
+            << std::endl;
 
-  std::cerr << " cr4: " << std::hex << std::setw(16) << std::setfill('0') << vcpu->sregs.cr4
-     << "   cr8: " << std::hex << std::setw(16) << std::setfill('0') << vcpu->sregs.cr8
-     << std::endl;
+  std::cerr << PRINT_REGISTER("cr4", vcpu->sregs.cr4)
+            << PRINT_REGISTER("  cr8", vcpu->sregs.cr8)
+            << std::endl;
 
   std::cerr << "\n Segment registers:\n";
   std::cerr <<   " ------------------\n";
@@ -555,9 +557,9 @@ void kvm_vcpu_dump_regs(struct kvm_vcpu *vcpu) {
 
   std::cerr << "\n APIC:\n";
   std::cerr <<   " -----\n";
-  std::cerr << " efer: " << std::hex << std::setw(16) << std::setfill('0') << vcpu->sregs.efer
-    << "  apic base: " << std::setw(16) << std::setfill('0') << vcpu->sregs.apic_base
-    << std::endl;
+  std::cerr << PRINT_REGISTER("efer", vcpu->sregs.efer)
+            << PRINT_REGISTER("  apic base", vcpu->sregs.apic_base)
+            << std::endl;
 
   std::cerr << "\n Interrupt bitmap:\n";
   std::cerr <<   " -----------------\n";
