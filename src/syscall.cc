@@ -1045,10 +1045,6 @@ long elkvm_do_sigprocmask(Elkvm::VM * vmi) {
           << "set: " << (void*)set_p << " (" << (void*)set << ") "
           << "oldset: " << (void*)oldset_p << " (" << (void*)oldset;
     Elkvm::dbg_log_result<int>(result);
-    if(result < 0) {
-      DBG () << "ERROR No: " << errno << " Msg: " << strerror(errno);
-    }
-
   }
   return result;
 }
@@ -1057,11 +1053,41 @@ long elkvm_do_sigreturn(Elkvm::VM * vmi __attribute__((unused))) {
   return -ENOSYS;
 }
 
-long elkvm_do_ioctl(Elkvm::VM * vmi __attribute__((unused))) {
+long elkvm_do_ioctl(Elkvm::VM * vmi) {
+  if(vmi->get_handlers()->ioctl == NULL) {
+    ERROR() << "IOCTL handler not found\n";
+    return -ENOSYS;
+  }
+
   INFO();
-  INFO() << "IOCTL IS NOT SUPPORTED BY ELKVM RIGHT NOW!";
+  INFO() << "IOCTL IS ONLY SUPPORTED FOR THREE ARGS BY ELKVM RIGHT NOW!";
   INFO();
-  return -ENOSYS;
+
+  CURRENT_ABI::paramtype fd;
+  CURRENT_ABI::paramtype request;
+  CURRENT_ABI::paramtype argp_p;
+
+  auto vcpu = vmi->get_vcpu(0);
+
+  elkvm_unpack_syscall3(vcpu, &fd, &request, &argp_p);
+
+  char *argp = static_cast<char *>(
+      vmi->get_region_manager()->get_pager().get_host_p(argp_p));
+
+  long result = vmi->get_handlers()->ioctl(fd, request, argp);
+
+  if(vmi->debug_mode()) {
+    DBG() << "IOCTL with fd: " << std::dec << fd
+          << "request: " << request
+          << "argp: " << LOG_GUEST_HOST(argp_p, argp);
+    Elkvm::dbg_log_result<int>(result);
+  }
+
+  if(result < 0) {
+    return -errno;
+  }
+
+  return result;
 }
 
 long elkvm_do_pread64(Elkvm::VM * vmi __attribute__((unused))) {
