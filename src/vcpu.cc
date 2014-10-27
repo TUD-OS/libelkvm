@@ -22,6 +22,9 @@
 #include <elkvm/syscall.h>
 #include <elkvm/vcpu.h>
 
+#define PRINT_REGISTER(name, reg) " " << name << ": " << std::hex << std::setw(16) \
+  << std::setfill('0') << reg
+
 int kvm_vcpu_initialize_regs(struct kvm_vcpu *vcpu, int mode) {
   switch(mode) {
     case VM_MODE_X86_64:
