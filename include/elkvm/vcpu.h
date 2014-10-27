@@ -1,14 +1,15 @@
 #pragma once
 #include <elkvm/config.h>
+#include <elkvm/stack.h>
 
 #include <linux/kvm.h>
-#include <stdbool.h>
-#include <stdio.h>
+
+#include <cstdbool>
+#include <cstdio>
+
 #ifdef HAVE_LIBUDIS86
 #include <udis86.h>
 #endif
-
-#include <elkvm/stack.h>
 
 struct kvm_vcpu {
   int fd;
@@ -120,20 +121,7 @@ int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *, uint64_t guest_addr);
 void elkvm_init_udis86(struct kvm_vcpu *, int mode);
 #endif
 
-static inline
-__attribute__((used))
-void print_dtable(const char *name, struct kvm_dtable dtable)
-{
-  fprintf(stderr, " %s                 %016lx  %08hx\n",
-          name, (uint64_t) dtable.base, (uint16_t) dtable.limit);
-}
+void print_flags(uint64_t flags);
+void print_dtable(const std::string name, struct kvm_dtable dtable);
+void print_segment(const std::string name, struct kvm_segment seg);
 
-static inline
-__attribute__((used))
-void print_segment(const char *name, struct kvm_segment seg)
-{
-  fprintf(stderr, " %s       %04hx      %016lx  %08x  %02hhx    %x %x   %x  %x %x %x %x\n",
-          name, (uint16_t) seg.selector, (uint64_t) seg.base, (uint32_t) seg.limit,
-          (uint8_t) seg.type, seg.present, seg.dpl, seg.db, seg.s, seg.l,
-          seg.g, seg.avl);
-}

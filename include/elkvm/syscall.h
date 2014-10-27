@@ -33,6 +33,44 @@ class ABI
 
 class X86_64_ABI : public ABI <uint64_t>
 {
+/* Taken from uClibc/libc/sysdeps/linux/x86_64/bits/syscalls.h
+   The Linux/x86-64 kernel expects the system call parameters in
+   registers according to the following table:
+
+   syscall number  rax
+   arg 1   rdi
+   arg 2   rsi
+   arg 3   rdx
+   arg 4   r10
+   arg 5   r8
+   arg 6   r9
+
+   The Linux kernel uses and destroys internally these registers:
+   return address from
+   syscall   rcx
+   additionally clobered: r12-r15,rbx,rbp
+   eflags from syscall r11
+
+   Normal function call, including calls to the system call stub
+   functions in the libc, get the first six parameters passed in
+   registers and the seventh parameter and later on the stack.  The
+   register use is as follows:
+
+    system call number in the DO_CALL macro
+    arg 1    rdi
+    arg 2    rsi
+    arg 3    rdx
+    arg 4    rcx
+    arg 5    r8
+    arg 6    r9
+
+   We have to take care that the stack is aligned to 16 bytes.  When
+   called the stack is not aligned since the return address has just
+   been pushed.
+
+
+   Syscalls of more than 6 arguments are not supported.  */
+
   public:
     static ABI::paramtype
     get_parameter(std::shared_ptr<struct kvm_vcpu > vcpu, unsigned pos)
