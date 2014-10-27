@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstring>
 #include <linux/futex.h>
+#include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -56,6 +57,10 @@ long allow_sigaction(int signum __attribute__((unused)),
 long pass_sigprocmask(int how, const sigset_t *set, sigset_t *old)
 {
 	return sigprocmask(how, set, old);
+}
+
+long pass_ioctl(int fd, unsigned long request, char *argp) {
+  return ioctl(fd, request, argp);
 }
 
 long pass_munmap(struct region_mapping *mapping) {
@@ -224,6 +229,7 @@ Elkvm::default_handlers = {
   /* ... */
   .sigaction = allow_sigaction,
   .sigprocmask = pass_sigprocmask,
+  .ioctl = pass_ioctl,
   /* ... */
   .readv = pass_readv,
   .writev = pass_writev,
