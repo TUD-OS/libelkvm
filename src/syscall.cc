@@ -1058,6 +1058,9 @@ long elkvm_do_sigreturn(Elkvm::VM * vmi __attribute__((unused))) {
 }
 
 long elkvm_do_ioctl(Elkvm::VM * vmi __attribute__((unused))) {
+  INFO();
+  INFO() << "IOCTL IS NOT SUPPORTED BY ELKVM RIGHT NOW!";
+  INFO();
   return -ENOSYS;
 }
 
