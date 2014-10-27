@@ -1078,8 +1078,8 @@ long elkvm_do_ioctl(Elkvm::VM * vmi) {
 
   if(vmi->debug_mode()) {
     DBG() << "IOCTL with fd: " << std::dec << fd
-          << "request: " << request
-          << "argp: " << LOG_GUEST_HOST(argp_p, argp);
+          << " request: " << request
+          << " argp: " << LOG_GUEST_HOST(argp_p, argp);
     Elkvm::dbg_log_result<int>(result);
   }
 
