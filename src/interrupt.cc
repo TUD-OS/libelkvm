@@ -56,14 +56,14 @@ int handle_page_fault(VM &vm,
   }
 
   handle_segfault(vcpu->sregs.cr2);
+  if(vcpu->handle_stack_expansion(code, vm.debug_mode())) {
+    return success;
+  }
 
   void *hp = vm.get_region_manager()->get_pager().get_host_p(vcpu->sregs.cr2);
   Elkvm::dump_page_fault_info(vcpu->sregs.cr2, code, hp);
   if(hp) {
     vm.get_region_manager()->get_pager().dump_page_tables();
-  }
-  if(vcpu->check_pagefault(code, vm.debug_mode())) {
-    return 0;
   }
 
   return failure;

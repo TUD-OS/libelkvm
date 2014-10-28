@@ -8,6 +8,8 @@
 namespace Elkvm {
 
 namespace Interrupt {
+  const int success = 0;
+  const int failure = 1;
   namespace Vector {
     const int stack_segment_fault      = 0x0c;
     const int general_protection_fault = 0x0d;
