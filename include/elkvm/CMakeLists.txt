@@ -9,6 +9,7 @@ SET( libelkvm_MOC_HEADERS
     gdt.h
     heap.h
     idt.h
+    interrupt.h
     kvm.h
     mapping.h
     pager.h

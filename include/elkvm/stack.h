@@ -20,7 +20,6 @@ namespace Elkvm {
       std::vector<std::shared_ptr<Region>> stack_regions;
       std::shared_ptr<RegionManager> _rm;
       std::shared_ptr<Region> kernel_stack;
-      int expand();
       guestptr_t base;
 
     public:
@@ -33,6 +32,7 @@ namespace Elkvm {
       bool grow(guestptr_t pfla);
       guestptr_t kernel_base() const { return kernel_stack->guest_address(); }
       guestptr_t user_base() const { return base; }
+      int expand();
   };
 
   //void dump_stack(VM &vmi, struct kvm_vcpu *vcpu);
