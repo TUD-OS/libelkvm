@@ -30,7 +30,7 @@ int VM::handle_interrupt(std::shared_ptr<struct kvm_vcpu> vcpu) {
     return Elkvm::Interrupt::handle_page_fault(*this, vcpu, err_code);
   }
 
-  return 1;
+  return failure;
 }
 
 namespace Interrupt {
@@ -38,22 +38,20 @@ namespace Interrupt {
 int handle_stack_segment_fault(uint64_t code) {
   ERROR() << "STACK SEGMENT FAULT\n";
   ERROR() << "Error Code: " << code << "\n";
-  return 1;
+  return failure;
 }
 
 int handle_general_protection_fault(uint64_t code) {
   ERROR() << "GENERAL PROTECTION FAULT\n";
   ERROR() << "Error Code:" << code << "\n";
-  return 1;
+  return failure;
 }
 
 int handle_page_fault(VM &vm,
     std::shared_ptr<struct kvm_vcpu> vcpu,
     uint64_t code) {
   int err = kvm_vcpu_get_sregs(vcpu.get());
-  if(err) {
-    return err;
-  }
+  assert(err == 0 && "error getting vcpu sregs");
 
   handle_segfault(vcpu->sregs.cr2);
   if(vcpu->handle_stack_expansion(code, vm.debug_mode())) {
@@ -75,7 +73,7 @@ int handle_segfault(guestptr_t pfla) {
       << std::endl << std::endl;
     exit(EXIT_FAILURE);
   }
-  return 0;
+  return failure;
 }
 
 //namespace Interrupt
