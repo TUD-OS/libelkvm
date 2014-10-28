@@ -1059,9 +1059,13 @@ long elkvm_do_ioctl(Elkvm::VM * vmi) {
     return -ENOSYS;
   }
 
-  INFO();
-  INFO() << "IOCTL IS ONLY SUPPORTED FOR THREE ARGS BY ELKVM RIGHT NOW!";
-  INFO();
+  static bool warned = false;
+  if(!warned) {
+    INFO();
+    INFO() << "IOCTL IS ONLY SUPPORTED FOR THREE ARGS BY ELKVM RIGHT NOW!";
+    INFO();
+    warned = true;
+  }
 
   CURRENT_ABI::paramtype fd;
   CURRENT_ABI::paramtype request;
