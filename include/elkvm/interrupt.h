@@ -18,6 +18,8 @@ namespace Interrupt {
   int handle_general_protection_fault(uint64_t code);
   int handle_page_fault(VM &vm, std::shared_ptr<struct kvm_vcpu> vcpu,
       uint64_t code);
+
+  int handle_segfault(guestptr_t pfla);
 }
 
 //namespace Elkvm

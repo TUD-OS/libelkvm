@@ -4,7 +4,9 @@
 #include <elkvm/interrupt.h>
 #include <elkvm/vcpu.h>
 
-int Elkvm::VM::handle_interrupt(std::shared_ptr<struct kvm_vcpu> vcpu) {
+namespace Elkvm {
+
+int VM::handle_interrupt(std::shared_ptr<struct kvm_vcpu> vcpu) {
   uint64_t interrupt_vector = vcpu->pop();
 
   if(debug_mode()) {
@@ -31,19 +33,21 @@ int Elkvm::VM::handle_interrupt(std::shared_ptr<struct kvm_vcpu> vcpu) {
   return 1;
 }
 
-int Elkvm::Interrupt::handle_stack_segment_fault(uint64_t code) {
+namespace Interrupt {
+
+int handle_stack_segment_fault(uint64_t code) {
   ERROR() << "STACK SEGMENT FAULT\n";
   ERROR() << "Error Code: " << code << "\n";
   return 1;
 }
 
-int Elkvm::Interrupt::handle_general_protection_fault(uint64_t code) {
+int handle_general_protection_fault(uint64_t code) {
   ERROR() << "GENERAL PROTECTION FAULT\n";
   ERROR() << "Error Code:" << code << "\n";
   return 1;
 }
 
-int Elkvm::Interrupt::handle_page_fault(VM &vm,
+int handle_page_fault(VM &vm,
     std::shared_ptr<struct kvm_vcpu> vcpu,
     uint64_t code) {
   int err = kvm_vcpu_get_sregs(vcpu.get());
@@ -51,11 +55,7 @@ int Elkvm::Interrupt::handle_page_fault(VM &vm,
     return err;
   }
 
-  if(vcpu->sregs.cr2 <= 0x1000) {
-    ERROR() << "\n\nABORT: SEGMENTATION FAULT\n\n";
-    exit(EXIT_FAILURE);
-    return 1;
-  }
+  handle_segfault(vcpu->sregs.cr2);
 
   void *hp = vm.get_region_manager()->get_pager().get_host_p(vcpu->sregs.cr2);
   Elkvm::dump_page_fault_info(vcpu->sregs.cr2, code, hp);
@@ -66,5 +66,20 @@ int Elkvm::Interrupt::handle_page_fault(VM &vm,
     return 0;
   }
 
-  return 1;
+  return failure;
+}
+
+int handle_segfault(guestptr_t pfla) {
+  if(pfla <= 0x1000) {
+    ERROR() << "\n\nABORT: SEGMENTATION FAULT at 0x" << std::hex << pfla
+      << std::endl << std::endl;
+    exit(EXIT_FAILURE);
+  }
+  return 0;
+}
+
+//namespace Interrupt
+}
+
+//namespace Elkvm
 }
