@@ -249,7 +249,7 @@ class VM {
      * Handle VM events
      */
     int handle_syscall(struct kvm_vcpu*);
-    int handle_interrupt(struct kvm_vcpu*);
+    int handle_interrupt(std::shared_ptr<struct kvm_vcpu>);
     int handle_hypercall(std::shared_ptr<struct kvm_vcpu>);
 
     /*

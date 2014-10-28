@@ -310,7 +310,7 @@ int Elkvm::VM::handle_hypercall(std::shared_ptr<struct kvm_vcpu> vcpu) {
       err = handle_syscall(vcpu.get());
       break;
     case ELKVM_HYPERCALL_INTERRUPT:
-      err = handle_interrupt(vcpu.get());
+      err = handle_interrupt(vcpu);
       if(err) {
         return err;
       }
