@@ -30,7 +30,7 @@ int VM::handle_interrupt(std::shared_ptr<struct kvm_vcpu> vcpu) {
     return Elkvm::Interrupt::handle_page_fault(*this, vcpu, err_code);
   }
 
-  return failure;
+  return Interrupt::failure;
 }
 
 namespace Interrupt {
