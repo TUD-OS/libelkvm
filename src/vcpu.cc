@@ -25,6 +25,11 @@
 #define PRINT_REGISTER(name, reg) " " << name << ": " << std::hex << std::setw(16) \
   << std::setfill('0') << reg
 
+int kvm_vcpu::check_pagefault(uint32_t err __attribute__((unused)),
+    bool debug __attribute__((unused))) {
+  return 0;
+}
+
 int kvm_vcpu_initialize_regs(struct kvm_vcpu *vcpu, int mode) {
   switch(mode) {
     case VM_MODE_X86_64:
