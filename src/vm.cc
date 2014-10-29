@@ -92,7 +92,7 @@ elkvm_vm_create(Elkvm::elkvm_opts *opts,
   auto vmi = Elkvm::create_vm_object(opts, hyp, handlers);
   assert(vmi != nullptr && "error creating vm object");
 
-  err = create_vcpus(vmi, cpus);
+  err = Elkvm::create_vcpus(vmi, cpus);
   assert(err == 0 && "error creating vcpus");
 
   Elkvm::ElfBinary bin(binary, vmi->get_region_manager(), vmi->get_heap_manager());
@@ -101,11 +101,11 @@ elkvm_vm_create(Elkvm::elkvm_opts *opts,
   guestptr_t entry = bin.get_entry_point();
   vcpu->set_entry_point(entry);
 
-  err = create_and_setup_environment(bin, vmi, opts, vcpu);
+  err = Elkvm::create_and_setup_environment(bin, vmi, opts, vcpu);
   assert(err == 0  && "error creating environment");
 
   err = elkvm_gdt_setup(*vmi->get_region_manager(), vcpu);
-  assert(err == 0);
+  assert(err == 0 && "error setting up global descriptor tables");
 
   Elkvm::elkvm_flat idth;
   std::string isr_path(RES_PATH "/isr");
