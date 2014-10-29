@@ -276,15 +276,30 @@ class VM {
 
 };
 
+std::shared_ptr<VM> create_virtual_hardware(const elkvm_opts * const opts,
+        const Elkvm::hypercall_handlers * const hyp,
+        const Elkvm::elkvm_handlers * const handlers,
+        unsigned cpus,
+        int mode);
+int load_elf_binary(const std::shared_ptr<VM> vm,
+        elkvm_opts * opts,
+        const std::string binary);
+int setup_proxy_os(const std::shared_ptr<VM> vm);
+
 std::shared_ptr<VM> create_vm_object(const elkvm_opts * const opts,
     const hypercall_handlers * const hyp,
     const elkvm_handlers * const handlers);
 int create_vcpus(const std::shared_ptr<VM> vm, unsigned cpus);
-int create_and_setup_environment(const ElfBinary bin,
+int create_and_setup_environment(const ElfBinary &bin,
     const std::shared_ptr<VM> vm,
-    const elkvm_opts * const opts,
+    elkvm_opts * opts,
     const std::shared_ptr<VCPU> vcpu);
 
+int create_idt(const std::shared_ptr<VM> vm,
+    const std::shared_ptr<VCPU> vcpu);
+int create_sysenter(const std::shared_ptr<VM> vm,
+    const std::shared_ptr<VCPU> vcpu);
+int create_sighandler(const std::shared_ptr<VM> vm);
 
 } // namespace Elkvm
 

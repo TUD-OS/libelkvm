@@ -28,6 +28,57 @@
 namespace Elkvm {
   std::list<VM> vmi;
 
+std::shared_ptr<VM> create_virtual_hardware(const elkvm_opts * const opts,
+        const Elkvm::hypercall_handlers * const hyp,
+        const Elkvm::elkvm_handlers * const handlers,
+        unsigned cpus,
+        int mode) {
+
+  auto vm = create_vm_object(opts, hyp, handlers);
+  assert(vm != nullptr && "error creating vm object");
+
+  int err = create_vcpus(vm, cpus);
+  assert(err == 0 && "error creating vcpus");
+
+  return vm;
+}
+
+int load_elf_binary(const std::shared_ptr<VM> vm,
+        elkvm_opts * opts,
+        const std::string binary) {
+
+  Elkvm::ElfBinary bin(binary, vm->get_region_manager(), vm->get_heap_manager());
+
+  auto vcpu = vm->get_vcpu(0);
+  vcpu->set_entry_point(bin.get_entry_point());
+
+  int err = create_and_setup_environment(bin, vm, opts, vcpu);
+  assert(err == 0  && "error creating environment");
+
+  return 0;
+}
+
+int setup_proxy_os(const std::shared_ptr<VM> vm) {
+  auto vcpu = vm->get_vcpu(0);
+
+  int err = elkvm_gdt_setup(*vm->get_region_manager(), vcpu);
+  assert(err == 0 && "error setting up global descriptor tables");
+
+  err = create_idt(vm, vcpu);
+  assert(err == 0 && "error creating idt");
+
+  err = create_sysenter(vm, vcpu);
+  assert(err == 0 && "error loading sysenter routines");
+
+  err = create_sighandler(vm);
+  assert(err == 0 && "error loading signal handler");
+
+  vm->init_rlimits();
+  assert(err == 0 && "error initializing rlimits");
+
+  return 0;
+}
+
 std::shared_ptr<VM> create_vm_object(const elkvm_opts * const opts,
         const Elkvm::hypercall_handlers * const hyp,
         const Elkvm::elkvm_handlers * const handlers) {
@@ -135,41 +186,17 @@ elkvm_vm_create(Elkvm::elkvm_opts *opts,
   int err = 0;
   opts->debug = debug;
 
-  auto vmi = Elkvm::create_vm_object(opts, hyp, handlers);
-  assert(vmi != nullptr && "error creating vm object");
+  auto vmi = Elkvm::create_virtual_hardware(opts, hyp, handlers, cpus, mode);
+  assert(vmi != nullptr && "error creating virtual hardware");
 
-  err = Elkvm::create_vcpus(vmi, cpus);
-  assert(err == 0 && "error creating vcpus");
+  err = Elkvm::load_elf_binary(vmi, opts, binary);
+  assert(err == 0 && "error loading elf binary");
 
-  Elkvm::ElfBinary bin(binary, vmi->get_region_manager(), vmi->get_heap_manager());
-
-  auto vcpu = vmi->get_vcpu(0);
-  guestptr_t entry = bin.get_entry_point();
-  vcpu->set_entry_point(entry);
-
-  err = Elkvm::create_and_setup_environment(bin, vmi, opts, vcpu);
-  assert(err == 0  && "error creating environment");
-
-  err = elkvm_gdt_setup(*vmi->get_region_manager(), vcpu);
-  assert(err == 0 && "error setting up global descriptor tables");
-
-  err = create_idt(vmi, vcpu);
-  assert(err == 0 && "error creating idt");
-
-  err = create_sysenter(vmi, vcpu);
-  assert(err == 0 && "error loading sysenter routines");
-
-  err = create_sighandler(vmi);
-  assert(err == 0 && "error loading signal handler");
-
-  vmi->init_rlimits();
-  assert(err == 0 && "error initializing rlimits");
+  err = Elkvm::setup_proxy_os(vmi);
+  assert(err == 0 && "error setting up proxy os");
 
   return vmi;
 }
-
-
-
 
 int elkvm_init(Elkvm::elkvm_opts *opts, int argc, char **argv, char **environ) {
   opts->argc = argc;
