@@ -74,6 +74,52 @@ int create_and_setup_environment(const ElfBinary &bin,
   return env.fill(opts, vcpu);
 }
 
+int create_idt(const std::shared_ptr<VM> vm,
+    const std::shared_ptr<VCPU> vcpu) {
+  Elkvm::elkvm_flat idth;
+
+  std::string isr_path(RES_PATH "/isr");
+  int err = vm->load_flat(idth, isr_path, 1);
+  if(err) {
+    return err;
+  }
+
+  return elkvm_idt_setup(*vm->get_region_manager(), vcpu, &idth);
+}
+
+int create_sysenter(const std::shared_ptr<VM> vm,
+    const std::shared_ptr<VCPU> vcpu) {
+  Elkvm::elkvm_flat sysenter;
+  std::string sysenter_path(RES_PATH "/entry");
+  int err = vm->load_flat(sysenter, sysenter_path, 1);
+  if(err) {
+    return err;
+  }
+
+  /*
+   * setup the lstar register with the syscall handler
+   */
+  vcpu->set_msr(VCPU_MSR_LSTAR, sysenter.region->guest_address());
+  return 0;
+}
+
+int create_sighandler(const std::shared_ptr<VM> vm) {
+  std::string sighandler_path(RES_PATH "/signal");
+  auto sigclean = vm->get_cleanup_flat();
+  return vm->load_flat(sigclean, sighandler_path, 0);
+}
+
+int VM::init_rlimits()
+{
+  for (unsigned i = 0; i < RLIMIT_NLIMITS; ++i) {
+    int err = ::getrlimit(i, &_vm.rlimits[i]);
+    if(err) {
+      return err;
+    }
+  }
+  return 0;
+}
+
 //namespace Elkvm
 }
 
@@ -107,60 +153,22 @@ elkvm_vm_create(Elkvm::elkvm_opts *opts,
   err = elkvm_gdt_setup(*vmi->get_region_manager(), vcpu);
   assert(err == 0 && "error setting up global descriptor tables");
 
-  Elkvm::elkvm_flat idth;
-  std::string isr_path(RES_PATH "/isr");
-  err = vmi->load_flat(idth, isr_path, 1);
-  if(err) {
-  if(err == -ENOENT) {
-    printf("LIBELKVM: ISR shared file could not be found\n");
-  }
-  errno = -err;
-    return NULL;
-  }
+  err = create_idt(vmi, vcpu);
+  assert(err == 0 && "error creating idt");
 
-  err = elkvm_idt_setup(*vmi->get_region_manager(), vcpu, &idth);
-  assert(err == 0);
+  err = create_sysenter(vmi, vcpu);
+  assert(err == 0 && "error loading sysenter routines");
 
-  Elkvm::elkvm_flat sysenter;
-  std::string sysenter_path(RES_PATH "/entry");
-  err = vmi->load_flat(sysenter, sysenter_path, 1);
-  if(err) {
-    if(err == -ENOENT) {
-      printf("LIBELKVM: SYSCALL ENTRY shared file could not be found\n");
-    }
-    errno = -err;
-    return NULL;
-  }
-
-  std::string sighandler_path(RES_PATH "/signal");
-  auto sigclean = vmi->get_cleanup_flat();
-  err = vmi->load_flat(sigclean, sighandler_path, 0);
-  if(err) {
-    if(err == -ENOENT) {
-      printf("LIBELKVM: SIGNAL HANDLER shared file could not be found\n");
-    }
-    errno = -err;
-    return NULL;
-  }
-
-  /*
-   * setup the lstar register with the syscall handler
-   */
-  vcpu->set_msr(VCPU_MSR_LSTAR, sysenter.region->guest_address());
+  err = create_sighandler(vmi);
+  assert(err == 0 && "error loading signal handler");
 
   vmi->init_rlimits();
+  assert(err == 0 && "error initializing rlimits");
 
   return vmi;
 }
 
 
-void Elkvm::VM::init_rlimits()
-{
-  for (int i = 0; i < RLIMIT_NLIMITS; ++i) {
-    int err = ::getrlimit(i, &_vm.rlimits[i]);
-    assert(err == 0);
-  }
-}
 
 
 int elkvm_init(Elkvm::elkvm_opts *opts, int argc, char **argv, char **environ) {

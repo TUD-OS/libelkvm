@@ -223,7 +223,7 @@ class VM {
      * Initialize the VM's rlimits.
      * TODO: move to KVM subclass
      */
-    void init_rlimits();
+    int init_rlimits();
 
     /*
      * Dump the current stack frame for the vCPU.
