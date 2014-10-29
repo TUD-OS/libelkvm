@@ -276,6 +276,10 @@ class VM {
 
 };
 
+std::shared_ptr<VM> create_vm_object(const elkvm_opts * const opts,
+    const hypercall_handlers * const hyp,
+    const elkvm_handlers * const handlers);
+
 } // namespace Elkvm
 
 /*

@@ -24,8 +24,37 @@
 #include <elkvm/kvm.h>
 #include <elkvm/pager.h>
 #include <elkvm/vcpu.h>
+
 namespace Elkvm {
   std::list<VM> vmi;
+
+std::shared_ptr<VM> create_vm_object(const elkvm_opts * const opts,
+        const Elkvm::hypercall_handlers * const hyp,
+        const Elkvm::elkvm_handlers * const handlers) {
+
+  int vmfd = ioctl(opts->fd, KVM_CREATE_VM, 0);
+  if(vmfd < 0) {
+    return NULL;
+  }
+
+  int run_struct_size = ioctl(opts->fd, KVM_GET_VCPU_MMAP_SIZE, 0);
+  if(run_struct_size < 0) {
+    return NULL;
+  }
+
+  vmi.emplace_back(
+        vmfd,
+        opts->argc,
+        opts->argv,
+        opts->environ,
+        run_struct_size,
+        hyp,
+        handlers,
+        opts->debug);
+  return std::shared_ptr<VM>(&vmi.back());
+}
+
+//namespace Elkvm
 }
 
 std::shared_ptr<Elkvm::VM>
@@ -38,27 +67,10 @@ elkvm_vm_create(Elkvm::elkvm_opts *opts,
                 bool debug) {
 
   int err = 0;
+  opts->debug = debug;
 
-  int vmfd = ioctl(opts->fd, KVM_CREATE_VM, 0);
-  if(vmfd < 0) {
-    return NULL;
-  }
-
-  int run_struct_size = ioctl(opts->fd, KVM_GET_VCPU_MMAP_SIZE, 0);
-  if(run_struct_size < 0) {
-    return NULL;
-  }
-
-  Elkvm::vmi.emplace_back(
-        vmfd,
-        opts->argc,
-        opts->argv,
-        opts->environ,
-        run_struct_size,
-        hyp,
-        handlers,
-        debug);
-  std::shared_ptr<Elkvm::VM> vmi(&Elkvm::vmi.back());
+  auto vmi = Elkvm::create_vm_object(opts, hyp, handlers);
+  assert(vmi != nullptr && "error creating vm object");
 
   for(unsigned i = 0; i < cpus; i++) {
     err = vmi->add_cpu();

@@ -10,6 +10,7 @@ struct elkvm_opts {
 	char **environ;
 	int fd;
 	int run_struct_size;
+  bool debug;
 };
 } // namespace Elkvm
 
