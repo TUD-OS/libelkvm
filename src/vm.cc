@@ -54,6 +54,16 @@ std::shared_ptr<VM> create_vm_object(const elkvm_opts * const opts,
   return std::shared_ptr<VM>(&vmi.back());
 }
 
+int create_vcpus(const std::shared_ptr<VM> vm, unsigned cpus) {
+  for(unsigned i = 0; i < cpus; i++) {
+    int err = vm->add_cpu();
+    if(err) {
+      return err;
+    }
+  }
+  return 0;
+}
+
 //namespace Elkvm
 }
 
@@ -72,13 +82,8 @@ elkvm_vm_create(Elkvm::elkvm_opts *opts,
   auto vmi = Elkvm::create_vm_object(opts, hyp, handlers);
   assert(vmi != nullptr && "error creating vm object");
 
-  for(unsigned i = 0; i < cpus; i++) {
-    err = vmi->add_cpu();
-    if(err) {
-    errno = -err;
-      return NULL;
-    }
-  }
+  err = create_vcpus(vmi, cpus);
+  assert(err == 0 && "error creating vcpus");
 
   Elkvm::ElfBinary bin(binary, vmi->get_region_manager(), vmi->get_heap_manager());
 

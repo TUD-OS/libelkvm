@@ -279,6 +279,8 @@ class VM {
 std::shared_ptr<VM> create_vm_object(const elkvm_opts * const opts,
     const hypercall_handlers * const hyp,
     const elkvm_handlers * const handlers);
+int create_vcpus(const std::shared_ptr<VM> vm, unsigned cpus);
+
 
 } // namespace Elkvm
 
