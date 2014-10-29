@@ -20,7 +20,6 @@
 #include <elkvm/heap.h>
 #include <elkvm/region_manager.h>
 
-
 class VCPU;
 
 #define VM_MODE_X86    1
@@ -35,6 +34,7 @@ class VCPU;
 
 namespace Elkvm {
 
+class ElfBinary;
 class VM;
 
 /*
@@ -280,6 +280,10 @@ std::shared_ptr<VM> create_vm_object(const elkvm_opts * const opts,
     const hypercall_handlers * const hyp,
     const elkvm_handlers * const handlers);
 int create_vcpus(const std::shared_ptr<VM> vm, unsigned cpus);
+int create_and_setup_environment(const ElfBinary bin,
+    const std::shared_ptr<VM> vm,
+    const elkvm_opts * const opts,
+    const std::shared_ptr<VCPU> vcpu);
 
 
 } // namespace Elkvm

@@ -64,6 +64,16 @@ int create_vcpus(const std::shared_ptr<VM> vm, unsigned cpus) {
   return 0;
 }
 
+int create_and_setup_environment(const ElfBinary &bin,
+    const std::shared_ptr<VM> vm,
+    elkvm_opts * opts,
+    const std::shared_ptr<VCPU> vcpu) {
+
+  Elkvm::Environment env(bin, vm->get_region_manager());
+  /* gets and sets vcpu->regs */
+  return env.fill(opts, vcpu);
+}
+
 //namespace Elkvm
 }
 
@@ -91,12 +101,8 @@ elkvm_vm_create(Elkvm::elkvm_opts *opts,
   guestptr_t entry = bin.get_entry_point();
   vcpu->set_entry_point(entry);
 
-  Elkvm::Environment env(bin, vmi->get_region_manager());
-
-
-  /* gets and sets vcpu->regs */
-  err = env.fill(opts, vcpu);
-  assert(err == 0);
+  err = create_and_setup_environment(bin, vmi, opts, vcpu);
+  assert(err == 0  && "error creating environment");
 
   err = elkvm_gdt_setup(*vmi->get_region_manager(), vcpu);
   assert(err == 0);
