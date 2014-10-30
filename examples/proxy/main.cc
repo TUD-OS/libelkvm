@@ -212,7 +212,8 @@ memory_map_for_pid(int pid, std::list<Mapping>& regions)
       INFO() << "    [" << std::hex << m.start << " - " << m.end << "] "
              << (m.perm.readable ? "r" : "-")
              << (m.perm.writable ? "w" : "-")
-             << (m.perm.exec ? "x" : "-");
+             << (m.perm.exec ? "x" : "-")
+             << " sz " << std::hex << m.size();
   }
   INFO() << "Totally in use: " << sum << " Bytes.";
 }
