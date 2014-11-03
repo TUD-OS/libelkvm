@@ -191,6 +191,59 @@ int create_sighandler(const std::shared_ptr<VM> vm) {
   return vm->load_flat(sigclean, sighandler_path, 0);
 }
 
+void VM::unpack_syscall(CURRENT_ABI::paramtype *arg) {
+  *arg = CURRENT_ABI::get_parameter(get_vcpu(0), 1);
+}
+
+void VM::unpack_syscall(CURRENT_ABI::paramtype *arg1,
+    CURRENT_ABI::paramtype *arg2) {
+  *arg1 = CURRENT_ABI::get_parameter(get_vcpu(0), 1);
+  *arg2 = CURRENT_ABI::get_parameter(get_vcpu(0), 2);
+}
+
+void VM::unpack_syscall(CURRENT_ABI::paramtype *arg1,
+    CURRENT_ABI::paramtype *arg2,
+    CURRENT_ABI::paramtype *arg3) {
+  *arg1 = CURRENT_ABI::get_parameter(get_vcpu(0), 1);
+  *arg2 = CURRENT_ABI::get_parameter(get_vcpu(0), 2);
+  *arg3 = CURRENT_ABI::get_parameter(get_vcpu(0), 3);
+}
+
+void VM::unpack_syscall(CURRENT_ABI::paramtype *arg1,
+    CURRENT_ABI::paramtype *arg2,
+    CURRENT_ABI::paramtype *arg3,
+    CURRENT_ABI::paramtype *arg4) {
+  *arg1 = CURRENT_ABI::get_parameter(get_vcpu(0), 1);
+  *arg2 = CURRENT_ABI::get_parameter(get_vcpu(0), 2);
+  *arg3 = CURRENT_ABI::get_parameter(get_vcpu(0), 3);
+  *arg4 = CURRENT_ABI::get_parameter(get_vcpu(0), 4);
+}
+
+void VM::unpack_syscall(CURRENT_ABI::paramtype *arg1,
+    CURRENT_ABI::paramtype *arg2,
+    CURRENT_ABI::paramtype *arg3,
+    CURRENT_ABI::paramtype *arg4,
+    CURRENT_ABI::paramtype *arg5) {
+  *arg1 = CURRENT_ABI::get_parameter(get_vcpu(0), 1);
+  *arg2 = CURRENT_ABI::get_parameter(get_vcpu(0), 2);
+  *arg3 = CURRENT_ABI::get_parameter(get_vcpu(0), 3);
+  *arg4 = CURRENT_ABI::get_parameter(get_vcpu(0), 4);
+  *arg5 = CURRENT_ABI::get_parameter(get_vcpu(0), 5);
+}
+
+void VM::unpack_syscall(CURRENT_ABI::paramtype *arg1,
+    CURRENT_ABI::paramtype *arg2,
+    CURRENT_ABI::paramtype *arg3,
+    CURRENT_ABI::paramtype *arg4,
+    CURRENT_ABI::paramtype *arg5,
+    CURRENT_ABI::paramtype *arg6) {
+  *arg1 = CURRENT_ABI::get_parameter(get_vcpu(0), 1);
+  *arg2 = CURRENT_ABI::get_parameter(get_vcpu(0), 2);
+  *arg3 = CURRENT_ABI::get_parameter(get_vcpu(0), 3);
+  *arg4 = CURRENT_ABI::get_parameter(get_vcpu(0), 4);
+  *arg5 = CURRENT_ABI::get_parameter(get_vcpu(0), 5);
+  *arg6 = CURRENT_ABI::get_parameter(get_vcpu(0), 6);
+}
 int VM::init_rlimits()
 {
   for (unsigned i = 0; i < RLIMIT_NLIMITS; ++i) {
