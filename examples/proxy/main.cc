@@ -1,4 +1,5 @@
 #include <fstream>
+#include <iostream>
 #include <cstring>
 #include <elkvm/elkvm.h>
 #include <elkvm/elkvm-log.h>
@@ -227,6 +228,25 @@ static void detach_pid(int pid)
   INFO() << "Resumed PID " << pid;
 }
 
+
+static void
+read_auxv(int pid, char *target, int tmax)
+{
+  std::stringstream fname;
+  fname << "/proc/" << pid << "/auxv";
+  INFO() << "Parsing auxv in " << fname.str();
+  
+  std::ifstream auxv(fname.str(), std::ios::binary);
+  auxv.read(target, tmax);
+  unsigned bytes = auxv.gcount();
+  if (bytes >= tmax) {
+      ERROR() << "Need more space to read AUXV!";
+      exit(1);
+  }
+  INFO() << "read " << bytes << " auxv bytes.";
+}
+
+
 std::shared_ptr<Elkvm::VM> attach_vm(int pid)
 {
   INFO() << "Attaching to PID " << pid;
@@ -234,6 +254,9 @@ std::shared_ptr<Elkvm::VM> attach_vm(int pid)
   char *binaryname = NULL;
   binary_for_pid(pid, &binaryname);
   INFO() << "Binary name is: " << LOG_MAGENTA << binaryname << LOG_RESET;
+
+  char remote_auxv[2048];
+  read_auxv(pid, remote_auxv, sizeof(remote_auxv));
 
   std::list<Mapping> regions;
   memory_map_for_pid(pid, regions);
