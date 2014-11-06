@@ -54,6 +54,8 @@ class VCPU {
 
     /* MSRs */
     void set_msr(uint32_t idx, CURRENT_ABI::paramtype data);
+    CURRENT_ABI::paramtype get_msr(uint32_t idx);
+
   uint64_t pop() { uint64_t val = stack.popq(regs.rsp); regs.rsp += 0x8; return val; }
   void push(uint64_t val) { regs.rsp -= 0x8; stack.pushq(regs.rsp, val); }
   guestptr_t kernel_stack_base() { return stack.kernel_base(); }
@@ -93,7 +95,6 @@ int kvm_vcpu_set_rip(std::shared_ptr<VCPU> vcpu, uint64_t);
  */
 int kvm_vcpu_set_cr3(std::shared_ptr<VCPU> vcpu, uint64_t);
 
-int kvm_vcpu_get_msr(std::shared_ptr<VCPU> vcpu, uint32_t, uint64_t *);
 void kvm_vcpu_dump_msr(std::shared_ptr<VCPU> vcpu, uint32_t);
 
 

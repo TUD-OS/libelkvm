@@ -271,22 +271,21 @@ void VCPU::set_reg(Elkvm::Reg_t reg, CURRENT_ABI::paramtype val) {
       assert(false);
   }
 }
-int kvm_vcpu_get_msr(std::shared_ptr<VCPU> vcpu, uint32_t index, uint64_t *res_p) {
+
+CURRENT_ABI::paramtype VCPU::get_msr(uint32_t idx) {
   struct kvm_msrs *msr = reinterpret_cast<struct kvm_msrs *>(
       malloc(sizeof(struct kvm_msrs) + sizeof(struct kvm_msr_entry)));
+  assert(msr != nullptr && "error allocating msr");
+
   msr->nmsrs = 1;
-  msr->entries[0].index = index;
+  msr->entries[0].index = idx;
 
-  int err = ioctl(vcpu->fd, KVM_GET_MSRS, msr);
-  if(err < 0) {
-    *res_p = -1;
-    free(msr);
-    return -errno;
-  }
+  int err = ioctl(fd, KVM_GET_MSRS, msr);
+  assert(err >= 0 && "error reading msrs");
 
-  *res_p = msr->entries[0].data;
+  CURRENT_ABI::paramtype res = msr->entries[0].data;
   free(msr);
-  return 0;
+  return res;
 }
 
 void VCPU::set_msr(uint32_t idx, CURRENT_ABI::paramtype data) {
@@ -634,14 +633,7 @@ void host_cpuid(uint32_t function, uint32_t count,
 }
 
 void kvm_vcpu_dump_msr(std::shared_ptr<VCPU> vcpu, uint32_t msr) {
-  uint64_t r;
-  int err = kvm_vcpu_get_msr(vcpu, msr, &r);
-  if(err) {
-    fprintf(stderr, "WARNING: Could not get MSR: 0x%x\n", msr);
-    return;
-  }
-
-  fprintf(stderr, " MSR: 0x%x: 0x%016lx\n", msr, r);
+  fprintf(stderr, " MSR: 0x%x: 0x%016lx\n", vcpu->get_msr(msr));
 }
 
 void kvm_vcpu_dump_regs(std::shared_ptr<VCPU> vcpu) {
