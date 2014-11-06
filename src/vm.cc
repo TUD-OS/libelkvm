@@ -61,7 +61,7 @@ elkvm_vm_create(Elkvm::elkvm_opts *opts,
   std::shared_ptr<Elkvm::VM> vmi(&Elkvm::vmi.back());
 
   for(unsigned i = 0; i < cpus; i++) {
-    err = vmi->add_cpu(mode);
+    err = vmi->add_cpu();
     if(err) {
     errno = -err;
       return NULL;

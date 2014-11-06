@@ -190,7 +190,7 @@ class VM {
         const Elkvm::elkvm_handlers * const handlers,
         int debug);
 
-    int add_cpu(int mode);
+    int add_cpu();
 
     bool address_mapped(guestptr_t addr) const;
     Mapping &find_mapping(guestptr_t addr);

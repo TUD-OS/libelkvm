@@ -34,7 +34,7 @@ namespace Elkvm {
     syscall_handlers   = handlers;
   }
 
-  int VM::add_cpu(int mode) {
+  int VM::add_cpu() {
     std::shared_ptr<VCPU> vcpu =
       std::make_shared<VCPU>(_rm, _vmfd, cpus.size());
 
