@@ -107,12 +107,7 @@ int elkvm_gdt_setup(Elkvm::RegionManager &rm, std::shared_ptr<VCPU> vcpu) {
 	uint64_t sysret_star = (ss_selector - 0x8) | 0x3;
 	uint64_t star = (sysret_star << 48) | (syscall_star << 32);
 
-	err = kvm_vcpu_set_msr(vcpu,
-			VCPU_MSR_STAR,
-			star);
-	if(err) {
-		return err;
-	}
+	vcpu->set_msr(VCPU_MSR_STAR, star);
 
 	err = vcpu->get_sregs();
 	if(err) {

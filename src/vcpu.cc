@@ -289,22 +289,20 @@ int kvm_vcpu_get_msr(std::shared_ptr<VCPU> vcpu, uint32_t index, uint64_t *res_p
   return 0;
 }
 
-int kvm_vcpu_set_msr(std::shared_ptr<VCPU> vcpu, uint32_t index, uint64_t data) {
+void VCPU::set_msr(uint32_t idx, CURRENT_ABI::paramtype data) {
   struct kvm_msrs *msr = reinterpret_cast<struct kvm_msrs *>(
       malloc(sizeof(struct kvm_msrs) + sizeof(struct kvm_msr_entry)));
+  assert(msr != nullptr && "error allocating msr");
+
   memset(msr, 0, sizeof(struct kvm_msrs) + sizeof(struct kvm_msr_entry));
 
   msr->nmsrs = 1;
-  msr->entries[0].index = index;
+  msr->entries[0].index = idx;
   msr->entries[0].data  = data;
 
-  int err = ioctl(vcpu->fd, KVM_SET_MSRS, msr);
+  int err = ioctl(fd, KVM_SET_MSRS, msr);
   free(msr);
-  if(err < 0) {
-    return -errno;
-  }
-
-  return 0;
+  assert(err >= 0 && "error setting msr");
 }
 
 int VCPU::initialize_regs() {

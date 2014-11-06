@@ -124,10 +124,7 @@ elkvm_vm_create(Elkvm::elkvm_opts *opts,
   /*
    * setup the lstar register with the syscall handler
    */
-  err = kvm_vcpu_set_msr(vmi->get_vcpu(0),
-                         VCPU_MSR_LSTAR,
-                         sysenter.region->guest_address());
-  assert(err == 0);
+  vcpu->set_msr(VCPU_MSR_LSTAR, sysenter.region->guest_address());
 
   vmi->init_rlimits();
 
