@@ -42,6 +42,7 @@ class VCPU {
      * Set VCPU registers
      */
     int set_regs();
+    int set_sregs();
 
   uint64_t pop() { uint64_t val = stack.popq(regs.rsp); regs.rsp += 0x8; return val; }
   void push(uint64_t val) { regs.rsp -= 0x8; stack.pushq(regs.rsp, val); }
@@ -81,11 +82,6 @@ int kvm_vcpu_set_rip(std::shared_ptr<VCPU> vcpu, uint64_t);
  * \brief Set the VCPU's CR3 to a specific value
  */
 int kvm_vcpu_set_cr3(std::shared_ptr<VCPU> vcpu, uint64_t);
-
-/*
-  Set the VCPU's registers
-*/
-int kvm_vcpu_set_sregs(std::shared_ptr<VCPU> vcpu);
 
 int kvm_vcpu_get_msr(std::shared_ptr<VCPU> vcpu, uint32_t, uint64_t *);
 int kvm_vcpu_set_msr(std::shared_ptr<VCPU> vcpu, uint32_t, uint64_t);

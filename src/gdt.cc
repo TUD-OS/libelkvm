@@ -126,7 +126,7 @@ int elkvm_gdt_setup(Elkvm::RegionManager &rm, std::shared_ptr<VCPU> vcpu) {
 	vcpu->sregs.tr.limit = sizeof(struct elkvm_tss64);
 	vcpu->sregs.tr.selector = tr_selector;
 
-	err = kvm_vcpu_set_sregs(vcpu);
+	err = vcpu->set_sregs();
 	if(err) {
 		return err;
 	}

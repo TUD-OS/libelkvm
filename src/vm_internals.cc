@@ -45,7 +45,7 @@ namespace Elkvm {
     cpus.push_back(vcpu);
 
     vcpu->set_regs();
-    kvm_vcpu_set_sregs(vcpu);
+    vcpu->set_sregs();
     return 0;
   }
 

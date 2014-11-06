@@ -85,7 +85,7 @@ int kvm_vcpu_set_cr3(std::shared_ptr<VCPU> vcpu, uint64_t cr3) {
 
   vcpu->sregs.cr3 = cr3;
 
-  err = kvm_vcpu_set_sregs(vcpu);
+  err = vcpu->set_sregs();
   if(err) {
     return err;
   }
@@ -120,12 +120,8 @@ int VCPU::set_regs() {
   return 0;
 }
 
-int kvm_vcpu_set_sregs(std::shared_ptr<VCPU> vcpu) {
-  if(vcpu->fd < 1) {
-    return -EIO;
-  }
-
-  int err = ioctl(vcpu->fd, KVM_SET_SREGS, &vcpu->sregs);
+int VCPU::set_sregs() {
+  int err = ioctl(fd, KVM_SET_SREGS, &sregs);
   if(err) {
     return -errno;
   }
@@ -302,7 +298,7 @@ int VCPU::initialize_regs() {
   //memset(&vcpu->sregs.tr, 0, sizeof(struct kvm_segment));
   //memset(&vcpu->sregs.ldt, 0, sizeof(struct kvm_segment));
 
-  //err = kvm_vcpu_set_sregs(vcpu);
+  //err = vcpu->set_sregs();
   return 0;
 }
 

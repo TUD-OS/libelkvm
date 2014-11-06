@@ -2256,7 +2256,7 @@ long elkvm_do_arch_prctl(Elkvm::VM * vmi) {
       return -EINVAL;
   }
 
-  err = kvm_vcpu_set_sregs(vcpu);
+  err = vcpu->set_sregs();
   if(vmi->debug_mode()) {
     DBG() << "ARCH PRCTL with code " << code << " user_addr " << LOG_GUEST_HOST(user_addr, host_addr);
     DBG() << "RESULT " << err;
