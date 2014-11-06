@@ -33,26 +33,26 @@ X86_64_ABI::get_parameter(std::shared_ptr<VCPU > vcpu, unsigned pos)
 
   switch(pos) {
     case 0:
-      return vcpu->regs.rax;
+      return vcpu->get_reg(Elkvm::Reg_t::rax);
     case 1:
-      return vcpu->regs.rdi;
+      return vcpu->get_reg(Elkvm::Reg_t::rdi);
     case 2:
-      return vcpu->regs.rsi;
+      return vcpu->get_reg(Elkvm::Reg_t::rsi);
     case 3:
-      return vcpu->regs.rdx;
+      return vcpu->get_reg(Elkvm::Reg_t::rdx);
     case 4:
-      return vcpu->regs.r10;
+      return vcpu->get_reg(Elkvm::Reg_t::r10);
     case 5:
-      return vcpu->regs.r8;
+      return vcpu->get_reg(Elkvm::Reg_t::r8);
     case 6:
-      return vcpu->regs.r9;
+      return vcpu->get_reg(Elkvm::Reg_t::r9);
   }
   return ~0ULL;
 }
 
 void X86_64_ABI::set_syscall_return(std::shared_ptr<VCPU> vcpu, paramtype value)
 {
-    vcpu->regs.rax = value;
+    vcpu->set_reg(Elkvm::Reg_t::rax, value);
 }
 
 // XXX: this should be the same for all platforms, we

@@ -60,14 +60,14 @@ int Elkvm::VM::signal_deliver() {
   int signum = pending_signals[num_pending_signals];
 
   /* push rax onto stack */
-  vcpu->push(vcpu->regs.rax);
+  vcpu->push(vcpu->get_reg(Elkvm::Reg_t::rax));
 
   /* push signal handler cleanup asm addr onto stack */
   vcpu->push(get_cleanup_flat().region->guest_address());
 
   /* setup the signal handler stack frame and pass the signal number as arg */
   vcpu->push((uint64_t) get_sig_ptr(signum)->sa_handler);
-  vcpu->regs.rdi = signum;
+  vcpu->set_reg(Elkvm::Reg_t::rdi, signum);
 
   return 0;
 }

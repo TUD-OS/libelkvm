@@ -66,7 +66,7 @@ int kvm_vcpu_set_rip(std::shared_ptr<VCPU>  vcpu, uint64_t rip) {
     return err;
   }
 
-  vcpu->regs.rip = rip;
+  vcpu->set_reg(Elkvm::Reg_t::rip, rip);
 
   err = vcpu->set_regs();
   if(err) {
@@ -650,36 +650,36 @@ void kvm_vcpu_dump_regs(std::shared_ptr<VCPU> vcpu) {
   std::cerr << std::endl << " Registers:" << std::endl;
   std::cerr << " ----------\n";
 
-  std::cerr << PRINT_REGISTER("rip", vcpu->regs.rip)
-            << PRINT_REGISTER("  rsp", vcpu->regs.rsp)
-            << PRINT_REGISTER("  flags", vcpu->regs.rflags)
+  std::cerr << PRINT_REGISTER("rip", vcpu->get_reg(Elkvm::Reg_t::rip))
+            << PRINT_REGISTER("  rsp", vcpu->get_reg(Elkvm::Reg_t::rsp))
+            << PRINT_REGISTER("  flags", vcpu->get_reg(Elkvm::Reg_t::rflags))
             << std::endl;
 
-  print_flags(vcpu->regs.rflags);
+  print_flags(vcpu->get_reg(Elkvm::Reg_t::rflags));
 
-  std::cerr << PRINT_REGISTER("rax", vcpu->regs.rax)
-            << PRINT_REGISTER("  rbx", vcpu->regs.rbx)
-            << PRINT_REGISTER("  rcx", vcpu->regs.rcx)
+  std::cerr << PRINT_REGISTER("rax", vcpu->get_reg(Elkvm::Reg_t::rax))
+            << PRINT_REGISTER("  rbx", vcpu->get_reg(Elkvm::Reg_t::rbx))
+            << PRINT_REGISTER("  rcx", vcpu->get_reg(Elkvm::Reg_t::rcx))
             << std::endl;
 
-  std::cerr << PRINT_REGISTER("rdx", vcpu->regs.rdx)
-            << PRINT_REGISTER("  rsi", vcpu->regs.rsi)
-            << PRINT_REGISTER("  rdi", vcpu->regs.rdi)
+  std::cerr << PRINT_REGISTER("rdx", vcpu->get_reg(Elkvm::Reg_t::rdx))
+            << PRINT_REGISTER("  rsi", vcpu->get_reg(Elkvm::Reg_t::rsi))
+            << PRINT_REGISTER("  rdi", vcpu->get_reg(Elkvm::Reg_t::rdi))
             << std::endl;
 
-  std::cerr << PRINT_REGISTER("rbp", vcpu->regs.rbp)
-            << PRINT_REGISTER("   r8", vcpu->regs.r8)
-            << PRINT_REGISTER("   r9", vcpu->regs.r9)
+  std::cerr << PRINT_REGISTER("rbp", vcpu->get_reg(Elkvm::Reg_t::rbp))
+            << PRINT_REGISTER("   r8", vcpu->get_reg(Elkvm::Reg_t::r8))
+            << PRINT_REGISTER("   r9", vcpu->get_reg(Elkvm::Reg_t::r9))
             << std::endl;
 
-  std::cerr << PRINT_REGISTER("r10", vcpu->regs.r10)
-            << PRINT_REGISTER("  r11", vcpu->regs.r11)
-            << PRINT_REGISTER("  r12", vcpu->regs.r12)
+  std::cerr << PRINT_REGISTER("r10", vcpu->get_reg(Elkvm::Reg_t::r10))
+            << PRINT_REGISTER("  r11", vcpu->get_reg(Elkvm::Reg_t::r11))
+            << PRINT_REGISTER("  r12", vcpu->get_reg(Elkvm::Reg_t::r12))
             << std::endl;
 
-  std::cerr << PRINT_REGISTER("r13", vcpu->regs.r13)
-            << PRINT_REGISTER("  r14", vcpu->regs.r14)
-            << PRINT_REGISTER("  r15", vcpu->regs.r15)
+  std::cerr << PRINT_REGISTER("r13", vcpu->get_reg(Elkvm::Reg_t::r13))
+            << PRINT_REGISTER("  r14", vcpu->get_reg(Elkvm::Reg_t::r14))
+            << PRINT_REGISTER("  r15", vcpu->get_reg(Elkvm::Reg_t::r15))
             << std::endl;
 
   std::cerr << PRINT_REGISTER("cr0", vcpu->sregs.cr0)
@@ -782,7 +782,7 @@ void kvm_vcpu_dump_code_at(std::shared_ptr<VCPU> vcpu, uint64_t guest_addr) {
 }
 
 void kvm_vcpu_dump_code(std::shared_ptr<VCPU> vcpu) {
-  kvm_vcpu_dump_code_at(vcpu, vcpu->regs.rip);
+  kvm_vcpu_dump_code_at(vcpu, vcpu->get_reg(Elkvm::Reg_t::rip));
 }
 
 #ifdef HAVE_LIBUDIS86

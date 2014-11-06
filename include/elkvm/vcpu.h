@@ -15,6 +15,7 @@
 
 class VCPU {
   private:
+    struct kvm_regs regs;
     /*
       Initialize a VCPU's registers according to mode
     */
@@ -27,7 +28,6 @@ class VCPU {
 #ifdef HAVE_LIBUDIS86
   ud_t ud_obj;
 #endif
-  struct kvm_regs regs;
   struct kvm_sregs sregs;
   struct kvm_run *run_struct;
   int singlestep;

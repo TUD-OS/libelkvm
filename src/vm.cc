@@ -192,7 +192,8 @@ int Elkvm::VM::chunk_remap(int num, size_t newsize) {
 
 void elkvm_emulate_vmcall(std::shared_ptr<VCPU> vcpu) {
   /* INTEL VMCALL instruction is three bytes long */
-  vcpu->regs.rip +=3;
+  CURRENT_ABI::paramtype rip = vcpu->get_reg(Elkvm::Reg_t::rip);
+  vcpu->set_reg(Elkvm::Reg_t::rip, rip += 3);
 }
 
 int elkvm_dump_valid_msrs(Elkvm::elkvm_opts *opts) {
