@@ -19,6 +19,7 @@
 #include <elkvm/gdt.h>
 #include <elkvm/idt.h>
 #include <elkvm/region.h>
+#include <elkvm/regs.h>
 #include <elkvm/stack.h>
 #include <elkvm/syscall.h>
 #include <elkvm/vcpu.h>
@@ -129,6 +130,147 @@ int VCPU::set_sregs() {
   return 0;
 }
 
+CURRENT_ABI::paramtype VCPU::get_reg(Elkvm::Reg_t reg) {
+  switch(reg) {
+    case Elkvm::Reg_t::rax:
+      return regs.rax;
+    case Elkvm::Reg_t::rbx:
+      return regs.rbx;
+    case Elkvm::Reg_t::rcx:
+      return regs.rcx;
+    case Elkvm::Reg_t::rdx:
+      return regs.rdx;
+    case Elkvm::Reg_t::rsi:
+      return regs.rsi;
+    case Elkvm::Reg_t::rdi:
+      return regs.rdi;
+    case Elkvm::Reg_t::rsp:
+      return regs.rsp;
+    case Elkvm::Reg_t::rbp:
+      return regs.rbp;
+    case Elkvm::Reg_t::r8:
+      return regs.r8;
+    case Elkvm::Reg_t::r9:
+      return regs.r9;
+    case Elkvm::Reg_t::r10:
+      return regs.r10;
+    case Elkvm::Reg_t::r11:
+      return regs.r11;
+    case Elkvm::Reg_t::r12:
+      return regs.r12;
+    case Elkvm::Reg_t::r13:
+      return regs.r13;
+    case Elkvm::Reg_t::r14:
+      return regs.r14;
+    case Elkvm::Reg_t::r15:
+      return regs.r15;
+    case Elkvm::Reg_t::rip:
+      return regs.rip;
+    case Elkvm::Reg_t::rflags:
+      return regs.rflags;
+    case Elkvm::Reg_t::cr0:
+      return sregs.cr0;
+    case Elkvm::Reg_t::cr2:
+      return sregs.cr2;
+    case Elkvm::Reg_t::cr3:
+      return sregs.cr3;
+    case Elkvm::Reg_t::cr4:
+      return sregs.cr4;
+    case Elkvm::Reg_t::cr8:
+      return sregs.cr8;
+    case Elkvm::Reg_t::efer:
+      return sregs.efer;
+    case Elkvm::Reg_t::apic_base:
+      return sregs.apic_base;
+
+    default:
+      assert(false);
+      return -1;
+  }
+}
+
+void VCPU::set_reg(Elkvm::Reg_t reg, CURRENT_ABI::paramtype val) {
+  switch(reg) {
+    case Elkvm::Reg_t::rax:
+      regs.rax = val;
+      break;
+    case Elkvm::Reg_t::rbx:
+      regs.rbx = val;
+      break;
+    case Elkvm::Reg_t::rcx:
+      regs.rcx = val;
+      break;
+    case Elkvm::Reg_t::rdx:
+      regs.rdx = val;
+      break;
+    case Elkvm::Reg_t::rsi:
+      regs.rsi = val;
+      break;
+    case Elkvm::Reg_t::rdi:
+      regs.rdi = val;
+      break;
+    case Elkvm::Reg_t::rsp:
+      regs.rsp = val;
+      break;
+    case Elkvm::Reg_t::rbp:
+      regs.rbp = val;
+      break;
+    case Elkvm::Reg_t::r8:
+      regs.r8 = val;
+      break;
+    case Elkvm::Reg_t::r9:
+      regs.r9 = val;
+      break;
+    case Elkvm::Reg_t::r10:
+      regs.r10 = val;
+      break;
+    case Elkvm::Reg_t::r11:
+      regs.r11 = val;
+      break;
+    case Elkvm::Reg_t::r12:
+      regs.r12 = val;
+      break;
+    case Elkvm::Reg_t::r13:
+      regs.r13 = val;
+      break;
+    case Elkvm::Reg_t::r14:
+      regs.r14 = val;
+      break;
+    case Elkvm::Reg_t::r15:
+      regs.r15 = val;
+      break;
+    case Elkvm::Reg_t::rip:
+      regs.rip = val;
+      break;
+    case Elkvm::Reg_t::rflags:
+      regs.rflags = val;
+      break;
+    case Elkvm::Reg_t::cr0:
+      sregs.cr0 = val;
+      break;
+    case Elkvm::Reg_t::cr2:
+      sregs.cr2 = val;
+      break;
+    case Elkvm::Reg_t::cr3:
+      sregs.cr3 = val;
+      break;
+    case Elkvm::Reg_t::cr4:
+      sregs.cr4 = val;
+      break;
+    case Elkvm::Reg_t::cr8:
+      sregs.cr8 = val;
+      break;
+    case Elkvm::Reg_t::efer:
+      sregs.efer = val;
+      break;
+    case Elkvm::Reg_t::apic_base:
+      sregs.apic_base = val;
+      break;
+
+    default:
+      assert(false);
+  }
+}
 int kvm_vcpu_get_msr(std::shared_ptr<VCPU> vcpu, uint32_t index, uint64_t *res_p) {
   struct kvm_msrs *msr = reinterpret_cast<struct kvm_msrs *>(
       malloc(sizeof(struct kvm_msrs) + sizeof(struct kvm_msr_entry)));

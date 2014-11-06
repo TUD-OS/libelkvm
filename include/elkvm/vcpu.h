@@ -1,6 +1,8 @@
 #pragma once
 #include <elkvm/config.h>
+#include <elkvm/regs.h>
 #include <elkvm/stack.h>
+#include <elkvm/syscall.h>
 
 #include <linux/kvm.h>
 
@@ -43,6 +45,12 @@ class VCPU {
      */
     int set_regs();
     int set_sregs();
+
+    /*
+     * get and set single registers
+     */
+    CURRENT_ABI::paramtype get_reg(Elkvm::Reg_t reg);
+    void set_reg(Elkvm::Reg_t reg, CURRENT_ABI::paramtype val);
 
   uint64_t pop() { uint64_t val = stack.popq(regs.rsp); regs.rsp += 0x8; return val; }
   void push(uint64_t val) { regs.rsp -= 0x8; stack.pushq(regs.rsp, val); }
