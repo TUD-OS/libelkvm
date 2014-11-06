@@ -276,11 +276,6 @@ class VM {
     struct kvm_userspace_memory_region get_chunk(int chunk)
     { return *get_region_manager()->get_pager().get_chunk(chunk); }
 
-    /*
-     * Get vCPU for given ID.
-     */
-    std::shared_ptr<VCPU> vcpu_get(int id)
-    { return get_vcpu(id); }
 };
 
 } // namespace Elkvm

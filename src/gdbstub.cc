@@ -257,7 +257,7 @@ static void debug_loop(std::shared_ptr<Elkvm::VM> vm) {
   char buffer[255];
   char obuf[1024];
   int ne = 0;
-  std::shared_ptr<VCPU> vcpu = vm->vcpu_get(0);
+  std::shared_ptr<VCPU> vcpu = vm->get_vcpu(0);
 
   while (ne == 0)
   {
@@ -315,7 +315,7 @@ static void debug_loop(std::shared_ptr<Elkvm::VM> vm) {
       {
         char buf[255];
 
-        std::shared_ptr<VCPU> vcpu = vm->vcpu_get(0);
+        std::shared_ptr<VCPU> vcpu = vm->get_vcpu(0);
         elkvm_debug_singlestep(vcpu);
         vm->run();
         elkvm_debug_singlestep_off(vcpu);
@@ -340,7 +340,7 @@ static void debug_loop(std::shared_ptr<Elkvm::VM> vm) {
 
         void *host_p = vm->get_region_manager()->get_pager().get_host_p(addr);
         memcpy(host_p, mem, len);
-        std::shared_ptr<VCPU> vcpu = vm->vcpu_get(0);
+        std::shared_ptr<VCPU> vcpu = vm->get_vcpu(0);
         vcpu->debug.control |= KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_USE_SW_BP;
         int err = elkvm_set_guest_debug(vcpu);
         assert(err == 0 && "could not set guest debug mode");
