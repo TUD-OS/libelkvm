@@ -12,6 +12,12 @@
 #endif
 
 class VCPU {
+  private:
+    /*
+      Initialize a VCPU's registers according to mode
+    */
+    int initialize_regs();
+
   public:
   int fd;
   Elkvm::Stack stack;
@@ -24,7 +30,7 @@ class VCPU {
   int singlestep;
   struct kvm_guest_debug debug;
 
-  VCPU(std::shared_ptr<Elkvm::RegionManager> rm) : stack(rm) {}
+  VCPU(std::shared_ptr<Elkvm::RegionManager> rm, int vmfd, unsigned cpu_num);
   uint64_t pop() { uint64_t val = stack.popq(regs.rsp); regs.rsp += 0x8; return val; }
   void push(uint64_t val) { regs.rsp -= 0x8; stack.pushq(regs.rsp, val); }
   guestptr_t kernel_stack_base() { return stack.kernel_base(); }
@@ -80,10 +86,6 @@ int kvm_vcpu_get_msr(std::shared_ptr<VCPU> vcpu, uint32_t, uint64_t *);
 int kvm_vcpu_set_msr(std::shared_ptr<VCPU> vcpu, uint32_t, uint64_t);
 void kvm_vcpu_dump_msr(std::shared_ptr<VCPU> vcpu, uint32_t);
 
-/*
-  Initialize a VCPU's registers according to mode
-*/
-int kvm_vcpu_initialize_regs(std::shared_ptr<VCPU> vcpu, int);
 
 /*
   Initialize the VCPU registers for long mode

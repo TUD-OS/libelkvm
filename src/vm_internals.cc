@@ -36,42 +36,16 @@ namespace Elkvm {
 
   int VM::add_cpu(int mode) {
     std::shared_ptr<VCPU> vcpu =
-      std::make_shared<VCPU>(_rm);
+      std::make_shared<VCPU>(_rm, _vmfd, cpus.size());
 
     if(vcpu == NULL) {
       return -ENOMEM;
     }
 
-    memset(&vcpu->regs, 0, sizeof(struct kvm_regs));
-    memset(&vcpu->sregs, 0, sizeof(struct kvm_sregs));
-    vcpu->singlestep = 0;
-
-    vcpu->fd = ioctl(_vmfd, KVM_CREATE_VCPU, cpus.size());
-    if(vcpu->fd <= 0) {
-      return -errno;
-    }
-
-    int err = kvm_vcpu_initialize_regs(vcpu, mode);
-    if(err) {
-      return err;
-    }
-
-    vcpu->init_rsp();
-
-    vcpu->run_struct = reinterpret_cast<struct kvm_run *>(
-        mmap(NULL, sizeof(struct kvm_run), PROT_READ | PROT_WRITE,
-        MAP_SHARED, vcpu->fd, 0));
-    if(vcpu->run_struct == NULL) {
-      return -ENOMEM;
-    }
-
-#ifdef HAVE_LIBUDIS86
-    elkvm_init_udis86(vcpu, mode);
-#endif
-
     cpus.push_back(vcpu);
 
     kvm_vcpu_set_regs(vcpu);
+    kvm_vcpu_set_sregs(vcpu);
     return 0;
   }
 
