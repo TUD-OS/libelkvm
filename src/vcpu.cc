@@ -60,7 +60,7 @@ int VCPU::handle_stack_expansion(uint32_t err __attribute__((unused)),
 }
 
 int kvm_vcpu_set_rip(std::shared_ptr<VCPU>  vcpu, uint64_t rip) {
-  int err = kvm_vcpu_get_regs(vcpu);
+  int err = vcpu->get_regs();
   if(err) {
     return err;
   }
@@ -93,12 +93,8 @@ int kvm_vcpu_set_cr3(std::shared_ptr<VCPU> vcpu, uint64_t cr3) {
   return 0;
 }
 
-int kvm_vcpu_get_regs(std::shared_ptr<VCPU> vcpu) {
-  if(vcpu->fd < 1) {
-    return -EIO;
-  }
-
-  int err = ioctl(vcpu->fd, KVM_GET_REGS, &vcpu->regs);
+int VCPU::get_regs() {
+  int err = ioctl(fd, KVM_GET_REGS, &regs);
   if(err) {
     return -errno;
   }
@@ -364,7 +360,7 @@ int Elkvm::VM::run() {
       break;
     }
 
-    err = kvm_vcpu_get_regs(vcpu);
+    err = vcpu->get_regs();
     if(err) {
       return err;
     }
@@ -417,7 +413,7 @@ int Elkvm::VM::run() {
       case KVM_EXIT_SHUTDOWN:
         fprintf(stderr, "KVM VCPU did shutdown\n");
         is_running = 0;
-        kvm_vcpu_get_regs(vcpu);
+        vcpu->get_regs();
         kvm_vcpu_get_sregs(vcpu);
         break;
       case KVM_EXIT_DEBUG: {

@@ -18,6 +18,7 @@ class VCPU {
     */
     int initialize_regs();
 
+
   public:
   int fd;
   Elkvm::Stack stack;
@@ -30,7 +31,12 @@ class VCPU {
   int singlestep;
   struct kvm_guest_debug debug;
 
-  VCPU(std::shared_ptr<Elkvm::RegionManager> rm, int vmfd, unsigned cpu_num);
+    VCPU(std::shared_ptr<Elkvm::RegionManager> rm, int vmfd, unsigned cpu_num);
+    /*
+     * Get VCPU registers
+     */
+    int get_regs();
+
   uint64_t pop() { uint64_t val = stack.popq(regs.rsp); regs.rsp += 0x8; return val; }
   void push(uint64_t val) { regs.rsp -= 0x8; stack.pushq(regs.rsp, val); }
   guestptr_t kernel_stack_base() { return stack.kernel_base(); }
@@ -73,7 +79,6 @@ int kvm_vcpu_set_cr3(std::shared_ptr<VCPU> vcpu, uint64_t);
 /*
   Get the VCPU's registers
 */
-int kvm_vcpu_get_regs(std::shared_ptr<VCPU> vcpu);
 int kvm_vcpu_get_sregs(std::shared_ptr<VCPU> vcpu);
 
 /*

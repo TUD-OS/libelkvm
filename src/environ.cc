@@ -190,7 +190,7 @@ namespace Elkvm {
 
 int Environment::fill(Elkvm::elkvm_opts *opts,
     std::shared_ptr<VCPU> vcpu) {
-  int err = kvm_vcpu_get_regs(vcpu);
+  int err = vcpu->get_regs();
   assert(err == 0 && "error getting vcpu");
 
   off64_t bytes = push_auxv(vcpu, opts->environ);
