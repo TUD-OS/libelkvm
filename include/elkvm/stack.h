@@ -35,7 +35,7 @@ namespace Elkvm {
       int expand();
   };
 
-  //void dump_stack(VM &vmi, VCPU *vcpu);
+  //void dump_stack(VM &vmi, std::shared_ptr<VCPU> vcpu);
 
 //namespace Elkvm
 }

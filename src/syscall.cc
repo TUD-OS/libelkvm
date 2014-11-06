@@ -307,7 +307,7 @@ int Elkvm::VM::handle_hypercall(std::shared_ptr<VCPU> vcpu) {
 
   switch(call) {
     case ELKVM_HYPERCALL_SYSCALL:
-      err = handle_syscall(vcpu.get());
+      err = handle_syscall(vcpu);
       break;
     case ELKVM_HYPERCALL_INTERRUPT:
       err = handle_interrupt(vcpu);
@@ -328,7 +328,7 @@ int Elkvm::VM::handle_hypercall(std::shared_ptr<VCPU> vcpu) {
       hyphandlers->post_handler(this, vcpu, call);
   }
 
-  elkvm_emulate_vmcall(vcpu.get());
+  elkvm_emulate_vmcall(vcpu);
 
   err = signal_deliver();
   assert(err == 0);
@@ -336,7 +336,7 @@ int Elkvm::VM::handle_hypercall(std::shared_ptr<VCPU> vcpu) {
   return 0;
 }
 
-int Elkvm::VM::handle_syscall(VCPU *vcpu)
+int Elkvm::VM::handle_syscall(std::shared_ptr<VCPU> vcpu)
 {
   CURRENT_ABI::paramtype syscall_num = CURRENT_ABI::get_parameter(vcpu, 0);
   if(debug_mode()) {
@@ -2227,7 +2227,7 @@ long elkvm_do_arch_prctl(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype user_addr = 0;
   std::shared_ptr<VCPU> vcpu = vmi->get_vcpu(0);
 
-  int err = kvm_vcpu_get_sregs(vcpu.get());
+  int err = kvm_vcpu_get_sregs(vcpu);
   if(err) {
     return err;
   }
@@ -2256,7 +2256,7 @@ long elkvm_do_arch_prctl(Elkvm::VM * vmi) {
       return -EINVAL;
   }
 
-  err = kvm_vcpu_set_sregs(vcpu.get());
+  err = kvm_vcpu_set_sregs(vcpu);
   if(vmi->debug_mode()) {
     DBG() << "ARCH PRCTL with code " << code << " user_addr " << LOG_GUEST_HOST(user_addr, host_addr);
     DBG() << "RESULT " << err;

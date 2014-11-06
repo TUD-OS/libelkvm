@@ -31,7 +31,7 @@ int VCPU::handle_stack_expansion(uint32_t err __attribute__((unused)),
   return 1;
 }
 
-int kvm_vcpu_initialize_regs(VCPU *vcpu, int mode) {
+int kvm_vcpu_initialize_regs(std::shared_ptr<VCPU> vcpu, int mode) {
   switch(mode) {
     case VM_MODE_X86_64:
       return kvm_vcpu_initialize_long_mode(vcpu);
@@ -40,7 +40,7 @@ int kvm_vcpu_initialize_regs(VCPU *vcpu, int mode) {
   }
 }
 
-int kvm_vcpu_set_rip(VCPU * vcpu, uint64_t rip) {
+int kvm_vcpu_set_rip(std::shared_ptr<VCPU>  vcpu, uint64_t rip) {
   int err = kvm_vcpu_get_regs(vcpu);
   if(err) {
     return err;
@@ -56,7 +56,7 @@ int kvm_vcpu_set_rip(VCPU * vcpu, uint64_t rip) {
   return 0;
 }
 
-int kvm_vcpu_set_cr3(VCPU *vcpu, uint64_t cr3) {
+int kvm_vcpu_set_cr3(std::shared_ptr<VCPU> vcpu, uint64_t cr3) {
   assert(vcpu != NULL);
 
   int err = kvm_vcpu_get_sregs(vcpu);
@@ -74,7 +74,7 @@ int kvm_vcpu_set_cr3(VCPU *vcpu, uint64_t cr3) {
   return 0;
 }
 
-int kvm_vcpu_get_regs(VCPU *vcpu) {
+int kvm_vcpu_get_regs(std::shared_ptr<VCPU> vcpu) {
   if(vcpu->fd < 1) {
     return -EIO;
   }
@@ -87,7 +87,7 @@ int kvm_vcpu_get_regs(VCPU *vcpu) {
   return 0;
 }
 
-int kvm_vcpu_get_sregs(VCPU *vcpu) {
+int kvm_vcpu_get_sregs(std::shared_ptr<VCPU> vcpu) {
   if(vcpu->fd < 1) {
     return -EIO;
   }
@@ -100,7 +100,7 @@ int kvm_vcpu_get_sregs(VCPU *vcpu) {
   return 0;
 }
 
-int kvm_vcpu_set_regs(VCPU *vcpu) {
+int kvm_vcpu_set_regs(std::shared_ptr<VCPU> vcpu) {
   if(vcpu->fd < 1) {
     return -EIO;
   }
@@ -113,7 +113,7 @@ int kvm_vcpu_set_regs(VCPU *vcpu) {
   return 0;
 }
 
-int kvm_vcpu_set_sregs(VCPU *vcpu) {
+int kvm_vcpu_set_sregs(std::shared_ptr<VCPU> vcpu) {
   if(vcpu->fd < 1) {
     return -EIO;
   }
@@ -126,7 +126,7 @@ int kvm_vcpu_set_sregs(VCPU *vcpu) {
   return 0;
 }
 
-int kvm_vcpu_get_msr(VCPU *vcpu, uint32_t index, uint64_t *res_p) {
+int kvm_vcpu_get_msr(std::shared_ptr<VCPU> vcpu, uint32_t index, uint64_t *res_p) {
   struct kvm_msrs *msr = reinterpret_cast<struct kvm_msrs *>(
       malloc(sizeof(struct kvm_msrs) + sizeof(struct kvm_msr_entry)));
   msr->nmsrs = 1;
@@ -144,7 +144,7 @@ int kvm_vcpu_get_msr(VCPU *vcpu, uint32_t index, uint64_t *res_p) {
   return 0;
 }
 
-int kvm_vcpu_set_msr(VCPU *vcpu, uint32_t index, uint64_t data) {
+int kvm_vcpu_set_msr(std::shared_ptr<VCPU> vcpu, uint32_t index, uint64_t data) {
   struct kvm_msrs *msr = reinterpret_cast<struct kvm_msrs *>(
       malloc(sizeof(struct kvm_msrs) + sizeof(struct kvm_msr_entry)));
   memset(msr, 0, sizeof(struct kvm_msrs) + sizeof(struct kvm_msr_entry));
@@ -162,7 +162,7 @@ int kvm_vcpu_set_msr(VCPU *vcpu, uint32_t index, uint64_t data) {
   return 0;
 }
 
-int kvm_vcpu_initialize_long_mode(VCPU *vcpu) {
+int kvm_vcpu_initialize_long_mode(std::shared_ptr<VCPU> vcpu) {
 
   memset(&vcpu->regs, 0, sizeof(struct kvm_regs));
   //vcpu->regs.rsp = LINUX_64_STACK_BASE;
@@ -299,7 +299,7 @@ int kvm_vcpu_initialize_long_mode(VCPU *vcpu) {
   return err;
 }
 
-int kvm_vcpu_run(VCPU *vcpu) {
+int kvm_vcpu_run(std::shared_ptr<VCPU> vcpu) {
   int err = ioctl(vcpu->fd, KVM_RUN, 0);
   if(err != 0) {
     if(errno == EINTR) {
@@ -329,7 +329,7 @@ int Elkvm::VM::run() {
   int err = 0;
   while(is_running) {
 
-    err = kvm_vcpu_set_regs(vcpu.get());
+    err = kvm_vcpu_set_regs(vcpu);
     if(err) {
       return err;
     }
@@ -340,12 +340,12 @@ int Elkvm::VM::run() {
 //      }
 //    }
 
-    err = kvm_vcpu_run(vcpu.get());
+    err = kvm_vcpu_run(vcpu);
     if(err) {
       break;
     }
 
-    err = kvm_vcpu_get_regs(vcpu.get());
+    err = kvm_vcpu_get_regs(vcpu);
     if(err) {
       return err;
     }
@@ -360,8 +360,8 @@ int Elkvm::VM::run() {
       case KVM_EXIT_HYPERCALL:
         if(vcpu->singlestep) {
           fprintf(stderr, "KVM_EXIT_HYPERCALL\n");
-          kvm_vcpu_dump_regs(vcpu.get());
-          kvm_vcpu_dump_code(vcpu.get());
+          kvm_vcpu_dump_regs(vcpu);
+          kvm_vcpu_dump_code(vcpu);
         }
         err = handle_hypercall(vcpu);
         if(err == ELKVM_HYPERCALL_EXIT) {
@@ -398,8 +398,8 @@ int Elkvm::VM::run() {
       case KVM_EXIT_SHUTDOWN:
         fprintf(stderr, "KVM VCPU did shutdown\n");
         is_running = 0;
-        kvm_vcpu_get_regs(vcpu.get());
-        kvm_vcpu_get_sregs(vcpu.get());
+        kvm_vcpu_get_regs(vcpu);
+        kvm_vcpu_get_sregs(vcpu);
         break;
       case KVM_EXIT_DEBUG: {
         /* NO-OP */
@@ -442,9 +442,9 @@ int Elkvm::VM::run() {
 
     if(  vcpu->run_struct->exit_reason == KVM_EXIT_MMIO ||
         vcpu->run_struct->exit_reason == KVM_EXIT_SHUTDOWN) {
-      kvm_vcpu_dump_regs(vcpu.get());
-      dump_stack(vcpu.get());
-      kvm_vcpu_dump_code(vcpu.get());
+      kvm_vcpu_dump_regs(vcpu);
+      dump_stack(vcpu);
+      kvm_vcpu_dump_code(vcpu);
     }
 
   }
@@ -490,7 +490,7 @@ void host_cpuid(uint32_t function, uint32_t count,
         *edx = vec[3];
 }
 
-void kvm_vcpu_dump_msr(VCPU *vcpu, uint32_t msr) {
+void kvm_vcpu_dump_msr(std::shared_ptr<VCPU> vcpu, uint32_t msr) {
   uint64_t r;
   int err = kvm_vcpu_get_msr(vcpu, msr, &r);
   if(err) {
@@ -501,7 +501,7 @@ void kvm_vcpu_dump_msr(VCPU *vcpu, uint32_t msr) {
   fprintf(stderr, " MSR: 0x%x: 0x%016lx\n", msr, r);
 }
 
-void kvm_vcpu_dump_regs(VCPU *vcpu) {
+void kvm_vcpu_dump_regs(std::shared_ptr<VCPU> vcpu) {
   std::cerr << std::endl << " Registers:" << std::endl;
   std::cerr << " ----------\n";
 
@@ -617,7 +617,7 @@ void print_dtable(const std::string name, struct kvm_dtable dtable)
     << std::endl;
 }
 
-void kvm_vcpu_dump_code_at(VCPU *vcpu, uint64_t guest_addr) {
+void kvm_vcpu_dump_code_at(std::shared_ptr<VCPU> vcpu, uint64_t guest_addr) {
   (void)vcpu; (void)guest_addr;
 #ifdef HAVE_LIBUDIS86
   int err = kvm_vcpu_get_next_code_byte(vcpu, guest_addr);
@@ -636,12 +636,12 @@ void kvm_vcpu_dump_code_at(VCPU *vcpu, uint64_t guest_addr) {
 #endif
 }
 
-void kvm_vcpu_dump_code(VCPU *vcpu) {
+void kvm_vcpu_dump_code(std::shared_ptr<VCPU> vcpu) {
   kvm_vcpu_dump_code_at(vcpu, vcpu->regs.rip);
 }
 
 #ifdef HAVE_LIBUDIS86
-int kvm_vcpu_get_next_code_byte(VCPU *vcpu, uint64_t guest_addr) {
+int kvm_vcpu_get_next_code_byte(std::shared_ptr<VCPU> vcpu, uint64_t guest_addr) {
 //  assert(guest_addr != 0x0);
 //  void *host_p = Elkvm::vmi->get_region_manager().get_pager().get_host_p(guest_addr);
 //  assert(host_p != NULL);
@@ -651,7 +651,7 @@ int kvm_vcpu_get_next_code_byte(VCPU *vcpu, uint64_t guest_addr) {
 //  return 0;
 }
 
-void elkvm_init_udis86(VCPU *vcpu, int mode) {
+void elkvm_init_udis86(std::shared_ptr<VCPU> vcpu, int mode) {
   ud_init(&vcpu->ud_obj);
   switch(mode) {
     case VM_MODE_X86_64:
@@ -662,6 +662,6 @@ void elkvm_init_udis86(VCPU *vcpu, int mode) {
 
 #endif
 
-int kvm_vcpu_had_page_fault(VCPU *vcpu) {
+int kvm_vcpu_had_page_fault(std::shared_ptr<VCPU> vcpu) {
   return vcpu->sregs.cr2 != 0x0;
 }

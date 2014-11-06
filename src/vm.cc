@@ -124,7 +124,7 @@ elkvm_vm_create(Elkvm::elkvm_opts *opts,
   /*
    * setup the lstar register with the syscall handler
    */
-  err = kvm_vcpu_set_msr(vmi->get_vcpu(0).get(),
+  err = kvm_vcpu_set_msr(vmi->get_vcpu(0),
                          VCPU_MSR_LSTAR,
                          sysenter.region->guest_address());
   assert(err == 0);
@@ -190,7 +190,7 @@ int Elkvm::VM::chunk_remap(int num, size_t newsize) {
   return 0;
 }
 
-void elkvm_emulate_vmcall(VCPU *vcpu) {
+void elkvm_emulate_vmcall(std::shared_ptr<VCPU> vcpu) {
   /* INTEL VMCALL instruction is three bytes long */
   vcpu->regs.rip +=3;
 }

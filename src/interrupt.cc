@@ -12,9 +12,9 @@ int VM::handle_interrupt(std::shared_ptr<VCPU> vcpu) {
   if(debug_mode()) {
     DBG() << " INTERRUPT with vector " << std::hex << "0x" << interrupt_vector
       << " detected";
-    kvm_vcpu_get_sregs(vcpu.get());
-    kvm_vcpu_dump_regs(vcpu.get());
-    dump_stack(vcpu.get());
+    kvm_vcpu_get_sregs(vcpu);
+    kvm_vcpu_dump_regs(vcpu);
+    dump_stack(vcpu);
   }
 
   uint64_t err_code = vcpu->pop();
@@ -50,7 +50,7 @@ int handle_general_protection_fault(uint64_t code) {
 int handle_page_fault(VM &vm,
     std::shared_ptr<VCPU> vcpu,
     uint64_t code) {
-  int err = kvm_vcpu_get_sregs(vcpu.get());
+  int err = kvm_vcpu_get_sregs(vcpu);
   assert(err == 0 && "error getting vcpu sregs");
 
   handle_segfault(vcpu->sregs.cr2);

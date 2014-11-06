@@ -51,7 +51,7 @@ namespace Elkvm {
       return -errno;
     }
 
-    int err = kvm_vcpu_initialize_regs(vcpu.get(), mode);
+    int err = kvm_vcpu_initialize_regs(vcpu, mode);
     if(err) {
       return err;
     }
@@ -66,12 +66,12 @@ namespace Elkvm {
     }
 
 #ifdef HAVE_LIBUDIS86
-    elkvm_init_udis86(vcpu.get(), mode);
+    elkvm_init_udis86(vcpu, mode);
 #endif
 
     cpus.push_back(vcpu);
 
-    kvm_vcpu_set_regs(vcpu.get());
+    kvm_vcpu_set_regs(vcpu);
     return 0;
   }
 
@@ -170,7 +170,7 @@ namespace Elkvm {
   /* TODO: Should be a function of the vCPU */
   int VM::set_entry_point(guestptr_t rip)
   {
-    return kvm_vcpu_set_rip(cpus.front().get(), rip);
+    return kvm_vcpu_set_rip(cpus.front(), rip);
   }
 
   //namespace Elkvm

@@ -232,7 +232,7 @@ class VM {
      *
      * TODOL should be part of the VCPU class.
      */
-    void dump_stack(VCPU *vcpu);
+    void dump_stack(std::shared_ptr<VCPU> vcpu);
 
 
     /*
@@ -248,7 +248,7 @@ class VM {
     /*
      * Handle VM events
      */
-    int handle_syscall(VCPU*);
+    int handle_syscall(std::shared_ptr<VCPU>);
     int handle_interrupt(std::shared_ptr<VCPU>);
     int handle_hypercall(std::shared_ptr<VCPU>);
 
@@ -279,8 +279,8 @@ class VM {
     /*
      * Get vCPU for given ID.
      */
-    VCPU* vcpu_get(int id)
-    { return get_vcpu(id).get(); }
+    std::shared_ptr<VCPU> vcpu_get(int id)
+    { return get_vcpu(id); }
 };
 
 } // namespace Elkvm
@@ -301,7 +301,7 @@ elkvm_vm_create(Elkvm::elkvm_opts *,
 /*
  * \brief Emulates (skips) the VMCALL instruction
  */
-void elkvm_emulate_vmcall(VCPU *);
+void elkvm_emulate_vmcall(std::shared_ptr<VCPU> );
 int elkvm_dump_valid_msrs(struct elkvm_opts *);
 
 /**
@@ -313,5 +313,5 @@ void elkvm_gdbstub_init(std::shared_ptr<Elkvm::VM> vm);
 /**
  * \brief Enable VCPU debug mode
  */
-int elkvm_debug_enable(VCPU *vcpu);
+int elkvm_debug_enable(std::shared_ptr<VCPU> vcpu);
 

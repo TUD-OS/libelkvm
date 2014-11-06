@@ -57,45 +57,45 @@ class VCPU {
 /*
   Set the VCPU's rip to a specific value
 */
-int kvm_vcpu_set_rip(VCPU *vcpu, uint64_t);
+int kvm_vcpu_set_rip(std::shared_ptr<VCPU> vcpu, uint64_t);
 
 /*
  * \brief Set the VCPU's CR3 to a specific value
  */
-int kvm_vcpu_set_cr3(VCPU *vcpu, uint64_t);
+int kvm_vcpu_set_cr3(std::shared_ptr<VCPU> vcpu, uint64_t);
 
 /*
   Get the VCPU's registers
 */
-int kvm_vcpu_get_regs(VCPU *vcpu);
-int kvm_vcpu_get_sregs(VCPU *vcpu);
+int kvm_vcpu_get_regs(std::shared_ptr<VCPU> vcpu);
+int kvm_vcpu_get_sregs(std::shared_ptr<VCPU> vcpu);
 
 /*
   Set the VCPU's registers
 */
-int kvm_vcpu_set_regs(VCPU *vcpu);
-int kvm_vcpu_set_sregs(VCPU *vcpu);
+int kvm_vcpu_set_regs(std::shared_ptr<VCPU> vcpu);
+int kvm_vcpu_set_sregs(std::shared_ptr<VCPU> vcpu);
 
-int kvm_vcpu_get_msr(VCPU *vcpu, uint32_t, uint64_t *);
-int kvm_vcpu_set_msr(VCPU *vcpu, uint32_t, uint64_t);
-void kvm_vcpu_dump_msr(VCPU *vcpu, uint32_t);
+int kvm_vcpu_get_msr(std::shared_ptr<VCPU> vcpu, uint32_t, uint64_t *);
+int kvm_vcpu_set_msr(std::shared_ptr<VCPU> vcpu, uint32_t, uint64_t);
+void kvm_vcpu_dump_msr(std::shared_ptr<VCPU> vcpu, uint32_t);
 
 /*
   Initialize a VCPU's registers according to mode
 */
-int kvm_vcpu_initialize_regs(VCPU *vcpu, int);
+int kvm_vcpu_initialize_regs(std::shared_ptr<VCPU> vcpu, int);
 
 /*
   Initialize the VCPU registers for long mode
 */
-int kvm_vcpu_initialize_long_mode(VCPU *vcpu);
+int kvm_vcpu_initialize_long_mode(std::shared_ptr<VCPU> vcpu);
 
 /*
  * \brief Run the VCPU
 */
-int kvm_vcpu_run(VCPU *vcpu);
+int kvm_vcpu_run(std::shared_ptr<VCPU> vcpu);
 
-int kvm_vcpu_had_page_fault(VCPU *vcpu);
+int kvm_vcpu_had_page_fault(std::shared_ptr<VCPU> vcpu);
 
 /*
  * \brief Returns true if the host supports vmx
@@ -107,19 +107,19 @@ bool host_supports_vmx(void);
 */
 void host_cpuid(uint32_t, uint32_t, uint32_t *, uint32_t *, uint32_t *, uint32_t *);
 
-void kvm_vcpu_dump_regs(VCPU *vcpu);
+void kvm_vcpu_dump_regs(std::shared_ptr<VCPU> vcpu);
 
-void kvm_vcpu_dump_code(VCPU *vcpu);
-void kvm_vcpu_dump_code_at(VCPU *vcpu, uint64_t guest_addr);
+void kvm_vcpu_dump_code(std::shared_ptr<VCPU> vcpu);
+void kvm_vcpu_dump_code_at(std::shared_ptr<VCPU> vcpu, uint64_t guest_addr);
 
 #ifdef HAVE_LIBUDIS86
 /*
  * \brief Get the next byte of code to be executed.
  * This is mainly here for libudis86 disassembly
  */
-int kvm_vcpu_get_next_code_byte(VCPU *vcpu, uint64_t guest_addr);
+int kvm_vcpu_get_next_code_byte(std::shared_ptr<VCPU> vcpu, uint64_t guest_addr);
 
-void elkvm_init_udis86(VCPU *vcpu, int mode);
+void elkvm_init_udis86(std::shared_ptr<VCPU> vcpu, int mode);
 #endif
 
 void print_flags(uint64_t flags);

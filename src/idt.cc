@@ -51,7 +51,7 @@ int elkvm_idt_setup(Elkvm::RegionManager &rm,
 	vcpu->sregs.idt.base = idt_region->guest_address();
 	vcpu->sregs.idt.limit = 0xFFF;
 
-	int err = kvm_vcpu_set_sregs(vcpu.get());
+	int err = kvm_vcpu_set_sregs(vcpu);
 
 	return err;
 }

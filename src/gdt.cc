@@ -107,14 +107,14 @@ int elkvm_gdt_setup(Elkvm::RegionManager &rm, std::shared_ptr<VCPU> vcpu) {
 	uint64_t sysret_star = (ss_selector - 0x8) | 0x3;
 	uint64_t star = (sysret_star << 48) | (syscall_star << 32);
 
-	err = kvm_vcpu_set_msr(vcpu.get(),
+	err = kvm_vcpu_set_msr(vcpu,
 			VCPU_MSR_STAR,
 			star);
 	if(err) {
 		return err;
 	}
 
-	err = kvm_vcpu_get_sregs(vcpu.get());
+	err = kvm_vcpu_get_sregs(vcpu);
 	if(err) {
 		return err;
 	}
@@ -126,7 +126,7 @@ int elkvm_gdt_setup(Elkvm::RegionManager &rm, std::shared_ptr<VCPU> vcpu) {
 	vcpu->sregs.tr.limit = sizeof(struct elkvm_tss64);
 	vcpu->sregs.tr.selector = tr_selector;
 
-	err = kvm_vcpu_set_sregs(vcpu.get());
+	err = kvm_vcpu_set_sregs(vcpu);
 	if(err) {
 		return err;
 	}
