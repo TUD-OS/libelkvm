@@ -1,6 +1,5 @@
 #pragma once
 
-#include <elkvm/vcpu.h>
 #include <asm/unistd_64.h>
 
 #define ELKVM_HYPERCALL_SYSCALL   1
@@ -8,6 +7,8 @@
 
 #define ELKVM_HYPERCALL_EXIT      0x42
 #define NUM_SYSCALLS 313
+
+class VCPU;
 
 /*
  * Interface for a platform-specific binary interface.
@@ -72,35 +73,10 @@ class X86_64_ABI : public ABI <uint64_t>
 
   public:
     static ABI::paramtype
-    get_parameter(std::shared_ptr<VCPU > vcpu, unsigned pos)
-    {
-      // no more than 6 params
-      assert(pos <= 6);
-
-      switch(pos) {
-        case 0:
-          return vcpu->regs.rax;
-        case 1:
-          return vcpu->regs.rdi;
-        case 2:
-          return vcpu->regs.rsi;
-        case 3:
-          return vcpu->regs.rdx;
-        case 4:
-          return vcpu->regs.r10;
-        case 5:
-          return vcpu->regs.r8;
-        case 6:
-          return vcpu->regs.r9;
-      }
-      return ~0ULL;
-    }
+    get_parameter(std::shared_ptr<VCPU > vcpu, unsigned pos);
 
     static void
-    set_syscall_return(std::shared_ptr<VCPU> vcpu, paramtype value)
-    {
-        vcpu->regs.rax = value;
-    }
+    set_syscall_return(std::shared_ptr<VCPU> vcpu, paramtype value);
 };
 
 // XXX: this needs to be adjusted for other platforms

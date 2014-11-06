@@ -25,6 +25,36 @@
 #define LOG_GUEST_HOST(guest, host) (void*)guest << " (" << (void*)host << ")"
 #define LOG_DEC_HEX(val) std::dec << val << " (" << std::hex << "0x" << val << ")"
 
+X86_64_ABI::paramtype
+X86_64_ABI::get_parameter(std::shared_ptr<VCPU > vcpu, unsigned pos)
+{
+  // no more than 6 params
+  assert(pos <= 6);
+
+  switch(pos) {
+    case 0:
+      return vcpu->regs.rax;
+    case 1:
+      return vcpu->regs.rdi;
+    case 2:
+      return vcpu->regs.rsi;
+    case 3:
+      return vcpu->regs.rdx;
+    case 4:
+      return vcpu->regs.r10;
+    case 5:
+      return vcpu->regs.r8;
+    case 6:
+      return vcpu->regs.r9;
+  }
+  return ~0ULL;
+}
+
+void X86_64_ABI::set_syscall_return(std::shared_ptr<VCPU> vcpu, paramtype value)
+{
+    vcpu->regs.rax = value;
+}
+
 // XXX: this should be the same for all platforms, we
 //      just need to include proper unistd.h
 static struct {
