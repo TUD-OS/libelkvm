@@ -6,7 +6,7 @@
 
 namespace Elkvm {
 
-int VM::handle_interrupt(std::shared_ptr<struct kvm_vcpu> vcpu) {
+int VM::handle_interrupt(std::shared_ptr<VCPU> vcpu) {
   uint64_t interrupt_vector = vcpu->pop();
 
   if(debug_mode()) {
@@ -48,7 +48,7 @@ int handle_general_protection_fault(uint64_t code) {
 }
 
 int handle_page_fault(VM &vm,
-    std::shared_ptr<struct kvm_vcpu> vcpu,
+    std::shared_ptr<VCPU> vcpu,
     uint64_t code) {
   int err = kvm_vcpu_get_sregs(vcpu.get());
   assert(err == 0 && "error getting vcpu sregs");

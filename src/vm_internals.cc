@@ -35,8 +35,8 @@ namespace Elkvm {
   }
 
   int VM::add_cpu(int mode) {
-    std::shared_ptr<struct kvm_vcpu> vcpu =
-      std::make_shared<struct kvm_vcpu>(_rm);
+    std::shared_ptr<VCPU> vcpu =
+      std::make_shared<VCPU>(_rm);
 
     if(vcpu == NULL) {
       return -ENOMEM;
@@ -136,7 +136,7 @@ namespace Elkvm {
     return 0;
   }
 
-  std::shared_ptr<struct kvm_vcpu> VM::get_vcpu(int num) const {
+  std::shared_ptr<VCPU> VM::get_vcpu(int num) const {
     return cpus.at(num);
   }
 
@@ -162,7 +162,7 @@ namespace Elkvm {
 #endif
 
   /* TODO: Should be a function of the vCPU */
-  unsigned get_hypercall_type(std::shared_ptr<struct kvm_vcpu> vcpu)
+  unsigned get_hypercall_type(std::shared_ptr<VCPU> vcpu)
   {
     return vcpu->pop();
   }

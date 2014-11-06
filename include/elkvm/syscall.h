@@ -28,7 +28,7 @@ class ABI
     /*
      * Set the ABI-specific syscall return register to value.
      */
-    static void set_syscall_return(struct kvm_vcpu *vcpu, paramtype value);
+    static void set_syscall_return(VCPU *vcpu, paramtype value);
 };
 
 class X86_64_ABI : public ABI <uint64_t>
@@ -73,7 +73,7 @@ class X86_64_ABI : public ABI <uint64_t>
 
   public:
     static ABI::paramtype
-    get_parameter(std::shared_ptr<struct kvm_vcpu > vcpu, unsigned pos)
+    get_parameter(std::shared_ptr<VCPU > vcpu, unsigned pos)
     {
       // no more than 6 params
       assert(pos <= 6);
@@ -98,7 +98,7 @@ class X86_64_ABI : public ABI <uint64_t>
     }
 
     static ABI::paramtype
-    get_parameter(struct kvm_vcpu *vcpu, unsigned pos)
+    get_parameter(VCPU *vcpu, unsigned pos)
     {
       // no more than 6 params
       assert(pos <= 6);
@@ -124,7 +124,7 @@ class X86_64_ABI : public ABI <uint64_t>
 
 
     static void
-    set_syscall_return(struct kvm_vcpu *vcpu, paramtype value)
+    set_syscall_return(VCPU *vcpu, paramtype value)
     {
         vcpu->regs.rax = value;
     }

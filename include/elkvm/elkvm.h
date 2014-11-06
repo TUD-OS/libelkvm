@@ -21,7 +21,7 @@
 #include <elkvm/region_manager.h>
 
 
-struct kvm_vcpu;
+class VCPU;
 
 #define VM_MODE_X86    1
 #define VM_MODE_PAGING 2
@@ -50,10 +50,10 @@ class VM;
  */
 struct hypercall_handlers {
     long (*pre_handler) (Elkvm::VM* vm,
-                         std::shared_ptr<struct kvm_vcpu> vcpu,
+                         std::shared_ptr<VCPU> vcpu,
                          int eventtype);
     long (*post_handler) (Elkvm::VM* vm,
-                          std::shared_ptr<struct kvm_vcpu> vcpu,
+                          std::shared_ptr<VCPU> vcpu,
                           int eventtype);
 };
 
@@ -152,7 +152,7 @@ struct elkvm_opts;
 
 class VM {
   protected:
-    std::vector<std::shared_ptr<struct kvm_vcpu>> cpus;
+    std::vector<std::shared_ptr<VCPU>> cpus;
 
     /*
      * Debugging enabled in VM?
@@ -200,7 +200,7 @@ class VM {
 
     std::shared_ptr<RegionManager> get_region_manager() { return _rm; }
     HeapManager &get_heap_manager() { return hm; }
-    std::shared_ptr<struct kvm_vcpu> get_vcpu(int num) const;
+    std::shared_ptr<VCPU> get_vcpu(int num) const;
     int get_vmfd() const { return _vmfd; }
     Elkvm::elkvm_flat &get_cleanup_flat();
 
@@ -232,7 +232,7 @@ class VM {
      *
      * TODOL should be part of the VCPU class.
      */
-    void dump_stack(struct kvm_vcpu *vcpu);
+    void dump_stack(VCPU *vcpu);
 
 
     /*
@@ -248,9 +248,9 @@ class VM {
     /*
      * Handle VM events
      */
-    int handle_syscall(struct kvm_vcpu*);
-    int handle_interrupt(std::shared_ptr<struct kvm_vcpu>);
-    int handle_hypercall(std::shared_ptr<struct kvm_vcpu>);
+    int handle_syscall(VCPU*);
+    int handle_interrupt(std::shared_ptr<VCPU>);
+    int handle_hypercall(std::shared_ptr<VCPU>);
 
     /*
      * Signal management
@@ -279,7 +279,7 @@ class VM {
     /*
      * Get vCPU for given ID.
      */
-    struct kvm_vcpu* vcpu_get(int id)
+    VCPU* vcpu_get(int id)
     { return get_vcpu(id).get(); }
 };
 
@@ -301,7 +301,7 @@ elkvm_vm_create(Elkvm::elkvm_opts *,
 /*
  * \brief Emulates (skips) the VMCALL instruction
  */
-void elkvm_emulate_vmcall(struct kvm_vcpu *);
+void elkvm_emulate_vmcall(VCPU *);
 int elkvm_dump_valid_msrs(struct elkvm_opts *);
 
 /**
@@ -313,5 +313,5 @@ void elkvm_gdbstub_init(std::shared_ptr<Elkvm::VM> vm);
 /**
  * \brief Enable VCPU debug mode
  */
-int elkvm_debug_enable(struct kvm_vcpu *vcpu);
+int elkvm_debug_enable(VCPU *vcpu);
 

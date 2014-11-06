@@ -11,7 +11,8 @@
 #include <udis86.h>
 #endif
 
-struct kvm_vcpu {
+class VCPU {
+  public:
   int fd;
   Elkvm::Stack stack;
 #ifdef HAVE_LIBUDIS86
@@ -23,7 +24,7 @@ struct kvm_vcpu {
   int singlestep;
   struct kvm_guest_debug debug;
 
-  kvm_vcpu(std::shared_ptr<Elkvm::RegionManager> rm) : stack(rm) {}
+  VCPU(std::shared_ptr<Elkvm::RegionManager> rm) : stack(rm) {}
   uint64_t pop() { uint64_t val = stack.popq(regs.rsp); regs.rsp += 0x8; return val; }
   void push(uint64_t val) { regs.rsp -= 0x8; stack.pushq(regs.rsp, val); }
   guestptr_t kernel_stack_base() { return stack.kernel_base(); }
@@ -56,45 +57,45 @@ struct kvm_vcpu {
 /*
   Set the VCPU's rip to a specific value
 */
-int kvm_vcpu_set_rip(struct kvm_vcpu *, uint64_t);
+int kvm_vcpu_set_rip(VCPU *vcpu, uint64_t);
 
 /*
  * \brief Set the VCPU's CR3 to a specific value
  */
-int kvm_vcpu_set_cr3(struct kvm_vcpu *, uint64_t);
+int kvm_vcpu_set_cr3(VCPU *vcpu, uint64_t);
 
 /*
   Get the VCPU's registers
 */
-int kvm_vcpu_get_regs(struct kvm_vcpu *);
-int kvm_vcpu_get_sregs(struct kvm_vcpu *);
+int kvm_vcpu_get_regs(VCPU *vcpu);
+int kvm_vcpu_get_sregs(VCPU *vcpu);
 
 /*
   Set the VCPU's registers
 */
-int kvm_vcpu_set_regs(struct kvm_vcpu *);
-int kvm_vcpu_set_sregs(struct kvm_vcpu *);
+int kvm_vcpu_set_regs(VCPU *vcpu);
+int kvm_vcpu_set_sregs(VCPU *vcpu);
 
-int kvm_vcpu_get_msr(struct kvm_vcpu *, uint32_t, uint64_t *);
-int kvm_vcpu_set_msr(struct kvm_vcpu *, uint32_t, uint64_t);
-void kvm_vcpu_dump_msr(struct kvm_vcpu *, uint32_t);
+int kvm_vcpu_get_msr(VCPU *vcpu, uint32_t, uint64_t *);
+int kvm_vcpu_set_msr(VCPU *vcpu, uint32_t, uint64_t);
+void kvm_vcpu_dump_msr(VCPU *vcpu, uint32_t);
 
 /*
   Initialize a VCPU's registers according to mode
 */
-int kvm_vcpu_initialize_regs(struct kvm_vcpu *, int);
+int kvm_vcpu_initialize_regs(VCPU *vcpu, int);
 
 /*
   Initialize the VCPU registers for long mode
 */
-int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *);
+int kvm_vcpu_initialize_long_mode(VCPU *vcpu);
 
 /*
  * \brief Run the VCPU
 */
-int kvm_vcpu_run(struct kvm_vcpu *);
+int kvm_vcpu_run(VCPU *vcpu);
 
-int kvm_vcpu_had_page_fault(struct kvm_vcpu *);
+int kvm_vcpu_had_page_fault(VCPU *vcpu);
 
 /*
  * \brief Returns true if the host supports vmx
@@ -106,19 +107,19 @@ bool host_supports_vmx(void);
 */
 void host_cpuid(uint32_t, uint32_t, uint32_t *, uint32_t *, uint32_t *, uint32_t *);
 
-void kvm_vcpu_dump_regs(struct kvm_vcpu *);
+void kvm_vcpu_dump_regs(VCPU *vcpu);
 
-void kvm_vcpu_dump_code(struct kvm_vcpu *);
-void kvm_vcpu_dump_code_at(struct kvm_vcpu *vcpu, uint64_t guest_addr);
+void kvm_vcpu_dump_code(VCPU *vcpu);
+void kvm_vcpu_dump_code_at(VCPU *vcpu, uint64_t guest_addr);
 
 #ifdef HAVE_LIBUDIS86
 /*
  * \brief Get the next byte of code to be executed.
  * This is mainly here for libudis86 disassembly
  */
-int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *, uint64_t guest_addr);
+int kvm_vcpu_get_next_code_byte(VCPU *vcpu, uint64_t guest_addr);
 
-void elkvm_init_udis86(struct kvm_vcpu *, int mode);
+void elkvm_init_udis86(VCPU *vcpu, int mode);
 #endif
 
 void print_flags(uint64_t flags);

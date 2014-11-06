@@ -6,7 +6,7 @@
 #include <elkvm/region.h>
 #include <elkvm/types.h>
 
-int elkvm_idt_setup(Elkvm::RegionManager &rm, std::shared_ptr<struct kvm_vcpu> vcpu,
+int elkvm_idt_setup(Elkvm::RegionManager &rm, std::shared_ptr<VCPU> vcpu,
     Elkvm::elkvm_flat *);
 
 struct kvm_idt_entry {

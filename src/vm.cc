@@ -76,7 +76,7 @@ elkvm_vm_create(Elkvm::elkvm_opts *opts,
 
   Elkvm::Environment env(bin, vmi->get_region_manager());
 
-  std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
+  std::shared_ptr<VCPU> vcpu = vmi->get_vcpu(0);
 
   /* gets and sets vcpu->regs */
   err = env.fill(opts, vcpu);
@@ -190,7 +190,7 @@ int Elkvm::VM::chunk_remap(int num, size_t newsize) {
   return 0;
 }
 
-void elkvm_emulate_vmcall(struct kvm_vcpu *vcpu) {
+void elkvm_emulate_vmcall(VCPU *vcpu) {
   /* INTEL VMCALL instruction is three bytes long */
   vcpu->regs.rip +=3;
 }
