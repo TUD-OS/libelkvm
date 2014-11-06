@@ -216,7 +216,7 @@ int Environment::fill(Elkvm::elkvm_opts *opts,
   /* at last push argc on the stack */
   vcpu->push(opts->argc);
 
-  err = kvm_vcpu_set_regs(vcpu);
+  err = vcpu->set_regs();
   return err;
 }
 

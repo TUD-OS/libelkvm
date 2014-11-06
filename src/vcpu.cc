@@ -67,7 +67,7 @@ int kvm_vcpu_set_rip(std::shared_ptr<VCPU>  vcpu, uint64_t rip) {
 
   vcpu->regs.rip = rip;
 
-  err = kvm_vcpu_set_regs(vcpu);
+  err = vcpu->set_regs();
   if(err) {
     return err;
   }
@@ -111,12 +111,8 @@ int VCPU::get_sregs() {
   return 0;
 }
 
-int kvm_vcpu_set_regs(std::shared_ptr<VCPU> vcpu) {
-  if(vcpu->fd < 1) {
-    return -EIO;
-  }
-
-  int err = ioctl(vcpu->fd, KVM_SET_REGS, &vcpu->regs);
+int VCPU::set_regs() {
+  int err = ioctl(fd, KVM_SET_REGS, &regs);
   if(err) {
     return -errno;
   }
@@ -180,7 +176,7 @@ int VCPU::initialize_regs() {
   /* for some reason this needs to be set */
   regs.rflags = 0x00000002;
 
-//  int err = kvm_vcpu_set_regs(vcpu);
+//  int err = vcpu->set_regs();
 //  if(err) {
 //    return err;
 //  }
@@ -340,7 +336,7 @@ int Elkvm::VM::run() {
   int err = 0;
   while(is_running) {
 
-    err = kvm_vcpu_set_regs(vcpu);
+    err = vcpu->set_regs();
     if(err) {
       return err;
     }
