@@ -114,7 +114,7 @@ int elkvm_gdt_setup(Elkvm::RegionManager &rm, std::shared_ptr<VCPU> vcpu) {
 		return err;
 	}
 
-	err = kvm_vcpu_get_sregs(vcpu);
+	err = vcpu->get_sregs();
 	if(err) {
 		return err;
 	}

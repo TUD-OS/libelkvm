@@ -2227,7 +2227,7 @@ long elkvm_do_arch_prctl(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype user_addr = 0;
   std::shared_ptr<VCPU> vcpu = vmi->get_vcpu(0);
 
-  int err = kvm_vcpu_get_sregs(vcpu);
+  int err = vcpu->get_sregs();
   if(err) {
     return err;
   }

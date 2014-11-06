@@ -78,7 +78,7 @@ int kvm_vcpu_set_rip(std::shared_ptr<VCPU>  vcpu, uint64_t rip) {
 int kvm_vcpu_set_cr3(std::shared_ptr<VCPU> vcpu, uint64_t cr3) {
   assert(vcpu != NULL);
 
-  int err = kvm_vcpu_get_sregs(vcpu);
+  int err = vcpu->get_sregs();
   if(err) {
     return err;
   }
@@ -102,12 +102,8 @@ int VCPU::get_regs() {
   return 0;
 }
 
-int kvm_vcpu_get_sregs(std::shared_ptr<VCPU> vcpu) {
-  if(vcpu->fd < 1) {
-    return -EIO;
-  }
-
-  int err = ioctl(vcpu->fd, KVM_GET_SREGS, &vcpu->sregs);
+int VCPU::get_sregs() {
+  int err = ioctl(fd, KVM_GET_SREGS, &sregs);
   if(err) {
     return -errno;
   }
@@ -414,7 +410,7 @@ int Elkvm::VM::run() {
         fprintf(stderr, "KVM VCPU did shutdown\n");
         is_running = 0;
         vcpu->get_regs();
-        kvm_vcpu_get_sregs(vcpu);
+        vcpu->get_sregs();
         break;
       case KVM_EXIT_DEBUG: {
         /* NO-OP */
