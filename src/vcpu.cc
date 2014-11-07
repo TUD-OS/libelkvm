@@ -34,7 +34,7 @@
 
     memset(&regs, 0, sizeof(struct kvm_regs));
     memset(&sregs, 0, sizeof(struct kvm_sregs));
-    singlestep = 0;
+    is_singlestepping = false;
 
     fd = ioctl(vmfd, KVM_CREATE_VCPU, cpu_num);
     assert(fd > 0 && "error creating vcpu");
@@ -499,7 +499,7 @@ int Elkvm::VM::run() {
         is_running = 0;
         break;
       case KVM_EXIT_HYPERCALL:
-        if(vcpu->singlestep) {
+        if(vcpu->is_singlestep()) {
           fprintf(stderr, "KVM_EXIT_HYPERCALL\n");
           print(std::cerr, vcpu);
           kvm_vcpu_dump_code(vcpu);

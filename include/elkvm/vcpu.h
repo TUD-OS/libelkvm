@@ -16,6 +16,7 @@
 class VCPU {
   private:
     int fd;
+    bool is_singlestepping;
     struct kvm_regs regs;
 
     struct kvm_run *run_struct;
@@ -32,7 +33,6 @@ class VCPU {
   ud_t ud_obj;
 #endif
   struct kvm_sregs sregs;
-  int singlestep;
   struct kvm_guest_debug debug;
 
     VCPU(std::shared_ptr<Elkvm::RegionManager> rm, int vmfd, unsigned cpu_num);
@@ -69,6 +69,9 @@ class VCPU {
 
     /* Debugging */
     int set_debug();
+    bool is_singlestep() { return is_singlestepping; }
+    int singlestep();
+    int singlestep_off();
     std::ostream &print_mmio(std::ostream &os);
 
   uint64_t pop() { uint64_t val = stack.popq(regs.rsp); regs.rsp += 0x8; return val; }

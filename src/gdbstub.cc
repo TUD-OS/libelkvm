@@ -317,9 +317,9 @@ static void debug_loop(std::shared_ptr<Elkvm::VM> vm) {
         char buf[255];
 
         std::shared_ptr<VCPU> vcpu = vm->get_vcpu(0);
-        elkvm_debug_singlestep(vcpu);
+        vcpu->singlestep();
         vm->run();
-        elkvm_debug_singlestep_off(vcpu);
+        vcpu->singlestep_off();
 
         buf[0] = 'S';
         write_signal(&buf[1], SIGTRAP);

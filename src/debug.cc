@@ -37,17 +37,17 @@ int elkvm_debug_enable(std::shared_ptr<VCPU> vcpu) {
   return vcpu->set_debug();
 }
 
-int elkvm_debug_singlestep(std::shared_ptr<VCPU> vcpu) {
-  vcpu->debug.control |= KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_SINGLESTEP;
-  vcpu->singlestep = 1;
+int VCPU::singlestep() {
+  debug.control |= KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_SINGLESTEP;
+  is_singlestepping = true;
 
-  return vcpu->set_debug();
+  return set_debug();
 }
 
-int elkvm_debug_singlestep_off(std::shared_ptr<VCPU> vcpu) {
-  vcpu->debug.control &= ~KVM_GUESTDBG_SINGLESTEP;
-  vcpu->singlestep = 0;
-  return vcpu->set_debug();
+int VCPU::singlestep_off() {
+  debug.control &= ~KVM_GUESTDBG_SINGLESTEP;
+  is_singlestepping = false;
+  return set_debug();
 }
 
 int VCPU::set_debug() {
