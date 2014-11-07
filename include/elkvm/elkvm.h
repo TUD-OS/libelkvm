@@ -219,8 +219,6 @@ class VM {
      */
     void set_debug(bool on = true) { _debug = on; }
 
-    int set_entry_point(guestptr_t rip);
-
     /*
      * Initialize the VM's rlimits.
      * TODO: move to KVM subclass

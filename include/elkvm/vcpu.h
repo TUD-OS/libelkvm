@@ -56,6 +56,8 @@ class VCPU {
     void set_msr(uint32_t idx, CURRENT_ABI::paramtype data);
     CURRENT_ABI::paramtype get_msr(uint32_t idx);
 
+    void set_entry_point(guestptr_t rip);
+
   uint64_t pop() { uint64_t val = stack.popq(regs.rsp); regs.rsp += 0x8; return val; }
   void push(uint64_t val) { regs.rsp -= 0x8; stack.pushq(regs.rsp, val); }
   guestptr_t kernel_stack_base() { return stack.kernel_base(); }
@@ -85,10 +87,6 @@ class VCPU {
 #define VCPU_MSR_CSTAR  0xC0000083
 #define VCPU_MSR_SFMASK 0XC0000084
 
-/*
-  Set the VCPU's rip to a specific value
-*/
-int kvm_vcpu_set_rip(std::shared_ptr<VCPU> vcpu, uint64_t);
 
 /*
  * \brief Set the VCPU's CR3 to a specific value

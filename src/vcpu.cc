@@ -60,20 +60,9 @@ int VCPU::handle_stack_expansion(uint32_t err __attribute__((unused)),
   return 1;
 }
 
-int kvm_vcpu_set_rip(std::shared_ptr<VCPU>  vcpu, uint64_t rip) {
-  int err = vcpu->get_regs();
-  if(err) {
-    return err;
-  }
-
-  vcpu->set_reg(Elkvm::Reg_t::rip, rip);
-
-  err = vcpu->set_regs();
-  if(err) {
-    return err;
-  }
-
-  return 0;
+void VCPU::set_entry_point(guestptr_t rip) {
+  set_reg(Elkvm::Reg_t::rip, rip);
+  set_regs();
 }
 
 int kvm_vcpu_set_cr3(std::shared_ptr<VCPU> vcpu, uint64_t cr3) {

@@ -141,11 +141,5 @@ namespace Elkvm {
     return vcpu->pop();
   }
 
-  /* TODO: Should be a function of the vCPU */
-  int VM::set_entry_point(guestptr_t rip)
-  {
-    return kvm_vcpu_set_rip(cpus.front(), rip);
-  }
-
   //namespace Elkvm
 }

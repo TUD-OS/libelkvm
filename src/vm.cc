@@ -70,13 +70,12 @@ elkvm_vm_create(Elkvm::elkvm_opts *opts,
 
   Elkvm::ElfBinary bin(binary, vmi->get_region_manager(), vmi->get_heap_manager());
 
+  auto vcpu = vmi->get_vcpu(0);
   guestptr_t entry = bin.get_entry_point();
-  err = vmi->set_entry_point(entry);
-  assert(err == 0);
+  vcpu->set_entry_point(entry);
 
   Elkvm::Environment env(bin, vmi->get_region_manager());
 
-  std::shared_ptr<VCPU> vcpu = vmi->get_vcpu(0);
 
   /* gets and sets vcpu->regs */
   err = env.fill(opts, vcpu);
