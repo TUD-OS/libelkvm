@@ -92,8 +92,6 @@ class VCPU {
 
 void kvm_vcpu_dump_msr(std::shared_ptr<VCPU> vcpu, uint32_t);
 
-int kvm_vcpu_had_page_fault(std::shared_ptr<VCPU> vcpu);
-
 /*
  * \brief Returns true if the host supports vmx
 */

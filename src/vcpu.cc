@@ -767,7 +767,3 @@ void elkvm_init_udis86(std::shared_ptr<VCPU> vcpu, int mode) {
 }
 
 #endif
-
-int kvm_vcpu_had_page_fault(std::shared_ptr<VCPU> vcpu) {
-  return vcpu->sregs.cr2 != 0x0;
-}
