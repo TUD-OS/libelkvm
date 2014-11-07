@@ -92,11 +92,6 @@ void kvm_vcpu_dump_msr(std::shared_ptr<VCPU> vcpu, uint32_t);
 
 
 /*
-  Initialize the VCPU registers for long mode
-*/
-int kvm_vcpu_initialize_long_mode(std::shared_ptr<VCPU> vcpu);
-
-/*
  * \brief Run the VCPU
 */
 int kvm_vcpu_run(std::shared_ptr<VCPU> vcpu);
