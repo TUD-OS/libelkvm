@@ -6,6 +6,7 @@ SET( libelkvm_SRCS
   gdt.cc
   heap.cc
   idt.cc
+  interrupt.cc
   mapping.cc
   pager.cc
   region.cc

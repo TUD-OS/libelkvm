@@ -1,9 +1,13 @@
+#include <string>
+
 #include <errno.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <iostream>
+#include <iomanip>
+#include <cstdbool>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <stropts.h>
 #include <sys/mman.h>
 #include <unistd.h>
@@ -17,6 +21,15 @@
 #include <elkvm/stack.h>
 #include <elkvm/syscall.h>
 #include <elkvm/vcpu.h>
+
+#define PRINT_REGISTER(name, reg) " " << name << ": " << std::hex << std::setw(16) \
+  << std::setfill('0') << reg
+
+int kvm_vcpu::handle_stack_expansion(uint32_t err __attribute__((unused)),
+    bool debug __attribute__((unused))) {
+  stack.expand();
+  return 1;
+}
 
 int kvm_vcpu_initialize_regs(struct kvm_vcpu *vcpu, int mode) {
   switch(mode) {
@@ -489,39 +502,54 @@ void kvm_vcpu_dump_msr(struct kvm_vcpu *vcpu, uint32_t msr) {
 }
 
 void kvm_vcpu_dump_regs(struct kvm_vcpu *vcpu) {
-  fprintf(stderr, "\n Registers:\n");
-  fprintf(stderr,   " ----------\n");
-  fprintf(stderr, " rip: %016llx   rsp: %016llx flags: %016llx",
-      vcpu->regs.rip, vcpu->regs.rsp, vcpu->regs.rflags);
-  fprintf(stderr, " [");
-  fprintf(stderr, "%s", ((vcpu->regs.rflags >> 16) & 0x1) ? "RF " : "");
-  fprintf(stderr, "%s", ((vcpu->regs.rflags >> 11) & 0x1) ? "OF " : "");
-  fprintf(stderr, "%s", ((vcpu->regs.rflags >> 10) & 0x1) ? "DF " : "");
-  fprintf(stderr, "%s", ((vcpu->regs.rflags >>  9) & 0x1) ? "IF " : "");
-  fprintf(stderr, "%s", ((vcpu->regs.rflags >>  8) & 0x1) ? "TF " : "");
-  fprintf(stderr, "%s", ((vcpu->regs.rflags >>  7) & 0x1) ? "SF " : "");
-  fprintf(stderr, "%s", ((vcpu->regs.rflags >>  6) & 0x1) ? "ZF " : "");
-  fprintf(stderr, "%s", ((vcpu->regs.rflags >>  4) & 0x1) ? "AF " : "");
-  fprintf(stderr, "%s", ((vcpu->regs.rflags >>  2) & 0x1) ? "PF " : "");
-  fprintf(stderr, "%s", ((vcpu->regs.rflags) & 0x1) ? "CF" : "");
-  fprintf(stderr, "]\n");
+  std::cerr << std::endl << " Registers:" << std::endl;
+  std::cerr << " ----------\n";
 
-  fprintf(stderr, " rax: %016llx   rbx: %016llx   rcx: %016llx\n",
-      vcpu->regs.rax, vcpu->regs.rbx, vcpu->regs.rcx);
-  fprintf(stderr, " rdx: %016llx   rsi: %016llx   rdi: %016llx\n",
-      vcpu->regs.rdx, vcpu->regs.rsi, vcpu->regs.rdi);
-  fprintf(stderr, " rbp: %016llx    r8: %016llx    r9: %016llx\n",
-      vcpu->regs.rbp, vcpu->regs.r8,  vcpu->regs.r9);
-  fprintf(stderr, " r10: %016llx   r11: %016llx   r12: %016llx\n",
-      vcpu->regs.r10, vcpu->regs.r11, vcpu->regs.r12);
-  fprintf(stderr, " r13: %016llx   r14: %016llx   r15: %016llx\n",
-      vcpu->regs.r13, vcpu->regs.r14, vcpu->regs.r15);
+  std::cerr << PRINT_REGISTER("rip", vcpu->regs.rip)
+            << PRINT_REGISTER("  rsp", vcpu->regs.rsp)
+            << PRINT_REGISTER("  flags", vcpu->regs.rflags)
+            << std::endl;
 
-  fprintf(stderr, " cr0: %016llx   cr2: %016llx   cr3: %016llx\n", vcpu->sregs.cr0, vcpu->sregs.cr2, vcpu->sregs.cr3);
-  fprintf(stderr, " cr4: %016llx   cr8: %016llx\n", vcpu->sregs.cr4, vcpu->sregs.cr8);
-  fprintf(stderr, "\n Segment registers:\n");
-  fprintf(stderr,   " ------------------\n");
-  fprintf(stderr, " register  selector  base              limit     type  p dpl db s l g avl\n");
+  print_flags(vcpu->regs.rflags);
+
+  std::cerr << PRINT_REGISTER("rax", vcpu->regs.rax)
+            << PRINT_REGISTER("  rbx", vcpu->regs.rbx)
+            << PRINT_REGISTER("  rcx", vcpu->regs.rcx)
+            << std::endl;
+
+  std::cerr << PRINT_REGISTER("rdx", vcpu->regs.rdx)
+            << PRINT_REGISTER("  rsi", vcpu->regs.rsi)
+            << PRINT_REGISTER("  rdi", vcpu->regs.rdi)
+            << std::endl;
+
+  std::cerr << PRINT_REGISTER("rbp", vcpu->regs.rbp)
+            << PRINT_REGISTER("   r8", vcpu->regs.r8)
+            << PRINT_REGISTER("   r9", vcpu->regs.r9)
+            << std::endl;
+
+  std::cerr << PRINT_REGISTER("r10", vcpu->regs.r10)
+            << PRINT_REGISTER("  r11", vcpu->regs.r11)
+            << PRINT_REGISTER("  r12", vcpu->regs.r12)
+            << std::endl;
+
+  std::cerr << PRINT_REGISTER("r13", vcpu->regs.r13)
+            << PRINT_REGISTER("  r14", vcpu->regs.r14)
+            << PRINT_REGISTER("  r15", vcpu->regs.r15)
+            << std::endl;
+
+  std::cerr << PRINT_REGISTER("cr0", vcpu->sregs.cr0)
+            << PRINT_REGISTER("  cr2", vcpu->sregs.cr2)
+            << PRINT_REGISTER("  cr3", vcpu->sregs.cr3)
+            << std::endl;
+
+  std::cerr << PRINT_REGISTER("cr4", vcpu->sregs.cr4)
+            << PRINT_REGISTER("  cr8", vcpu->sregs.cr8)
+            << std::endl;
+
+  std::cerr << "\n Segment registers:\n";
+  std::cerr <<   " ------------------\n";
+  std::cerr << " register  selector  base              limit     type  p dpl db s l g avl\n";
+
   print_segment("cs ", vcpu->sregs.cs);
   print_segment("ss ", vcpu->sregs.ss);
   print_segment("ds ", vcpu->sregs.ds);
@@ -533,19 +561,60 @@ void kvm_vcpu_dump_regs(struct kvm_vcpu *vcpu) {
   print_dtable("gdt",  vcpu->sregs.gdt);
   print_dtable("idt",  vcpu->sregs.idt);
 
-  fprintf(stderr, "\n APIC:\n");
-  fprintf(stderr,   " -----\n");
-  fprintf(stderr, " efer: %016lx  apic base: %016lx  nmi: TODO\n",
-         (uint64_t) vcpu->sregs.efer, (uint64_t) vcpu->sregs.apic_base
-         );
+  std::cerr << "\n APIC:\n";
+  std::cerr <<   " -----\n";
+  std::cerr << PRINT_REGISTER("efer", vcpu->sregs.efer)
+            << PRINT_REGISTER("  apic base", vcpu->sregs.apic_base)
+            << std::endl;
 
-  fprintf(stderr, "\n Interrupt bitmap:\n");
-  fprintf(stderr,   " -----------------\n");
+  std::cerr << "\n Interrupt bitmap:\n";
+  std::cerr <<   " -----------------\n";
   for (int i = 0; i < (KVM_NR_INTERRUPTS + 63) / 64; i++)
-    fprintf(stderr, " %016lx", (uint64_t) vcpu->sregs.interrupt_bitmap[i]);
-  fprintf(stderr, "\n");
+    std::cerr << " " << std::setw(16) << std::setfill('0') << vcpu->sregs.interrupt_bitmap[i];
+  std::cerr << std::endl;
 
   return;
+}
+
+void print_flags(uint64_t flags) {
+  std::cerr << " [";
+  std::cerr << (((flags >> 16) & 0x1) ? "RF " : "");
+  std::cerr << (((flags >> 11) & 0x1) ? "OF " : "");
+  std::cerr << (((flags >> 10) & 0x1) ? "DF " : "");
+  std::cerr << (((flags >>  9) & 0x1) ? "IF " : "");
+  std::cerr << (((flags >>  8) & 0x1) ? "TF " : "");
+  std::cerr << (((flags >>  7) & 0x1) ? "SF " : "");
+  std::cerr << (((flags >>  6) & 0x1) ? "ZF " : "");
+  std::cerr << (((flags >>  4) & 0x1) ? "AF " : "");
+  std::cerr << (((flags >>  2) & 0x1) ? "PF " : "");
+  std::cerr << (((flags) & 0x1) ? "CF" : "");
+  std::cerr << "]\n";
+}
+
+void print_segment(const std::string name, struct kvm_segment seg)
+{
+  std::cerr << " " << name
+    << std::hex
+    << "       " << std::setw(4) << std::setfill('0') << seg.selector
+    << "      "  << std::setw(16) << std::setfill('0') << seg.base
+    << "  "      << std::setw(8) << std::setfill('0') << seg.limit
+    << "  "      << std::setw(2) << std::setfill('0') << static_cast<unsigned>(seg.type)
+    << "    " << static_cast<unsigned>(seg.present)
+    << " "    << static_cast<unsigned>(seg.dpl)
+    << "   "  << static_cast<unsigned>(seg.db)
+    << "  "   << static_cast<unsigned>(seg.s)
+    << " "    << static_cast<unsigned>(seg.l)
+    << " "    << static_cast<unsigned>(seg.g)
+    << " "    << static_cast<unsigned>(seg.avl) << std::endl;
+}
+
+void print_dtable(const std::string name, struct kvm_dtable dtable)
+{
+  std::cerr << " " << name
+    << std::hex
+    << "                 " << std::setw(16) << std::setfill('0') << dtable.base
+    << "  " << std::setw(8) << std::setfill('0') << dtable.limit
+    << std::endl;
 }
 
 void kvm_vcpu_dump_code_at(struct kvm_vcpu *vcpu, uint64_t guest_addr) {

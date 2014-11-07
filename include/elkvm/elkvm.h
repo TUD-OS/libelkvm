@@ -83,6 +83,7 @@ struct elkvm_handlers {
   long (*sigaction) (int signum, const struct sigaction *act,
       struct sigaction *oldact);
   long (*sigprocmask)(int how, const sigset_t *set, sigset_t *oldset);
+  long (*ioctl) (int fd, unsigned long request, char *argp);
   /* ... */
   long (*readv) (int fd, struct iovec *iov, int iovcnt);
   long (*writev) (int fd, struct iovec *iov, int iovcnt);
@@ -248,7 +249,7 @@ class VM {
      * Handle VM events
      */
     int handle_syscall(struct kvm_vcpu*);
-    int handle_interrupt(struct kvm_vcpu*);
+    int handle_interrupt(std::shared_ptr<struct kvm_vcpu>);
     int handle_hypercall(std::shared_ptr<struct kvm_vcpu>);
 
     /*
