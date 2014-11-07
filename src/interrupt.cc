@@ -13,7 +13,7 @@ int VM::handle_interrupt(std::shared_ptr<VCPU> vcpu) {
     DBG() << " INTERRUPT with vector " << std::hex << "0x" << interrupt_vector
       << " detected";
     vcpu->get_sregs();
-    kvm_vcpu_dump_regs(vcpu);
+    print(std::cerr, vcpu);
     dump_stack(vcpu);
   }
 

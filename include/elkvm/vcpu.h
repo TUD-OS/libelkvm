@@ -67,6 +67,12 @@ class VCPU {
   void init_rsp() { regs.rsp = stack.user_base(); }
 };
 
+std::ostream &print(std::ostream &os, std::shared_ptr<VCPU> vcpu);
+std::ostream &print(std::ostream &os, const std::string &name,
+    struct kvm_segment seg);
+std::ostream &print(std::ostream &os, const std::string &name,
+    struct kvm_dtable dtable);
+
 #define VCPU_CR0_FLAG_PAGING            0x80000000
 #define VCPU_CR0_FLAG_CACHE_DISABLE     0x40000000
 #define VCPU_CR0_FLAG_NOT_WRITE_THROUGH 0x20000000
@@ -89,7 +95,6 @@ class VCPU {
 #define VCPU_MSR_CSTAR  0xC0000083
 #define VCPU_MSR_SFMASK 0XC0000084
 
-
 void kvm_vcpu_dump_msr(std::shared_ptr<VCPU> vcpu, uint32_t);
 
 /*
@@ -101,8 +106,6 @@ bool host_supports_vmx(void);
  * \brief Get the host CPUID
 */
 void host_cpuid(uint32_t, uint32_t, uint32_t *, uint32_t *, uint32_t *, uint32_t *);
-
-void kvm_vcpu_dump_regs(std::shared_ptr<VCPU> vcpu);
 
 void kvm_vcpu_dump_code(std::shared_ptr<VCPU> vcpu);
 void kvm_vcpu_dump_code_at(std::shared_ptr<VCPU> vcpu, uint64_t guest_addr);
@@ -118,6 +121,3 @@ void elkvm_init_udis86(std::shared_ptr<VCPU> vcpu, int mode);
 #endif
 
 void print_flags(uint64_t flags);
-void print_dtable(const std::string name, struct kvm_dtable dtable);
-void print_segment(const std::string name, struct kvm_segment seg);
-

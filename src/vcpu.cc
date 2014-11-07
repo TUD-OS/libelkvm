@@ -473,7 +473,7 @@ int Elkvm::VM::run() {
       case KVM_EXIT_HYPERCALL:
         if(vcpu->singlestep) {
           fprintf(stderr, "KVM_EXIT_HYPERCALL\n");
-          kvm_vcpu_dump_regs(vcpu);
+          print(std::cerr, vcpu);
           kvm_vcpu_dump_code(vcpu);
         }
         err = handle_hypercall(vcpu);
@@ -555,7 +555,7 @@ int Elkvm::VM::run() {
 
     if(  vcpu->run_struct->exit_reason == KVM_EXIT_MMIO ||
         vcpu->run_struct->exit_reason == KVM_EXIT_SHUTDOWN) {
-      kvm_vcpu_dump_regs(vcpu);
+      print(std::cerr, vcpu);
       dump_stack(vcpu);
       kvm_vcpu_dump_code(vcpu);
     }
@@ -607,79 +607,79 @@ void kvm_vcpu_dump_msr(std::shared_ptr<VCPU> vcpu, uint32_t msr) {
   fprintf(stderr, " MSR: 0x%x: 0x%016lx\n", vcpu->get_msr(msr));
 }
 
-void kvm_vcpu_dump_regs(std::shared_ptr<VCPU> vcpu) {
-  std::cerr << std::endl << " Registers:" << std::endl;
-  std::cerr << " ----------\n";
+std::ostream &print(std::ostream &os, std::shared_ptr<VCPU> vcpu) {
+  os << std::endl << " Registers:" << std::endl;
+  os << " ----------\n";
 
-  std::cerr << PRINT_REGISTER("rip", vcpu->get_reg(Elkvm::Reg_t::rip))
+  os << PRINT_REGISTER("rip", vcpu->get_reg(Elkvm::Reg_t::rip))
             << PRINT_REGISTER("  rsp", vcpu->get_reg(Elkvm::Reg_t::rsp))
             << PRINT_REGISTER("  flags", vcpu->get_reg(Elkvm::Reg_t::rflags))
             << std::endl;
 
   print_flags(vcpu->get_reg(Elkvm::Reg_t::rflags));
 
-  std::cerr << PRINT_REGISTER("rax", vcpu->get_reg(Elkvm::Reg_t::rax))
+  os << PRINT_REGISTER("rax", vcpu->get_reg(Elkvm::Reg_t::rax))
             << PRINT_REGISTER("  rbx", vcpu->get_reg(Elkvm::Reg_t::rbx))
             << PRINT_REGISTER("  rcx", vcpu->get_reg(Elkvm::Reg_t::rcx))
             << std::endl;
 
-  std::cerr << PRINT_REGISTER("rdx", vcpu->get_reg(Elkvm::Reg_t::rdx))
+  os << PRINT_REGISTER("rdx", vcpu->get_reg(Elkvm::Reg_t::rdx))
             << PRINT_REGISTER("  rsi", vcpu->get_reg(Elkvm::Reg_t::rsi))
             << PRINT_REGISTER("  rdi", vcpu->get_reg(Elkvm::Reg_t::rdi))
             << std::endl;
 
-  std::cerr << PRINT_REGISTER("rbp", vcpu->get_reg(Elkvm::Reg_t::rbp))
+  os << PRINT_REGISTER("rbp", vcpu->get_reg(Elkvm::Reg_t::rbp))
             << PRINT_REGISTER("   r8", vcpu->get_reg(Elkvm::Reg_t::r8))
             << PRINT_REGISTER("   r9", vcpu->get_reg(Elkvm::Reg_t::r9))
             << std::endl;
 
-  std::cerr << PRINT_REGISTER("r10", vcpu->get_reg(Elkvm::Reg_t::r10))
+  os << PRINT_REGISTER("r10", vcpu->get_reg(Elkvm::Reg_t::r10))
             << PRINT_REGISTER("  r11", vcpu->get_reg(Elkvm::Reg_t::r11))
             << PRINT_REGISTER("  r12", vcpu->get_reg(Elkvm::Reg_t::r12))
             << std::endl;
 
-  std::cerr << PRINT_REGISTER("r13", vcpu->get_reg(Elkvm::Reg_t::r13))
+  os << PRINT_REGISTER("r13", vcpu->get_reg(Elkvm::Reg_t::r13))
             << PRINT_REGISTER("  r14", vcpu->get_reg(Elkvm::Reg_t::r14))
             << PRINT_REGISTER("  r15", vcpu->get_reg(Elkvm::Reg_t::r15))
             << std::endl;
 
-  std::cerr << PRINT_REGISTER("cr0", vcpu->sregs.cr0)
+  os << PRINT_REGISTER("cr0", vcpu->sregs.cr0)
             << PRINT_REGISTER("  cr2", vcpu->sregs.cr2)
             << PRINT_REGISTER("  cr3", vcpu->sregs.cr3)
             << std::endl;
 
-  std::cerr << PRINT_REGISTER("cr4", vcpu->sregs.cr4)
+  os << PRINT_REGISTER("cr4", vcpu->sregs.cr4)
             << PRINT_REGISTER("  cr8", vcpu->sregs.cr8)
             << std::endl;
 
-  std::cerr << "\n Segment registers:\n";
-  std::cerr <<   " ------------------\n";
-  std::cerr << " register  selector  base              limit     type  p dpl db s l g avl\n";
+  os << "\n Segment registers:\n";
+  os <<   " ------------------\n";
+  os << " register  selector  base              limit     type  p dpl db s l g avl\n";
 
-  print_segment("cs ", vcpu->sregs.cs);
-  print_segment("ss ", vcpu->sregs.ss);
-  print_segment("ds ", vcpu->sregs.ds);
-  print_segment("es ", vcpu->sregs.es);
-  print_segment("fs ", vcpu->sregs.fs);
-  print_segment("gs ", vcpu->sregs.gs);
-  print_segment("tr ", vcpu->sregs.tr);
-  print_segment("ldt", vcpu->sregs.ldt);
-  print_dtable("gdt",  vcpu->sregs.gdt);
-  print_dtable("idt",  vcpu->sregs.idt);
+  print(os, "cs ", vcpu->sregs.cs);
+  print(os, "ss ", vcpu->sregs.ss);
+  print(os, "ds ", vcpu->sregs.ds);
+  print(os, "es ", vcpu->sregs.es);
+  print(os, "fs ", vcpu->sregs.fs);
+  print(os, "gs ", vcpu->sregs.gs);
+  print(os, "tr ", vcpu->sregs.tr);
+  print(os, "ldt", vcpu->sregs.ldt);
+  print(os, "gdt",  vcpu->sregs.gdt);
+  print(os, "idt",  vcpu->sregs.idt);
 
-  std::cerr << "\n APIC:\n";
-  std::cerr <<   " -----\n";
-  std::cerr << PRINT_REGISTER("efer", vcpu->sregs.efer)
+  os << "\n APIC:\n";
+  os <<   " -----\n";
+  os << PRINT_REGISTER("efer", vcpu->sregs.efer)
             << PRINT_REGISTER("  apic base", vcpu->sregs.apic_base)
             << std::endl;
 
-  std::cerr << "\n Interrupt bitmap:\n";
-  std::cerr <<   " -----------------\n";
+  os << "\n Interrupt bitmap:\n";
+  os <<   " -----------------\n";
   for (int i = 0; i < (KVM_NR_INTERRUPTS + 63) / 64; i++)
-    std::cerr << " " << std::setw(16) << std::setfill('0') << vcpu->sregs.interrupt_bitmap[i];
-  std::cerr << std::endl;
+    os << " " << std::setw(16) << std::setfill('0') << vcpu->sregs.interrupt_bitmap[i];
+  os << std::endl;
 
-  return;
+  return os;
 }
 
 void print_flags(uint64_t flags) {
@@ -697,9 +697,9 @@ void print_flags(uint64_t flags) {
   std::cerr << "]\n";
 }
 
-void print_segment(const std::string name, struct kvm_segment seg)
+std::ostream &print(std::ostream &os, const std::string &name, struct kvm_segment seg)
 {
-  std::cerr << " " << name
+  os << " " << name
     << std::hex
     << "       " << std::setw(4) << std::setfill('0') << seg.selector
     << "      "  << std::setw(16) << std::setfill('0') << seg.base
@@ -712,15 +712,18 @@ void print_segment(const std::string name, struct kvm_segment seg)
     << " "    << static_cast<unsigned>(seg.l)
     << " "    << static_cast<unsigned>(seg.g)
     << " "    << static_cast<unsigned>(seg.avl) << std::endl;
+  return os;
 }
 
-void print_dtable(const std::string name, struct kvm_dtable dtable)
+std::ostream &print(std::ostream &os, const std::string &name,
+    struct kvm_dtable dtable)
 {
-  std::cerr << " " << name
+  os << " " << name
     << std::hex
     << "                 " << std::setw(16) << std::setfill('0') << dtable.base
     << "  " << std::setw(8) << std::setfill('0') << dtable.limit
     << std::endl;
+  return os;
 }
 
 void kvm_vcpu_dump_code_at(std::shared_ptr<VCPU> vcpu, uint64_t guest_addr) {
