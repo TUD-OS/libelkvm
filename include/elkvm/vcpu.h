@@ -60,8 +60,14 @@ class VCPU {
     /* RUNNING the VCPU */
     int run();
 
+    /* get VCPU hypervisor exit reasons */
+    uint32_t exit_reason();
+    uint64_t hardware_exit_reason();
+    uint64_t hardware_entry_failure_reason();
+
     /* Debugging */
     int set_debug();
+    std::ostream &print_mmio(std::ostream &os);
 
   uint64_t pop() { uint64_t val = stack.popq(regs.rsp); regs.rsp += 0x8; return val; }
   void push(uint64_t val) { regs.rsp -= 0x8; stack.pushq(regs.rsp, val); }

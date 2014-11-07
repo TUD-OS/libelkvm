@@ -427,6 +427,34 @@ int VCPU::run() {
   return 0;
 }
 
+uint32_t VCPU::exit_reason() {
+  return run_struct->exit_reason;
+}
+
+uint64_t VCPU::hardware_exit_reason() {
+  return run_struct->hw.hardware_exit_reason;
+}
+
+uint64_t VCPU::hardware_entry_failure_reason() {
+  return run_struct->fail_entry.hardware_entry_failure_reason;
+}
+
+std::ostream &VCPU::print_mmio(std::ostream &os) {
+  os << "phys_addr: 0x" << std::hex << run_struct->mmio.phys_addr
+     << " data[0]: " << run_struct->mmio.data[0]
+     << " data[1]: " << run_struct->mmio.data[1]
+     << " data[2]: " << run_struct->mmio.data[2]
+     << " data[3]: " << run_struct->mmio.data[3]
+     << " data[4]: " << run_struct->mmio.data[4]
+     << " data[5]: " << run_struct->mmio.data[5]
+     << " data[6]: " << run_struct->mmio.data[6]
+     << " data[7]: " << run_struct->mmio.data[7]
+     << " len: " << run_struct->mmio.len
+     << " write: " << run_struct->mmio.is_write
+     << std::endl;
+  return os;
+}
+
 int Elkvm::VM::run() {
 
   int is_running = 1;
@@ -463,11 +491,11 @@ int Elkvm::VM::run() {
       return err;
     }
 
-    switch(vcpu->run_struct->exit_reason) {
+    switch(vcpu->exit_reason()) {
       case KVM_EXIT_UNKNOWN:
         fprintf(stderr, "KVM exit for unknown reason (KVM_EXIT_UNKNOWN)\n");
         fprintf(stderr, "Hardware exit reason: %llu\n",
-            vcpu->run_struct->hw.hardware_exit_reason);
+            vcpu->hardware_exit_reason());
         is_running = 0;
         break;
       case KVM_EXIT_HYPERCALL:
@@ -487,7 +515,7 @@ int Elkvm::VM::run() {
         break;
       case KVM_EXIT_FAIL_ENTRY: {
         ;
-        uint64_t code = vcpu->run_struct->fail_entry.hardware_entry_failure_reason;
+        uint64_t code = vcpu->hardware_entry_failure_reason();
         fprintf(stderr, "KVM: entry failed, hardware error 0x%lx\n",
           code);
         if (host_supports_vmx() && code == VMX_INVALID_GUEST_STATE) {
@@ -526,20 +554,7 @@ int Elkvm::VM::run() {
       }
       case KVM_EXIT_MMIO:
         fprintf(stderr, "KVM_EXIT_MMIO\n");
-        fprintf(stderr, "\tphys_addr: 0x%llx data[0] %x data[1] %x"
-            " data[2] %x data[3] %x data[4] %x data[5] %x "
-            " data[6] %x data[7] %x len 0x%x write %i\n",
-            vcpu->run_struct->mmio.phys_addr,
-            vcpu->run_struct->mmio.data[0],
-            vcpu->run_struct->mmio.data[1],
-            vcpu->run_struct->mmio.data[2],
-            vcpu->run_struct->mmio.data[3],
-            vcpu->run_struct->mmio.data[4],
-            vcpu->run_struct->mmio.data[5],
-            vcpu->run_struct->mmio.data[6],
-            vcpu->run_struct->mmio.data[7],
-            vcpu->run_struct->mmio.len,
-            vcpu->run_struct->mmio.is_write);
+        vcpu->print_mmio(std::cerr);
         is_running = 0;
         break;
       case KVM_EXIT_WATCHDOG:
@@ -548,13 +563,13 @@ int Elkvm::VM::run() {
         break;
       default:
         fprintf(stderr, "KVM VCPU exit for unknown reason: %i\n",
-            vcpu->run_struct->exit_reason);
+            vcpu->exit_reason());
         is_running = 0;
         break;
     }
 
-    if(  vcpu->run_struct->exit_reason == KVM_EXIT_MMIO ||
-        vcpu->run_struct->exit_reason == KVM_EXIT_SHUTDOWN) {
+    if(  vcpu->exit_reason() == KVM_EXIT_MMIO ||
+        vcpu->exit_reason() == KVM_EXIT_SHUTDOWN) {
       print(std::cerr, vcpu);
       dump_stack(vcpu);
       kvm_vcpu_dump_code(vcpu);
