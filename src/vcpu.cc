@@ -412,8 +412,8 @@ int VCPU::initialize_regs() {
   return 0;
 }
 
-int kvm_vcpu_run(std::shared_ptr<VCPU> vcpu) {
-  int err = ioctl(vcpu->fd, KVM_RUN, 0);
+int VCPU::run() {
+  int err = ioctl(fd, KVM_RUN, 0);
   if(err != 0) {
     if(errno == EINTR) {
       fprintf(stderr, "VM interrupted by signal\n");
@@ -453,7 +453,7 @@ int Elkvm::VM::run() {
 //      }
 //    }
 
-    err = kvm_vcpu_run(vcpu);
+    err = vcpu->run();
     if(err) {
       break;
     }

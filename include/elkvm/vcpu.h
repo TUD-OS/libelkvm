@@ -51,12 +51,14 @@ class VCPU {
      */
     CURRENT_ABI::paramtype get_reg(Elkvm::Reg_t reg);
     void set_reg(Elkvm::Reg_t reg, CURRENT_ABI::paramtype val);
+    void set_entry_point(guestptr_t rip);
 
     /* MSRs */
     void set_msr(uint32_t idx, CURRENT_ABI::paramtype data);
     CURRENT_ABI::paramtype get_msr(uint32_t idx);
 
-    void set_entry_point(guestptr_t rip);
+    /* RUNNING the VCPU */
+    int run();
 
   uint64_t pop() { uint64_t val = stack.popq(regs.rsp); regs.rsp += 0x8; return val; }
   void push(uint64_t val) { regs.rsp -= 0x8; stack.pushq(regs.rsp, val); }
@@ -89,12 +91,6 @@ class VCPU {
 
 
 void kvm_vcpu_dump_msr(std::shared_ptr<VCPU> vcpu, uint32_t);
-
-
-/*
- * \brief Run the VCPU
-*/
-int kvm_vcpu_run(std::shared_ptr<VCPU> vcpu);
 
 int kvm_vcpu_had_page_fault(std::shared_ptr<VCPU> vcpu);
 
