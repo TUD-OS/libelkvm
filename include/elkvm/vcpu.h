@@ -17,6 +17,9 @@ class VCPU {
   private:
     int fd;
     struct kvm_regs regs;
+
+    struct kvm_run *run_struct;
+
     /*
       Initialize a VCPU's registers according to mode
     */
@@ -29,7 +32,6 @@ class VCPU {
   ud_t ud_obj;
 #endif
   struct kvm_sregs sregs;
-  struct kvm_run *run_struct;
   int singlestep;
   struct kvm_guest_debug debug;
 
