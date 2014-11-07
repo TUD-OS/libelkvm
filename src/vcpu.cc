@@ -65,24 +65,6 @@ void VCPU::set_entry_point(guestptr_t rip) {
   set_regs();
 }
 
-int kvm_vcpu_set_cr3(std::shared_ptr<VCPU> vcpu, uint64_t cr3) {
-  assert(vcpu != NULL);
-
-  int err = vcpu->get_sregs();
-  if(err) {
-    return err;
-  }
-
-  vcpu->sregs.cr3 = cr3;
-
-  err = vcpu->set_sregs();
-  if(err) {
-    return err;
-  }
-
-  return 0;
-}
-
 int VCPU::get_regs() {
   int err = ioctl(fd, KVM_GET_REGS, &regs);
   if(err) {

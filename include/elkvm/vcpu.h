@@ -88,11 +88,6 @@ class VCPU {
 #define VCPU_MSR_SFMASK 0XC0000084
 
 
-/*
- * \brief Set the VCPU's CR3 to a specific value
- */
-int kvm_vcpu_set_cr3(std::shared_ptr<VCPU> vcpu, uint64_t);
-
 void kvm_vcpu_dump_msr(std::shared_ptr<VCPU> vcpu, uint32_t);
 
 
