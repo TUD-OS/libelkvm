@@ -60,6 +60,9 @@ class VCPU {
     /* RUNNING the VCPU */
     int run();
 
+    /* Debugging */
+    int set_debug();
+
   uint64_t pop() { uint64_t val = stack.popq(regs.rsp); regs.rsp += 0x8; return val; }
   void push(uint64_t val) { regs.rsp -= 0x8; stack.pushq(regs.rsp, val); }
   guestptr_t kernel_stack_base() { return stack.kernel_base(); }

@@ -343,7 +343,7 @@ static void debug_loop(std::shared_ptr<Elkvm::VM> vm) {
         memcpy(host_p, mem, len);
         std::shared_ptr<VCPU> vcpu = vm->get_vcpu(0);
         vcpu->debug.control |= KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_USE_SW_BP;
-        int err = elkvm_set_guest_debug(vcpu);
+        int err = vcpu->set_debug();
         assert(err == 0 && "could not set guest debug mode");
         put_reply("OK");
 

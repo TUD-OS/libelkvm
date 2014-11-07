@@ -5,7 +5,6 @@
 #include <elkvm/vcpu.h>
 
 int elkvm_handle_debug(Elkvm::VM *);
-int elkvm_set_guest_debug(std::shared_ptr<VCPU> vcpu);
 
 /**
  * \brief Set the VCPU in singlestepping mode
