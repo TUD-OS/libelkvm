@@ -15,6 +15,7 @@
 
 class VCPU {
   private:
+    int fd;
     struct kvm_regs regs;
     /*
       Initialize a VCPU's registers according to mode
@@ -23,7 +24,6 @@ class VCPU {
 
 
   public:
-  int fd;
   Elkvm::Stack stack;
 #ifdef HAVE_LIBUDIS86
   ud_t ud_obj;
