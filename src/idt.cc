@@ -13,6 +13,7 @@
 #include <elkvm/idt.h>
 #include <elkvm/pager.h>
 #include <elkvm/region.h>
+#include <elkvm/regs.h>
 #include <elkvm/vcpu.h>
 
 int elkvm_idt_setup(Elkvm::RegionManager &rm,
@@ -48,8 +49,8 @@ int elkvm_idt_setup(Elkvm::RegionManager &rm,
   assert(guest_virtual != 0x0);
   idt_region->set_guest_addr(guest_virtual);
 
-	vcpu->sregs.idt.base = idt_region->guest_address();
-	vcpu->sregs.idt.limit = 0xFFF;
+  Elkvm::Segment idt(idt_region->guest_address(), 0xFFF);
+  vcpu->set_reg(Elkvm::Seg_t::idt, idt);
 
 	int err = vcpu->set_sregs();
 
