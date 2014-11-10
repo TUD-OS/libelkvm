@@ -31,10 +31,10 @@ int elkvm_handle_debug(Elkvm::VM *vm) {
   return handled;
 }
 
-int elkvm_debug_enable(std::shared_ptr<VCPU> vcpu) {
-  vcpu->debug.control |= KVM_GUESTDBG_ENABLE;
+int VCPU::enable_debug() {
+  debug.control |= KVM_GUESTDBG_ENABLE;
 
-  return vcpu->set_debug();
+  return set_debug();
 }
 
 int VCPU::singlestep() {
@@ -52,4 +52,9 @@ int VCPU::singlestep_off() {
 
 int VCPU::set_debug() {
   return ioctl(fd, KVM_SET_GUEST_DEBUG, &debug);
+}
+
+int VCPU::enable_software_breakpoints() {
+  debug.control |= KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_USE_SW_BP;
+  return set_debug();
 }

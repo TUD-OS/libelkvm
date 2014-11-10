@@ -21,6 +21,10 @@ class VCPU {
 
     struct kvm_run *run_struct;
 
+    /* internal debugging stuff */
+    struct kvm_guest_debug debug;
+    int set_debug();
+
     Elkvm::Stack stack;
     /*
       Initialize a VCPU's registers according to mode
@@ -33,7 +37,6 @@ class VCPU {
   ud_t ud_obj;
 #endif
   struct kvm_sregs sregs;
-  struct kvm_guest_debug debug;
 
     VCPU(std::shared_ptr<Elkvm::RegionManager> rm, int vmfd, unsigned cpu_num);
     /*
@@ -68,7 +71,8 @@ class VCPU {
     uint64_t hardware_entry_failure_reason();
 
     /* Debugging */
-    int set_debug();
+    int enable_debug();
+    int enable_software_breakpoints();
     bool is_singlestep() { return is_singlestepping; }
     int singlestep();
     int singlestep_off();
