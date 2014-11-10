@@ -15,6 +15,7 @@ SET( libelkvm_MOC_HEADERS
     pager.h
     region.h
     region_manager.h
+    regs.h
     stack.h
     syscall.h
     tss.h

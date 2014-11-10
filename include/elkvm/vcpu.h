@@ -1,6 +1,8 @@
 #pragma once
 #include <elkvm/config.h>
+#include <elkvm/regs.h>
 #include <elkvm/stack.h>
+#include <elkvm/syscall.h>
 
 #include <linux/kvm.h>
 
@@ -11,25 +13,160 @@
 #include <udis86.h>
 #endif
 
-struct kvm_vcpu {
-  int fd;
-  Elkvm::Stack stack;
+namespace Elkvm {
+
+class Segment {
+  CURRENT_ABI::paramtype _selector;
+  CURRENT_ABI::paramtype _base;
+  CURRENT_ABI::paramtype _limit;
+  CURRENT_ABI::paramtype _type;
+  CURRENT_ABI::paramtype _present;
+  CURRENT_ABI::paramtype _dpl;
+  CURRENT_ABI::paramtype _db;
+  CURRENT_ABI::paramtype _s;
+  CURRENT_ABI::paramtype _l;
+  CURRENT_ABI::paramtype _g;
+  CURRENT_ABI::paramtype _avl;
+
+  public:
+    Segment(CURRENT_ABI::paramtype base,
+            CURRENT_ABI::paramtype limit) :
+      _base(base),
+      _limit(limit) {}
+
+    Segment(CURRENT_ABI::paramtype selector,
+            CURRENT_ABI::paramtype base,
+            CURRENT_ABI::paramtype limit,
+            CURRENT_ABI::paramtype type,
+            CURRENT_ABI::paramtype present,
+            CURRENT_ABI::paramtype dpl,
+            CURRENT_ABI::paramtype db,
+            CURRENT_ABI::paramtype s,
+            CURRENT_ABI::paramtype l,
+            CURRENT_ABI::paramtype g,
+            CURRENT_ABI::paramtype avl) :
+      _selector(selector),
+      _base(base),
+      _limit(limit),
+      _type(type),
+      _present(present),
+      _dpl(dpl),
+      _db(db),
+      _s(s),
+      _l(l),
+      _g(g),
+      _avl(avl) {}
+
+    CURRENT_ABI::paramtype get_selector() const { return _selector; }
+    CURRENT_ABI::paramtype get_base() const { return _base; }
+    CURRENT_ABI::paramtype get_limit() const { return _limit; }
+    CURRENT_ABI::paramtype get_type() const { return _type; }
+    CURRENT_ABI::paramtype is_present() const { return _present; }
+    CURRENT_ABI::paramtype get_dpl() const { return _dpl; }
+    CURRENT_ABI::paramtype get_db() const { return _db; }
+    CURRENT_ABI::paramtype get_s() const { return _s; }
+    CURRENT_ABI::paramtype get_l() const { return _l; }
+    CURRENT_ABI::paramtype get_g() const { return _g; }
+    CURRENT_ABI::paramtype get_avl() const { return _avl; }
+
+    void set_base(CURRENT_ABI::paramtype base) {
+      _base = base;
+    }
+};
+
+//namespace Elkvm
+}
+
+class VCPU {
+  private:
+    bool is_singlestepping;
+
+    /* internal kvm-specific stuff
+     * TODO move this to some hypervisor abstraction
+     */
+    int fd;
+    struct kvm_regs regs;
+    struct kvm_sregs sregs;
+
+    struct kvm_run *run_struct;
+
+    void set_reg(struct kvm_dtable *ptr, const Elkvm::Segment &seg);
+    void set_reg(struct kvm_segment *ptr, const Elkvm::Segment &seg);
+    Elkvm::Segment get_reg(struct kvm_dtable *ptr);
+    Elkvm::Segment get_reg(struct kvm_segment *ptr);
+
+    /* internal debugging stuff */
+    struct kvm_guest_debug debug;
+    int set_debug();
+
+    Elkvm::Stack stack;
+
+    /*
+      Initialize a VCPU's registers according to mode
+    */
+    int initialize_regs();
+
+
+  public:
 #ifdef HAVE_LIBUDIS86
   ud_t ud_obj;
 #endif
-  struct kvm_regs regs;
-  struct kvm_sregs sregs;
-  struct kvm_run *run_struct;
-  int singlestep;
-  struct kvm_guest_debug debug;
 
-  kvm_vcpu(std::shared_ptr<Elkvm::RegionManager> rm) : stack(rm) {}
+    VCPU(std::shared_ptr<Elkvm::RegionManager> rm, int vmfd, unsigned cpu_num);
+    /*
+     * Get VCPU registers
+     */
+    int get_regs();
+    int get_sregs();
+
+    /*
+     * Set VCPU registers
+     */
+    int set_regs();
+    int set_sregs();
+
+    /*
+     * get and set single registers
+     */
+    CURRENT_ABI::paramtype get_reg(Elkvm::Reg_t reg);
+    Elkvm::Segment get_reg(Elkvm::Seg_t seg);
+    CURRENT_ABI::paramtype get_interrupt_bitmap(unsigned idx);
+    void set_reg(Elkvm::Reg_t reg, CURRENT_ABI::paramtype val);
+    void set_reg(Elkvm::Seg_t seg, const Elkvm::Segment &s);
+    void set_entry_point(guestptr_t rip);
+
+    /* MSRs */
+    void set_msr(uint32_t idx, CURRENT_ABI::paramtype data);
+    CURRENT_ABI::paramtype get_msr(uint32_t idx);
+
+    /* RUNNING the VCPU */
+    int run();
+
+    /* get VCPU hypervisor exit reasons */
+    uint32_t exit_reason();
+    uint64_t hardware_exit_reason();
+    uint64_t hardware_entry_failure_reason();
+
+    /* Debugging */
+    int enable_debug();
+    int enable_software_breakpoints();
+    bool is_singlestep() { return is_singlestepping; }
+    int singlestep();
+    int singlestep_off();
+    std::ostream &print_mmio(std::ostream &os);
+
   uint64_t pop() { uint64_t val = stack.popq(regs.rsp); regs.rsp += 0x8; return val; }
   void push(uint64_t val) { regs.rsp -= 0x8; stack.pushq(regs.rsp, val); }
   guestptr_t kernel_stack_base() { return stack.kernel_base(); }
   int handle_stack_expansion(uint32_t err, bool debug);
   void init_rsp() { regs.rsp = stack.user_base(); }
 };
+
+std::ostream &print(std::ostream &os, std::shared_ptr<VCPU> vcpu);
+std::ostream &print(std::ostream &os, const std::string &name,
+    const Elkvm::Segment &seg);
+std::ostream &print(std::ostream &os, const std::string &name,
+    struct kvm_dtable dtable);
 
 #define VCPU_CR0_FLAG_PAGING            0x80000000
 #define VCPU_CR0_FLAG_CACHE_DISABLE     0x40000000
@@ -53,48 +190,7 @@ struct kvm_vcpu {
 #define VCPU_MSR_CSTAR  0xC0000083
 #define VCPU_MSR_SFMASK 0XC0000084
 
-/*
-  Set the VCPU's rip to a specific value
-*/
-int kvm_vcpu_set_rip(struct kvm_vcpu *, uint64_t);
-
-/*
- * \brief Set the VCPU's CR3 to a specific value
- */
-int kvm_vcpu_set_cr3(struct kvm_vcpu *, uint64_t);
-
-/*
-  Get the VCPU's registers
-*/
-int kvm_vcpu_get_regs(struct kvm_vcpu *);
-int kvm_vcpu_get_sregs(struct kvm_vcpu *);
-
-/*
-  Set the VCPU's registers
-*/
-int kvm_vcpu_set_regs(struct kvm_vcpu *);
-int kvm_vcpu_set_sregs(struct kvm_vcpu *);
-
-int kvm_vcpu_get_msr(struct kvm_vcpu *, uint32_t, uint64_t *);
-int kvm_vcpu_set_msr(struct kvm_vcpu *, uint32_t, uint64_t);
-void kvm_vcpu_dump_msr(struct kvm_vcpu *, uint32_t);
-
-/*
-  Initialize a VCPU's registers according to mode
-*/
-int kvm_vcpu_initialize_regs(struct kvm_vcpu *, int);
-
-/*
-  Initialize the VCPU registers for long mode
-*/
-int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *);
-
-/*
- * \brief Run the VCPU
-*/
-int kvm_vcpu_run(struct kvm_vcpu *);
-
-int kvm_vcpu_had_page_fault(struct kvm_vcpu *);
+void kvm_vcpu_dump_msr(std::shared_ptr<VCPU> vcpu, uint32_t);
 
 /*
  * \brief Returns true if the host supports vmx
@@ -106,22 +202,17 @@ bool host_supports_vmx(void);
 */
 void host_cpuid(uint32_t, uint32_t, uint32_t *, uint32_t *, uint32_t *, uint32_t *);
 
-void kvm_vcpu_dump_regs(struct kvm_vcpu *);
-
-void kvm_vcpu_dump_code(struct kvm_vcpu *);
-void kvm_vcpu_dump_code_at(struct kvm_vcpu *vcpu, uint64_t guest_addr);
+void kvm_vcpu_dump_code(std::shared_ptr<VCPU> vcpu);
+void kvm_vcpu_dump_code_at(std::shared_ptr<VCPU> vcpu, uint64_t guest_addr);
 
 #ifdef HAVE_LIBUDIS86
 /*
  * \brief Get the next byte of code to be executed.
  * This is mainly here for libudis86 disassembly
  */
-int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *, uint64_t guest_addr);
+int kvm_vcpu_get_next_code_byte(std::shared_ptr<VCPU> vcpu, uint64_t guest_addr);
 
-void elkvm_init_udis86(struct kvm_vcpu *, int mode);
+void elkvm_init_udis86(std::shared_ptr<VCPU> vcpu, int mode);
 #endif
 
 void print_flags(uint64_t flags);
-void print_dtable(const std::string name, struct kvm_dtable dtable);
-void print_segment(const std::string name, struct kvm_segment seg);
-

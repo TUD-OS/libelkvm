@@ -6,15 +6,15 @@
 
 namespace Elkvm {
 
-int VM::handle_interrupt(std::shared_ptr<struct kvm_vcpu> vcpu) {
+int VM::handle_interrupt(std::shared_ptr<VCPU> vcpu) {
   uint64_t interrupt_vector = vcpu->pop();
 
   if(debug_mode()) {
     DBG() << " INTERRUPT with vector " << std::hex << "0x" << interrupt_vector
       << " detected";
-    kvm_vcpu_get_sregs(vcpu.get());
-    kvm_vcpu_dump_regs(vcpu.get());
-    dump_stack(vcpu.get());
+    vcpu->get_sregs();
+    print(std::cerr, vcpu);
+    dump_stack(vcpu);
   }
 
   uint64_t err_code = vcpu->pop();
@@ -48,18 +48,19 @@ int handle_general_protection_fault(uint64_t code) {
 }
 
 int handle_page_fault(VM &vm,
-    std::shared_ptr<struct kvm_vcpu> vcpu,
+    std::shared_ptr<VCPU> vcpu,
     uint64_t code) {
-  int err = kvm_vcpu_get_sregs(vcpu.get());
+  int err = vcpu->get_sregs();
   assert(err == 0 && "error getting vcpu sregs");
 
-  handle_segfault(vcpu->sregs.cr2);
+  CURRENT_ABI::paramtype pfla = vcpu->get_reg(Elkvm::Reg_t::cr2);
+  handle_segfault(pfla);
   if(vcpu->handle_stack_expansion(code, vm.debug_mode())) {
     return success;
   }
 
-  void *hp = vm.get_region_manager()->get_pager().get_host_p(vcpu->sregs.cr2);
-  Elkvm::dump_page_fault_info(vcpu->sregs.cr2, code, hp);
+  void *hp = vm.get_region_manager()->get_pager().get_host_p(pfla);
+  Elkvm::dump_page_fault_info(pfla, code, hp);
   if(hp) {
     vm.get_region_manager()->get_pager().dump_page_tables();
   }

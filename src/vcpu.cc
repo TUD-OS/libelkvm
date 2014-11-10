@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <memory>
 #include <stropts.h>
 #include <sys/mman.h>
 #include <unistd.h>
@@ -18,6 +19,7 @@
 #include <elkvm/gdt.h>
 #include <elkvm/idt.h>
 #include <elkvm/region.h>
+#include <elkvm/regs.h>
 #include <elkvm/stack.h>
 #include <elkvm/syscall.h>
 #include <elkvm/vcpu.h>
@@ -25,268 +27,485 @@
 #define PRINT_REGISTER(name, reg) " " << name << ": " << std::hex << std::setw(16) \
   << std::setfill('0') << reg
 
-int kvm_vcpu::handle_stack_expansion(uint32_t err __attribute__((unused)),
+  VCPU::VCPU(std::shared_ptr<Elkvm::RegionManager> rm,
+          int vmfd,
+          unsigned cpu_num) :
+      stack(rm) {
+
+    memset(&regs, 0, sizeof(struct kvm_regs));
+    memset(&sregs, 0, sizeof(struct kvm_sregs));
+    is_singlestepping = false;
+
+    fd = ioctl(vmfd, KVM_CREATE_VCPU, cpu_num);
+    assert(fd > 0 && "error creating vcpu");
+
+    int err = initialize_regs();
+    assert(err == 0 && "error initializing vcpu registers");
+
+    init_rsp();
+
+    run_struct = reinterpret_cast<struct kvm_run *>(
+        mmap(NULL, sizeof(struct kvm_run), PROT_READ | PROT_WRITE,
+        MAP_SHARED, fd, 0));
+    assert(run_struct != nullptr && "error allocating run_struct");
+
+//#ifdef HAVE_LIBUDIS86
+//    elkvm_init_udis86(vcpu, mode);
+//#endif
+  }
+
+int VCPU::handle_stack_expansion(uint32_t err __attribute__((unused)),
     bool debug __attribute__((unused))) {
   stack.expand();
   return 1;
 }
 
-int kvm_vcpu_initialize_regs(struct kvm_vcpu *vcpu, int mode) {
-  switch(mode) {
-    case VM_MODE_X86_64:
-      return kvm_vcpu_initialize_long_mode(vcpu);
+void VCPU::set_entry_point(guestptr_t rip) {
+  set_reg(Elkvm::Reg_t::rip, rip);
+  set_regs();
+}
+
+int VCPU::get_regs() {
+  int err = ioctl(fd, KVM_GET_REGS, &regs);
+  if(err) {
+    return -errno;
+  }
+
+  return 0;
+}
+
+int VCPU::get_sregs() {
+  int err = ioctl(fd, KVM_GET_SREGS, &sregs);
+  if(err) {
+    return -errno;
+  }
+
+  return 0;
+}
+
+int VCPU::set_regs() {
+  int err = ioctl(fd, KVM_SET_REGS, &regs);
+  if(err) {
+    return -errno;
+  }
+
+  return 0;
+}
+
+int VCPU::set_sregs() {
+  int err = ioctl(fd, KVM_SET_SREGS, &sregs);
+  if(err) {
+    return -errno;
+  }
+
+  return 0;
+}
+
+CURRENT_ABI::paramtype VCPU::get_interrupt_bitmap(unsigned idx) {
+  return sregs.interrupt_bitmap[idx];
+}
+
+CURRENT_ABI::paramtype VCPU::get_reg(Elkvm::Reg_t reg) {
+  switch(reg) {
+    case Elkvm::Reg_t::rax:
+      return regs.rax;
+    case Elkvm::Reg_t::rbx:
+      return regs.rbx;
+    case Elkvm::Reg_t::rcx:
+      return regs.rcx;
+    case Elkvm::Reg_t::rdx:
+      return regs.rdx;
+    case Elkvm::Reg_t::rsi:
+      return regs.rsi;
+    case Elkvm::Reg_t::rdi:
+      return regs.rdi;
+    case Elkvm::Reg_t::rsp:
+      return regs.rsp;
+    case Elkvm::Reg_t::rbp:
+      return regs.rbp;
+    case Elkvm::Reg_t::r8:
+      return regs.r8;
+    case Elkvm::Reg_t::r9:
+      return regs.r9;
+    case Elkvm::Reg_t::r10:
+      return regs.r10;
+    case Elkvm::Reg_t::r11:
+      return regs.r11;
+    case Elkvm::Reg_t::r12:
+      return regs.r12;
+    case Elkvm::Reg_t::r13:
+      return regs.r13;
+    case Elkvm::Reg_t::r14:
+      return regs.r14;
+    case Elkvm::Reg_t::r15:
+      return regs.r15;
+    case Elkvm::Reg_t::rip:
+      return regs.rip;
+    case Elkvm::Reg_t::rflags:
+      return regs.rflags;
+    case Elkvm::Reg_t::cr0:
+      return sregs.cr0;
+    case Elkvm::Reg_t::cr2:
+      return sregs.cr2;
+    case Elkvm::Reg_t::cr3:
+      return sregs.cr3;
+    case Elkvm::Reg_t::cr4:
+      return sregs.cr4;
+    case Elkvm::Reg_t::cr8:
+      return sregs.cr8;
+    case Elkvm::Reg_t::efer:
+      return sregs.efer;
+    case Elkvm::Reg_t::apic_base:
+      return sregs.apic_base;
+
     default:
+      assert(false);
       return -1;
   }
 }
 
-int kvm_vcpu_set_rip(struct kvm_vcpu * vcpu, uint64_t rip) {
-  int err = kvm_vcpu_get_regs(vcpu);
-  if(err) {
-    return err;
+void VCPU::set_reg(Elkvm::Reg_t reg, CURRENT_ABI::paramtype val) {
+  switch(reg) {
+    case Elkvm::Reg_t::rax:
+      regs.rax = val;
+      break;
+    case Elkvm::Reg_t::rbx:
+      regs.rbx = val;
+      break;
+    case Elkvm::Reg_t::rcx:
+      regs.rcx = val;
+      break;
+    case Elkvm::Reg_t::rdx:
+      regs.rdx = val;
+      break;
+    case Elkvm::Reg_t::rsi:
+      regs.rsi = val;
+      break;
+    case Elkvm::Reg_t::rdi:
+      regs.rdi = val;
+      break;
+    case Elkvm::Reg_t::rsp:
+      regs.rsp = val;
+      break;
+    case Elkvm::Reg_t::rbp:
+      regs.rbp = val;
+      break;
+    case Elkvm::Reg_t::r8:
+      regs.r8 = val;
+      break;
+    case Elkvm::Reg_t::r9:
+      regs.r9 = val;
+      break;
+    case Elkvm::Reg_t::r10:
+      regs.r10 = val;
+      break;
+    case Elkvm::Reg_t::r11:
+      regs.r11 = val;
+      break;
+    case Elkvm::Reg_t::r12:
+      regs.r12 = val;
+      break;
+    case Elkvm::Reg_t::r13:
+      regs.r13 = val;
+      break;
+    case Elkvm::Reg_t::r14:
+      regs.r14 = val;
+      break;
+    case Elkvm::Reg_t::r15:
+      regs.r15 = val;
+      break;
+    case Elkvm::Reg_t::rip:
+      regs.rip = val;
+      break;
+    case Elkvm::Reg_t::rflags:
+      regs.rflags = val;
+      break;
+    case Elkvm::Reg_t::cr0:
+      sregs.cr0 = val;
+      break;
+    case Elkvm::Reg_t::cr2:
+      sregs.cr2 = val;
+      break;
+    case Elkvm::Reg_t::cr3:
+      sregs.cr3 = val;
+      break;
+    case Elkvm::Reg_t::cr4:
+      sregs.cr4 = val;
+      break;
+    case Elkvm::Reg_t::cr8:
+      sregs.cr8 = val;
+      break;
+    case Elkvm::Reg_t::efer:
+      sregs.efer = val;
+      break;
+    case Elkvm::Reg_t::apic_base:
+      sregs.apic_base = val;
+      break;
+
+    default:
+      assert(false);
   }
-
-  vcpu->regs.rip = rip;
-
-  err = kvm_vcpu_set_regs(vcpu);
-  if(err) {
-    return err;
-  }
-
-  return 0;
 }
 
-int kvm_vcpu_set_cr3(struct kvm_vcpu *vcpu, uint64_t cr3) {
-  assert(vcpu != NULL);
-
-  int err = kvm_vcpu_get_sregs(vcpu);
-  if(err) {
-    return err;
-  }
-
-  vcpu->sregs.cr3 = cr3;
-
-  err = kvm_vcpu_set_sregs(vcpu);
-  if(err) {
-    return err;
-  }
-
-  return 0;
-}
-
-int kvm_vcpu_get_regs(struct kvm_vcpu *vcpu) {
-  if(vcpu->fd < 1) {
-    return -EIO;
-  }
-
-  int err = ioctl(vcpu->fd, KVM_GET_REGS, &vcpu->regs);
-  if(err) {
-    return -errno;
-  }
-
-  return 0;
-}
-
-int kvm_vcpu_get_sregs(struct kvm_vcpu *vcpu) {
-  if(vcpu->fd < 1) {
-    return -EIO;
-  }
-
-  int err = ioctl(vcpu->fd, KVM_GET_SREGS, &vcpu->sregs);
-  if(err) {
-    return -errno;
-  }
-
-  return 0;
-}
-
-int kvm_vcpu_set_regs(struct kvm_vcpu *vcpu) {
-  if(vcpu->fd < 1) {
-    return -EIO;
-  }
-
-  int err = ioctl(vcpu->fd, KVM_SET_REGS, &vcpu->regs);
-  if(err) {
-    return -errno;
-  }
-
-  return 0;
-}
-
-int kvm_vcpu_set_sregs(struct kvm_vcpu *vcpu) {
-  if(vcpu->fd < 1) {
-    return -EIO;
-  }
-
-  int err = ioctl(vcpu->fd, KVM_SET_SREGS, &vcpu->sregs);
-  if(err) {
-    return -errno;
-  }
-
-  return 0;
-}
-
-int kvm_vcpu_get_msr(struct kvm_vcpu *vcpu, uint32_t index, uint64_t *res_p) {
+CURRENT_ABI::paramtype VCPU::get_msr(uint32_t idx) {
   struct kvm_msrs *msr = reinterpret_cast<struct kvm_msrs *>(
       malloc(sizeof(struct kvm_msrs) + sizeof(struct kvm_msr_entry)));
+  assert(msr != nullptr && "error allocating msr");
+
   msr->nmsrs = 1;
-  msr->entries[0].index = index;
+  msr->entries[0].index = idx;
 
-  int err = ioctl(vcpu->fd, KVM_GET_MSRS, msr);
-  if(err < 0) {
-    *res_p = -1;
-    free(msr);
-    return -errno;
-  }
+  int err = ioctl(fd, KVM_GET_MSRS, msr);
+  assert(err >= 0 && "error reading msrs");
 
-  *res_p = msr->entries[0].data;
+  CURRENT_ABI::paramtype res = msr->entries[0].data;
   free(msr);
-  return 0;
+  return res;
 }
 
-int kvm_vcpu_set_msr(struct kvm_vcpu *vcpu, uint32_t index, uint64_t data) {
+void VCPU::set_msr(uint32_t idx, CURRENT_ABI::paramtype data) {
   struct kvm_msrs *msr = reinterpret_cast<struct kvm_msrs *>(
       malloc(sizeof(struct kvm_msrs) + sizeof(struct kvm_msr_entry)));
+  assert(msr != nullptr && "error allocating msr");
+
   memset(msr, 0, sizeof(struct kvm_msrs) + sizeof(struct kvm_msr_entry));
 
   msr->nmsrs = 1;
-  msr->entries[0].index = index;
+  msr->entries[0].index = idx;
   msr->entries[0].data  = data;
 
-  int err = ioctl(vcpu->fd, KVM_SET_MSRS, msr);
+  int err = ioctl(fd, KVM_SET_MSRS, msr);
   free(msr);
-  if(err < 0) {
-    return -errno;
-  }
-
-  return 0;
+  assert(err >= 0 && "error setting msr");
 }
 
-int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
+Elkvm::Segment VCPU::get_reg(struct kvm_dtable *ptr) {
+  return Elkvm::Segment(ptr->base, ptr->limit);
+}
 
-  memset(&vcpu->regs, 0, sizeof(struct kvm_regs));
+Elkvm::Segment VCPU::get_reg(struct kvm_segment *ptr) {
+  return Elkvm::Segment(ptr->selector,
+            ptr->base,
+            ptr->limit,
+            ptr->type,
+            ptr->present,
+            ptr->dpl,
+            ptr->db,
+            ptr->s,
+            ptr->l,
+            ptr->g,
+            ptr->avl);
+}
+
+Elkvm::Segment VCPU::get_reg(Elkvm::Seg_t segtype) {
+  switch(segtype) {
+    case Elkvm::Seg_t::cs:
+      return get_reg(&sregs.cs);
+    case Elkvm::Seg_t::ds:
+      return get_reg(&sregs.ds);
+    case Elkvm::Seg_t::es:
+      return get_reg(&sregs.es);
+    case Elkvm::Seg_t::fs:
+      return get_reg(&sregs.fs);
+    case Elkvm::Seg_t::gs:
+      return get_reg(&sregs.gs);
+    case Elkvm::Seg_t::ss:
+      return get_reg(&sregs.ss);
+    case Elkvm::Seg_t::tr:
+      return get_reg(&sregs.tr);
+    case Elkvm::Seg_t::ldt:
+      return get_reg(&sregs.ldt);
+    case Elkvm::Seg_t::gdt:
+      return get_reg(&sregs.gdt);
+    case Elkvm::Seg_t::idt:
+      return get_reg(&sregs.idt);
+    default:
+      assert(false);
+  }
+}
+
+void VCPU::set_reg(Elkvm::Seg_t segtype, const Elkvm::Segment &seg) {
+  switch(segtype) {
+    case Elkvm::Seg_t::cs:
+      set_reg(&sregs.cs, seg);
+      break;
+    case Elkvm::Seg_t::ds:
+      set_reg(&sregs.ds, seg);
+      break;
+    case Elkvm::Seg_t::es:
+      set_reg(&sregs.es, seg);
+      break;
+    case Elkvm::Seg_t::fs:
+      set_reg(&sregs.fs, seg);
+      break;
+    case Elkvm::Seg_t::gs:
+      set_reg(&sregs.gs, seg);
+      break;
+    case Elkvm::Seg_t::ss:
+      set_reg(&sregs.ss, seg);
+      break;
+    case Elkvm::Seg_t::tr:
+      set_reg(&sregs.tr, seg);
+      break;
+    case Elkvm::Seg_t::ldt:
+      set_reg(&sregs.ldt, seg);
+      break;
+    case Elkvm::Seg_t::gdt:
+      set_reg(&sregs.gdt, seg);
+      break;
+    case Elkvm::Seg_t::idt:
+      set_reg(&sregs.idt, seg);
+      break;
+    default:
+      assert(false);
+  }
+}
+
+void VCPU::set_reg(struct kvm_dtable *ptr, const Elkvm::Segment &seg) {
+  ptr->base = seg.get_base();
+  ptr->limit = seg.get_limit();
+}
+
+void VCPU::set_reg(struct kvm_segment *ptr, const Elkvm::Segment &seg) {
+  ptr->base = seg.get_base();
+  ptr->limit = seg.get_limit();
+  ptr->selector = seg.get_selector();
+  ptr->type = seg.get_type();
+  ptr->present = seg.is_present();
+  ptr->dpl = seg.get_dpl();
+  ptr->db = seg.get_db();
+  ptr->s = seg.get_s();
+  ptr->l = seg.get_l();
+  ptr->g = seg.get_g();
+  ptr->avl = seg.get_avl();
+}
+
+
+int VCPU::initialize_regs() {
+
+  memset(&regs, 0, sizeof(struct kvm_regs));
   //vcpu->regs.rsp = LINUX_64_STACK_BASE;
   /* for some reason this needs to be set */
-  vcpu->regs.rflags = 0x00000002;
+  regs.rflags = 0x00000002;
 
-  int err = kvm_vcpu_set_regs(vcpu);
-  if(err) {
-    return err;
-  }
+//  int err = vcpu->set_regs();
+//  if(err) {
+//    return err;
+//  }
 
-  vcpu->sregs.cr0 = VCPU_CR0_FLAG_PAGING | VCPU_CR0_FLAG_CACHE_DISABLE |
+  sregs.cr0 = VCPU_CR0_FLAG_PAGING | VCPU_CR0_FLAG_CACHE_DISABLE |
       VCPU_CR0_FLAG_NOT_WRITE_THROUGH |
       VCPU_CR0_FLAG_PROTECTED;
-  vcpu->sregs.cr4 = VCPU_CR4_FLAG_OSFXSR | VCPU_CR4_FLAG_PAE;
-  vcpu->sregs.cr2 = vcpu->sregs.cr3 = vcpu->sregs.cr8 = 0x0;
-  vcpu->sregs.efer = VCPU_EFER_FLAG_NXE | VCPU_EFER_FLAG_LME | VCPU_EFER_FLAG_SCE;
+  sregs.cr4 = VCPU_CR4_FLAG_OSFXSR | VCPU_CR4_FLAG_PAE;
+  sregs.cr2 = sregs.cr3 = sregs.cr8 = 0x0;
+  sregs.efer = VCPU_EFER_FLAG_NXE | VCPU_EFER_FLAG_LME | VCPU_EFER_FLAG_SCE;
 
   //TODO find out why this is!
-  vcpu->sregs.apic_base = 0xfee00900;
+  sregs.apic_base = 0xfee00900;
 
-  vcpu->sregs.cs.selector = 0x0013;
-  vcpu->sregs.cs.base     = 0x0;
-  vcpu->sregs.cs.limit    = 0xFFFFFFFF;
-  vcpu->sregs.cs.type     = 0xb;
-  vcpu->sregs.cs.present  = 0x1;
-  vcpu->sregs.cs.dpl      = 0x3;
-  vcpu->sregs.cs.db       = 0x0;
-  vcpu->sregs.cs.s        = 0x1;
-  vcpu->sregs.cs.l        = 0x1;
-  vcpu->sregs.cs.g        = 0x1;
-  vcpu->sregs.cs.avl      = 0x0;
+  sregs.cs.selector = 0x0013;
+  sregs.cs.base     = 0x0;
+  sregs.cs.limit    = 0xFFFFFFFF;
+  sregs.cs.type     = 0xb;
+  sregs.cs.present  = 0x1;
+  sregs.cs.dpl      = 0x3;
+  sregs.cs.db       = 0x0;
+  sregs.cs.s        = 0x1;
+  sregs.cs.l        = 0x1;
+  sregs.cs.g        = 0x1;
+  sregs.cs.avl      = 0x0;
 
-  vcpu->sregs.ds.selector = 0x0018;
-  vcpu->sregs.ds.base     = 0x0;
-  vcpu->sregs.ds.limit    = 0xFFFFFFFF;
-  vcpu->sregs.ds.type     = 0x3;
-  vcpu->sregs.ds.present  = 0x1;
-  vcpu->sregs.ds.dpl      = 0x0;
-  vcpu->sregs.ds.db       = 0x0;
-  vcpu->sregs.ds.s        = 0x1;
-  vcpu->sregs.ds.l        = 0x1;
-  vcpu->sregs.ds.g        = 0x1;
-  vcpu->sregs.ds.avl      = 0x0;
+  sregs.ds.selector = 0x0018;
+  sregs.ds.base     = 0x0;
+  sregs.ds.limit    = 0xFFFFFFFF;
+  sregs.ds.type     = 0x3;
+  sregs.ds.present  = 0x1;
+  sregs.ds.dpl      = 0x0;
+  sregs.ds.db       = 0x0;
+  sregs.ds.s        = 0x1;
+  sregs.ds.l        = 0x1;
+  sregs.ds.g        = 0x1;
+  sregs.ds.avl      = 0x0;
 
-  vcpu->sregs.es.selector = 0x0;
-  vcpu->sregs.es.base     = 0x0;
-  vcpu->sregs.es.limit    = 0xFFFFF;
-  vcpu->sregs.es.type     = 0x3;
-  vcpu->sregs.es.present  = 0x1;
-  vcpu->sregs.es.dpl      = 0x0;
-  vcpu->sregs.es.db       = 0x0;
-  vcpu->sregs.es.s        = 0x1;
-  vcpu->sregs.es.l        = 0x0;
-  vcpu->sregs.es.g        = 0x0;
-  vcpu->sregs.es.avl      = 0x0;
+  sregs.es.selector = 0x0;
+  sregs.es.base     = 0x0;
+  sregs.es.limit    = 0xFFFFF;
+  sregs.es.type     = 0x3;
+  sregs.es.present  = 0x1;
+  sregs.es.dpl      = 0x0;
+  sregs.es.db       = 0x0;
+  sregs.es.s        = 0x1;
+  sregs.es.l        = 0x0;
+  sregs.es.g        = 0x0;
+  sregs.es.avl      = 0x0;
 
-  vcpu->sregs.fs.selector = 0x0;
-  vcpu->sregs.fs.base     = 0x0;
-  vcpu->sregs.fs.limit    = 0xFFFFF;
-  vcpu->sregs.fs.type     = 0x3;
-  vcpu->sregs.fs.present  = 0x1;
-  vcpu->sregs.fs.dpl      = 0x0;
-  vcpu->sregs.fs.db       = 0x0;
-  vcpu->sregs.fs.s        = 0x1;
-  vcpu->sregs.fs.l        = 0x0;
-  vcpu->sregs.fs.g        = 0x0;
-  vcpu->sregs.fs.avl      = 0x0;
+  sregs.fs.selector = 0x0;
+  sregs.fs.base     = 0x0;
+  sregs.fs.limit    = 0xFFFFF;
+  sregs.fs.type     = 0x3;
+  sregs.fs.present  = 0x1;
+  sregs.fs.dpl      = 0x0;
+  sregs.fs.db       = 0x0;
+  sregs.fs.s        = 0x1;
+  sregs.fs.l        = 0x0;
+  sregs.fs.g        = 0x0;
+  sregs.fs.avl      = 0x0;
 
-  vcpu->sregs.gs.selector = 0x0;
-  vcpu->sregs.gs.base     = 0x10000;
-  vcpu->sregs.gs.limit    = 0xFFFFF;
-  vcpu->sregs.gs.type     = 0x3;
-  vcpu->sregs.gs.present  = 0x1;
-  vcpu->sregs.gs.dpl      = 0x0;
-  vcpu->sregs.gs.db       = 0x0;
-  vcpu->sregs.gs.s        = 0x1;
-  vcpu->sregs.gs.l        = 0x0;
-  vcpu->sregs.gs.g        = 0x0;
-  vcpu->sregs.gs.avl      = 0x0;
+  sregs.gs.selector = 0x0;
+  sregs.gs.base     = 0x10000;
+  sregs.gs.limit    = 0xFFFFF;
+  sregs.gs.type     = 0x3;
+  sregs.gs.present  = 0x1;
+  sregs.gs.dpl      = 0x0;
+  sregs.gs.db       = 0x0;
+  sregs.gs.s        = 0x1;
+  sregs.gs.l        = 0x0;
+  sregs.gs.g        = 0x0;
+  sregs.gs.avl      = 0x0;
 
-  vcpu->sregs.tr.selector = 0x0;
-  vcpu->sregs.tr.base     = 0x0;
-  vcpu->sregs.tr.limit    = 0xFFFF;
-  vcpu->sregs.tr.type     = 0xb;
-  vcpu->sregs.tr.present  = 0x1;
-  vcpu->sregs.tr.dpl      = 0x0;
-  vcpu->sregs.tr.db       = 0x0;
-  vcpu->sregs.tr.s        = 0x0;
-  vcpu->sregs.tr.l        = 0x1;
-  vcpu->sregs.tr.g        = 0x0;
-  vcpu->sregs.tr.avl      = 0x0;
+  sregs.tr.selector = 0x0;
+  sregs.tr.base     = 0x0;
+  sregs.tr.limit    = 0xFFFF;
+  sregs.tr.type     = 0xb;
+  sregs.tr.present  = 0x1;
+  sregs.tr.dpl      = 0x0;
+  sregs.tr.db       = 0x0;
+  sregs.tr.s        = 0x0;
+  sregs.tr.l        = 0x1;
+  sregs.tr.g        = 0x0;
+  sregs.tr.avl      = 0x0;
 
-  vcpu->sregs.ldt.selector = 0x0;
-  vcpu->sregs.ldt.base     = 0x0;
-  vcpu->sregs.ldt.limit    = 0xFFFF;
-  vcpu->sregs.ldt.type     = 0x2;
-  vcpu->sregs.ldt.present  = 0x1;
-  vcpu->sregs.ldt.dpl      = 0x0;
-  vcpu->sregs.ldt.db       = 0x0;
-  vcpu->sregs.ldt.s        = 0x0;
-  vcpu->sregs.ldt.l        = 0x0;
-  vcpu->sregs.ldt.g        = 0x0;
-  vcpu->sregs.ldt.avl      = 0x0;
+  sregs.ldt.selector = 0x0;
+  sregs.ldt.base     = 0x0;
+  sregs.ldt.limit    = 0xFFFF;
+  sregs.ldt.type     = 0x2;
+  sregs.ldt.present  = 0x1;
+  sregs.ldt.dpl      = 0x0;
+  sregs.ldt.db       = 0x0;
+  sregs.ldt.s        = 0x0;
+  sregs.ldt.l        = 0x0;
+  sregs.ldt.g        = 0x0;
+  sregs.ldt.avl      = 0x0;
 
-  vcpu->sregs.ss.selector = 0x000b;
-  vcpu->sregs.ss.base     = 0x0;
-  vcpu->sregs.ss.limit    = 0xFFFFFFFF;
-  vcpu->sregs.ss.type     = 0x3;
-  vcpu->sregs.ss.present  = 0x1;
-  vcpu->sregs.ss.dpl      = 0x3;
-  vcpu->sregs.ss.db       = 0x0;
-  vcpu->sregs.ss.s        = 0x1;
-  vcpu->sregs.ss.l        = 0x1;
-  vcpu->sregs.ss.g        = 0x1;
-  vcpu->sregs.ss.avl      = 0x0;
+  sregs.ss.selector = 0x000b;
+  sregs.ss.base     = 0x0;
+  sregs.ss.limit    = 0xFFFFFFFF;
+  sregs.ss.type     = 0x3;
+  sregs.ss.present  = 0x1;
+  sregs.ss.dpl      = 0x3;
+  sregs.ss.db       = 0x0;
+  sregs.ss.s        = 0x1;
+  sregs.ss.l        = 0x1;
+  sregs.ss.g        = 0x1;
+  sregs.ss.avl      = 0x0;
 
   /* gets set in elkvm_gdt_setup */
-  vcpu->sregs.gdt.base  = 0x0;
-  vcpu->sregs.gdt.limit = 0xFFFF;
+  sregs.gdt.base  = 0x0;
+  sregs.gdt.limit = 0xFFFF;
 
   /* gets set in elkvm_idt_setup */
-  vcpu->sregs.idt.base  = 0xFBFF000;
-  vcpu->sregs.idt.limit = 0x0;
+  sregs.idt.base  = 0xFBFF000;
+  sregs.idt.limit = 0x0;
 
 
   //memset(&vcpu->sregs.es, 0, sizeof(struct kvm_segment));
@@ -295,12 +514,12 @@ int kvm_vcpu_initialize_long_mode(struct kvm_vcpu *vcpu) {
   //memset(&vcpu->sregs.tr, 0, sizeof(struct kvm_segment));
   //memset(&vcpu->sregs.ldt, 0, sizeof(struct kvm_segment));
 
-  err = kvm_vcpu_set_sregs(vcpu);
-  return err;
+  //err = vcpu->set_sregs();
+  return 0;
 }
 
-int kvm_vcpu_run(struct kvm_vcpu *vcpu) {
-  int err = ioctl(vcpu->fd, KVM_RUN, 0);
+int VCPU::run() {
+  int err = ioctl(fd, KVM_RUN, 0);
   if(err != 0) {
     if(errno == EINTR) {
       fprintf(stderr, "VM interrupted by signal\n");
@@ -314,6 +533,34 @@ int kvm_vcpu_run(struct kvm_vcpu *vcpu) {
   return 0;
 }
 
+uint32_t VCPU::exit_reason() {
+  return run_struct->exit_reason;
+}
+
+uint64_t VCPU::hardware_exit_reason() {
+  return run_struct->hw.hardware_exit_reason;
+}
+
+uint64_t VCPU::hardware_entry_failure_reason() {
+  return run_struct->fail_entry.hardware_entry_failure_reason;
+}
+
+std::ostream &VCPU::print_mmio(std::ostream &os) {
+  os << "phys_addr: 0x" << std::hex << run_struct->mmio.phys_addr
+     << " data[0]: " << run_struct->mmio.data[0]
+     << " data[1]: " << run_struct->mmio.data[1]
+     << " data[2]: " << run_struct->mmio.data[2]
+     << " data[3]: " << run_struct->mmio.data[3]
+     << " data[4]: " << run_struct->mmio.data[4]
+     << " data[5]: " << run_struct->mmio.data[5]
+     << " data[6]: " << run_struct->mmio.data[6]
+     << " data[7]: " << run_struct->mmio.data[7]
+     << " len: " << run_struct->mmio.len
+     << " write: " << run_struct->mmio.is_write
+     << std::endl;
+  return os;
+}
+
 int Elkvm::VM::run() {
 
   int is_running = 1;
@@ -325,11 +572,11 @@ int Elkvm::VM::run() {
 //    kvm_pager_dump_page_tables(&vcpu->vm->pager);
 //  }
 
-  std::shared_ptr<struct kvm_vcpu> vcpu = get_vcpu(0);
+  std::shared_ptr<VCPU> vcpu = get_vcpu(0);
   int err = 0;
   while(is_running) {
 
-    err = kvm_vcpu_set_regs(vcpu.get());
+    err = vcpu->set_regs();
     if(err) {
       return err;
     }
@@ -340,28 +587,28 @@ int Elkvm::VM::run() {
 //      }
 //    }
 
-    err = kvm_vcpu_run(vcpu.get());
+    err = vcpu->run();
     if(err) {
       break;
     }
 
-    err = kvm_vcpu_get_regs(vcpu.get());
+    err = vcpu->get_regs();
     if(err) {
       return err;
     }
 
-    switch(vcpu->run_struct->exit_reason) {
+    switch(vcpu->exit_reason()) {
       case KVM_EXIT_UNKNOWN:
-        fprintf(stderr, "KVM exit for unknown reason (KVM_EXIT_UNKNOWN)\n");
-        fprintf(stderr, "Hardware exit reason: %llu\n",
-            vcpu->run_struct->hw.hardware_exit_reason);
+        std::cerr << "KVM exit for unknown reason (KVM_EXIT_UNKNOWN)\n"
+                  << " Hardware exit reason: " << std::dec
+                  << vcpu->exit_reason() << std::endl;
         is_running = 0;
         break;
       case KVM_EXIT_HYPERCALL:
-        if(vcpu->singlestep) {
+        if(vcpu->is_singlestep()) {
           fprintf(stderr, "KVM_EXIT_HYPERCALL\n");
-          kvm_vcpu_dump_regs(vcpu.get());
-          kvm_vcpu_dump_code(vcpu.get());
+          print(std::cerr, vcpu);
+          kvm_vcpu_dump_code(vcpu);
         }
         err = handle_hypercall(vcpu);
         if(err == ELKVM_HYPERCALL_EXIT) {
@@ -374,7 +621,7 @@ int Elkvm::VM::run() {
         break;
       case KVM_EXIT_FAIL_ENTRY: {
         ;
-        uint64_t code = vcpu->run_struct->fail_entry.hardware_entry_failure_reason;
+        uint64_t code = vcpu->hardware_entry_failure_reason();
         fprintf(stderr, "KVM: entry failed, hardware error 0x%lx\n",
           code);
         if (host_supports_vmx() && code == VMX_INVALID_GUEST_STATE) {
@@ -398,8 +645,8 @@ int Elkvm::VM::run() {
       case KVM_EXIT_SHUTDOWN:
         fprintf(stderr, "KVM VCPU did shutdown\n");
         is_running = 0;
-        kvm_vcpu_get_regs(vcpu.get());
-        kvm_vcpu_get_sregs(vcpu.get());
+        vcpu->get_regs();
+        vcpu->get_sregs();
         break;
       case KVM_EXIT_DEBUG: {
         /* NO-OP */
@@ -413,20 +660,7 @@ int Elkvm::VM::run() {
       }
       case KVM_EXIT_MMIO:
         fprintf(stderr, "KVM_EXIT_MMIO\n");
-        fprintf(stderr, "\tphys_addr: 0x%llx data[0] %x data[1] %x"
-            " data[2] %x data[3] %x data[4] %x data[5] %x "
-            " data[6] %x data[7] %x len 0x%x write %i\n",
-            vcpu->run_struct->mmio.phys_addr,
-            vcpu->run_struct->mmio.data[0],
-            vcpu->run_struct->mmio.data[1],
-            vcpu->run_struct->mmio.data[2],
-            vcpu->run_struct->mmio.data[3],
-            vcpu->run_struct->mmio.data[4],
-            vcpu->run_struct->mmio.data[5],
-            vcpu->run_struct->mmio.data[6],
-            vcpu->run_struct->mmio.data[7],
-            vcpu->run_struct->mmio.len,
-            vcpu->run_struct->mmio.is_write);
+        vcpu->print_mmio(std::cerr);
         is_running = 0;
         break;
       case KVM_EXIT_WATCHDOG:
@@ -435,16 +669,16 @@ int Elkvm::VM::run() {
         break;
       default:
         fprintf(stderr, "KVM VCPU exit for unknown reason: %i\n",
-            vcpu->run_struct->exit_reason);
+            vcpu->exit_reason());
         is_running = 0;
         break;
     }
 
-    if(  vcpu->run_struct->exit_reason == KVM_EXIT_MMIO ||
-        vcpu->run_struct->exit_reason == KVM_EXIT_SHUTDOWN) {
-      kvm_vcpu_dump_regs(vcpu.get());
-      dump_stack(vcpu.get());
-      kvm_vcpu_dump_code(vcpu.get());
+    if(  vcpu->exit_reason() == KVM_EXIT_MMIO ||
+        vcpu->exit_reason() == KVM_EXIT_SHUTDOWN) {
+      print(std::cerr, vcpu);
+      dump_stack(vcpu);
+      kvm_vcpu_dump_code(vcpu);
     }
 
   }
@@ -490,90 +724,84 @@ void host_cpuid(uint32_t function, uint32_t count,
         *edx = vec[3];
 }
 
-void kvm_vcpu_dump_msr(struct kvm_vcpu *vcpu, uint32_t msr) {
-  uint64_t r;
-  int err = kvm_vcpu_get_msr(vcpu, msr, &r);
-  if(err) {
-    fprintf(stderr, "WARNING: Could not get MSR: 0x%x\n", msr);
-    return;
-  }
-
-  fprintf(stderr, " MSR: 0x%x: 0x%016lx\n", msr, r);
+void kvm_vcpu_dump_msr(std::shared_ptr<VCPU> vcpu, uint32_t msr) {
+  std::cerr << " MSR: 0x" << std::hex << msr << ": 0x" << vcpu->get_msr(msr)
+            << std::endl;
 }
 
-void kvm_vcpu_dump_regs(struct kvm_vcpu *vcpu) {
-  std::cerr << std::endl << " Registers:" << std::endl;
-  std::cerr << " ----------\n";
+std::ostream &print(std::ostream &os, std::shared_ptr<VCPU> vcpu) {
+  os << std::endl << " Registers:" << std::endl;
+  os << " ----------\n";
 
-  std::cerr << PRINT_REGISTER("rip", vcpu->regs.rip)
-            << PRINT_REGISTER("  rsp", vcpu->regs.rsp)
-            << PRINT_REGISTER("  flags", vcpu->regs.rflags)
+  os << PRINT_REGISTER("rip", vcpu->get_reg(Elkvm::Reg_t::rip))
+            << PRINT_REGISTER("  rsp", vcpu->get_reg(Elkvm::Reg_t::rsp))
+            << PRINT_REGISTER("  flags", vcpu->get_reg(Elkvm::Reg_t::rflags))
             << std::endl;
 
-  print_flags(vcpu->regs.rflags);
+  print_flags(vcpu->get_reg(Elkvm::Reg_t::rflags));
 
-  std::cerr << PRINT_REGISTER("rax", vcpu->regs.rax)
-            << PRINT_REGISTER("  rbx", vcpu->regs.rbx)
-            << PRINT_REGISTER("  rcx", vcpu->regs.rcx)
+  os << PRINT_REGISTER("rax", vcpu->get_reg(Elkvm::Reg_t::rax))
+            << PRINT_REGISTER("  rbx", vcpu->get_reg(Elkvm::Reg_t::rbx))
+            << PRINT_REGISTER("  rcx", vcpu->get_reg(Elkvm::Reg_t::rcx))
             << std::endl;
 
-  std::cerr << PRINT_REGISTER("rdx", vcpu->regs.rdx)
-            << PRINT_REGISTER("  rsi", vcpu->regs.rsi)
-            << PRINT_REGISTER("  rdi", vcpu->regs.rdi)
+  os << PRINT_REGISTER("rdx", vcpu->get_reg(Elkvm::Reg_t::rdx))
+            << PRINT_REGISTER("  rsi", vcpu->get_reg(Elkvm::Reg_t::rsi))
+            << PRINT_REGISTER("  rdi", vcpu->get_reg(Elkvm::Reg_t::rdi))
             << std::endl;
 
-  std::cerr << PRINT_REGISTER("rbp", vcpu->regs.rbp)
-            << PRINT_REGISTER("   r8", vcpu->regs.r8)
-            << PRINT_REGISTER("   r9", vcpu->regs.r9)
+  os << PRINT_REGISTER("rbp", vcpu->get_reg(Elkvm::Reg_t::rbp))
+            << PRINT_REGISTER("   r8", vcpu->get_reg(Elkvm::Reg_t::r8))
+            << PRINT_REGISTER("   r9", vcpu->get_reg(Elkvm::Reg_t::r9))
             << std::endl;
 
-  std::cerr << PRINT_REGISTER("r10", vcpu->regs.r10)
-            << PRINT_REGISTER("  r11", vcpu->regs.r11)
-            << PRINT_REGISTER("  r12", vcpu->regs.r12)
+  os << PRINT_REGISTER("r10", vcpu->get_reg(Elkvm::Reg_t::r10))
+            << PRINT_REGISTER("  r11", vcpu->get_reg(Elkvm::Reg_t::r11))
+            << PRINT_REGISTER("  r12", vcpu->get_reg(Elkvm::Reg_t::r12))
             << std::endl;
 
-  std::cerr << PRINT_REGISTER("r13", vcpu->regs.r13)
-            << PRINT_REGISTER("  r14", vcpu->regs.r14)
-            << PRINT_REGISTER("  r15", vcpu->regs.r15)
+  os << PRINT_REGISTER("r13", vcpu->get_reg(Elkvm::Reg_t::r13))
+            << PRINT_REGISTER("  r14", vcpu->get_reg(Elkvm::Reg_t::r14))
+            << PRINT_REGISTER("  r15", vcpu->get_reg(Elkvm::Reg_t::r15))
             << std::endl;
 
-  std::cerr << PRINT_REGISTER("cr0", vcpu->sregs.cr0)
-            << PRINT_REGISTER("  cr2", vcpu->sregs.cr2)
-            << PRINT_REGISTER("  cr3", vcpu->sregs.cr3)
+  os << PRINT_REGISTER("cr0", vcpu->get_reg(Elkvm::Reg_t::cr0))
+            << PRINT_REGISTER("  cr2", vcpu->get_reg(Elkvm::Reg_t::cr2))
+            << PRINT_REGISTER("  cr3", vcpu->get_reg(Elkvm::Reg_t::cr3))
             << std::endl;
 
-  std::cerr << PRINT_REGISTER("cr4", vcpu->sregs.cr4)
-            << PRINT_REGISTER("  cr8", vcpu->sregs.cr8)
+  os << PRINT_REGISTER("cr4", vcpu->get_reg(Elkvm::Reg_t::cr4))
+            << PRINT_REGISTER("  cr8", vcpu->get_reg(Elkvm::Reg_t::cr8))
             << std::endl;
 
-  std::cerr << "\n Segment registers:\n";
-  std::cerr <<   " ------------------\n";
-  std::cerr << " register  selector  base              limit     type  p dpl db s l g avl\n";
+  os << "\n Segment registers:\n";
+  os <<   " ------------------\n";
+  os << " register  selector  base              limit     type  p dpl db s l g avl\n";
 
-  print_segment("cs ", vcpu->sregs.cs);
-  print_segment("ss ", vcpu->sregs.ss);
-  print_segment("ds ", vcpu->sregs.ds);
-  print_segment("es ", vcpu->sregs.es);
-  print_segment("fs ", vcpu->sregs.fs);
-  print_segment("gs ", vcpu->sregs.gs);
-  print_segment("tr ", vcpu->sregs.tr);
-  print_segment("ldt", vcpu->sregs.ldt);
-  print_dtable("gdt",  vcpu->sregs.gdt);
-  print_dtable("idt",  vcpu->sregs.idt);
+  print(os, "cs ", vcpu->get_reg(Elkvm::Seg_t::cs));
+  print(os, "ss ", vcpu->get_reg(Elkvm::Seg_t::ss));
+  print(os, "ds ", vcpu->get_reg(Elkvm::Seg_t::ds));
+  print(os, "es ", vcpu->get_reg(Elkvm::Seg_t::es));
+  print(os, "fs ", vcpu->get_reg(Elkvm::Seg_t::fs));
+  print(os, "gs ", vcpu->get_reg(Elkvm::Seg_t::gs));
+  print(os, "tr ", vcpu->get_reg(Elkvm::Seg_t::tr));
+  print(os, "ldt", vcpu->get_reg(Elkvm::Seg_t::ldt));
+  print(os, "gdt",  vcpu->get_reg(Elkvm::Seg_t::gdt));
+  print(os, "idt",  vcpu->get_reg(Elkvm::Seg_t::idt));
 
-  std::cerr << "\n APIC:\n";
-  std::cerr <<   " -----\n";
-  std::cerr << PRINT_REGISTER("efer", vcpu->sregs.efer)
-            << PRINT_REGISTER("  apic base", vcpu->sregs.apic_base)
+  os << "\n APIC:\n";
+  os <<   " -----\n";
+  os << PRINT_REGISTER("efer", vcpu->get_reg(Elkvm::Reg_t::efer))
+            << PRINT_REGISTER("  apic base", vcpu->get_reg(Elkvm::Reg_t::apic_base))
             << std::endl;
 
-  std::cerr << "\n Interrupt bitmap:\n";
-  std::cerr <<   " -----------------\n";
+  os << "\n Interrupt bitmap:\n";
+  os <<   " -----------------\n";
   for (int i = 0; i < (KVM_NR_INTERRUPTS + 63) / 64; i++)
-    std::cerr << " " << std::setw(16) << std::setfill('0') << vcpu->sregs.interrupt_bitmap[i];
-  std::cerr << std::endl;
+    os << " " << std::setw(16) << std::setfill('0') << vcpu->get_interrupt_bitmap(i);
+  os << std::endl;
 
-  return;
+  return os;
 }
 
 void print_flags(uint64_t flags) {
@@ -591,33 +819,38 @@ void print_flags(uint64_t flags) {
   std::cerr << "]\n";
 }
 
-void print_segment(const std::string name, struct kvm_segment seg)
+std::ostream &print(std::ostream &os, const std::string &name,
+   const Elkvm::Segment &seg)
 {
-  std::cerr << " " << name
+  os << " " << name
     << std::hex
-    << "       " << std::setw(4) << std::setfill('0') << seg.selector
-    << "      "  << std::setw(16) << std::setfill('0') << seg.base
-    << "  "      << std::setw(8) << std::setfill('0') << seg.limit
-    << "  "      << std::setw(2) << std::setfill('0') << static_cast<unsigned>(seg.type)
-    << "    " << static_cast<unsigned>(seg.present)
-    << " "    << static_cast<unsigned>(seg.dpl)
-    << "   "  << static_cast<unsigned>(seg.db)
-    << "  "   << static_cast<unsigned>(seg.s)
-    << " "    << static_cast<unsigned>(seg.l)
-    << " "    << static_cast<unsigned>(seg.g)
-    << " "    << static_cast<unsigned>(seg.avl) << std::endl;
+    << "       " << std::setw(4) << std::setfill('0') << seg.get_selector()
+    << "      "  << std::setw(16) << std::setfill('0') << seg.get_base()
+    << "  "      << std::setw(8) << std::setfill('0') << seg.get_limit()
+    << "  "      << std::setw(2) << std::setfill('0')
+    << static_cast<unsigned>(seg.get_type())
+    << "    " << static_cast<unsigned>(seg.is_present())
+    << " "    << static_cast<unsigned>(seg.get_dpl())
+    << "   "  << static_cast<unsigned>(seg.get_db())
+    << "  "   << static_cast<unsigned>(seg.get_s())
+    << " "    << static_cast<unsigned>(seg.get_l())
+    << " "    << static_cast<unsigned>(seg.get_g())
+    << " "    << static_cast<unsigned>(seg.get_avl()) << std::endl;
+  return os;
 }
 
-void print_dtable(const std::string name, struct kvm_dtable dtable)
+std::ostream &print(std::ostream &os, const std::string &name,
+    struct kvm_dtable dtable)
 {
-  std::cerr << " " << name
+  os << " " << name
     << std::hex
     << "                 " << std::setw(16) << std::setfill('0') << dtable.base
     << "  " << std::setw(8) << std::setfill('0') << dtable.limit
     << std::endl;
+  return os;
 }
 
-void kvm_vcpu_dump_code_at(struct kvm_vcpu *vcpu, uint64_t guest_addr) {
+void kvm_vcpu_dump_code_at(std::shared_ptr<VCPU> vcpu, uint64_t guest_addr) {
   (void)vcpu; (void)guest_addr;
 #ifdef HAVE_LIBUDIS86
   int err = kvm_vcpu_get_next_code_byte(vcpu, guest_addr);
@@ -636,12 +869,13 @@ void kvm_vcpu_dump_code_at(struct kvm_vcpu *vcpu, uint64_t guest_addr) {
 #endif
 }
 
-void kvm_vcpu_dump_code(struct kvm_vcpu *vcpu) {
-  kvm_vcpu_dump_code_at(vcpu, vcpu->regs.rip);
+void kvm_vcpu_dump_code(std::shared_ptr<VCPU> vcpu) {
+  kvm_vcpu_dump_code_at(vcpu, vcpu->get_reg(Elkvm::Reg_t::rip));
 }
 
 #ifdef HAVE_LIBUDIS86
-int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *vcpu, uint64_t guest_addr) {
+int kvm_vcpu_get_next_code_byte(std::shared_ptr<VCPU> vcpu __attribute__((unused)),
+      guestptr_t guest_addr __attribute__((unused))) {
 //  assert(guest_addr != 0x0);
 //  void *host_p = Elkvm::vmi->get_region_manager().get_pager().get_host_p(guest_addr);
 //  assert(host_p != NULL);
@@ -649,9 +883,10 @@ int kvm_vcpu_get_next_code_byte(struct kvm_vcpu *vcpu, uint64_t guest_addr) {
 //  ud_set_input_buffer(&vcpu->ud_obj, (const uint8_t *)host_p, disassembly_size);
 //
 //  return 0;
+  return -1;
 }
 
-void elkvm_init_udis86(struct kvm_vcpu *vcpu, int mode) {
+void elkvm_init_udis86(std::shared_ptr<VCPU> vcpu, int mode) {
   ud_init(&vcpu->ud_obj);
   switch(mode) {
     case VM_MODE_X86_64:
@@ -661,7 +896,3 @@ void elkvm_init_udis86(struct kvm_vcpu *vcpu, int mode) {
 }
 
 #endif
-
-int kvm_vcpu_had_page_fault(struct kvm_vcpu *vcpu) {
-  return vcpu->sregs.cr2 != 0x0;
-}

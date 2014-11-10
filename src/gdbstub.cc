@@ -38,6 +38,7 @@
 #include <elkvm/elkvm-internal.h>
 #include <elkvm/debug.h>
 #include <elkvm/pager.h>
+#include <elkvm/regs.h>
 #include <elkvm/region_manager.h>
 
 #define NEED_CPU_REG_SHORTCUTS 1
@@ -257,7 +258,7 @@ static void debug_loop(std::shared_ptr<Elkvm::VM> vm) {
   char buffer[255];
   char obuf[1024];
   int ne = 0;
-  struct kvm_vcpu *vcpu = vm->vcpu_get(0);
+  std::shared_ptr<VCPU> vcpu = vm->get_vcpu(0);
 
   while (ne == 0)
   {
@@ -289,10 +290,10 @@ static void debug_loop(std::shared_ptr<Elkvm::VM> vm) {
 
           printf("continuing at 0x%lx\n", new_rip);
 
-          saved_eip = vcpu->regs.rip;
+          saved_eip = vcpu->get_reg(Elkvm::Reg_t::rip);
           //BX_CPU_THIS_PTR gen_reg[BX_32BIT_REG_EIP].dword.erx = new_eip;
           //TODO reset the rip, set kvm_regs
-          vcpu->regs.rip = new_rip;
+          vcpu->set_reg(Elkvm::Reg_t::rip, new_rip);
         }
 
         vm->run();
@@ -315,10 +316,10 @@ static void debug_loop(std::shared_ptr<Elkvm::VM> vm) {
       {
         char buf[255];
 
-        struct kvm_vcpu *vcpu = vm->vcpu_get(0);
-        elkvm_debug_singlestep(vcpu);
+        std::shared_ptr<VCPU> vcpu = vm->get_vcpu(0);
+        vcpu->singlestep();
         vm->run();
-        elkvm_debug_singlestep_off(vcpu);
+        vcpu->singlestep_off();
 
         buf[0] = 'S';
         write_signal(&buf[1], SIGTRAP);
@@ -340,9 +341,8 @@ static void debug_loop(std::shared_ptr<Elkvm::VM> vm) {
 
         void *host_p = vm->get_region_manager()->get_pager().get_host_p(addr);
         memcpy(host_p, mem, len);
-        struct kvm_vcpu *vcpu = vm->vcpu_get(0);
-        vcpu->debug.control |= KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_USE_SW_BP;
-        int err = elkvm_set_guest_debug(vcpu);
+        std::shared_ptr<VCPU> vcpu = vm->get_vcpu(0);
+        int err = vcpu->enable_software_breakpoints();
         assert(err == 0 && "could not set guest debug mode");
         put_reply("OK");
 
@@ -438,50 +438,52 @@ static void debug_loop(std::shared_ptr<Elkvm::VM> vm) {
          (buf) = mem2hex((const Bit8u*)&u, (buf), (len)); \
       } while (0)
         char* buf = obuf;
-        PUTREG(buf, vcpu->regs.rax, 8);
-        PUTREG(buf, vcpu->regs.rbx, 8);
-        PUTREG(buf, vcpu->regs.rcx, 8);
-        PUTREG(buf, vcpu->regs.rdx, 8);
-        PUTREG(buf, vcpu->regs.rsi, 8);
-        PUTREG(buf, vcpu->regs.rdi, 8);
-        PUTREG(buf, vcpu->regs.rbp, 8);
-        if(vcpu->regs.rip < 0xffff800000000000) {
-          PUTREG(buf, vcpu->regs.rsp, 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::rax), 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::rbx), 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::rcx), 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::rdx), 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::rsi), 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::rdi), 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::rbp), 8);
+        if(vcpu->get_reg(Elkvm::Reg_t::rip) < 0xffff800000000000) {
+          PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::rsp), 8);
         } else {
           /* in kernel mode, figure out the real stack and return that
            * this really helps with backtraces (hopefully) */
           guestptr_t *sf = reinterpret_cast<guestptr_t *>(
-              vm->get_region_manager()->get_pager().get_host_p(vcpu->regs.rsp + 24)
+              vm->get_region_manager()->get_pager().get_host_p(
+                vcpu->get_reg(Elkvm::Reg_t::rsp) + 24)
               );
           guestptr_t real_rsp = *sf;
           PUTREG(buf, real_rsp, 8);
         }
-        PUTREG(buf, vcpu->regs.r8,  8);
-        PUTREG(buf, vcpu->regs.r9,  8);
-        PUTREG(buf, vcpu->regs.r10, 8);
-        PUTREG(buf, vcpu->regs.r11, 8);
-        PUTREG(buf, vcpu->regs.r12, 8);
-        PUTREG(buf, vcpu->regs.r13, 8);
-        PUTREG(buf, vcpu->regs.r14, 8);
-        PUTREG(buf, vcpu->regs.r15, 8);
-        if(vcpu->regs.rip < 0xffff800000000000) {
-          PUTREG(buf, vcpu->regs.rip, 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::r8),  8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::r9),  8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::r10), 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::r11), 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::r12), 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::r13), 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::r14), 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::r15), 8);
+        if(vcpu->get_reg(Elkvm::Reg_t::rip) < 0xffff800000000000) {
+          PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::rip), 8);
         } else {
           /* in kernel mode, figure out the real stack and return that
            * this really helps with backtraces (hopefully) */
           guestptr_t *sf = reinterpret_cast<guestptr_t *>(
-              vm->get_region_manager()->get_pager().get_host_p(vcpu->regs.rsp)
-              );
+              vm->get_region_manager()->get_pager().get_host_p(
+                vcpu->get_reg(Elkvm::Reg_t::rsp))
+                );
           guestptr_t real_rip = *sf;
           PUTREG(buf, real_rip, 8);
         }
-        PUTREG(buf, vcpu->regs.rflags, 8);
-        PUTREG(buf, vcpu->sregs.cs.base, 8);
-        PUTREG(buf, vcpu->sregs.ss.base, 8);
-        PUTREG(buf, vcpu->sregs.ds.base, 8);
-        PUTREG(buf, vcpu->sregs.es.base, 8);
-        PUTREG(buf, vcpu->sregs.fs.base, 8);
-        PUTREG(buf, vcpu->sregs.gs.base, 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::rflags), 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Seg_t::cs).get_base(), 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Seg_t::ss).get_base(), 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Seg_t::ds).get_base(), 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Seg_t::es).get_base(), 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Seg_t::fs).get_base(), 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Seg_t::gs).get_base(), 8);
         put_reply(obuf);
         break;
       }

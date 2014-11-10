@@ -98,11 +98,11 @@ namespace Elkvm {
     return false;
   }
 
-  void Elkvm::VM::dump_stack(struct kvm_vcpu *vcpu) {
-    assert(vcpu->regs.rsp != 0x0);
+  void Elkvm::VM::dump_stack(std::shared_ptr<VCPU> vcpu) {
+    assert(vcpu->get_reg(Elkvm::Reg_t::rsp) != 0x0);
     std::cerr << "\n Stack:\n";
     std::cerr <<   " ------\n";
-    dump_memory(vcpu->regs.rsp);
+    dump_memory(vcpu->get_reg(Elkvm::Reg_t::rsp));
   }
 
 //namespace Elkvm

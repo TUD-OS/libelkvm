@@ -34,44 +34,18 @@ namespace Elkvm {
     syscall_handlers   = handlers;
   }
 
-  int VM::add_cpu(int mode) {
-    std::shared_ptr<struct kvm_vcpu> vcpu =
-      std::make_shared<struct kvm_vcpu>(_rm);
+  int VM::add_cpu() {
+    std::shared_ptr<VCPU> vcpu =
+      std::make_shared<VCPU>(_rm, _vmfd, cpus.size());
 
     if(vcpu == NULL) {
       return -ENOMEM;
     }
 
-    memset(&vcpu->regs, 0, sizeof(struct kvm_regs));
-    memset(&vcpu->sregs, 0, sizeof(struct kvm_sregs));
-    vcpu->singlestep = 0;
-
-    vcpu->fd = ioctl(_vmfd, KVM_CREATE_VCPU, cpus.size());
-    if(vcpu->fd <= 0) {
-      return -errno;
-    }
-
-    int err = kvm_vcpu_initialize_regs(vcpu.get(), mode);
-    if(err) {
-      return err;
-    }
-
-    vcpu->init_rsp();
-
-    vcpu->run_struct = reinterpret_cast<struct kvm_run *>(
-        mmap(NULL, sizeof(struct kvm_run), PROT_READ | PROT_WRITE,
-        MAP_SHARED, vcpu->fd, 0));
-    if(vcpu->run_struct == NULL) {
-      return -ENOMEM;
-    }
-
-#ifdef HAVE_LIBUDIS86
-    elkvm_init_udis86(vcpu.get(), mode);
-#endif
-
     cpus.push_back(vcpu);
 
-    kvm_vcpu_set_regs(vcpu.get());
+    vcpu->set_regs();
+    vcpu->set_sregs();
     return 0;
   }
 
@@ -136,7 +110,7 @@ namespace Elkvm {
     return 0;
   }
 
-  std::shared_ptr<struct kvm_vcpu> VM::get_vcpu(int num) const {
+  std::shared_ptr<VCPU> VM::get_vcpu(int num) const {
     return cpus.at(num);
   }
 
@@ -162,15 +136,9 @@ namespace Elkvm {
 #endif
 
   /* TODO: Should be a function of the vCPU */
-  unsigned get_hypercall_type(std::shared_ptr<struct kvm_vcpu> vcpu)
+  unsigned get_hypercall_type(std::shared_ptr<VCPU> vcpu)
   {
     return vcpu->pop();
-  }
-
-  /* TODO: Should be a function of the vCPU */
-  int VM::set_entry_point(guestptr_t rip)
-  {
-    return kvm_vcpu_set_rip(cpus.front().get(), rip);
   }
 
   //namespace Elkvm
