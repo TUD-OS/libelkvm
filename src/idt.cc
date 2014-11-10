@@ -13,10 +13,11 @@
 #include <elkvm/idt.h>
 #include <elkvm/pager.h>
 #include <elkvm/region.h>
+#include <elkvm/regs.h>
 #include <elkvm/vcpu.h>
 
-int elkvm_idt_setup(Elkvm::RegionManager &rm, 
-    std::shared_ptr<kvm_vcpu> vcpu,
+int elkvm_idt_setup(Elkvm::RegionManager &rm,
+    std::shared_ptr<VCPU> vcpu,
     Elkvm::elkvm_flat *default_handler) {
   std::shared_ptr<Elkvm::Region> idt_region =
     rm.allocate_region(
@@ -48,10 +49,10 @@ int elkvm_idt_setup(Elkvm::RegionManager &rm,
   assert(guest_virtual != 0x0);
   idt_region->set_guest_addr(guest_virtual);
 
-	vcpu->sregs.idt.base = idt_region->guest_address();
-	vcpu->sregs.idt.limit = 0xFFF;
+  Elkvm::Segment idt(idt_region->guest_address(), 0xFFF);
+  vcpu->set_reg(Elkvm::Seg_t::idt, idt);
 
-	int err = kvm_vcpu_set_sregs(vcpu.get());
+	int err = vcpu->set_sregs();
 
 	return err;
 }

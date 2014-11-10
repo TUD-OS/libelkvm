@@ -24,7 +24,7 @@ namespace Elkvm {
 
     public:
       Stack(std::shared_ptr<RegionManager> rm);
-      void init(std::shared_ptr<struct kvm_vcpu> v, const Environment &e,
+      void init(std::shared_ptr<VCPU> v, const Environment &e,
           std::shared_ptr<RegionManager> rm);
       int pushq(guestptr_t rsp, uint64_t val);
       uint64_t popq(guestptr_t rsp);
@@ -35,7 +35,7 @@ namespace Elkvm {
       int expand();
   };
 
-  //void dump_stack(VM &vmi, struct kvm_vcpu *vcpu);
+  //void dump_stack(VM &vmi, std::shared_ptr<VCPU> vcpu);
 
 //namespace Elkvm
 }

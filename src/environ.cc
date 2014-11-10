@@ -88,7 +88,7 @@ namespace Elkvm {
     assert(all_set == 0x1F && "elf auxv is complete");
   }
 
-  off64_t Environment::push_auxv(std::shared_ptr<struct kvm_vcpu> vcpu, char **env_p) {
+  off64_t Environment::push_auxv(std::shared_ptr<VCPU> vcpu, char **env_p) {
     unsigned count = calc_auxv_num_and_set_auxv(env_p);
 
     off64_t offset = 0;
@@ -142,7 +142,7 @@ namespace Elkvm {
     return offset;
   }
 
-  off64_t Environment::push_str_copy(std::shared_ptr<struct kvm_vcpu> vcpu,
+  off64_t Environment::push_str_copy(std::shared_ptr<VCPU> vcpu,
       off64_t offset, std::string str) const {
     char *target = reinterpret_cast<char *>(region->base_address()) + offset;
     guestptr_t guest_virtual = region->guest_address() + offset;
@@ -154,7 +154,7 @@ namespace Elkvm {
     return bytes;
   }
 
-  int Environment::copy_and_push_str_arr_p(std::shared_ptr<struct kvm_vcpu> vcpu,
+  int Environment::copy_and_push_str_arr_p(std::shared_ptr<VCPU> vcpu,
       off64_t offset, char **str) const {
     if(str == NULL) {
       return 0;
@@ -189,8 +189,8 @@ namespace Elkvm {
 
 
 int Environment::fill(Elkvm::elkvm_opts *opts,
-    std::shared_ptr<struct kvm_vcpu> vcpu) {
-  int err = kvm_vcpu_get_regs(vcpu.get());
+    std::shared_ptr<VCPU> vcpu) {
+  int err = vcpu->get_regs();
   assert(err == 0 && "error getting vcpu");
 
   off64_t bytes = push_auxv(vcpu, opts->environ);
@@ -216,7 +216,7 @@ int Environment::fill(Elkvm::elkvm_opts *opts,
   /* at last push argc on the stack */
   vcpu->push(opts->argc);
 
-  err = kvm_vcpu_set_regs(vcpu.get());
+  err = vcpu->set_regs();
   return err;
 }
 

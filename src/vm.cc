@@ -61,7 +61,7 @@ elkvm_vm_create(Elkvm::elkvm_opts *opts,
   std::shared_ptr<Elkvm::VM> vmi(&Elkvm::vmi.back());
 
   for(unsigned i = 0; i < cpus; i++) {
-    err = vmi->add_cpu(mode);
+    err = vmi->add_cpu();
     if(err) {
     errno = -err;
       return NULL;
@@ -70,13 +70,12 @@ elkvm_vm_create(Elkvm::elkvm_opts *opts,
 
   Elkvm::ElfBinary bin(binary, vmi->get_region_manager(), vmi->get_heap_manager());
 
+  auto vcpu = vmi->get_vcpu(0);
   guestptr_t entry = bin.get_entry_point();
-  err = vmi->set_entry_point(entry);
-  assert(err == 0);
+  vcpu->set_entry_point(entry);
 
   Elkvm::Environment env(bin, vmi->get_region_manager());
 
-  std::shared_ptr<struct kvm_vcpu> vcpu = vmi->get_vcpu(0);
 
   /* gets and sets vcpu->regs */
   err = env.fill(opts, vcpu);
@@ -124,10 +123,7 @@ elkvm_vm_create(Elkvm::elkvm_opts *opts,
   /*
    * setup the lstar register with the syscall handler
    */
-  err = kvm_vcpu_set_msr(vmi->get_vcpu(0).get(),
-                         VCPU_MSR_LSTAR,
-                         sysenter.region->guest_address());
-  assert(err == 0);
+  vcpu->set_msr(VCPU_MSR_LSTAR, sysenter.region->guest_address());
 
   vmi->init_rlimits();
 
@@ -190,9 +186,10 @@ int Elkvm::VM::chunk_remap(int num, size_t newsize) {
   return 0;
 }
 
-void elkvm_emulate_vmcall(struct kvm_vcpu *vcpu) {
+void elkvm_emulate_vmcall(std::shared_ptr<VCPU> vcpu) {
   /* INTEL VMCALL instruction is three bytes long */
-  vcpu->regs.rip +=3;
+  CURRENT_ABI::paramtype rip = vcpu->get_reg(Elkvm::Reg_t::rip);
+  vcpu->set_reg(Elkvm::Reg_t::rip, rip += 3);
 }
 
 int elkvm_dump_valid_msrs(Elkvm::elkvm_opts *opts) {

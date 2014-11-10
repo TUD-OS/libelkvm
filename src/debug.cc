@@ -31,25 +31,30 @@ int elkvm_handle_debug(Elkvm::VM *vm) {
   return handled;
 }
 
-int elkvm_debug_enable(struct kvm_vcpu *vcpu) {
-  vcpu->debug.control |= KVM_GUESTDBG_ENABLE;
+int VCPU::enable_debug() {
+  debug.control |= KVM_GUESTDBG_ENABLE;
 
-  return elkvm_set_guest_debug(vcpu);
+  return set_debug();
 }
 
-int elkvm_debug_singlestep(struct kvm_vcpu *vcpu) {
-  vcpu->debug.control |= KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_SINGLESTEP;
-  vcpu->singlestep = 1;
+int VCPU::singlestep() {
+  debug.control |= KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_SINGLESTEP;
+  is_singlestepping = true;
 
-  return elkvm_set_guest_debug(vcpu);
+  return set_debug();
 }
 
-int elkvm_debug_singlestep_off(struct kvm_vcpu *vcpu) {
-  vcpu->debug.control &= ~KVM_GUESTDBG_SINGLESTEP;
-  vcpu->singlestep = 0;
-  return elkvm_set_guest_debug(vcpu);
+int VCPU::singlestep_off() {
+  debug.control &= ~KVM_GUESTDBG_SINGLESTEP;
+  is_singlestepping = false;
+  return set_debug();
 }
 
-int elkvm_set_guest_debug(struct kvm_vcpu *vcpu) {
-  return ioctl(vcpu->fd, KVM_SET_GUEST_DEBUG, &vcpu->debug);
+int VCPU::set_debug() {
+  return ioctl(fd, KVM_SET_GUEST_DEBUG, &debug);
+}
+
+int VCPU::enable_software_breakpoints() {
+  debug.control |= KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_USE_SW_BP;
+  return set_debug();
 }
