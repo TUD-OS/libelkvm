@@ -21,6 +21,7 @@ class VCPU {
 
     struct kvm_run *run_struct;
 
+    Elkvm::Stack stack;
     /*
       Initialize a VCPU's registers according to mode
     */
@@ -28,7 +29,6 @@ class VCPU {
 
 
   public:
-  Elkvm::Stack stack;
 #ifdef HAVE_LIBUDIS86
   ud_t ud_obj;
 #endif
