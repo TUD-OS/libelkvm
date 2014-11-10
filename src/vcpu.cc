@@ -493,9 +493,9 @@ int Elkvm::VM::run() {
 
     switch(vcpu->exit_reason()) {
       case KVM_EXIT_UNKNOWN:
-        fprintf(stderr, "KVM exit for unknown reason (KVM_EXIT_UNKNOWN)\n");
-        fprintf(stderr, "Hardware exit reason: %llu\n",
-            vcpu->hardware_exit_reason());
+        std::cerr << "KVM exit for unknown reason (KVM_EXIT_UNKNOWN)\n"
+                  << " Hardware exit reason: " << std::dec
+                  << vcpu->exit_reason() << std::endl;
         is_running = 0;
         break;
       case KVM_EXIT_HYPERCALL:
@@ -619,7 +619,8 @@ void host_cpuid(uint32_t function, uint32_t count,
 }
 
 void kvm_vcpu_dump_msr(std::shared_ptr<VCPU> vcpu, uint32_t msr) {
-  fprintf(stderr, " MSR: 0x%x: 0x%016lx\n", vcpu->get_msr(msr));
+  std::cerr << " MSR: 0x" << std::hex << msr << ": 0x" << vcpu->get_msr(msr)
+            << std::endl;
 }
 
 std::ostream &print(std::ostream &os, std::shared_ptr<VCPU> vcpu) {
@@ -765,7 +766,8 @@ void kvm_vcpu_dump_code(std::shared_ptr<VCPU> vcpu) {
 }
 
 #ifdef HAVE_LIBUDIS86
-int kvm_vcpu_get_next_code_byte(std::shared_ptr<VCPU> vcpu, uint64_t guest_addr) {
+int kvm_vcpu_get_next_code_byte(std::shared_ptr<VCPU> vcpu __attribute__((unused)),
+      guestptr_t guest_addr __attribute__((unused))) {
 //  assert(guest_addr != 0x0);
 //  void *host_p = Elkvm::vmi->get_region_manager().get_pager().get_host_p(guest_addr);
 //  assert(host_p != NULL);
@@ -773,6 +775,7 @@ int kvm_vcpu_get_next_code_byte(std::shared_ptr<VCPU> vcpu, uint64_t guest_addr)
 //  ud_set_input_buffer(&vcpu->ud_obj, (const uint8_t *)host_p, disassembly_size);
 //
 //  return 0;
+  return -1;
 }
 
 void elkvm_init_udis86(std::shared_ptr<VCPU> vcpu, int mode) {
