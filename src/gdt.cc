@@ -18,7 +18,8 @@
 int elkvm_gdt_setup(Elkvm::RegionManager &rm, std::shared_ptr<VCPU> vcpu) {
   std::shared_ptr<Elkvm::Region> gdt_region =
     rm.allocate_region(
-				GDT_NUM_ENTRIES * sizeof(struct elkvm_gdt_segment_descriptor));
+				GDT_NUM_ENTRIES * sizeof(struct elkvm_gdt_segment_descriptor),
+				"ELKVM GDT");
 
   guestptr_t guest_virtual =
     rm.get_pager().map_kernel_page(
@@ -60,7 +61,7 @@ int elkvm_gdt_setup(Elkvm::RegionManager &rm, std::shared_ptr<VCPU> vcpu) {
 
   std::shared_ptr<Elkvm::Region> tss_region =
     rm.allocate_region(
-      sizeof(struct elkvm_tss64));
+      sizeof(struct elkvm_tss64), "ELKVM TSS");
 	/* setup the tss, before loading the segment descriptor */
 	int err = elkvm_tss_setup64(vcpu, rm, tss_region);
 	if(err) {
