@@ -275,6 +275,51 @@ void VCPU::set_msr(uint32_t idx, CURRENT_ABI::paramtype data) {
   assert(err >= 0 && "error setting msr");
 }
 
+Elkvm::Segment VCPU::get_reg(struct kvm_dtable *ptr) {
+  return Elkvm::Segment(ptr->base, ptr->limit);
+}
+
+Elkvm::Segment VCPU::get_reg(struct kvm_segment *ptr) {
+  return Elkvm::Segment(ptr->selector,
+            ptr->base,
+            ptr->limit,
+            ptr->type,
+            ptr->present,
+            ptr->dpl,
+            ptr->db,
+            ptr->s,
+            ptr->l,
+            ptr->g,
+            ptr->avl);
+}
+
+Elkvm::Segment VCPU::get_reg(Elkvm::Seg_t segtype) {
+  switch(segtype) {
+    case Elkvm::Seg_t::cs:
+      return get_reg(&sregs.cs);
+    case Elkvm::Seg_t::ds:
+      return get_reg(&sregs.ds);
+    case Elkvm::Seg_t::es:
+      return get_reg(&sregs.es);
+    case Elkvm::Seg_t::fs:
+      return get_reg(&sregs.fs);
+    case Elkvm::Seg_t::gs:
+      return get_reg(&sregs.gs);
+    case Elkvm::Seg_t::ss:
+      return get_reg(&sregs.ss);
+    case Elkvm::Seg_t::tr:
+      return get_reg(&sregs.tr);
+    case Elkvm::Seg_t::ldt:
+      return get_reg(&sregs.ldt);
+    case Elkvm::Seg_t::gdt:
+      return get_reg(&sregs.gdt);
+    case Elkvm::Seg_t::idt:
+      return get_reg(&sregs.idt);
+    default:
+      assert(false);
+  }
+}
+
 void VCPU::set_reg(Elkvm::Seg_t segtype, const Elkvm::Segment &seg) {
   switch(segtype) {
     case Elkvm::Seg_t::cs:

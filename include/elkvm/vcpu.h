@@ -91,6 +91,8 @@ class VCPU {
 
     void set_reg(struct kvm_dtable *ptr, const Elkvm::Segment &seg);
     void set_reg(struct kvm_segment *ptr, const Elkvm::Segment &seg);
+    Elkvm::Segment get_reg(struct kvm_dtable *ptr);
+    Elkvm::Segment get_reg(struct kvm_segment *ptr);
 
     /* internal debugging stuff */
     struct kvm_guest_debug debug;
@@ -127,6 +129,7 @@ class VCPU {
      * get and set single registers
      */
     CURRENT_ABI::paramtype get_reg(Elkvm::Reg_t reg);
+    Elkvm::Segment get_reg(Elkvm::Seg_t seg);
     void set_reg(Elkvm::Reg_t reg, CURRENT_ABI::paramtype val);
     void set_reg(Elkvm::Seg_t seg, const Elkvm::Segment &s);
     void set_entry_point(guestptr_t rip);

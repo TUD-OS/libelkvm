@@ -478,12 +478,12 @@ static void debug_loop(std::shared_ptr<Elkvm::VM> vm) {
           PUTREG(buf, real_rip, 8);
         }
         PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::rflags), 8);
-        PUTREG(buf, vcpu->sregs.cs.base, 8);
-        PUTREG(buf, vcpu->sregs.ss.base, 8);
-        PUTREG(buf, vcpu->sregs.ds.base, 8);
-        PUTREG(buf, vcpu->sregs.es.base, 8);
-        PUTREG(buf, vcpu->sregs.fs.base, 8);
-        PUTREG(buf, vcpu->sregs.gs.base, 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Seg_t::cs).get_base(), 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Seg_t::ss).get_base(), 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Seg_t::ds).get_base(), 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Seg_t::es).get_base(), 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Seg_t::fs).get_base(), 8);
+        PUTREG(buf, vcpu->get_reg(Elkvm::Seg_t::gs).get_base(), 8);
         put_reply(obuf);
         break;
       }
