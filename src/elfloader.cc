@@ -211,7 +211,7 @@ namespace Elkvm {
 
     size_t total_size = phdr.p_memsz + offset_in_page(load_addr);
     std::shared_ptr<Region> loadable_region =
-      _rm->allocate_region(total_size);
+      _rm->allocate_region(total_size, "ELF PHdr");
     loadable_region->set_guest_addr(page_begin(load_addr));
 
     int err = load_program_header(phdr, loadable_region);

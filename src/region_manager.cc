@@ -9,7 +9,7 @@
 
 namespace Elkvm {
   RegionManager::RegionManager(int vmfd) : pager(vmfd) {
-    auto sysregion = allocate_region(ELKVM_PAGER_MEMSIZE);
+    auto sysregion = allocate_region(ELKVM_PAGER_MEMSIZE, "ELKVM Pager Memory");
     pager.set_pml4(sysregion);
   }
 
@@ -23,11 +23,11 @@ namespace Elkvm {
     std::cout << std::endl << std::endl;
   }
 
-  std::shared_ptr<Region> RegionManager::allocate_region(size_t size) {
+  std::shared_ptr<Region> RegionManager::allocate_region(size_t size, char const* purpose) {
     auto r = find_free_region(size);
 
     if(r == nullptr) {
-      int err = add_chunk(size);
+      int err = add_chunk(size, purpose);
       assert(err == 0 && "could not allocate memory for new region");
 
       r = find_free_region(size);
@@ -35,7 +35,7 @@ namespace Elkvm {
     }
 
     if(r->size() > pagesize_align(size)) {
-      auto new_region = r->slice_begin(size);
+      auto new_region = r->slice_begin(size, purpose);
       add_free_region(r);
       r = new_region;
     }
@@ -83,7 +83,7 @@ namespace Elkvm {
     return *r;
   }
 
-  int RegionManager::add_chunk(const size_t size) {
+  int RegionManager::add_chunk(const size_t size, char const* purpose) {
     void *chunk_p;
     const size_t grow_size = size > ELKVM_SYSTEM_MEMGROW ?
       pagesize_align(size) : ELKVM_SYSTEM_MEMGROW;
@@ -96,7 +96,7 @@ namespace Elkvm {
     }
 
     auto idx = get_freelist_idx(grow_size);
-    freelists[idx].push_back(std::make_shared<Region>(chunk_p, grow_size));
+    freelists[idx].push_back(std::make_shared<Region>(chunk_p, grow_size, purpose));
     return 0;
   }
 
