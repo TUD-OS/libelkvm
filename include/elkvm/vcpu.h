@@ -86,6 +86,7 @@ class VCPU {
      */
     int fd;
     struct kvm_regs regs;
+    struct kvm_sregs sregs;
 
     struct kvm_run *run_struct;
 
@@ -110,7 +111,6 @@ class VCPU {
 #ifdef HAVE_LIBUDIS86
   ud_t ud_obj;
 #endif
-  struct kvm_sregs sregs;
 
     VCPU(std::shared_ptr<Elkvm::RegionManager> rm, int vmfd, unsigned cpu_num);
     /*
