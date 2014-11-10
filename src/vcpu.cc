@@ -101,6 +101,10 @@ int VCPU::set_sregs() {
   return 0;
 }
 
+CURRENT_ABI::paramtype VCPU::get_interrupt_bitmap(unsigned idx) {
+  return sregs.interrupt_bitmap[idx];
+}
+
 CURRENT_ABI::paramtype VCPU::get_reg(Elkvm::Reg_t reg) {
   switch(reg) {
     case Elkvm::Reg_t::rax:
@@ -794,7 +798,7 @@ std::ostream &print(std::ostream &os, std::shared_ptr<VCPU> vcpu) {
   os << "\n Interrupt bitmap:\n";
   os <<   " -----------------\n";
   for (int i = 0; i < (KVM_NR_INTERRUPTS + 63) / 64; i++)
-    os << " " << std::setw(16) << std::setfill('0') << vcpu->sregs.interrupt_bitmap[i];
+    os << " " << std::setw(16) << std::setfill('0') << vcpu->get_interrupt_bitmap(i);
   os << std::endl;
 
   return os;

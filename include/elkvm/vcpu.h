@@ -130,6 +130,7 @@ class VCPU {
      */
     CURRENT_ABI::paramtype get_reg(Elkvm::Reg_t reg);
     Elkvm::Segment get_reg(Elkvm::Seg_t seg);
+    CURRENT_ABI::paramtype get_interrupt_bitmap(unsigned idx);
     void set_reg(Elkvm::Reg_t reg, CURRENT_ABI::paramtype val);
     void set_reg(Elkvm::Seg_t seg, const Elkvm::Segment &s);
     void set_entry_point(guestptr_t rip);
