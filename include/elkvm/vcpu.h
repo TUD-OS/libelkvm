@@ -13,19 +13,91 @@
 #include <udis86.h>
 #endif
 
+namespace Elkvm {
+
+class Segment {
+  CURRENT_ABI::paramtype _selector;
+  CURRENT_ABI::paramtype _base;
+  CURRENT_ABI::paramtype _limit;
+  CURRENT_ABI::paramtype _type;
+  CURRENT_ABI::paramtype _present;
+  CURRENT_ABI::paramtype _dpl;
+  CURRENT_ABI::paramtype _db;
+  CURRENT_ABI::paramtype _s;
+  CURRENT_ABI::paramtype _l;
+  CURRENT_ABI::paramtype _g;
+  CURRENT_ABI::paramtype _avl;
+
+  public:
+    Segment(CURRENT_ABI::paramtype base,
+            CURRENT_ABI::paramtype limit) :
+      _base(base),
+      _limit(limit) {}
+
+    Segment(CURRENT_ABI::paramtype selector,
+            CURRENT_ABI::paramtype base,
+            CURRENT_ABI::paramtype limit,
+            CURRENT_ABI::paramtype type,
+            CURRENT_ABI::paramtype present,
+            CURRENT_ABI::paramtype dpl,
+            CURRENT_ABI::paramtype db,
+            CURRENT_ABI::paramtype s,
+            CURRENT_ABI::paramtype l,
+            CURRENT_ABI::paramtype g,
+            CURRENT_ABI::paramtype avl) :
+      _selector(selector),
+      _base(base),
+      _limit(limit),
+      _type(type),
+      _present(present),
+      _dpl(dpl),
+      _db(db),
+      _s(s),
+      _l(l),
+      _g(g),
+      _avl(avl) {}
+
+    CURRENT_ABI::paramtype get_selector() const { return _selector; }
+    CURRENT_ABI::paramtype get_base() const { return _base; }
+    CURRENT_ABI::paramtype get_limit() const { return _limit; }
+    CURRENT_ABI::paramtype get_type() const { return _type; }
+    CURRENT_ABI::paramtype is_present() const { return _present; }
+    CURRENT_ABI::paramtype get_dpl() const { return _dpl; }
+    CURRENT_ABI::paramtype get_db() const { return _db; }
+    CURRENT_ABI::paramtype get_s() const { return _s; }
+    CURRENT_ABI::paramtype get_l() const { return _l; }
+    CURRENT_ABI::paramtype get_g() const { return _g; }
+    CURRENT_ABI::paramtype get_avl() const { return _avl; }
+
+    void set_base(CURRENT_ABI::paramtype base) {
+      _base = base;
+    }
+};
+
+//namespace Elkvm
+}
+
 class VCPU {
   private:
-    int fd;
     bool is_singlestepping;
+
+    /* internal kvm-specific stuff
+     * TODO move this to some hypervisor abstraction
+     */
+    int fd;
     struct kvm_regs regs;
 
     struct kvm_run *run_struct;
+
+    void set_reg(struct kvm_dtable *ptr, const Elkvm::Segment &seg);
+    void set_reg(struct kvm_segment *ptr, const Elkvm::Segment &seg);
 
     /* internal debugging stuff */
     struct kvm_guest_debug debug;
     int set_debug();
 
     Elkvm::Stack stack;
+
     /*
       Initialize a VCPU's registers according to mode
     */
@@ -56,6 +128,7 @@ class VCPU {
      */
     CURRENT_ABI::paramtype get_reg(Elkvm::Reg_t reg);
     void set_reg(Elkvm::Reg_t reg, CURRENT_ABI::paramtype val);
+    void set_reg(Elkvm::Seg_t seg, const Elkvm::Segment &s);
     void set_entry_point(guestptr_t rip);
 
     /* MSRs */

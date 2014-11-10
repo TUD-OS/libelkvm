@@ -11,6 +11,7 @@
 #include <elkvm/gdt.h>
 #include <elkvm/region.h>
 #include <elkvm/region_manager.h>
+#include <elkvm/regs.h>
 #include <elkvm/tss.h>
 #include <elkvm/vcpu.h>
 
@@ -114,12 +115,21 @@ int elkvm_gdt_setup(Elkvm::RegionManager &rm, std::shared_ptr<VCPU> vcpu) {
 		return err;
 	}
 
-	vcpu->sregs.gdt.base = gdt_region->guest_address();
-	vcpu->sregs.gdt.limit = GDT_NUM_ENTRIES * 8 - 1;
+  Elkvm::Segment gdt(gdt_region->guest_address(), GDT_NUM_ENTRIES * 8 - 1);
+  vcpu->set_reg(Elkvm::Seg_t::gdt, gdt);
 
-	vcpu->sregs.tr.base = tss_region->guest_address();
-	vcpu->sregs.tr.limit = sizeof(struct elkvm_tss64);
-	vcpu->sregs.tr.selector = tr_selector;
+  Elkvm::Segment tr(tr_selector,
+      tss_region->guest_address(),
+      sizeof(struct elkvm_tss64),
+      0xb,
+      0x1,
+      0x0,
+      0x0,
+      0x0,
+      0x1,
+      0x0,
+      0x0);
+  vcpu->set_reg(Elkvm::Seg_t::tr, tr);
 
 	err = vcpu->set_sregs();
 	if(err) {

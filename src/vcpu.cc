@@ -275,6 +275,63 @@ void VCPU::set_msr(uint32_t idx, CURRENT_ABI::paramtype data) {
   assert(err >= 0 && "error setting msr");
 }
 
+void VCPU::set_reg(Elkvm::Seg_t segtype, const Elkvm::Segment &seg) {
+  switch(segtype) {
+    case Elkvm::Seg_t::cs:
+      set_reg(&sregs.cs, seg);
+      break;
+    case Elkvm::Seg_t::ds:
+      set_reg(&sregs.ds, seg);
+      break;
+    case Elkvm::Seg_t::es:
+      set_reg(&sregs.es, seg);
+      break;
+    case Elkvm::Seg_t::fs:
+      set_reg(&sregs.fs, seg);
+      break;
+    case Elkvm::Seg_t::gs:
+      set_reg(&sregs.gs, seg);
+      break;
+    case Elkvm::Seg_t::ss:
+      set_reg(&sregs.ss, seg);
+      break;
+    case Elkvm::Seg_t::tr:
+      set_reg(&sregs.tr, seg);
+      break;
+    case Elkvm::Seg_t::ldt:
+      set_reg(&sregs.ldt, seg);
+      break;
+    case Elkvm::Seg_t::gdt:
+      set_reg(&sregs.gdt, seg);
+      break;
+    case Elkvm::Seg_t::idt:
+      set_reg(&sregs.idt, seg);
+      break;
+    default:
+      assert(false);
+  }
+}
+
+void VCPU::set_reg(struct kvm_dtable *ptr, const Elkvm::Segment &seg) {
+  ptr->base = seg.get_base();
+  ptr->limit = seg.get_limit();
+}
+
+void VCPU::set_reg(struct kvm_segment *ptr, const Elkvm::Segment &seg) {
+  ptr->base = seg.get_base();
+  ptr->limit = seg.get_limit();
+  ptr->selector = seg.get_selector();
+  ptr->type = seg.get_type();
+  ptr->present = seg.is_present();
+  ptr->dpl = seg.get_dpl();
+  ptr->db = seg.get_db();
+  ptr->s = seg.get_s();
+  ptr->l = seg.get_l();
+  ptr->g = seg.get_g();
+  ptr->avl = seg.get_avl();
+}
+
+
 int VCPU::initialize_regs() {
 
   memset(&regs, 0, sizeof(struct kvm_regs));
