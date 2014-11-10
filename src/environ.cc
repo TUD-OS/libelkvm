@@ -20,7 +20,7 @@ namespace Elkvm {
     binary(bin)
   {
     /* for now the region to hold env etc. will be 12 pages large */
-    region = rm->allocate_region(12 * ELKVM_PAGESIZE);
+    region = rm->allocate_region(12 * ELKVM_PAGESIZE, "ELKVM Environment");
     assert(region != nullptr && "error getting memory for env");
     region->set_guest_addr(
         reinterpret_cast<guestptr_t>(region->base_address()));

@@ -17,7 +17,7 @@ namespace Elkvm {
 
       PagerX86_64 pager;
 
-      int add_chunk(size_t size);
+      int add_chunk(size_t size, char const* purpose);
 
     public:
       RegionManager(int vmfd);
@@ -27,7 +27,7 @@ namespace Elkvm {
       bool same_region(const void *p1, const void *p2) const;
 
       void add_free_region(std::shared_ptr<Region> region);
-      std::shared_ptr<Region> allocate_region(size_t size);
+      std::shared_ptr<Region> allocate_region(size_t size, char const* purpose="anon. region");
       void free_region(std::shared_ptr<Region> r);
       void free_region(void *host_p, size_t sz);
       void use_region(std::shared_ptr<Region> r);

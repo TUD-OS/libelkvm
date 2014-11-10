@@ -76,7 +76,7 @@ namespace Elkvm {
     }
 
     flat.size = stbuf.st_size;
-    std::shared_ptr<Elkvm::Region> region = _rm->allocate_region(stbuf.st_size);
+    std::shared_ptr<Elkvm::Region> region = _rm->allocate_region(stbuf.st_size,path.c_str());
 
     if(kernel) {
       guestptr_t addr = _rm->get_pager().map_kernel_page(
