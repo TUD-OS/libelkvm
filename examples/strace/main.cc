@@ -5,7 +5,9 @@
 #include <elkvm/elkvm.h>
 #include <elkvm/elkvm-log.h>
 #include <elkvm/kvm.h>
+#include <elkvm/regs.h>
 #include <elkvm/syscall.h>
+#include <elkvm/vcpu.h>
 
 extern char **environment;
 
@@ -68,30 +70,30 @@ char const *syscalls[]= {
 };
 
 static long
-strace_pre_handler(Elkvm::VM* vm,
-                   std::shared_ptr<struct kvm_vcpu> vcpu,
+strace_pre_handler(Elkvm::VM* vm __attribute__((unused)),
+                   std::shared_ptr<VCPU> vcpu,
                    int eventtype)
 {
   if (eventtype != ELKVM_HYPERCALL_SYSCALL)
     return 0;
 
   INFO() << "[ELKVM] System call '"
-         << syscalls[vcpu->regs.rax]
+         << syscalls[vcpu->get_reg(Elkvm::Reg_t::rax)]
          << "'";
   return 0;
 }
 
 
 static long
-strace_post_handler(Elkvm::VM* vm,
-                    std::shared_ptr<struct kvm_vcpu> vcpu,
+strace_post_handler(Elkvm::VM* vm __attribute__((unused)),
+                    std::shared_ptr<VCPU> vcpu,
                     int eventtype)
 {
   if (eventtype != ELKVM_HYPERCALL_SYSCALL)
     return 0;
 
   INFO() << "[ELKVM]      = 0x" << std::hex
-         << vcpu->regs.rax;
+         << vcpu->get_reg(Elkvm::Reg_t::rax);
   return 0;
 }
 
