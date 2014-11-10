@@ -761,34 +761,34 @@ std::ostream &print(std::ostream &os, std::shared_ptr<VCPU> vcpu) {
             << PRINT_REGISTER("  r15", vcpu->get_reg(Elkvm::Reg_t::r15))
             << std::endl;
 
-  os << PRINT_REGISTER("cr0", vcpu->sregs.cr0)
-            << PRINT_REGISTER("  cr2", vcpu->sregs.cr2)
-            << PRINT_REGISTER("  cr3", vcpu->sregs.cr3)
+  os << PRINT_REGISTER("cr0", vcpu->get_reg(Elkvm::Reg_t::cr0))
+            << PRINT_REGISTER("  cr2", vcpu->get_reg(Elkvm::Reg_t::cr2))
+            << PRINT_REGISTER("  cr3", vcpu->get_reg(Elkvm::Reg_t::cr3))
             << std::endl;
 
-  os << PRINT_REGISTER("cr4", vcpu->sregs.cr4)
-            << PRINT_REGISTER("  cr8", vcpu->sregs.cr8)
+  os << PRINT_REGISTER("cr4", vcpu->get_reg(Elkvm::Reg_t::cr4))
+            << PRINT_REGISTER("  cr8", vcpu->get_reg(Elkvm::Reg_t::cr8))
             << std::endl;
 
   os << "\n Segment registers:\n";
   os <<   " ------------------\n";
   os << " register  selector  base              limit     type  p dpl db s l g avl\n";
 
-  print(os, "cs ", vcpu->sregs.cs);
-  print(os, "ss ", vcpu->sregs.ss);
-  print(os, "ds ", vcpu->sregs.ds);
-  print(os, "es ", vcpu->sregs.es);
-  print(os, "fs ", vcpu->sregs.fs);
-  print(os, "gs ", vcpu->sregs.gs);
-  print(os, "tr ", vcpu->sregs.tr);
-  print(os, "ldt", vcpu->sregs.ldt);
-  print(os, "gdt",  vcpu->sregs.gdt);
-  print(os, "idt",  vcpu->sregs.idt);
+  print(os, "cs ", vcpu->get_reg(Elkvm::Seg_t::cs));
+  print(os, "ss ", vcpu->get_reg(Elkvm::Seg_t::ss));
+  print(os, "ds ", vcpu->get_reg(Elkvm::Seg_t::ds));
+  print(os, "es ", vcpu->get_reg(Elkvm::Seg_t::es));
+  print(os, "fs ", vcpu->get_reg(Elkvm::Seg_t::fs));
+  print(os, "gs ", vcpu->get_reg(Elkvm::Seg_t::gs));
+  print(os, "tr ", vcpu->get_reg(Elkvm::Seg_t::tr));
+  print(os, "ldt", vcpu->get_reg(Elkvm::Seg_t::ldt));
+  print(os, "gdt",  vcpu->get_reg(Elkvm::Seg_t::gdt));
+  print(os, "idt",  vcpu->get_reg(Elkvm::Seg_t::idt));
 
   os << "\n APIC:\n";
   os <<   " -----\n";
-  os << PRINT_REGISTER("efer", vcpu->sregs.efer)
-            << PRINT_REGISTER("  apic base", vcpu->sregs.apic_base)
+  os << PRINT_REGISTER("efer", vcpu->get_reg(Elkvm::Reg_t::efer))
+            << PRINT_REGISTER("  apic base", vcpu->get_reg(Elkvm::Reg_t::apic_base))
             << std::endl;
 
   os << "\n Interrupt bitmap:\n";
@@ -815,21 +815,23 @@ void print_flags(uint64_t flags) {
   std::cerr << "]\n";
 }
 
-std::ostream &print(std::ostream &os, const std::string &name, struct kvm_segment seg)
+std::ostream &print(std::ostream &os, const std::string &name,
+   const Elkvm::Segment &seg)
 {
   os << " " << name
     << std::hex
-    << "       " << std::setw(4) << std::setfill('0') << seg.selector
-    << "      "  << std::setw(16) << std::setfill('0') << seg.base
-    << "  "      << std::setw(8) << std::setfill('0') << seg.limit
-    << "  "      << std::setw(2) << std::setfill('0') << static_cast<unsigned>(seg.type)
-    << "    " << static_cast<unsigned>(seg.present)
-    << " "    << static_cast<unsigned>(seg.dpl)
-    << "   "  << static_cast<unsigned>(seg.db)
-    << "  "   << static_cast<unsigned>(seg.s)
-    << " "    << static_cast<unsigned>(seg.l)
-    << " "    << static_cast<unsigned>(seg.g)
-    << " "    << static_cast<unsigned>(seg.avl) << std::endl;
+    << "       " << std::setw(4) << std::setfill('0') << seg.get_selector()
+    << "      "  << std::setw(16) << std::setfill('0') << seg.get_base()
+    << "  "      << std::setw(8) << std::setfill('0') << seg.get_limit()
+    << "  "      << std::setw(2) << std::setfill('0')
+    << static_cast<unsigned>(seg.get_type())
+    << "    " << static_cast<unsigned>(seg.is_present())
+    << " "    << static_cast<unsigned>(seg.get_dpl())
+    << "   "  << static_cast<unsigned>(seg.get_db())
+    << "  "   << static_cast<unsigned>(seg.get_s())
+    << " "    << static_cast<unsigned>(seg.get_l())
+    << " "    << static_cast<unsigned>(seg.get_g())
+    << " "    << static_cast<unsigned>(seg.get_avl()) << std::endl;
   return os;
 }
 

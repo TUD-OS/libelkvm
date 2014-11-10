@@ -163,7 +163,7 @@ class VCPU {
 
 std::ostream &print(std::ostream &os, std::shared_ptr<VCPU> vcpu);
 std::ostream &print(std::ostream &os, const std::string &name,
-    struct kvm_segment seg);
+    const Elkvm::Segment &seg);
 std::ostream &print(std::ostream &os, const std::string &name,
     struct kvm_dtable dtable);
 
