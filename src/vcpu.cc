@@ -101,11 +101,11 @@ int VCPU::set_sregs() {
   return 0;
 }
 
-CURRENT_ABI::paramtype VCPU::get_interrupt_bitmap(unsigned idx) {
+CURRENT_ABI::paramtype VCPU::get_interrupt_bitmap(unsigned idx) const {
   return sregs.interrupt_bitmap[idx];
 }
 
-CURRENT_ABI::paramtype VCPU::get_reg(Elkvm::Reg_t reg) {
+CURRENT_ABI::paramtype VCPU::get_reg(Elkvm::Reg_t reg) const {
   switch(reg) {
     case Elkvm::Reg_t::rax:
       return regs.rax;
@@ -279,11 +279,11 @@ void VCPU::set_msr(uint32_t idx, CURRENT_ABI::paramtype data) {
   assert(err >= 0 && "error setting msr");
 }
 
-Elkvm::Segment VCPU::get_reg(struct kvm_dtable *ptr) {
+Elkvm::Segment VCPU::get_reg(const struct kvm_dtable * const ptr) const {
   return Elkvm::Segment(ptr->base, ptr->limit);
 }
 
-Elkvm::Segment VCPU::get_reg(struct kvm_segment *ptr) {
+Elkvm::Segment VCPU::get_reg(const struct kvm_segment * const ptr) const {
   return Elkvm::Segment(ptr->selector,
             ptr->base,
             ptr->limit,
@@ -297,7 +297,7 @@ Elkvm::Segment VCPU::get_reg(struct kvm_segment *ptr) {
             ptr->avl);
 }
 
-Elkvm::Segment VCPU::get_reg(Elkvm::Seg_t segtype) {
+Elkvm::Segment VCPU::get_reg(Elkvm::Seg_t segtype) const {
   switch(segtype) {
     case Elkvm::Seg_t::cs:
       return get_reg(&sregs.cs);
@@ -607,7 +607,7 @@ int Elkvm::VM::run() {
       case KVM_EXIT_HYPERCALL:
         if(vcpu->is_singlestep()) {
           fprintf(stderr, "KVM_EXIT_HYPERCALL\n");
-          print(std::cerr, vcpu);
+          print(std::cerr, *vcpu);
           kvm_vcpu_dump_code(vcpu);
         }
         err = handle_hypercall(vcpu);
@@ -676,7 +676,7 @@ int Elkvm::VM::run() {
 
     if(  vcpu->exit_reason() == KVM_EXIT_MMIO ||
         vcpu->exit_reason() == KVM_EXIT_SHUTDOWN) {
-      print(std::cerr, vcpu);
+      print(std::cerr, *vcpu);
       dump_stack(vcpu);
       kvm_vcpu_dump_code(vcpu);
     }
@@ -729,76 +729,76 @@ void kvm_vcpu_dump_msr(std::shared_ptr<VCPU> vcpu, uint32_t msr) {
             << std::endl;
 }
 
-std::ostream &print(std::ostream &os, std::shared_ptr<VCPU> vcpu) {
+std::ostream &print(std::ostream &os, const VCPU &vcpu) {
   os << std::endl << " Registers:" << std::endl;
   os << " ----------\n";
 
-  os << PRINT_REGISTER("rip", vcpu->get_reg(Elkvm::Reg_t::rip))
-            << PRINT_REGISTER("  rsp", vcpu->get_reg(Elkvm::Reg_t::rsp))
-            << PRINT_REGISTER("  flags", vcpu->get_reg(Elkvm::Reg_t::rflags))
+  os << PRINT_REGISTER("rip", vcpu.get_reg(Elkvm::Reg_t::rip))
+            << PRINT_REGISTER("  rsp", vcpu.get_reg(Elkvm::Reg_t::rsp))
+            << PRINT_REGISTER("  flags", vcpu.get_reg(Elkvm::Reg_t::rflags))
             << std::endl;
 
-  print_flags(vcpu->get_reg(Elkvm::Reg_t::rflags));
+  print_flags(vcpu.get_reg(Elkvm::Reg_t::rflags));
 
-  os << PRINT_REGISTER("rax", vcpu->get_reg(Elkvm::Reg_t::rax))
-            << PRINT_REGISTER("  rbx", vcpu->get_reg(Elkvm::Reg_t::rbx))
-            << PRINT_REGISTER("  rcx", vcpu->get_reg(Elkvm::Reg_t::rcx))
+  os << PRINT_REGISTER("rax", vcpu.get_reg(Elkvm::Reg_t::rax))
+            << PRINT_REGISTER("  rbx", vcpu.get_reg(Elkvm::Reg_t::rbx))
+            << PRINT_REGISTER("  rcx", vcpu.get_reg(Elkvm::Reg_t::rcx))
             << std::endl;
 
-  os << PRINT_REGISTER("rdx", vcpu->get_reg(Elkvm::Reg_t::rdx))
-            << PRINT_REGISTER("  rsi", vcpu->get_reg(Elkvm::Reg_t::rsi))
-            << PRINT_REGISTER("  rdi", vcpu->get_reg(Elkvm::Reg_t::rdi))
+  os << PRINT_REGISTER("rdx", vcpu.get_reg(Elkvm::Reg_t::rdx))
+            << PRINT_REGISTER("  rsi", vcpu.get_reg(Elkvm::Reg_t::rsi))
+            << PRINT_REGISTER("  rdi", vcpu.get_reg(Elkvm::Reg_t::rdi))
             << std::endl;
 
-  os << PRINT_REGISTER("rbp", vcpu->get_reg(Elkvm::Reg_t::rbp))
-            << PRINT_REGISTER("   r8", vcpu->get_reg(Elkvm::Reg_t::r8))
-            << PRINT_REGISTER("   r9", vcpu->get_reg(Elkvm::Reg_t::r9))
+  os << PRINT_REGISTER("rbp", vcpu.get_reg(Elkvm::Reg_t::rbp))
+            << PRINT_REGISTER("   r8", vcpu.get_reg(Elkvm::Reg_t::r8))
+            << PRINT_REGISTER("   r9", vcpu.get_reg(Elkvm::Reg_t::r9))
             << std::endl;
 
-  os << PRINT_REGISTER("r10", vcpu->get_reg(Elkvm::Reg_t::r10))
-            << PRINT_REGISTER("  r11", vcpu->get_reg(Elkvm::Reg_t::r11))
-            << PRINT_REGISTER("  r12", vcpu->get_reg(Elkvm::Reg_t::r12))
+  os << PRINT_REGISTER("r10", vcpu.get_reg(Elkvm::Reg_t::r10))
+            << PRINT_REGISTER("  r11", vcpu.get_reg(Elkvm::Reg_t::r11))
+            << PRINT_REGISTER("  r12", vcpu.get_reg(Elkvm::Reg_t::r12))
             << std::endl;
 
-  os << PRINT_REGISTER("r13", vcpu->get_reg(Elkvm::Reg_t::r13))
-            << PRINT_REGISTER("  r14", vcpu->get_reg(Elkvm::Reg_t::r14))
-            << PRINT_REGISTER("  r15", vcpu->get_reg(Elkvm::Reg_t::r15))
+  os << PRINT_REGISTER("r13", vcpu.get_reg(Elkvm::Reg_t::r13))
+            << PRINT_REGISTER("  r14", vcpu.get_reg(Elkvm::Reg_t::r14))
+            << PRINT_REGISTER("  r15", vcpu.get_reg(Elkvm::Reg_t::r15))
             << std::endl;
 
-  os << PRINT_REGISTER("cr0", vcpu->get_reg(Elkvm::Reg_t::cr0))
-            << PRINT_REGISTER("  cr2", vcpu->get_reg(Elkvm::Reg_t::cr2))
-            << PRINT_REGISTER("  cr3", vcpu->get_reg(Elkvm::Reg_t::cr3))
+  os << PRINT_REGISTER("cr0", vcpu.get_reg(Elkvm::Reg_t::cr0))
+            << PRINT_REGISTER("  cr2", vcpu.get_reg(Elkvm::Reg_t::cr2))
+            << PRINT_REGISTER("  cr3", vcpu.get_reg(Elkvm::Reg_t::cr3))
             << std::endl;
 
-  os << PRINT_REGISTER("cr4", vcpu->get_reg(Elkvm::Reg_t::cr4))
-            << PRINT_REGISTER("  cr8", vcpu->get_reg(Elkvm::Reg_t::cr8))
+  os << PRINT_REGISTER("cr4", vcpu.get_reg(Elkvm::Reg_t::cr4))
+            << PRINT_REGISTER("  cr8", vcpu.get_reg(Elkvm::Reg_t::cr8))
             << std::endl;
 
   os << "\n Segment registers:\n";
   os <<   " ------------------\n";
   os << " register  selector  base              limit     type  p dpl db s l g avl\n";
 
-  print(os, "cs ", vcpu->get_reg(Elkvm::Seg_t::cs));
-  print(os, "ss ", vcpu->get_reg(Elkvm::Seg_t::ss));
-  print(os, "ds ", vcpu->get_reg(Elkvm::Seg_t::ds));
-  print(os, "es ", vcpu->get_reg(Elkvm::Seg_t::es));
-  print(os, "fs ", vcpu->get_reg(Elkvm::Seg_t::fs));
-  print(os, "gs ", vcpu->get_reg(Elkvm::Seg_t::gs));
-  print(os, "tr ", vcpu->get_reg(Elkvm::Seg_t::tr));
-  print(os, "ldt", vcpu->get_reg(Elkvm::Seg_t::ldt));
-  print(os, "gdt",  vcpu->get_reg(Elkvm::Seg_t::gdt));
-  print(os, "idt",  vcpu->get_reg(Elkvm::Seg_t::idt));
+  print(os, "cs ", vcpu.get_reg(Elkvm::Seg_t::cs));
+  print(os, "ss ", vcpu.get_reg(Elkvm::Seg_t::ss));
+  print(os, "ds ", vcpu.get_reg(Elkvm::Seg_t::ds));
+  print(os, "es ", vcpu.get_reg(Elkvm::Seg_t::es));
+  print(os, "fs ", vcpu.get_reg(Elkvm::Seg_t::fs));
+  print(os, "gs ", vcpu.get_reg(Elkvm::Seg_t::gs));
+  print(os, "tr ", vcpu.get_reg(Elkvm::Seg_t::tr));
+  print(os, "ldt", vcpu.get_reg(Elkvm::Seg_t::ldt));
+  print(os, "gdt",  vcpu.get_reg(Elkvm::Seg_t::gdt));
+  print(os, "idt",  vcpu.get_reg(Elkvm::Seg_t::idt));
 
   os << "\n APIC:\n";
   os <<   " -----\n";
-  os << PRINT_REGISTER("efer", vcpu->get_reg(Elkvm::Reg_t::efer))
-            << PRINT_REGISTER("  apic base", vcpu->get_reg(Elkvm::Reg_t::apic_base))
+  os << PRINT_REGISTER("efer", vcpu.get_reg(Elkvm::Reg_t::efer))
+            << PRINT_REGISTER("  apic base", vcpu.get_reg(Elkvm::Reg_t::apic_base))
             << std::endl;
 
   os << "\n Interrupt bitmap:\n";
   os <<   " -----------------\n";
   for (int i = 0; i < (KVM_NR_INTERRUPTS + 63) / 64; i++)
-    os << " " << std::setw(16) << std::setfill('0') << vcpu->get_interrupt_bitmap(i);
+    os << " " << std::setw(16) << std::setfill('0') << vcpu.get_interrupt_bitmap(i);
   os << std::endl;
 
   return os;

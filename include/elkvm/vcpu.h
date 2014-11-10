@@ -92,8 +92,8 @@ class VCPU {
 
     void set_reg(struct kvm_dtable *ptr, const Elkvm::Segment &seg);
     void set_reg(struct kvm_segment *ptr, const Elkvm::Segment &seg);
-    Elkvm::Segment get_reg(struct kvm_dtable *ptr);
-    Elkvm::Segment get_reg(struct kvm_segment *ptr);
+    Elkvm::Segment get_reg(const struct kvm_dtable * const ptr) const;
+    Elkvm::Segment get_reg(const struct kvm_segment * const ptr) const;
 
     /* internal debugging stuff */
     struct kvm_guest_debug debug;
@@ -128,9 +128,9 @@ class VCPU {
     /*
      * get and set single registers
      */
-    CURRENT_ABI::paramtype get_reg(Elkvm::Reg_t reg);
-    Elkvm::Segment get_reg(Elkvm::Seg_t seg);
-    CURRENT_ABI::paramtype get_interrupt_bitmap(unsigned idx);
+    CURRENT_ABI::paramtype get_reg(Elkvm::Reg_t reg) const;
+    Elkvm::Segment get_reg(Elkvm::Seg_t seg) const;
+    CURRENT_ABI::paramtype get_interrupt_bitmap(unsigned idx) const;
     void set_reg(Elkvm::Reg_t reg, CURRENT_ABI::paramtype val);
     void set_reg(Elkvm::Seg_t seg, const Elkvm::Segment &s);
     void set_entry_point(guestptr_t rip);
@@ -162,7 +162,7 @@ class VCPU {
   void init_rsp() { regs.rsp = stack.user_base(); }
 };
 
-std::ostream &print(std::ostream &os, std::shared_ptr<VCPU> vcpu);
+std::ostream &print(std::ostream &os, const VCPU &vcpu);
 std::ostream &print(std::ostream &os, const std::string &name,
     const Elkvm::Segment &seg);
 std::ostream &print(std::ostream &os, const std::string &name,
