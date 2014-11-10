@@ -2270,17 +2270,23 @@ long elkvm_do_arch_prctl(Elkvm::VM * vmi) {
   assert(host_addr != nullptr && "could not get host address in arch_prctl");
 
   switch(code) {
-    case ARCH_SET_FS:
-      vcpu->sregs.fs.base = user_addr;
+    case ARCH_SET_FS: {
+      Elkvm::Segment fs = vcpu->get_reg(Elkvm::Seg_t::fs);
+      fs.set_base(user_addr);
+      vcpu->set_reg(Elkvm::Seg_t::fs, fs);
       break;
+                      }
     case ARCH_GET_FS:
-      *host_addr = vcpu->sregs.fs.base;
+      *host_addr = vcpu->get_reg(Elkvm::Seg_t::fs).get_base();
       break;
-    case ARCH_SET_GS:
-      vcpu->sregs.gs.base = user_addr;
+    case ARCH_SET_GS: {
+      Elkvm::Segment gs = vcpu->get_reg(Elkvm::Seg_t::gs);
+      gs.set_base(user_addr);
+      vcpu->set_reg(Elkvm::Seg_t::gs, gs);
       break;
+                      }
     case ARCH_GET_GS:
-      *host_addr = vcpu->sregs.gs.base;
+      *host_addr = vcpu->get_reg(Elkvm::Seg_t::gs).get_base();
       break;
     default:
       return -EINVAL;
