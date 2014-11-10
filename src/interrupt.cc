@@ -53,13 +53,14 @@ int handle_page_fault(VM &vm,
   int err = vcpu->get_sregs();
   assert(err == 0 && "error getting vcpu sregs");
 
-  handle_segfault(vcpu->sregs.cr2);
+  CURRENT_ABI::paramtype pfla = vcpu->get_reg(Elkvm::Reg_t::cr2);
+  handle_segfault(pfla);
   if(vcpu->handle_stack_expansion(code, vm.debug_mode())) {
     return success;
   }
 
-  void *hp = vm.get_region_manager()->get_pager().get_host_p(vcpu->sregs.cr2);
-  Elkvm::dump_page_fault_info(vcpu->sregs.cr2, code, hp);
+  void *hp = vm.get_region_manager()->get_pager().get_host_p(pfla);
+  Elkvm::dump_page_fault_info(pfla, code, hp);
   if(hp) {
     vm.get_region_manager()->get_pager().dump_page_tables();
   }
