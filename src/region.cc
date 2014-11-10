@@ -10,12 +10,12 @@
 
 namespace Elkvm {
 
-  std::ostream &print(std::ostream &stream, const Region &r) {
+  std::ostream &print(std::ostream &stream, Region const & r) {
     if(r.is_free()) {
       stream << "FREE ";
     }
     stream << std::hex
-      <<"REGION[" << &r << "] guest address: 0x" << r.guest_address()
+      <<"REGION[" << r.getName() << "] guest address: 0x" << r.guest_address()
       << " host_p: " << r.base_address() << " size: 0x" << r.size()
       << " last guest address: 0x" << r.guest_address() + r.size() - 1
       << std::endl;
@@ -60,13 +60,13 @@ namespace Elkvm {
     return addr + rsize - 1;
   }
 
-  std::shared_ptr<Region> Region::slice_begin(const size_t size) {
+  std::shared_ptr<Region> Region::slice_begin(const size_t size, char const *purpose) {
     //assert(free);
     assert(size > 0x0);
     assert(rsize > pagesize_align(size));
 
     std::shared_ptr<Region> r =
-      std::make_shared<Region>(host_p, pagesize_align(size));
+      std::make_shared<Region>(host_p, pagesize_align(size), purpose);
 
     host_p = reinterpret_cast<char *>(host_p) + r->size();
     rsize  -= r->size();

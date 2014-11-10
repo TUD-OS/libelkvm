@@ -21,7 +21,7 @@ namespace Elkvm {
 
     /* get a frame for the kernel (interrupt) stack */
     /* this is only ONE page large */
-    kernel_stack = _rm->allocate_region(ELKVM_PAGESIZE);
+    kernel_stack = _rm->allocate_region(ELKVM_PAGESIZE, "kernel stack");
 
     /* create a mapping for the kernel (interrupt) stack */
     guestptr_t kstack_addr = _rm->get_pager().map_kernel_page(kernel_stack->base_address(),
@@ -58,7 +58,7 @@ namespace Elkvm {
   int Stack::expand() {
     base -= ELKVM_STACK_GROW;
 
-    std::shared_ptr<Region> region = _rm->allocate_region(ELKVM_STACK_GROW);
+    std::shared_ptr<Region> region = _rm->allocate_region(ELKVM_STACK_GROW, "ELKVM stack");
     if(region == nullptr) {
       return -ENOMEM;
     }
