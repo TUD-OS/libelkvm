@@ -7,14 +7,14 @@
 #include <elkvm/elkvm-internal.h>
 #include <elkvm/debug.h>
 
-void Elkvm::VM::dump_memory(guestptr_t addr) {
+void Elkvm::VM::dump_memory(guestptr_t addr, unsigned size) {
   assert(addr != 0x0 && "cannot dump address NULL");
   uint64_t *host_p = reinterpret_cast<uint64_t *>(
   get_region_manager()->get_pager().get_host_p(addr));
   assert(host_p != NULL && "cannot dump unmapped memory");
 
   fprintf(stderr, " Host Address\tGuest Address\t\tValue\t\tValue\n");
-  for(int i = 0; i < 16; i++) {
+  for(unsigned i = 0; i < size; i++) {
     fprintf(stderr, " %p\t0x%016lx\t0x%016lx\t0x%016lx\n",
             host_p, addr, *host_p, *(host_p+1));
     addr  += 0x10;
