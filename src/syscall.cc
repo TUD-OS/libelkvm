@@ -346,7 +346,8 @@ int Elkvm::VM::handle_hypercall(std::shared_ptr<VCPU> vcpu) {
       }
       break;
     default:
-      ERROR() << "Hypercall was something else, don't know how to handle, ABORT!\n";
+      ERROR() << "Hypercall was something else, don't know how to handle\n"
+              << "Hypercall Num: " << std::dec << call << "\nABORT!\n";
       return 1;
   }
 
