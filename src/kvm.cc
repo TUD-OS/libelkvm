@@ -354,6 +354,10 @@ int VCPU::run() {
     }
   }
 
+  if(run_struct->exit_reason == KVM_EXIT_HYPERCALL) {
+    return 1;
+  }
+
   return 0;
 }
 

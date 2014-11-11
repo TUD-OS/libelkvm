@@ -168,6 +168,61 @@ int VCPU::run() {
   return _kvm_vcpu.run();
 }
 
+bool VCPU::handle_vm_exit() {
+  switch(_kvm_vcpu.exit_reason()) {
+    case KVM_EXIT_UNKNOWN:
+      std::cerr << "KVM exit for unknown reason (KVM_EXIT_UNKNOWN)\n"
+                << " Hardware exit reason: " << std::dec
+                << exit_reason() << std::endl;
+      return false;
+    case KVM_EXIT_FAIL_ENTRY: {
+      uint64_t code = hardware_entry_failure_reason();
+      fprintf(stderr, "KVM: entry failed, hardware error 0x%lx\n",
+        code);
+      if (host_supports_vmx() && code == VMX_INVALID_GUEST_STATE) {
+        fprintf(stderr,
+          "\nIf you're running a guest on an Intel machine without "
+              "unrestricted mode\n"
+          "support, the failure can be most likely due to the guest "
+              "entering an invalid\n"
+          "state for Intel VT. For example, the guest maybe running "
+              "in big real mode\n"
+          "which is not supported on less recent Intel processors."
+              "\n\n");
+      }
+      return false;
+                              }
+    case KVM_EXIT_EXCEPTION:
+      fprintf(stderr, "KVM VCPU had exception\n");
+      return false;
+    case KVM_EXIT_SHUTDOWN:
+      fprintf(stderr, "KVM VCPU did shutdown\n");
+      get_regs();
+      get_sregs();
+      return false;
+    case KVM_EXIT_DEBUG: {
+      /* NO-OP */
+      assert(false && "TODO make debugging api work!");
+      /* XXX rethink debug handling */
+//      int debug_handled = elkvm_handle_debug(vmi);
+//      if(debug_handled == 0) {
+      //}
+      return false;
+    }
+    case KVM_EXIT_MMIO:
+      fprintf(stderr, "KVM_EXIT_MMIO\n");
+      print_mmio(std::cerr);
+      return false;
+    case KVM_EXIT_WATCHDOG:
+      fprintf(stderr, "KVM_EXIT_WATCHDOG\n");
+      return false;
+    default:
+      fprintf(stderr, "KVM VCPU exit for unknown reason: %i\n",
+          exit_reason());
+      return false;
+  }
+}
+
 uint32_t VCPU::exit_reason() {
   return _kvm_vcpu.exit_reason();
 }
@@ -210,9 +265,9 @@ int VM::run() {
 //      }
 //    }
 
-    err = vcpu->run();
-    if(err) {
-      break;
+    uint32_t exit_reason = vcpu->run();
+    if(exit_reason < 0) {
+      return exit_reason;
     }
 
     err = vcpu->get_regs();
@@ -220,81 +275,22 @@ int VM::run() {
       return err;
     }
 
-    switch(vcpu->exit_reason()) {
-      case KVM_EXIT_UNKNOWN:
-        std::cerr << "KVM exit for unknown reason (KVM_EXIT_UNKNOWN)\n"
-                  << " Hardware exit reason: " << std::dec
-                  << vcpu->exit_reason() << std::endl;
-        is_running = 0;
-        break;
-      case KVM_EXIT_HYPERCALL:
-        if(vcpu->is_singlestep()) {
-          fprintf(stderr, "KVM_EXIT_HYPERCALL\n");
-          print(std::cerr, *vcpu);
-          kvm_vcpu_dump_code(vcpu);
-        }
-        err = handle_hypercall(vcpu);
-        if(err == ELKVM_HYPERCALL_EXIT) {
-          is_running = 0;
-        } else if(err) {
-          is_running = 0;
-          fprintf(stderr, "ELKVM: Could not handle hypercall!\n");
-          fprintf(stderr, "Errno: %i Msg: %s\n", err, strerror(err));
-        }
-        break;
-      case KVM_EXIT_FAIL_ENTRY: {
-        ;
-        uint64_t code = vcpu->hardware_entry_failure_reason();
-        fprintf(stderr, "KVM: entry failed, hardware error 0x%lx\n",
-          code);
-        if (host_supports_vmx() && code == VMX_INVALID_GUEST_STATE) {
-          fprintf(stderr,
-            "\nIf you're running a guest on an Intel machine without "
-                "unrestricted mode\n"
-            "support, the failure can be most likely due to the guest "
-                "entering an invalid\n"
-            "state for Intel VT. For example, the guest maybe running "
-                "in big real mode\n"
-            "which is not supported on less recent Intel processors."
-                "\n\n");
-        }
-        is_running = 0;
-        break;
-                                }
-      case KVM_EXIT_EXCEPTION:
-        fprintf(stderr, "KVM VCPU had exception\n");
-        is_running = 0;
-        break;
-      case KVM_EXIT_SHUTDOWN:
-        fprintf(stderr, "KVM VCPU did shutdown\n");
-        is_running = 0;
-        vcpu->get_regs();
-        vcpu->get_sregs();
-        break;
-      case KVM_EXIT_DEBUG: {
-        /* NO-OP */
-        ;
-        /* XXX rethink debug handling */
-//        int debug_handled = elkvm_handle_debug(vmi);
-//        if(debug_handled == 0) {
-          is_running = 0;
-        //}
-        break;
+    if(exit_reason == 1) {
+      if(vcpu->is_singlestep()) {
+        fprintf(stderr, "KVM_EXIT_HYPERCALL\n");
+        print(std::cerr, *vcpu);
+        //kvm_vcpu_dump_code(this);
       }
-      case KVM_EXIT_MMIO:
-        fprintf(stderr, "KVM_EXIT_MMIO\n");
-        vcpu->print_mmio(std::cerr);
-        is_running = 0;
-        break;
-      case KVM_EXIT_WATCHDOG:
-        fprintf(stderr, "KVM_EXIT_WATCHDOG\n");
-        is_running = 0;
-        break;
-      default:
-        fprintf(stderr, "KVM VCPU exit for unknown reason: %i\n",
-            vcpu->exit_reason());
-        is_running = 0;
-        break;
+      int err = handle_hypercall(vcpu);
+      if(err == ELKVM_HYPERCALL_EXIT) {
+        is_running = false;
+      } else if(err) {
+        fprintf(stderr, "ELKVM: Could not handle hypercall!\n");
+        fprintf(stderr, "Errno: %i Msg: %s\n", err, strerror(err));
+        is_running = false;
+      }
+    } else {
+      is_running = vcpu->handle_vm_exit();
     }
 
     if(  vcpu->exit_reason() == KVM_EXIT_MMIO ||
@@ -303,7 +299,6 @@ int VM::run() {
       dump_stack(vcpu);
       kvm_vcpu_dump_code(vcpu);
     }
-
   }
   return 0;
 }

@@ -80,14 +80,9 @@ class VCPU {
   private:
     bool is_singlestepping;
     KVM::VCPU _kvm_vcpu;
-
     Elkvm::Stack stack;
 
-    /*
-      Initialize a VCPU's registers according to mode
-    */
     void initialize_regs();
-
 
   public:
 #ifdef HAVE_LIBUDIS86
@@ -96,13 +91,13 @@ class VCPU {
 
     VCPU(std::shared_ptr<Elkvm::RegionManager> rm, int vmfd, unsigned cpu_num);
     /*
-     * Get VCPU registers
+     * Get VCPU registers from hypervisor
      */
     int get_regs();
     int get_sregs();
 
     /*
-     * Set VCPU registers
+     * Set VCPU registers with hypervisor
      */
     int set_regs();
     int set_sregs();
@@ -123,6 +118,7 @@ class VCPU {
 
     /* RUNNING the VCPU */
     int run();
+    bool handle_vm_exit();
 
     /* get VCPU hypervisor exit reasons */
     uint32_t exit_reason();
