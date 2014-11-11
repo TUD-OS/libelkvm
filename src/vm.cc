@@ -25,7 +25,7 @@
 #include <elkvm/pager.h>
 #include <elkvm/vcpu.h>
 namespace Elkvm {
-  std::list<VM> vmi;
+  std::list<std::shared_ptr<Elkvm::VM> > vmi;
 }
 
 std::shared_ptr<Elkvm::VM>
@@ -48,7 +48,8 @@ elkvm_vm_create_raw(Elkvm::elkvm_opts *opts,
   }
 
   INFO() << "    (0) emplace(new VM)";
-  Elkvm::vmi.emplace_back(
+
+  std::shared_ptr<Elkvm::VM> vmi = std::make_shared<Elkvm::VM>(
         vmfd,
         opts->argc,
         opts->argv,
@@ -57,7 +58,7 @@ elkvm_vm_create_raw(Elkvm::elkvm_opts *opts,
         hyp,
         handlers,
         debug);
-  std::shared_ptr<Elkvm::VM> vmi(&Elkvm::vmi.back());
+  Elkvm::vmi.push_back(vmi);
 
   INFO() << "    (1) Adding CPUs";
   for(unsigned i = 0; i < cpus; i++) {
@@ -146,7 +147,7 @@ elkvm_vm_create(Elkvm::elkvm_opts *opts,
     return NULL;
   }
 
-  Elkvm::vmi.emplace_back(
+  std::shared_ptr<Elkvm::VM> vmi = std::make_shared<Elkvm::VM>(
         vmfd,
         opts->argc,
         opts->argv,
@@ -155,7 +156,7 @@ elkvm_vm_create(Elkvm::elkvm_opts *opts,
         hyp,
         handlers,
         debug);
-  std::shared_ptr<Elkvm::VM> vmi(&Elkvm::vmi.back());
+  Elkvm::vmi.push_back(vmi);
 
   for(unsigned i = 0; i < cpus; i++) {
     err = vmi->add_cpu();
