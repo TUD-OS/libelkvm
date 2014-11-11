@@ -291,6 +291,18 @@ elkvm_vm_create(Elkvm::elkvm_opts *,
                 int mode = VM_MODE_X86_64,
                 bool debug = false);
 
+
+/*
+ * Create a new VM without loading an application binary.
+ */
+std::shared_ptr<Elkvm::VM>
+elkvm_vm_create_raw(Elkvm::elkvm_opts *,
+                    unsigned cpus = 1,
+                    const Elkvm::hypercall_handlers * const = &Elkvm::hypercall_null,
+                    const Elkvm::elkvm_handlers * const = &Elkvm::default_handlers,
+                    bool debug = false);
+
+
 /*
  * \brief Emulates (skips) the VMCALL instruction
  */

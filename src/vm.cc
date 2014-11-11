@@ -29,6 +29,103 @@ namespace Elkvm {
 }
 
 std::shared_ptr<Elkvm::VM>
+elkvm_vm_create_raw(Elkvm::elkvm_opts *opts,
+                    unsigned cpus,
+                    const Elkvm::hypercall_handlers * const hyp,
+                    const Elkvm::elkvm_handlers * const handlers,
+                    bool debug)
+{
+  int err = 0;
+
+  int vmfd = ioctl(opts->fd, KVM_CREATE_VM, 0);
+  if(vmfd < 0) {
+    return NULL;
+  }
+
+  int run_struct_size = ioctl(opts->fd, KVM_GET_VCPU_MMAP_SIZE, 0);
+  if(run_struct_size < 0) {
+    return NULL;
+  }
+
+  INFO() << "    (0) emplace(new VM)";
+  Elkvm::vmi.emplace_back(
+        vmfd,
+        opts->argc,
+        opts->argv,
+        opts->environ,
+        run_struct_size,
+        hyp,
+        handlers,
+        debug);
+  std::shared_ptr<Elkvm::VM> vmi(&Elkvm::vmi.back());
+
+  INFO() << "    (1) Adding CPUs";
+  for(unsigned i = 0; i < cpus; i++) {
+    err = vmi->add_cpu();
+    if(err) {
+    errno = -err;
+      return NULL;
+    }
+  }
+
+  INFO() << "    (2) GDT";
+  auto vcpu = vmi->get_vcpu(0);
+  err = elkvm_gdt_setup(*vmi->get_region_manager(), vcpu);
+  assert(err == 0);
+
+  INFO() << "    (3) Loading ISR";
+  Elkvm::elkvm_flat idth;
+  std::string isr_path(RES_PATH "/isr");
+  err = vmi->load_flat(idth, isr_path, 1);
+  if(err) {
+  if(err == -ENOENT) {
+    printf("LIBELKVM: ISR shared file could not be found\n");
+  }
+  errno = -err;
+    return NULL;
+  }
+
+  INFO() << "    (4) Setting IDT";
+  err = elkvm_idt_setup(*vmi->get_region_manager(), vcpu, &idth);
+  assert(err == 0);
+
+  INFO() << "    (5) Adding sysenter region";
+  Elkvm::elkvm_flat sysenter;
+  std::string sysenter_path(RES_PATH "/entry");
+  err = vmi->load_flat(sysenter, sysenter_path, 1);
+  if(err) {
+    if(err == -ENOENT) {
+      printf("LIBELKVM: SYSCALL ENTRY shared file could not be found\n");
+    }
+    errno = -err;
+    return NULL;
+  }
+
+  INFO() << "    (6) Adding signal handler";
+  std::string sighandler_path(RES_PATH "/signal");
+  auto sigclean = vmi->get_cleanup_flat();
+  err = vmi->load_flat(sigclean, sighandler_path, 0);
+  if(err) {
+    if(err == -ENOENT) {
+      printf("LIBELKVM: SIGNAL HANDLER shared file could not be found\n");
+    }
+    errno = -err;
+    return NULL;
+  }
+
+  /*
+   * setup the lstar register with the syscall handler
+   */
+  vcpu->set_msr(VCPU_MSR_LSTAR, sysenter.region->guest_address());
+
+  INFO() << "    (7) Setting rlimits";
+  vmi->init_rlimits();
+
+  return vmi;
+}
+
+
+std::shared_ptr<Elkvm::VM>
 elkvm_vm_create(Elkvm::elkvm_opts *opts,
                 const char *binary,
                 unsigned cpus,
