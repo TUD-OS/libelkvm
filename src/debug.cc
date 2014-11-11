@@ -35,21 +35,37 @@ int elkvm_handle_debug(Elkvm::VM *vm) {
 namespace Elkvm {
 
 int VCPU::enable_debug() {
-  debug.control |= KVM_GUESTDBG_ENABLE;
+  return _kvm_vcpu.enable_debug();
+}
 
+int VCPU::singlestep() {
+  is_singlestepping = true;
+  return _kvm_vcpu.singlestep();
+}
+
+int VCPU::singlestep_off() {
+  is_singlestepping = false;
+  return _kvm_vcpu.singlestep_off();
+}
+
+int VCPU::enable_software_breakpoints() {
+  return _kvm_vcpu.enable_software_breakpoints();
+}
+
+namespace KVM {
+
+int VCPU::enable_debug() {
+  debug.control |= KVM_GUESTDBG_ENABLE;
   return set_debug();
 }
 
 int VCPU::singlestep() {
   debug.control |= KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_SINGLESTEP;
-  is_singlestepping = true;
-
   return set_debug();
 }
 
 int VCPU::singlestep_off() {
   debug.control &= ~KVM_GUESTDBG_SINGLESTEP;
-  is_singlestepping = false;
   return set_debug();
 }
 
@@ -62,5 +78,7 @@ int VCPU::enable_software_breakpoints() {
   return set_debug();
 }
 
+//namespace KVM
+}
 //namespace Elkvm
 }

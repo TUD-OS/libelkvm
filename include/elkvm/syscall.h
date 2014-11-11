@@ -2,6 +2,8 @@
 
 #include <asm/unistd_64.h>
 
+#include <memory>
+
 #define ELKVM_HYPERCALL_SYSCALL   1
 #define ELKVM_HYPERCALL_INTERRUPT 2
 
@@ -10,6 +12,7 @@
 
 namespace Elkvm {
   class VCPU;
+  class VM;
 }
 
 /*

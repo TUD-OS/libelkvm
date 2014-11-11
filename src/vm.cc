@@ -7,7 +7,6 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <linux/kvm.h>
 #include <stropts.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -196,36 +195,6 @@ elkvm_vm_create(Elkvm::elkvm_opts *opts,
   assert(err == 0 && "error setting up proxy os");
 
   return vmi;
-}
-
-int elkvm_init(Elkvm::elkvm_opts *opts, int argc, char **argv, char **environ) {
-  opts->argc = argc;
-  opts->argv = argv;
-  opts->environ = environ;
-
-  opts->fd = open(KVM_DEV_PATH, O_RDWR);
-  if(opts->fd < 0) {
-    return -errno;
-  }
-
-  int version = ioctl(opts->fd, KVM_GET_API_VERSION, 0);
-  if(version != KVM_EXPECT_VERSION) {
-    return -ENOPROTOOPT;
-  }
-
-  opts->run_struct_size = ioctl(opts->fd, KVM_GET_VCPU_MMAP_SIZE, 0);
-  if(opts->run_struct_size <= 0) {
-    return -EIO;
-  }
-
-  return 0;
-}
-
-int elkvm_cleanup(Elkvm::elkvm_opts *opts) {
-  close(opts->fd);
-  opts->fd = 0;
-  opts->run_struct_size = 0;
-  return 0;
 }
 
 int Elkvm::VM::chunk_remap(int num, size_t newsize) {

@@ -1,5 +1,7 @@
 #pragma once
+
 #include <elkvm/config.h>
+#include <elkvm/kvm.h>
 #include <elkvm/regs.h>
 #include <elkvm/stack.h>
 #include <elkvm/syscall.h>
@@ -77,24 +79,7 @@ class Segment {
 class VCPU {
   private:
     bool is_singlestepping;
-
-    /* internal kvm-specific stuff
-     * TODO move this to some hypervisor abstraction
-     */
-    int fd;
-    struct kvm_regs regs;
-    struct kvm_sregs sregs;
-
-    struct kvm_run *run_struct;
-
-    void set_reg(struct kvm_dtable *ptr, const Elkvm::Segment &seg);
-    void set_reg(struct kvm_segment *ptr, const Elkvm::Segment &seg);
-    Elkvm::Segment get_reg(const struct kvm_dtable * const ptr) const;
-    Elkvm::Segment get_reg(const struct kvm_segment * const ptr) const;
-
-    /* internal debugging stuff */
-    struct kvm_guest_debug debug;
-    int set_debug();
+    KVM::VCPU _kvm_vcpu;
 
     Elkvm::Stack stack;
 
@@ -152,11 +137,12 @@ class VCPU {
     int singlestep_off();
     std::ostream &print_mmio(std::ostream &os);
 
-  uint64_t pop() { uint64_t val = stack.popq(regs.rsp); regs.rsp += 0x8; return val; }
-  void push(uint64_t val) { regs.rsp -= 0x8; stack.pushq(regs.rsp, val); }
-  guestptr_t kernel_stack_base() { return stack.kernel_base(); }
-  int handle_stack_expansion(uint32_t err, bool debug);
-  void init_rsp() { regs.rsp = stack.user_base(); }
+    /* stack handling */
+    CURRENT_ABI::paramtype pop();
+    void push(CURRENT_ABI::paramtype val);
+    guestptr_t kernel_stack_base() { return stack.kernel_base(); }
+    int handle_stack_expansion(uint32_t err, bool debug);
+    void init_rsp();
 };
 
 std::ostream &print(std::ostream &os, const VCPU &vcpu);
