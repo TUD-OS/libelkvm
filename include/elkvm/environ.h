@@ -8,6 +8,7 @@
 #include <elkvm/region.h>
 
 namespace Elkvm {
+  class VCPU;
 
   class Environment {
     private:
@@ -28,7 +29,7 @@ namespace Elkvm {
           off64_t offset, std::string str) const;
 
       guestptr_t get_guest_address() const { return region->guest_address(); }
-      int fill(Elkvm::elkvm_opts *opts, std::shared_ptr<VCPU> vcpu);
+      int fill(elkvm_opts *opts, std::shared_ptr<VCPU> vcpu);
 
   };
 

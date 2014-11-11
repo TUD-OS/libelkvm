@@ -74,9 +74,6 @@ class Segment {
     }
 };
 
-//namespace Elkvm
-}
-
 class VCPU {
   private:
     bool is_singlestepping;
@@ -168,6 +165,9 @@ std::ostream &print(std::ostream &os, const std::string &name,
 std::ostream &print(std::ostream &os, const std::string &name,
     struct kvm_dtable dtable);
 
+//namespace Elkvm
+}
+
 #define VCPU_CR0_FLAG_PAGING            0x80000000
 #define VCPU_CR0_FLAG_CACHE_DISABLE     0x40000000
 #define VCPU_CR0_FLAG_NOT_WRITE_THROUGH 0x20000000
@@ -190,7 +190,7 @@ std::ostream &print(std::ostream &os, const std::string &name,
 #define VCPU_MSR_CSTAR  0xC0000083
 #define VCPU_MSR_SFMASK 0XC0000084
 
-void kvm_vcpu_dump_msr(std::shared_ptr<VCPU> vcpu, uint32_t);
+void kvm_vcpu_dump_msr(std::shared_ptr<Elkvm::VCPU> vcpu, uint32_t);
 
 /*
  * \brief Returns true if the host supports vmx
@@ -202,17 +202,17 @@ bool host_supports_vmx(void);
 */
 void host_cpuid(uint32_t, uint32_t, uint32_t *, uint32_t *, uint32_t *, uint32_t *);
 
-void kvm_vcpu_dump_code(std::shared_ptr<VCPU> vcpu);
-void kvm_vcpu_dump_code_at(std::shared_ptr<VCPU> vcpu, uint64_t guest_addr);
+void kvm_vcpu_dump_code(std::shared_ptr<Elkvm::VCPU> vcpu);
+void kvm_vcpu_dump_code_at(std::shared_ptr<Elkvm::VCPU> vcpu, uint64_t guest_addr);
 
 #ifdef HAVE_LIBUDIS86
 /*
  * \brief Get the next byte of code to be executed.
  * This is mainly here for libudis86 disassembly
  */
-int kvm_vcpu_get_next_code_byte(std::shared_ptr<VCPU> vcpu, uint64_t guest_addr);
+int kvm_vcpu_get_next_code_byte(std::shared_ptr<Elkvm::VCPU> vcpu, uint64_t guest_addr);
 
-void elkvm_init_udis86(std::shared_ptr<VCPU> vcpu, int mode);
+void elkvm_init_udis86(std::shared_ptr<Elkvm::VCPU> vcpu, int mode);
 #endif
 
 void print_flags(uint64_t flags);

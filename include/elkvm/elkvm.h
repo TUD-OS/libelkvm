@@ -20,8 +20,6 @@
 #include <elkvm/heap.h>
 #include <elkvm/region_manager.h>
 
-class VCPU;
-
 #define VM_MODE_X86    1
 #define VM_MODE_PAGING 2
 #define VM_MODE_X86_64 3
@@ -35,6 +33,7 @@ class VCPU;
 namespace Elkvm {
 
 class ElfBinary;
+class VCPU;
 class VM;
 
 /*
@@ -319,7 +318,7 @@ elkvm_vm_create(Elkvm::elkvm_opts *,
 /*
  * \brief Emulates (skips) the VMCALL instruction
  */
-void elkvm_emulate_vmcall(std::shared_ptr<VCPU> );
+void elkvm_emulate_vmcall(std::shared_ptr<Elkvm::VCPU> );
 int elkvm_dump_valid_msrs(struct elkvm_opts *);
 
 /**
@@ -331,5 +330,5 @@ void elkvm_gdbstub_init(std::shared_ptr<Elkvm::VM> vm);
 /**
  * \brief Enable VCPU debug mode
  */
-int elkvm_debug_enable(std::shared_ptr<VCPU> vcpu);
+int elkvm_debug_enable(std::shared_ptr<Elkvm::VCPU> vcpu);
 

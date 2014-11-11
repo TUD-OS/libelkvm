@@ -5,7 +5,7 @@
 #include <elkvm/region.h>
 #include <elkvm/vcpu.h>
 
-int elkvm_gdt_setup(Elkvm::RegionManager &rm, std::shared_ptr<VCPU> vcpu);
+int elkvm_gdt_setup(Elkvm::RegionManager &rm, std::shared_ptr<Elkvm::VCPU> vcpu);
 
 struct elkvm_gdt_segment_descriptor {
 	uint16_t limit1;

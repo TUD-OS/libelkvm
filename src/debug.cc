@@ -6,6 +6,7 @@
 #include <elkvm/elkvm.h>
 #include <elkvm/elkvm-internal.h>
 #include <elkvm/debug.h>
+#include <elkvm/vcpu.h>
 
 void Elkvm::VM::dump_memory(guestptr_t addr, unsigned size) {
   assert(addr != 0x0 && "cannot dump address NULL");
@@ -30,6 +31,8 @@ int elkvm_handle_debug(Elkvm::VM *vm) {
 
   return handled;
 }
+
+namespace Elkvm {
 
 int VCPU::enable_debug() {
   debug.control |= KVM_GUESTDBG_ENABLE;
@@ -57,4 +60,7 @@ int VCPU::set_debug() {
 int VCPU::enable_software_breakpoints() {
   debug.control |= KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_USE_SW_BP;
   return set_debug();
+}
+
+//namespace Elkvm
 }

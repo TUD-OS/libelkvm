@@ -27,6 +27,8 @@
 #define PRINT_REGISTER(name, reg) " " << name << ": " << std::hex << std::setw(16) \
   << std::setfill('0') << reg
 
+namespace Elkvm {
+
   VCPU::VCPU(std::shared_ptr<Elkvm::RegionManager> rm,
           int vmfd,
           unsigned cpu_num) :
@@ -279,11 +281,11 @@ void VCPU::set_msr(uint32_t idx, CURRENT_ABI::paramtype data) {
   assert(err >= 0 && "error setting msr");
 }
 
-Elkvm::Segment VCPU::get_reg(const struct kvm_dtable * const ptr) const {
+Segment VCPU::get_reg(const struct kvm_dtable * const ptr) const {
   return Elkvm::Segment(ptr->base, ptr->limit);
 }
 
-Elkvm::Segment VCPU::get_reg(const struct kvm_segment * const ptr) const {
+Segment VCPU::get_reg(const struct kvm_segment * const ptr) const {
   return Elkvm::Segment(ptr->selector,
             ptr->base,
             ptr->limit,
@@ -297,7 +299,7 @@ Elkvm::Segment VCPU::get_reg(const struct kvm_segment * const ptr) const {
             ptr->avl);
 }
 
-Elkvm::Segment VCPU::get_reg(Elkvm::Seg_t segtype) const {
+Segment VCPU::get_reg(Elkvm::Seg_t segtype) const {
   switch(segtype) {
     case Elkvm::Seg_t::cs:
       return get_reg(&sregs.cs);
@@ -561,7 +563,7 @@ std::ostream &VCPU::print_mmio(std::ostream &os) {
   return os;
 }
 
-int Elkvm::VM::run() {
+int VM::run() {
 
   int is_running = 1;
 //  if(vcpu->singlestep) {
@@ -572,7 +574,7 @@ int Elkvm::VM::run() {
 //    kvm_pager_dump_page_tables(&vcpu->vm->pager);
 //  }
 
-  std::shared_ptr<VCPU> vcpu = get_vcpu(0);
+  auto vcpu = get_vcpu(0);
   int err = 0;
   while(is_running) {
 
@@ -685,50 +687,6 @@ int Elkvm::VM::run() {
   return 0;
 }
 
-bool host_supports_vmx(void) {
-    uint32_t ecx, unused;
-
-    host_cpuid(1, 0, &unused, &unused, &ecx, &unused);
-    return ecx & CPUID_EXT_VMX;
-}
-
-void host_cpuid(uint32_t function, uint32_t count,
-                uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx)
-{
-    uint32_t vec[4];
-
-#ifdef __x86_64__
-    asm volatile("cpuid"
-                 : "=a"(vec[0]), "=b"(vec[1]),
-                   "=c"(vec[2]), "=d"(vec[3])
-                 : "0"(function), "c"(count) : "cc");
-#else
-    asm volatile("pusha \n\t"
-                 "cpuid \n\t"
-                 "mov %%eax, 0(%2) \n\t"
-                 "mov %%ebx, 4(%2) \n\t"
-                 "mov %%ecx, 8(%2) \n\t"
-                 "mov %%edx, 12(%2) \n\t"
-                 "popa"
-                 : : "a"(function), "c"(count), "S"(vec)
-                 : "memory", "cc");
-#endif
-
-    if (eax)
-        *eax = vec[0];
-    if (ebx)
-        *ebx = vec[1];
-    if (ecx)
-        *ecx = vec[2];
-    if (edx)
-        *edx = vec[3];
-}
-
-void kvm_vcpu_dump_msr(std::shared_ptr<VCPU> vcpu, uint32_t msr) {
-  std::cerr << " MSR: 0x" << std::hex << msr << ": 0x" << vcpu->get_msr(msr)
-            << std::endl;
-}
-
 std::ostream &print(std::ostream &os, const VCPU &vcpu) {
   os << std::endl << " Registers:" << std::endl;
   os << " ----------\n";
@@ -804,21 +762,6 @@ std::ostream &print(std::ostream &os, const VCPU &vcpu) {
   return os;
 }
 
-void print_flags(uint64_t flags) {
-  std::cerr << " [";
-  std::cerr << (((flags >> 16) & 0x1) ? "RF " : "");
-  std::cerr << (((flags >> 11) & 0x1) ? "OF " : "");
-  std::cerr << (((flags >> 10) & 0x1) ? "DF " : "");
-  std::cerr << (((flags >>  9) & 0x1) ? "IF " : "");
-  std::cerr << (((flags >>  8) & 0x1) ? "TF " : "");
-  std::cerr << (((flags >>  7) & 0x1) ? "SF " : "");
-  std::cerr << (((flags >>  6) & 0x1) ? "ZF " : "");
-  std::cerr << (((flags >>  4) & 0x1) ? "AF " : "");
-  std::cerr << (((flags >>  2) & 0x1) ? "PF " : "");
-  std::cerr << (((flags) & 0x1) ? "CF" : "");
-  std::cerr << "]\n";
-}
-
 std::ostream &print(std::ostream &os, const std::string &name,
    const Elkvm::Segment &seg)
 {
@@ -850,7 +793,69 @@ std::ostream &print(std::ostream &os, const std::string &name,
   return os;
 }
 
-void kvm_vcpu_dump_code_at(std::shared_ptr<VCPU> vcpu, uint64_t guest_addr) {
+//namespace Elkvm
+}
+
+bool host_supports_vmx(void) {
+    uint32_t ecx, unused;
+
+    host_cpuid(1, 0, &unused, &unused, &ecx, &unused);
+    return ecx & CPUID_EXT_VMX;
+}
+
+void host_cpuid(uint32_t function, uint32_t count,
+                uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx)
+{
+    uint32_t vec[4];
+
+#ifdef __x86_64__
+    asm volatile("cpuid"
+                 : "=a"(vec[0]), "=b"(vec[1]),
+                   "=c"(vec[2]), "=d"(vec[3])
+                 : "0"(function), "c"(count) : "cc");
+#else
+    asm volatile("pusha \n\t"
+                 "cpuid \n\t"
+                 "mov %%eax, 0(%2) \n\t"
+                 "mov %%ebx, 4(%2) \n\t"
+                 "mov %%ecx, 8(%2) \n\t"
+                 "mov %%edx, 12(%2) \n\t"
+                 "popa"
+                 : : "a"(function), "c"(count), "S"(vec)
+                 : "memory", "cc");
+#endif
+
+    if (eax)
+        *eax = vec[0];
+    if (ebx)
+        *ebx = vec[1];
+    if (ecx)
+        *ecx = vec[2];
+    if (edx)
+        *edx = vec[3];
+}
+
+void kvm_vcpu_dump_msr(std::shared_ptr<Elkvm::VCPU> vcpu, uint32_t msr) {
+  std::cerr << " MSR: 0x" << std::hex << msr << ": 0x" << vcpu->get_msr(msr)
+            << std::endl;
+}
+
+void print_flags(uint64_t flags) {
+  std::cerr << " [";
+  std::cerr << (((flags >> 16) & 0x1) ? "RF " : "");
+  std::cerr << (((flags >> 11) & 0x1) ? "OF " : "");
+  std::cerr << (((flags >> 10) & 0x1) ? "DF " : "");
+  std::cerr << (((flags >>  9) & 0x1) ? "IF " : "");
+  std::cerr << (((flags >>  8) & 0x1) ? "TF " : "");
+  std::cerr << (((flags >>  7) & 0x1) ? "SF " : "");
+  std::cerr << (((flags >>  6) & 0x1) ? "ZF " : "");
+  std::cerr << (((flags >>  4) & 0x1) ? "AF " : "");
+  std::cerr << (((flags >>  2) & 0x1) ? "PF " : "");
+  std::cerr << (((flags) & 0x1) ? "CF" : "");
+  std::cerr << "]\n";
+}
+
+void kvm_vcpu_dump_code_at(std::shared_ptr<Elkvm::VCPU> vcpu, uint64_t guest_addr) {
   (void)vcpu; (void)guest_addr;
 #ifdef HAVE_LIBUDIS86
   int err = kvm_vcpu_get_next_code_byte(vcpu, guest_addr);
@@ -869,12 +874,12 @@ void kvm_vcpu_dump_code_at(std::shared_ptr<VCPU> vcpu, uint64_t guest_addr) {
 #endif
 }
 
-void kvm_vcpu_dump_code(std::shared_ptr<VCPU> vcpu) {
+void kvm_vcpu_dump_code(std::shared_ptr<Elkvm::VCPU> vcpu) {
   kvm_vcpu_dump_code_at(vcpu, vcpu->get_reg(Elkvm::Reg_t::rip));
 }
 
 #ifdef HAVE_LIBUDIS86
-int kvm_vcpu_get_next_code_byte(std::shared_ptr<VCPU> vcpu __attribute__((unused)),
+int kvm_vcpu_get_next_code_byte(std::shared_ptr<Elkvm::VCPU> vcpu __attribute__((unused)),
       guestptr_t guest_addr __attribute__((unused))) {
 //  assert(guest_addr != 0x0);
 //  void *host_p = Elkvm::vmi->get_region_manager().get_pager().get_host_p(guest_addr);
@@ -886,7 +891,7 @@ int kvm_vcpu_get_next_code_byte(std::shared_ptr<VCPU> vcpu __attribute__((unused
   return -1;
 }
 
-void elkvm_init_udis86(std::shared_ptr<VCPU> vcpu, int mode) {
+void elkvm_init_udis86(std::shared_ptr<Elkvm::VCPU> vcpu, int mode) {
   ud_init(&vcpu->ud_obj);
   switch(mode) {
     case VM_MODE_X86_64:
