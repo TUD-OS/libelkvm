@@ -33,12 +33,8 @@ namespace Elkvm {
       _kvm_vcpu(vmfd, cpu_num),
       stack(rm) {
     is_singlestepping = false;
-
-    int err = initialize_regs();
-    assert(err == 0 && "error initializing vcpu registers");
-
+    initialize_regs();
     init_rsp();
-
 
 //#ifdef HAVE_LIBUDIS86
 //    elkvm_init_udis86(vcpu, mode);
@@ -100,8 +96,7 @@ void VCPU::set_reg(Elkvm::Seg_t segtype, const Elkvm::Segment &seg) {
   _kvm_vcpu.set_reg(segtype, seg);
 }
 
-int VCPU::initialize_regs() {
-
+void VCPU::initialize_regs() {
   //vcpu->regs.rsp = LINUX_64_STACK_BASE;
   /* for some reason this needs to be set */
   _kvm_vcpu.set_reg(Elkvm::Reg_t::rflags, 0x2);
@@ -148,8 +143,6 @@ int VCPU::initialize_regs() {
 
   Segment ss(0xb, 0x0, 0xFFFFFFFF, 0x3, 0x1, 0x3, 0x0, 0x1, 0x1, 0x1, 0x0);
   _kvm_vcpu.set_reg(Elkvm::Seg_t::ss, ss);
-
-  return 0;
 }
 
 CURRENT_ABI::paramtype VCPU::pop() {

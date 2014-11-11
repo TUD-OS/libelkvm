@@ -86,7 +86,7 @@ class VCPU {
     /*
       Initialize a VCPU's registers according to mode
     */
-    int initialize_regs();
+    void initialize_regs();
 
 
   public:
