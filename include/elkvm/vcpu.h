@@ -134,6 +134,7 @@ class VCPU {
     int singlestep_off();
     std::ostream &print_mmio(std::ostream &os);
 
+    void print_info();
     /* stack handling */
     CURRENT_ABI::paramtype pop();
     void push(CURRENT_ABI::paramtype val);

@@ -13,6 +13,7 @@
 
 #include <elkvm/debug.h>
 #include <elkvm/elkvm.h>
+#include <elkvm/elkvm-log.h>
 #include <elkvm/elkvm-internal.h>
 #include <elkvm/gdt.h>
 #include <elkvm/idt.h>
@@ -168,6 +169,19 @@ int VCPU::run() {
   return _kvm_vcpu.run();
 }
 
+void VCPU::print_info() {
+  if(exit_reason() == KVM_EXIT_MMIO
+  || exit_reason() == KVM_EXIT_SHUTDOWN) {
+    print(std::cerr, *this);
+    //dump_stack(this);
+    //kvm_vcpu_dump_code(this);
+  } else if(is_singlestepping && exit_reason() == hypercall_exit) {
+    DBG() << "KVM_EXIT_HYPERCALL";
+    print(std::cerr, *this);
+    //kvm_vcpu_dump_code(this);
+  }
+}
+
 bool VCPU::handle_vm_exit() {
   switch(_kvm_vcpu.exit_reason()) {
     case KVM_EXIT_UNKNOWN:
@@ -241,7 +255,7 @@ std::ostream &VCPU::print_mmio(std::ostream &os) {
 
 int VM::run() {
 
-  int is_running = 1;
+  bool is_running = 1;
 //  if(vcpu->singlestep) {
 //    elkvm_gdt_dump(vcpu->vm);
 //    kvm_vcpu_dump_msr(vcpu, VCPU_MSR_STAR);
@@ -258,12 +272,6 @@ int VM::run() {
     if(err) {
       return err;
     }
-//    if(vcpu->singlestep) {
-//      err = kvm_vcpu_singlestep(vcpu);
-//      if(err) {
-//        return err;
-//      }
-//    }
 
     uint32_t exit_reason = vcpu->run();
     if(exit_reason < 0) {
@@ -275,30 +283,16 @@ int VM::run() {
       return err;
     }
 
+    vcpu->print_info();
     if(exit_reason == VCPU::hypercall_exit) {
-      if(vcpu->is_singlestep()) {
-        fprintf(stderr, "KVM_EXIT_HYPERCALL\n");
-        print(std::cerr, *vcpu);
-        //kvm_vcpu_dump_code(this);
-      }
       int err = handle_hypercall(vcpu);
-      if(err == ELKVM_HYPERCALL_EXIT) {
-        is_running = false;
-      } else if(err) {
-        fprintf(stderr, "ELKVM: Could not handle hypercall!\n");
-        fprintf(stderr, "Errno: %i Msg: %s\n", err, strerror(err));
+      if(err) {
         is_running = false;
       }
     } else {
       is_running = vcpu->handle_vm_exit();
     }
 
-    if(  vcpu->exit_reason() == KVM_EXIT_MMIO ||
-        vcpu->exit_reason() == KVM_EXIT_SHUTDOWN) {
-      print(std::cerr, *vcpu);
-      dump_stack(vcpu);
-      kvm_vcpu_dump_code(vcpu);
-    }
   }
   return 0;
 }

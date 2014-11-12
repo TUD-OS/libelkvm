@@ -352,6 +352,10 @@ int Elkvm::VM::handle_hypercall(std::shared_ptr<Elkvm::VCPU> vcpu) {
   }
 
   if(err) {
+    if(err != ELKVM_HYPERCALL_EXIT) {
+      fprintf(stderr, "ELKVM: Could not handle hypercall!\n");
+      fprintf(stderr, "Errno: %i Msg: %s\n", err, strerror(err));
+    }
     return err;
   }
 
