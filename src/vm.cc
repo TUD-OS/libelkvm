@@ -27,6 +27,38 @@
 namespace Elkvm {
   std::list<VM> vmi;
 
+int VM::run() {
+  bool is_running = 1;
+  auto vcpu = get_vcpu(0);
+  while(is_running) {
+    int err = vcpu->set_regs();
+    if(err) {
+      return err;
+    }
+
+    int exit_reason = vcpu->run();
+    if(exit_reason < 0) {
+      return exit_reason;
+    }
+
+    err = vcpu->get_regs();
+    if(err) {
+      return err;
+    }
+
+    vcpu->print_info();
+    if(exit_reason == VCPU::hypercall_exit) {
+      int err = handle_hypercall(vcpu);
+      if(err) {
+        is_running = false;
+      }
+    } else {
+      is_running = vcpu->handle_vm_exit();
+    }
+  }
+  return 0;
+}
+
 std::shared_ptr<VM> create_virtual_hardware(const elkvm_opts * const opts,
         const Elkvm::hypercall_handlers * const hyp,
         const Elkvm::elkvm_handlers * const handlers,

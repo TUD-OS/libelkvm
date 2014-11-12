@@ -253,50 +253,6 @@ std::ostream &VCPU::print_mmio(std::ostream &os) {
   return _kvm_vcpu.print_mmio(os);
 }
 
-int VM::run() {
-
-  bool is_running = 1;
-//  if(vcpu->singlestep) {
-//    elkvm_gdt_dump(vcpu->vm);
-//    kvm_vcpu_dump_msr(vcpu, VCPU_MSR_STAR);
-//    kvm_vcpu_dump_msr(vcpu, VCPU_MSR_LSTAR);
-//    kvm_vcpu_dump_msr(vcpu, VCPU_MSR_CSTAR);
-//    kvm_pager_dump_page_tables(&vcpu->vm->pager);
-//  }
-
-  auto vcpu = get_vcpu(0);
-  int err = 0;
-  while(is_running) {
-
-    err = vcpu->set_regs();
-    if(err) {
-      return err;
-    }
-
-    int exit_reason = vcpu->run();
-    if(exit_reason < 0) {
-      return exit_reason;
-    }
-
-    err = vcpu->get_regs();
-    if(err) {
-      return err;
-    }
-
-    vcpu->print_info();
-    if(exit_reason == VCPU::hypercall_exit) {
-      int err = handle_hypercall(vcpu);
-      if(err) {
-        is_running = false;
-      }
-    } else {
-      is_running = vcpu->handle_vm_exit();
-    }
-
-  }
-  return 0;
-}
-
 std::ostream &print_stack(std::ostream &os, const VCPU &vcpu) {
   assert(vcpu.get_reg(Elkvm::Reg_t::rsp) != 0x0);
   os << "\n Stack:\n";
