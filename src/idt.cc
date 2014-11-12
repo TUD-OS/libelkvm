@@ -17,7 +17,7 @@
 #include <elkvm/vcpu.h>
 
 int elkvm_idt_setup(Elkvm::RegionManager &rm,
-    std::shared_ptr<VCPU> vcpu,
+    std::shared_ptr<Elkvm::VCPU> vcpu,
     Elkvm::elkvm_flat *default_handler) {
   std::shared_ptr<Elkvm::Region> idt_region =
     rm.allocate_region(

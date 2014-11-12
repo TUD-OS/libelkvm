@@ -7,7 +7,6 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <linux/kvm.h>
 #include <stropts.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -27,6 +26,38 @@
 
 namespace Elkvm {
   std::list<VM> vmi;
+
+int VM::run() {
+  bool is_running = 1;
+  auto vcpu = get_vcpu(0);
+  while(is_running) {
+    int err = vcpu->set_regs();
+    if(err) {
+      return err;
+    }
+
+    int exit_reason = vcpu->run();
+    if(exit_reason < 0) {
+      return exit_reason;
+    }
+
+    err = vcpu->get_regs();
+    if(err) {
+      return err;
+    }
+
+    vcpu->print_info();
+    if(exit_reason == VCPU::hypercall_exit) {
+      int err = handle_hypercall(vcpu);
+      if(err) {
+        is_running = false;
+      }
+    } else {
+      is_running = vcpu->handle_vm_exit();
+    }
+  }
+  return 0;
+}
 
 std::shared_ptr<VM> create_virtual_hardware(const elkvm_opts * const opts,
         const Elkvm::hypercall_handlers * const hyp,
@@ -198,36 +229,6 @@ elkvm_vm_create(Elkvm::elkvm_opts *opts,
   return vmi;
 }
 
-int elkvm_init(Elkvm::elkvm_opts *opts, int argc, char **argv, char **environ) {
-  opts->argc = argc;
-  opts->argv = argv;
-  opts->environ = environ;
-
-  opts->fd = open(KVM_DEV_PATH, O_RDWR);
-  if(opts->fd < 0) {
-    return -errno;
-  }
-
-  int version = ioctl(opts->fd, KVM_GET_API_VERSION, 0);
-  if(version != KVM_EXPECT_VERSION) {
-    return -ENOPROTOOPT;
-  }
-
-  opts->run_struct_size = ioctl(opts->fd, KVM_GET_VCPU_MMAP_SIZE, 0);
-  if(opts->run_struct_size <= 0) {
-    return -EIO;
-  }
-
-  return 0;
-}
-
-int elkvm_cleanup(Elkvm::elkvm_opts *opts) {
-  close(opts->fd);
-  opts->fd = 0;
-  opts->run_struct_size = 0;
-  return 0;
-}
-
 int Elkvm::VM::chunk_remap(int num, size_t newsize) {
 
   auto chunk = get_region_manager()->get_pager().get_chunk(num);
@@ -244,7 +245,7 @@ int Elkvm::VM::chunk_remap(int num, size_t newsize) {
   return 0;
 }
 
-void elkvm_emulate_vmcall(std::shared_ptr<VCPU> vcpu) {
+void elkvm_emulate_vmcall(std::shared_ptr<Elkvm::VCPU> vcpu) {
   /* INTEL VMCALL instruction is three bytes long */
   CURRENT_ABI::paramtype rip = vcpu->get_reg(Elkvm::Reg_t::rip);
   vcpu->set_reg(Elkvm::Reg_t::rip, rip += 3);

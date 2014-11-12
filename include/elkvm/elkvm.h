@@ -20,8 +20,6 @@
 #include <elkvm/heap.h>
 #include <elkvm/region_manager.h>
 
-class VCPU;
-
 #define VM_MODE_X86    1
 #define VM_MODE_PAGING 2
 #define VM_MODE_X86_64 3
@@ -35,6 +33,7 @@ class VCPU;
 namespace Elkvm {
 
 class ElfBinary;
+class VCPU;
 class VM;
 
 /*
@@ -199,6 +198,7 @@ class VM {
         bool kernel);
 
     std::shared_ptr<RegionManager> get_region_manager() { return _rm; }
+    const std::shared_ptr<const RegionManager> get_region_manager() const { return _rm; }
     HeapManager &get_heap_manager() { return hm; }
     std::shared_ptr<VCPU> get_vcpu(int num) const;
     int get_vmfd() const { return _vmfd; }
@@ -225,18 +225,12 @@ class VM {
      */
     int init_rlimits();
 
-    /*
-     * Dump the current stack frame for the vCPU.
-     *
-     * TODOL should be part of the VCPU class.
-     */
-    void dump_stack(std::shared_ptr<VCPU> vcpu);
 
 
     /*
      * Dump guest memory at given address.
      */
-    void dump_memory(guestptr_t ptr, unsigned size = 16);
+    void dump_memory(guestptr_t ptr, unsigned size = 16) const;
 
     /*
      * Runs all CPUS of the VM
@@ -319,7 +313,7 @@ elkvm_vm_create(Elkvm::elkvm_opts *,
 /*
  * \brief Emulates (skips) the VMCALL instruction
  */
-void elkvm_emulate_vmcall(std::shared_ptr<VCPU> );
+void elkvm_emulate_vmcall(std::shared_ptr<Elkvm::VCPU> );
 int elkvm_dump_valid_msrs(struct elkvm_opts *);
 
 /**
@@ -331,5 +325,5 @@ void elkvm_gdbstub_init(std::shared_ptr<Elkvm::VM> vm);
 /**
  * \brief Enable VCPU debug mode
  */
-int elkvm_debug_enable(std::shared_ptr<VCPU> vcpu);
+int elkvm_debug_enable(std::shared_ptr<Elkvm::VCPU> vcpu);
 

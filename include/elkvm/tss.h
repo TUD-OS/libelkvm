@@ -4,7 +4,7 @@
 
 #include <elkvm/region.h>
 
-int elkvm_tss_setup64(std::shared_ptr<VCPU> vcpu,
+int elkvm_tss_setup64(std::shared_ptr<Elkvm::VCPU> vcpu,
     Elkvm::RegionManager &rm, std::shared_ptr<Elkvm::Region> r);
 
 struct elkvm_tss64 {

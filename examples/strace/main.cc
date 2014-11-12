@@ -71,7 +71,7 @@ char const *syscalls[]= {
 
 static long
 strace_pre_handler(Elkvm::VM* vm __attribute__((unused)),
-                   std::shared_ptr<VCPU> vcpu,
+                   std::shared_ptr<Elkvm::VCPU> vcpu,
                    int eventtype)
 {
   if (eventtype != ELKVM_HYPERCALL_SYSCALL)
@@ -86,7 +86,7 @@ strace_pre_handler(Elkvm::VM* vm __attribute__((unused)),
 
 static long
 strace_post_handler(Elkvm::VM* vm __attribute__((unused)),
-                    std::shared_ptr<VCPU> vcpu,
+                    std::shared_ptr<Elkvm::VCPU> vcpu,
                     int eventtype)
 {
   if (eventtype != ELKVM_HYPERCALL_SYSCALL)

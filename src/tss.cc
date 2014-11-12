@@ -6,7 +6,7 @@
 #include <elkvm/tss.h>
 #include <elkvm/vcpu.h>
 
-int elkvm_tss_setup64(std::shared_ptr<VCPU> vcpu, Elkvm::RegionManager &rm, std::shared_ptr<Elkvm::Region> r) {
+int elkvm_tss_setup64(std::shared_ptr<Elkvm::VCPU> vcpu, Elkvm::RegionManager &rm, std::shared_ptr<Elkvm::Region> r) {
   guestptr_t guest_virtual =
     rm.get_pager().map_kernel_page(
 			r->base_address(), 0);

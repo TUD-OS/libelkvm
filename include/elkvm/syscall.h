@@ -2,13 +2,18 @@
 
 #include <asm/unistd_64.h>
 
+#include <memory>
+
 #define ELKVM_HYPERCALL_SYSCALL   1
 #define ELKVM_HYPERCALL_INTERRUPT 2
 
 #define ELKVM_HYPERCALL_EXIT      0x42
 #define NUM_SYSCALLS 313
 
-class VCPU;
+namespace Elkvm {
+  class VCPU;
+  class VM;
+}
 
 /*
  * Interface for a platform-specific binary interface.
@@ -23,12 +28,12 @@ class ABI
     /*
      * Get n-th system call parameter from ABI register set.
      */
-    static paramtype get_parameter(std::shared_ptr<VCPU> vcpu, unsigned pos);
+    static paramtype get_parameter(std::shared_ptr<Elkvm::VCPU> vcpu, unsigned pos);
 
     /*
      * Set the ABI-specific syscall return register to value.
      */
-    static void set_syscall_return(std::shared_ptr<VCPU> vcpu, paramtype value);
+    static void set_syscall_return(std::shared_ptr<Elkvm::VCPU> vcpu, paramtype value);
 };
 
 class X86_64_ABI : public ABI <uint64_t>
@@ -73,10 +78,10 @@ class X86_64_ABI : public ABI <uint64_t>
 
   public:
     static ABI::paramtype
-    get_parameter(std::shared_ptr<VCPU > vcpu, unsigned pos);
+    get_parameter(std::shared_ptr<Elkvm::VCPU> vcpu, unsigned pos);
 
     static void
-    set_syscall_return(std::shared_ptr<VCPU> vcpu, paramtype value);
+    set_syscall_return(std::shared_ptr<Elkvm::VCPU> vcpu, paramtype value);
 };
 
 // XXX: this needs to be adjusted for other platforms

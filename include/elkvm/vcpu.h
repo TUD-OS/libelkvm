@@ -1,5 +1,7 @@
 #pragma once
+
 #include <elkvm/config.h>
+#include <elkvm/kvm.h>
 #include <elkvm/regs.h>
 #include <elkvm/stack.h>
 #include <elkvm/syscall.h>
@@ -74,53 +76,29 @@ class Segment {
     }
 };
 
-//namespace Elkvm
-}
-
 class VCPU {
   private:
     bool is_singlestepping;
-
-    /* internal kvm-specific stuff
-     * TODO move this to some hypervisor abstraction
-     */
-    int fd;
-    struct kvm_regs regs;
-    struct kvm_sregs sregs;
-
-    struct kvm_run *run_struct;
-
-    void set_reg(struct kvm_dtable *ptr, const Elkvm::Segment &seg);
-    void set_reg(struct kvm_segment *ptr, const Elkvm::Segment &seg);
-    Elkvm::Segment get_reg(const struct kvm_dtable * const ptr) const;
-    Elkvm::Segment get_reg(const struct kvm_segment * const ptr) const;
-
-    /* internal debugging stuff */
-    struct kvm_guest_debug debug;
-    int set_debug();
-
+    KVM::VCPU _kvm_vcpu;
     Elkvm::Stack stack;
 
-    /*
-      Initialize a VCPU's registers according to mode
-    */
-    int initialize_regs();
-
+    void initialize_regs();
 
   public:
+    static const int hypercall_exit = 1;
 #ifdef HAVE_LIBUDIS86
   ud_t ud_obj;
 #endif
 
     VCPU(std::shared_ptr<Elkvm::RegionManager> rm, int vmfd, unsigned cpu_num);
     /*
-     * Get VCPU registers
+     * Get VCPU registers from hypervisor
      */
     int get_regs();
     int get_sregs();
 
     /*
-     * Set VCPU registers
+     * Set VCPU registers with hypervisor
      */
     int set_regs();
     int set_sregs();
@@ -141,6 +119,7 @@ class VCPU {
 
     /* RUNNING the VCPU */
     int run();
+    bool handle_vm_exit();
 
     /* get VCPU hypervisor exit reasons */
     uint32_t exit_reason();
@@ -155,11 +134,13 @@ class VCPU {
     int singlestep_off();
     std::ostream &print_mmio(std::ostream &os);
 
-  uint64_t pop() { uint64_t val = stack.popq(regs.rsp); regs.rsp += 0x8; return val; }
-  void push(uint64_t val) { regs.rsp -= 0x8; stack.pushq(regs.rsp, val); }
-  guestptr_t kernel_stack_base() { return stack.kernel_base(); }
-  int handle_stack_expansion(uint32_t err, bool debug);
-  void init_rsp() { regs.rsp = stack.user_base(); }
+    void print_info();
+    /* stack handling */
+    CURRENT_ABI::paramtype pop();
+    void push(CURRENT_ABI::paramtype val);
+    guestptr_t kernel_stack_base() { return stack.kernel_base(); }
+    int handle_stack_expansion(uint32_t err, bool debug);
+    void init_rsp();
 };
 
 std::ostream &print(std::ostream &os, const VCPU &vcpu);
@@ -167,6 +148,10 @@ std::ostream &print(std::ostream &os, const std::string &name,
     const Elkvm::Segment &seg);
 std::ostream &print(std::ostream &os, const std::string &name,
     struct kvm_dtable dtable);
+std::ostream &print_stack(std::ostream &os, const VCPU &vcpu);
+
+//namespace Elkvm
+}
 
 #define VCPU_CR0_FLAG_PAGING            0x80000000
 #define VCPU_CR0_FLAG_CACHE_DISABLE     0x40000000
@@ -190,7 +175,7 @@ std::ostream &print(std::ostream &os, const std::string &name,
 #define VCPU_MSR_CSTAR  0xC0000083
 #define VCPU_MSR_SFMASK 0XC0000084
 
-void kvm_vcpu_dump_msr(std::shared_ptr<VCPU> vcpu, uint32_t);
+void kvm_vcpu_dump_msr(std::shared_ptr<Elkvm::VCPU> vcpu, uint32_t);
 
 /*
  * \brief Returns true if the host supports vmx
@@ -202,17 +187,17 @@ bool host_supports_vmx(void);
 */
 void host_cpuid(uint32_t, uint32_t, uint32_t *, uint32_t *, uint32_t *, uint32_t *);
 
-void kvm_vcpu_dump_code(std::shared_ptr<VCPU> vcpu);
-void kvm_vcpu_dump_code_at(std::shared_ptr<VCPU> vcpu, uint64_t guest_addr);
+void kvm_vcpu_dump_code(std::shared_ptr<Elkvm::VCPU> vcpu);
+void kvm_vcpu_dump_code_at(std::shared_ptr<Elkvm::VCPU> vcpu, uint64_t guest_addr);
 
 #ifdef HAVE_LIBUDIS86
 /*
  * \brief Get the next byte of code to be executed.
  * This is mainly here for libudis86 disassembly
  */
-int kvm_vcpu_get_next_code_byte(std::shared_ptr<VCPU> vcpu, uint64_t guest_addr);
+int kvm_vcpu_get_next_code_byte(std::shared_ptr<Elkvm::VCPU> vcpu, uint64_t guest_addr);
 
-void elkvm_init_udis86(std::shared_ptr<VCPU> vcpu, int mode);
+void elkvm_init_udis86(std::shared_ptr<Elkvm::VCPU> vcpu, int mode);
 #endif
 
 void print_flags(uint64_t flags);

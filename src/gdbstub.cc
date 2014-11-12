@@ -40,6 +40,7 @@
 #include <elkvm/pager.h>
 #include <elkvm/regs.h>
 #include <elkvm/region_manager.h>
+#include <elkvm/vcpu.h>
 
 #define NEED_CPU_REG_SHORTCUTS 1
 
@@ -258,7 +259,7 @@ static void debug_loop(std::shared_ptr<Elkvm::VM> vm) {
   char buffer[255];
   char obuf[1024];
   int ne = 0;
-  std::shared_ptr<VCPU> vcpu = vm->get_vcpu(0);
+  auto vcpu = vm->get_vcpu(0);
 
   while (ne == 0)
   {
@@ -316,7 +317,7 @@ static void debug_loop(std::shared_ptr<Elkvm::VM> vm) {
       {
         char buf[255];
 
-        std::shared_ptr<VCPU> vcpu = vm->get_vcpu(0);
+        auto vcpu = vm->get_vcpu(0);
         vcpu->singlestep();
         vm->run();
         vcpu->singlestep_off();
@@ -341,7 +342,7 @@ static void debug_loop(std::shared_ptr<Elkvm::VM> vm) {
 
         void *host_p = vm->get_region_manager()->get_pager().get_host_p(addr);
         memcpy(host_p, mem, len);
-        std::shared_ptr<VCPU> vcpu = vm->get_vcpu(0);
+        auto vcpu = vm->get_vcpu(0);
         int err = vcpu->enable_software_breakpoints();
         assert(err == 0 && "could not set guest debug mode");
         put_reply("OK");

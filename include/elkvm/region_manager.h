@@ -41,6 +41,7 @@ namespace Elkvm {
 
       /* XXX make this const */
       PagerX86_64 &get_pager() { return pager; }
+      const PagerX86_64 &get_pager() const { return pager; }
   };
 
   std::array<std::vector<Region>, RegionManager::n_freelists>::size_type

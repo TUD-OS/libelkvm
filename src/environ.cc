@@ -188,7 +188,7 @@ namespace Elkvm {
   }
 
 
-int Environment::fill(Elkvm::elkvm_opts *opts,
+int Environment::fill(elkvm_opts *opts,
     std::shared_ptr<VCPU> vcpu) {
   int err = vcpu->get_regs();
   assert(err == 0 && "error getting vcpu");
