@@ -85,6 +85,7 @@ class VCPU {
     void initialize_regs();
 
   public:
+    static const int hypercall_exit = 1;
 #ifdef HAVE_LIBUDIS86
   ud_t ud_obj;
 #endif

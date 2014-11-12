@@ -275,7 +275,7 @@ int VM::run() {
       return err;
     }
 
-    if(exit_reason == 1) {
+    if(exit_reason == VCPU::hypercall_exit) {
       if(vcpu->is_singlestep()) {
         fprintf(stderr, "KVM_EXIT_HYPERCALL\n");
         print(std::cerr, *vcpu);
