@@ -224,12 +224,6 @@ class VM {
      */
     int init_rlimits();
 
-    /*
-     * Dump the current stack frame for the vCPU.
-     *
-     * TODOL should be part of the VCPU class.
-     */
-    void dump_stack(std::shared_ptr<VCPU> vcpu);
 
 
     /*

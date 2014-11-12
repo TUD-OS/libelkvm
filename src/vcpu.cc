@@ -173,7 +173,7 @@ void VCPU::print_info() {
   if(exit_reason() == KVM_EXIT_MMIO
   || exit_reason() == KVM_EXIT_SHUTDOWN) {
     print(std::cerr, *this);
-    //dump_stack(this);
+    print_stack(std::cerr, *this);
     //kvm_vcpu_dump_code(this);
   } else if(is_singlestepping && exit_reason() == hypercall_exit) {
     DBG() << "KVM_EXIT_HYPERCALL";
@@ -273,7 +273,7 @@ int VM::run() {
       return err;
     }
 
-    uint32_t exit_reason = vcpu->run();
+    int exit_reason = vcpu->run();
     if(exit_reason < 0) {
       return exit_reason;
     }
@@ -295,6 +295,14 @@ int VM::run() {
 
   }
   return 0;
+}
+
+std::ostream &print_stack(std::ostream &os, const VCPU &vcpu) {
+  assert(vcpu.get_reg(Elkvm::Reg_t::rsp) != 0x0);
+  os << "\n Stack:\n";
+  os <<   " ------\n";
+  //dump_memory(vcpu.get_reg(Elkvm::Reg_t::rsp));
+  return os;
 }
 
 std::ostream &print(std::ostream &os, const VCPU &vcpu) {

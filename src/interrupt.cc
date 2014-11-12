@@ -14,7 +14,7 @@ int VM::handle_interrupt(std::shared_ptr<VCPU> vcpu) {
       << " detected";
     vcpu->get_sregs();
     print(std::cerr, *vcpu);
-    dump_stack(vcpu);
+    print_stack(std::cerr, *vcpu);
   }
 
   uint64_t err_code = vcpu->pop();
