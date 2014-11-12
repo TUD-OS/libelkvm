@@ -8,11 +8,11 @@
 #include <elkvm/debug.h>
 #include <elkvm/vcpu.h>
 
-void Elkvm::VM::dump_memory(guestptr_t addr, unsigned size) {
+void Elkvm::VM::dump_memory(guestptr_t addr, unsigned size) const {
   assert(addr != 0x0 && "cannot dump address NULL");
-  uint64_t *host_p = reinterpret_cast<uint64_t *>(
-  get_region_manager()->get_pager().get_host_p(addr));
-  assert(host_p != NULL && "cannot dump unmapped memory");
+  uint64_t *host_p = static_cast<uint64_t *>(
+      get_region_manager()->get_pager().get_host_p(addr));
+  assert(host_p != nullptr && "cannot dump unmapped memory");
 
   fprintf(stderr, " Host Address\tGuest Address\t\tValue\t\tValue\n");
   for(unsigned i = 0; i < size; i++) {

@@ -198,6 +198,7 @@ class VM {
         bool kernel);
 
     std::shared_ptr<RegionManager> get_region_manager() { return _rm; }
+    const std::shared_ptr<const RegionManager> get_region_manager() const { return _rm; }
     HeapManager &get_heap_manager() { return hm; }
     std::shared_ptr<VCPU> get_vcpu(int num) const;
     int get_vmfd() const { return _vmfd; }
@@ -229,7 +230,7 @@ class VM {
     /*
      * Dump guest memory at given address.
      */
-    void dump_memory(guestptr_t ptr, unsigned size = 16);
+    void dump_memory(guestptr_t ptr, unsigned size = 16) const;
 
     /*
      * Runs all CPUS of the VM
