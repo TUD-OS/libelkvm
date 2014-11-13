@@ -180,11 +180,11 @@ struct Mapping
     size_t pages() const
     {
         unsigned sz = end - start;
-        if (sz & ~ELKVM_PAGESIZE) { // need one more page if size is
+        if (sz & ~(ELKVM_PAGESIZE-1)) { // need one more page if size is
                                     // not a multiple...
-            sz =+ ELKVM_PAGESIZE;
+            sz += ELKVM_PAGESIZE;
         }
-        return sz / ELKVM_PAGESIZE;
+        return (sz / ELKVM_PAGESIZE);
     }
 
     Mapping(guestptr_t _start, guestptr_t _end, char const *_perm)
@@ -270,7 +270,7 @@ std::shared_ptr<Elkvm::VM> attach_vm(int pid)
   memory_map_for_pid(pid, regions);
 
   for (auto reg : regions) {
-      //INFO() << "size: " << reg.size();
+      INFO() << "size: " << reg.pages();
       std::shared_ptr<Elkvm::Region> r =
           vm->get_region_manager()->allocate_region(reg.size(), "ELVKM::attach");
       r->set_guest_addr(reg.start);
@@ -278,10 +278,12 @@ std::shared_ptr<Elkvm::VM> attach_vm(int pid)
       ptopt_t pt_options = 0;
       if (reg.perm.writable) pt_options |= PT_OPT_WRITE;
       if (reg.perm.exec)     pt_options |= PT_OPT_EXEC;
-      vm->get_region_manager()->get_pager().map_region(r->base_address(),
+      int err = vm->get_region_manager()->get_pager().map_region(r->base_address(),
                                                        r->guest_address(),
-                                                       reg.pages() / ELKVM_PAGESIZE,
+                                                       reg.pages(),
                                                        pt_options);
+      void* ptr = vm->get_region_manager()->get_pager().get_host_p(r->guest_address());
+      INFO() << "map_region(): " << err << " get_host_p(): " << ptr;
       {
           struct iovec local, remote;
           local.iov_base = r->base_address();
@@ -305,6 +307,7 @@ std::shared_ptr<Elkvm::VM> attach_vm(int pid)
     perror("ptrace getregs");
     abort();
   }
+  INFO() << "RIP:     " << (void*)user_regs.rip;
   std::shared_ptr<VCPU> cpu = vm->get_vcpu(0);
   cpu->set_reg(Elkvm::rax, user_regs.rax);
   cpu->set_reg(Elkvm::rbx, user_regs.rbx);
@@ -324,11 +327,16 @@ std::shared_ptr<Elkvm::VM> attach_vm(int pid)
   cpu->set_reg(Elkvm::rbp, user_regs.rbp);
   cpu->set_reg(Elkvm::rsi, user_regs.rsi);
   cpu->set_reg(Elkvm::rdi, user_regs.rdi);
-  cpu->set_reg(Elkvm::rflags, user_regs.eflags);
+  cpu->set_reg(Elkvm::rflags, user_regs.eflags );
+  INFO() << "GS Base: " << (void*)user_regs.gs_base;
+  INFO() << "GS       " << (void*)user_regs.gs;
   Elkvm::Segment fs (user_regs.gs_base, ~0ULL);
   Elkvm::Segment gs (user_regs.gs_base, ~0ULL);
   cpu->set_reg(Elkvm::gs, fs);
   cpu->set_reg(Elkvm::fs, gs);
+  cpu->set_regs();
+
+  cpu->singlestep();
 
   //detach_pid(pid);
   //elkvm_cleanup(&elkvm);
