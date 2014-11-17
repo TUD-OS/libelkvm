@@ -15,6 +15,7 @@
 
 #include <elkvm/debug.h>
 #include <elkvm/elkvm.h>
+#include <elkvm/elkvm-log.h>
 #include <elkvm/elkvm-internal.h>
 #include <elkvm/gdt.h>
 #include <elkvm/idt.h>
@@ -599,14 +600,14 @@ int Elkvm::VM::run() {
 
     switch(vcpu->exit_reason()) {
       case KVM_EXIT_UNKNOWN:
-        std::cerr << "KVM exit for unknown reason (KVM_EXIT_UNKNOWN)\n"
-                  << " Hardware exit reason: " << std::dec
-                  << vcpu->exit_reason() << std::endl;
+        ERROR() << "KVM exit for unknown reason (KVM_EXIT_UNKNOWN)\n"
+                << " Hardware exit reason: " << std::dec
+                << vcpu->exit_reason() << std::endl;
         is_running = 0;
         break;
       case KVM_EXIT_HYPERCALL:
         if(vcpu->is_singlestep()) {
-          fprintf(stderr, "KVM_EXIT_HYPERCALL\n");
+          ERROR() << "KVM_EXIT_HYPERCALL";
           print(std::cerr, vcpu);
           kvm_vcpu_dump_code(vcpu);
         }
@@ -615,8 +616,8 @@ int Elkvm::VM::run() {
           is_running = 0;
         } else if(err) {
           is_running = 0;
-          fprintf(stderr, "ELKVM: Could not handle hypercall!\n");
-          fprintf(stderr, "Errno: %i Msg: %s\n", err, strerror(err));
+          ERROR() << "ELKVM: Could not handle hypercall!";
+          ERROR() << "Errno: " << err << " Msg: " << strerror(err);
         }
         break;
       case KVM_EXIT_FAIL_ENTRY: {
