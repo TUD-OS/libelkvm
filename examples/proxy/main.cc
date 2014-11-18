@@ -3,7 +3,6 @@
 #include <elkvm/kvm.h>
 
 #include <stdint.h>
-#include <smmintrin.h>
 
 extern char **environ;
 Elkvm::elkvm_opts elkvm;

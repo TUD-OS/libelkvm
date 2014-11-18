@@ -3,7 +3,7 @@ find_package(Boost 1.54.0 REQUIRED
 find_package(Threads REQUIRED)
 
 set( strace_SRC main.cc )
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4  -DBOOST_LOG_DYN_LINK")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_LOG_DYN_LINK")
 
 include_directories("${PROJECT_SOURCE_DIR}/include")
 
