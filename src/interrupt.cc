@@ -18,16 +18,15 @@ int VM::handle_interrupt(std::shared_ptr<VCPU> vcpu) {
   }
 
   uint64_t err_code = vcpu->pop();
-  if(interrupt_vector == Interrupt::Vector::stack_segment_fault) {
-    return Elkvm::Interrupt::handle_stack_segment_fault(err_code);
-  }
-
-  if(interrupt_vector == Interrupt::Vector::general_protection_fault) {
-    return Elkvm::Interrupt::handle_general_protection_fault(err_code);
-  }
-
-  if(interrupt_vector == Interrupt::Vector::page_fault) {
-    return Elkvm::Interrupt::handle_page_fault(*this, vcpu, err_code);
+  switch(interrupt_vector) {
+    case Interrupt::Vector::debug_trap:
+      return Elkvm::Interrupt::handle_debug_trap(vcpu, err_code);
+    case Interrupt::Vector::stack_segment_fault:
+      return Elkvm::Interrupt::handle_stack_segment_fault(err_code);
+    case Interrupt::Vector::general_protection_fault:
+      return Elkvm::Interrupt::handle_general_protection_fault(err_code);
+    case Interrupt::Vector::page_fault:
+      return Elkvm::Interrupt::handle_page_fault(*this, vcpu, err_code);
   }
 
   return Interrupt::failure;
@@ -36,15 +35,24 @@ int VM::handle_interrupt(std::shared_ptr<VCPU> vcpu) {
 namespace Interrupt {
 
 int handle_stack_segment_fault(uint64_t code) {
-  ERROR() << "STACK SEGMENT FAULT\n";
-  ERROR() << "Error Code: " << code << "\n";
+  ERROR() << "STACK SEGMENT FAULT";
+  ERROR() << "Error Code: " << code;
   return failure;
 }
 
 int handle_general_protection_fault(uint64_t code) {
-  ERROR() << "GENERAL PROTECTION FAULT\n";
-  ERROR() << "Error Code:" << code << "\n";
+  ERROR() << "GENERAL PROTECTION FAULT";
+  ERROR() << "Error Code:" << code;
   return failure;
+}
+
+
+int handle_debug_trap(std::shared_ptr<VCPU> vcpu, uint64_t code) {
+  // code is RIP in this case
+  ERROR() << "Debug trap @ RIP " << (void*)code;
+  // push RIP back and IRET from handler
+  vcpu->push(code);
+  return success;
 }
 
 int handle_page_fault(VM &vm,
@@ -54,6 +62,7 @@ int handle_page_fault(VM &vm,
   assert(err == 0 && "error getting vcpu sregs");
 
   CURRENT_ABI::paramtype pfla = vcpu->get_reg(Elkvm::Reg_t::cr2);
+  DBG() << "Page fault @ " << (void*)pfla;
   handle_segfault(pfla);
   if(vcpu->handle_stack_expansion(code, vm.debug_mode())) {
     return success;
