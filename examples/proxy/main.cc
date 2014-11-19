@@ -3,6 +3,7 @@
 #include <cstring>
 #include <elkvm/elkvm.h>
 #include <elkvm/elkvm-log.h>
+#include <elkvm/gdt.h>
 #include <elkvm/kvm.h>
 #include <elkvm/vcpu.h>
 #include <cassert>
@@ -239,8 +240,25 @@ memory_map_for_pid(int pid, std::list<Mapping>& regions)
   INFO() << "Totally in use: " << sum << " Bytes.";
 }
 
-static void detach_pid(int pid)
+
+static void
+restore_to_pid(std::shared_ptr<Elkvm::VM> vm, int pid)
 {
+    // XXX: Need to update tracee state:
+    //   1) Copy modified mem regions
+    //      (INCLUDING NEW ALLOCATIONS!!)
+    //   2) Set register state
+
+    // TODO: IMPLEMENT ME
+}
+
+
+static void detach_pid(std::shared_ptr<Elkvm::VM> vm, int pid)
+{
+  if (vm != nullptr) {
+    restore_to_pid(vm, pid);
+  }
+
   int err = ptrace(PTRACE_DETACH, pid, 0, 0);
   if (err) {
     perror("ptrace detach");
@@ -253,24 +271,17 @@ std::shared_ptr<Elkvm::VM> attach_vm(int pid)
 {
   INFO() << "Attaching to PID " << pid;
   stop_pid(pid);
-#if 0
-  char *binaryname = NULL;
-  binary_for_pid(pid, &binaryname);
-  INFO() << "Binary name is: " << LOG_MAGENTA << binaryname << LOG_RESET;
-#endif
   initialize_elkvm(0, nullptr, nullptr);
-  INFO() << "initialized ELKVM";
 
   std::shared_ptr<Elkvm::VM> vm = elkvm_vm_create_raw(&elkvm);
-  INFO() << "Created Elkvm::VM";
 
-  vm->get_region_manager()->dump_regions();
+  //vm->get_region_manager()->dump_regions();
 
   std::list<Mapping> regions;
   memory_map_for_pid(pid, regions);
 
   for (auto reg : regions) {
-      INFO() << "size: " << reg.pages();
+      //INFO() << "size: " << reg.pages();
       std::shared_ptr<Elkvm::Region> r =
           vm->get_region_manager()->allocate_region(reg.size(), "ELVKM::attach");
       r->set_guest_addr(reg.start);
@@ -282,8 +293,10 @@ std::shared_ptr<Elkvm::VM> attach_vm(int pid)
                                                        r->guest_address(),
                                                        reg.pages(),
                                                        pt_options);
+      assert(err == 0);
       void* ptr = vm->get_region_manager()->get_pager().get_host_p(r->guest_address());
-      INFO() << "map_region(): " << err << " get_host_p(): " << ptr;
+      assert(ptr);
+      //INFO() << "map_region(): " << err << " get_host_p(): " << ptr;
       {
           struct iovec local, remote;
           local.iov_base = r->base_address();
@@ -294,7 +307,7 @@ std::shared_ptr<Elkvm::VM> attach_vm(int pid)
                                            &local, 1,
                                            &remote, 1,
                                            0);
-          INFO() << "Read " << bytes << " bytes from remote process.";
+          //INFO() << "Read " << bytes << " bytes from remote process.";
           assert(bytes == reg.size());
       }
   }
@@ -307,7 +320,6 @@ std::shared_ptr<Elkvm::VM> attach_vm(int pid)
     perror("ptrace getregs");
     abort();
   }
-  INFO() << "RIP:     " << (void*)user_regs.rip;
   std::shared_ptr<VCPU> cpu = vm->get_vcpu(0);
   cpu->set_reg(Elkvm::rax, user_regs.rax);
   cpu->set_reg(Elkvm::rbx, user_regs.rbx);
@@ -327,16 +339,24 @@ std::shared_ptr<Elkvm::VM> attach_vm(int pid)
   cpu->set_reg(Elkvm::rbp, user_regs.rbp);
   cpu->set_reg(Elkvm::rsi, user_regs.rsi);
   cpu->set_reg(Elkvm::rdi, user_regs.rdi);
-  cpu->set_reg(Elkvm::rflags, user_regs.eflags );
-  INFO() << "GS Base: " << (void*)user_regs.gs_base;
-  INFO() << "GS       " << (void*)user_regs.gs;
-  Elkvm::Segment fs (user_regs.gs_base, ~0ULL);
-  Elkvm::Segment gs (user_regs.gs_base, ~0ULL);
-  cpu->set_reg(Elkvm::gs, fs);
-  cpu->set_reg(Elkvm::fs, gs);
+  cpu->set_reg(Elkvm::rflags, user_regs.eflags);
+
+#if 0
+  auto gdt_region = vm->get_gdt_region();
+  elkvm_gdt_segment_descriptor entry;
+  elkvm_gdt_create_segment_descriptor(&entry, user_regs.fs_base, 0xFFFFFFFF,
+            GDT_SEGMENT_PRESENT | GDT_SEGMENT_WRITEABLE | GDT_SEGMENT_BIT |
+            GDT_SEGMENT_PRIVILEDGE_USER, GDT_SEGMENT_PAGE_GRANULARITY | GDT_SEGMENT_LONG);
+#endif
+  Elkvm::Segment fs = cpu->get_reg(Elkvm::Seg_t::fs);
+  fs.set_base(user_regs.fs_base);
+  fs.set_selector(0x28);
+  cpu->set_reg(Elkvm::fs, fs);
+
+  cpu->set_sregs();
   cpu->set_regs();
 
-  cpu->singlestep();
+  print(std::cout, cpu);
 
   //detach_pid(pid);
   //elkvm_cleanup(&elkvm);
@@ -401,6 +421,11 @@ int main(int argc, char **argv) {
   if(err) {
     printf("ERROR running VCPU errno: %i Msg: %s\n", -err, strerror(-err));
     return -1;
+  }
+
+  if (attach_pid != -1) {
+    INFO() << "Detaching from PID " << std::dec << attach_pid;
+    detach_pid(vm, attach_pid);
   }
 
   err = elkvm_cleanup(&elkvm);
