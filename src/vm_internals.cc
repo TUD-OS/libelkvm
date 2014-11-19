@@ -8,6 +8,7 @@
 #include <sys/types.h>
 
 #include <elkvm/elkvm.h>
+#include <elkvm/elkvm-log.h>
 #include <elkvm/elkvm-internal.h>
 #include <elkvm/pager.h>
 #include <elkvm/vcpu.h>
@@ -22,6 +23,7 @@ namespace Elkvm {
       int debug) :
     _debug(debug == 1),
     _rm(std::make_shared<RegionManager>(vmfd)),
+    _gdt(nullptr),
     hm(_rm),
     _vmfd(vmfd),
     _argc(argc),

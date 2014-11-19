@@ -72,6 +72,10 @@ class Segment {
     void set_base(CURRENT_ABI::paramtype base) {
       _base = base;
     }
+
+	void set_selector(CURRENT_ABI::paramtype sel) {
+      _selector = sel;
+	}
 };
 
 //namespace Elkvm

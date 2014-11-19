@@ -16,6 +16,7 @@
 #include <vector>
 #include <memory>
 
+#include <elkvm/elkvm-log.h>
 #include <elkvm/types.h>
 #include <elkvm/heap.h>
 #include <elkvm/region_manager.h>
@@ -170,6 +171,7 @@ class VM {
     } _vm;
 
     std::shared_ptr<RegionManager> _rm;
+    std::shared_ptr<Elkvm::Region> _gdt;
     HeapManager hm;
 
     int _vmfd;
@@ -204,8 +206,14 @@ class VM {
     int get_vmfd() const { return _vmfd; }
     Elkvm::elkvm_flat &get_cleanup_flat();
 
+    std::shared_ptr<Elkvm::Region> get_gdt_region() { return _gdt; }
+    void set_gdt_region(std::shared_ptr<Elkvm::Region> gdt) { _gdt = gdt; }
+
     const Elkvm::elkvm_handlers * get_handlers() const
-    { return syscall_handlers; }
+    {
+        //INFO() << "handlers @ " << (void*)this->syscall_handlers;
+        return this->syscall_handlers;
+    }
 
     const Elkvm::hypercall_handlers* get_hyp_handlers() const
     { return this->hypercall_handlers; }

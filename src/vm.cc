@@ -71,8 +71,9 @@ elkvm_vm_create_raw(Elkvm::elkvm_opts *opts,
 
   INFO() << "    (2) GDT";
   auto vcpu = vmi->get_vcpu(0);
-  err = elkvm_gdt_setup(*vmi->get_region_manager(), vcpu);
-  assert(err == 0);
+  std::shared_ptr<Elkvm::Region> gdt = elkvm_gdt_setup(*vmi->get_region_manager(), vcpu);
+  assert(gdt != nullptr);
+  vmi->set_gdt_region(gdt);
 
   INFO() << "    (3) Loading ISR";
   Elkvm::elkvm_flat idth;
@@ -179,8 +180,8 @@ elkvm_vm_create(Elkvm::elkvm_opts *opts,
   err = env.fill(opts, vcpu);
   assert(err == 0);
 
-  err = elkvm_gdt_setup(*vmi->get_region_manager(), vcpu);
-  assert(err == 0);
+  std::shared_ptr<Elkvm::Region> gdt = elkvm_gdt_setup(*vmi->get_region_manager(), vcpu);
+  assert(gdt != nullptr);
 
   Elkvm::elkvm_flat idth;
   std::string isr_path(RES_PATH "/isr");
