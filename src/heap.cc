@@ -355,15 +355,17 @@ namespace Elkvm {
     assert(m.contains_address(reinterpret_cast<char *>(m.base_address()) + off
           + len));
     assert(0 <= off);
-	assert(off < (off_t)m.get_length());
+    assert(off < (off_t)m.get_length());
+    assert(m.get_region() != nullptr);
 
-  assert(m.get_length() <= m.get_region()->size());
+    assert(m.get_length() <= m.get_region()->size());
 
     /* unmap the old stuff */
     unsigned pages = pages_from_size(len);
     unmap(m, m.guest_address() + off, pages);
 
     auto regions = m.get_region()->slice_center(off, len);
+    assert(m.get_region() != nullptr);
     _rm->use_region(regions.first);
     _rm->add_free_region(regions.second);
 
@@ -379,6 +381,7 @@ namespace Elkvm {
     }
 
     m.set_length(off);
+    assert(m.get_region() != nullptr);
   }
 
   void HeapManager::slice_end(Mapping &m, guestptr_t slice_base) {
