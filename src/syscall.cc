@@ -2299,7 +2299,24 @@ long elkvm_do_arch_prctl(Elkvm::VM * vmi) {
 
   err = vcpu->set_sregs();
   if(vmi->debug_mode()) {
-    DBG() << "ARCH PRCTL with code " << code << " user_addr " << LOG_GUEST_HOST(user_addr, host_addr);
+    std::string cdes;
+    switch(code) {
+      case ARCH_SET_FS:
+        cdes = "ARCH_SET_FS";
+        break;
+      case ARCH_GET_FS:
+        cdes = "ARCH_GET_FS";
+        break;
+      case ARCH_SET_GS:
+        cdes = "ARCH_SET_GS";
+        break;
+      case ARCH_GET_GS:
+        cdes = "ARCH_GET_GS";
+        break;
+    }
+
+    DBG() << "ARCH PRCTL with code " << cdes << " (" << code << ")"
+      << " addr " << LOG_GUEST_HOST(user_addr, host_addr);
     DBG() << "RESULT " << err;
   }
   return err;

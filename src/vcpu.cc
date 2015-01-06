@@ -169,10 +169,11 @@ int VCPU::run() {
   return _kvm_vcpu.run();
 }
 
-void VCPU::print_info() {
+void VCPU::print_info(const VM &vm) {
   if(exit_reason() == KVM_EXIT_MMIO
   || exit_reason() == KVM_EXIT_SHUTDOWN) {
     print(std::cerr, *this);
+    print_stack(std::cerr, vm, *this);
     //kvm_vcpu_dump_code(this);
   } else if(is_singlestepping && exit_reason() == hypercall_exit) {
     DBG() << "KVM_EXIT_HYPERCALL";
