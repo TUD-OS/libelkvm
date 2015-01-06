@@ -33,4 +33,5 @@ print_msg "expect installed?"
 which expect >/dev/null
 return_check
 
-run_test "ELKVM works?" 001-run.exp
+run_test "ELKVM works?" 		001-run.exp
+run_test "Proxy+debug works" 	002-proxy.exp
