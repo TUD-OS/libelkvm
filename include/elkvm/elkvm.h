@@ -228,11 +228,6 @@ class VM {
 
 
     /*
-     * Dump guest memory at given address.
-     */
-    void dump_memory(guestptr_t ptr, unsigned size = 16) const;
-
-    /*
      * Runs all CPUS of the VM
      */
     int run();
