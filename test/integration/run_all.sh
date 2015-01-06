@@ -2,16 +2,18 @@
 
 export ELKVM_BUILD=../../build
 
+# Print a banner message
+print_msg () {
+	printf "\033[35m%30s\033[0m " "$1"
+}
+
+# Call this after a test command to validate its result
 return_check () {
 	if [ $? -ne 0 ]; then
 		echo "\033[31;1mFAILURE\033[0m"
 		exit $?;
 	fi
 	echo "\033[32mOK\033[0m"
-}
-
-print_msg () {
-	printf "\033[35m%30s\033[0m " "$1"
 }
 
 # Run expect test and check output
