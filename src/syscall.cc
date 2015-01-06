@@ -894,8 +894,10 @@ long elkvm_do_mprotect(Elkvm::VM * vmi) {
   }
 
   if(vmi->debug_mode()) {
-    DBG() << "MPROTEXT requested with address " << (void*)addr
-          << " len " << len << " prot " << std::hex << prot << std::dec;
+    DBG() << "MPROTECT requested with address 0x"
+          << std::hex << addr
+          << " len: 0x" << len
+          << " prot: 0x" << prot;
     print(std::cout, mapping);
     DBG() << "RESULT: " << err;
   }
