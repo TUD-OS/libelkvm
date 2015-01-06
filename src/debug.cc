@@ -30,7 +30,7 @@ std::ostream &print_memory(std::ostream &os, const VM &vm, guestptr_t addr,
   os << " Host Address\tGuest Address\t\tValue\t\t\tValue\n";
   for(unsigned i = 0; i < size; i++) {
     os << std::hex
-      << host_p
+      << " " << host_p
       << "  0x" << addr
       << "\t0x" << std::setw(16) << std::setfill('0') << *host_p
       << "\t0x" << std::setw(16) << std::setfill('0') << *(host_p + 1) << std::endl;
