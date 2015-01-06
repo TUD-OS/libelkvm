@@ -4,7 +4,7 @@ export ELKVM_BUILD=../../build
 
 # Print a banner message
 print_msg () {
-	printf "\033[35m%30s\033[0m " "$1"
+	printf "\033[35m%50s\033[0m " "$1"
 }
 
 # Call this after a test command to validate its result
@@ -31,6 +31,11 @@ run_test () {
 
 print_msg "expect installed?"
 which expect >/dev/null
+return_check
+
+print_msg "/proc/sys/kernel/yama/ptrace_scope set to 0?"
+val=`cat /proc/sys/kernel/yama/ptrace_scope`
+test "x$val" = "x0"
 return_check
 
 run_test "ELKVM works?" 		001-run.exp
