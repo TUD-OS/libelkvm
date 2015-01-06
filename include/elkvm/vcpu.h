@@ -138,7 +138,7 @@ class VCPU {
     int singlestep_off();
     std::ostream &print_mmio(std::ostream &os);
 
-    void print_info();
+    void print_info(const VM &vm);
     /* stack handling */
     CURRENT_ABI::paramtype pop();
     void push(CURRENT_ABI::paramtype val);
@@ -152,7 +152,7 @@ std::ostream &print(std::ostream &os, const std::string &name,
     const Elkvm::Segment &seg);
 std::ostream &print(std::ostream &os, const std::string &name,
     struct kvm_dtable dtable);
-std::ostream &print_stack(std::ostream &os, const VCPU &vcpu);
+std::ostream &print_stack(std::ostream &os, const VM &vm, const VCPU &vcpu);
 
 //namespace Elkvm
 }
