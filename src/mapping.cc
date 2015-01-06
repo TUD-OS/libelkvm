@@ -38,11 +38,16 @@ namespace Elkvm {
   std::shared_ptr<Region> Mapping::move_guest_address(off64_t off) {
     assert(off > 0);
     assert((unsigned)off < (unsigned)length);
+    assert(length <= region->size());
+
     addr += off;
     length -= off;
     mapped_pages = pages_from_size(length);
-    host_p = reinterpret_cast<char *>(host_p) + off;
-    return region->slice_begin(off);
+    host_p = static_cast<char *>(host_p) + off;
+
+    auto r = region->slice_begin(off);
+    assert(length <= region->size());
+    return r;
   }
 
   void Mapping::set_length(size_t len) {

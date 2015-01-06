@@ -879,6 +879,8 @@ long elkvm_do_mprotect(Elkvm::VM * vmi) {
 
   Elkvm::Mapping &mapping = vmi->get_heap_manager().find_mapping(addr);
   int err = 0;
+
+  assert(mapping.get_length() >= len);
   if(mapping.get_length() != len) {
     /* we need to split this mapping */
     vmi->get_heap_manager().slice(mapping, addr, len);
