@@ -1,27 +1,13 @@
 #include <assert.h>
 #include <errno.h>
-#include <stdio.h>
+#include <iomanip>
+#include <iostream>
 #include <sys/ioctl.h>
 
 #include <elkvm/elkvm.h>
 #include <elkvm/elkvm-internal.h>
 #include <elkvm/debug.h>
 #include <elkvm/vcpu.h>
-
-void Elkvm::VM::dump_memory(guestptr_t addr, unsigned size) const {
-  assert(addr != 0x0 && "cannot dump address NULL");
-  uint64_t *host_p = static_cast<uint64_t *>(
-      get_region_manager()->get_pager().get_host_p(addr));
-  assert(host_p != nullptr && "cannot dump unmapped memory");
-
-  fprintf(stderr, " Host Address\tGuest Address\t\tValue\t\tValue\n");
-  for(unsigned i = 0; i < size; i++) {
-    fprintf(stderr, " %p\t0x%016lx\t0x%016lx\t0x%016lx\n",
-            host_p, addr, *host_p, *(host_p+1));
-    addr  += 0x10;
-    host_p+=2;
-  }
-}
 
 int elkvm_handle_debug(Elkvm::VM *vm) {
   int handled = 0;
@@ -33,6 +19,27 @@ int elkvm_handle_debug(Elkvm::VM *vm) {
 }
 
 namespace Elkvm {
+
+std::ostream &print_memory(std::ostream &os, const VM &vm, guestptr_t addr,
+    size_t size) {
+  assert(addr != 0x0 && "cannot dump address NULL");
+  uint64_t *host_p = static_cast<uint64_t *>(
+      vm.get_region_manager()->get_pager().get_host_p(addr));
+  assert(host_p != nullptr && "cannot dump unmapped memory");
+
+  os << " Host Address\tGuest Address\t\tValue\t\t\tValue\n";
+  for(unsigned i = 0; i < size; i++) {
+    os << std::hex
+      << " " << host_p
+      << " 0x" << addr
+      << "\t0x" << std::setw(16) << std::setfill('0') << *host_p
+      << "\t0x" << std::setw(16) << std::setfill('0') << *(host_p + 1) << std::endl;
+    addr  += 0x10;
+    host_p+=2;
+  }
+
+  return os;
+}
 
 int VCPU::enable_debug() {
   return _kvm_vcpu.enable_debug();

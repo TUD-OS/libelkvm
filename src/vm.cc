@@ -47,6 +47,7 @@ int VM::run() {
     }
 
     vcpu->print_info();
+    print_stack(std::cerr, *this, *vcpu);
     if(exit_reason == VCPU::hypercall_exit) {
       int err = handle_hypercall(vcpu);
       if(err) {
