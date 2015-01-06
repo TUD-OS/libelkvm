@@ -47,6 +47,8 @@ namespace Elkvm {
 
     auto r = region->slice_begin(off);
     assert(length <= region->size());
+
+    assert(region != nullptr);
     return r;
   }
 

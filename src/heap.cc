@@ -348,6 +348,7 @@ namespace Elkvm {
     unmap(m, m.guest_address(), pages);
     std::shared_ptr<Region> r = m.move_guest_address(len);
     _rm->add_free_region(r);
+    assert(m.get_region() != nullptr);
   }
 
   void HeapManager::slice_center(Mapping &m, off_t off, size_t len) {
@@ -355,6 +356,7 @@ namespace Elkvm {
           + len));
     assert(0 <= off);
 	assert(off < (off_t)m.get_length());
+
   assert(m.get_length() <= m.get_region()->size());
 
     /* unmap the old stuff */
