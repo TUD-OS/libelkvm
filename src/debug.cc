@@ -27,10 +27,11 @@ std::ostream &print_memory(std::ostream &os, const VM &vm, guestptr_t addr,
       vm.get_region_manager()->get_pager().get_host_p(addr));
   assert(host_p != nullptr && "cannot dump unmapped memory");
 
-  os << " Host Address\tGuest Address\t\tValue\t\tValue\n";
+  os << " Host Address\tGuest Address\t\tValue\t\t\tValue\n";
   for(unsigned i = 0; i < size; i++) {
     os << std::hex
-      << host_p << "0x" << addr
+      << host_p
+      << "  0x" << addr
       << "\t0x" << std::setw(16) << std::setfill('0') << *host_p
       << "\t0x" << std::setw(16) << std::setfill('0') << *(host_p + 1) << std::endl;
     addr  += 0x10;
