@@ -3,6 +3,7 @@
 #include <memory>
 #include <iostream>
 
+#include <elkvm/elkvm-log.h>
 #include <elkvm/heap.h>
 #include <elkvm/region.h>
 #include <elkvm/region_manager.h>
@@ -14,8 +15,8 @@ namespace Elkvm {
   }
 
   void RegionManager::dump_regions() const {
-    std::cout << "DUMPING ALL REGIONS:\n";
-    std::cout << "====================\n";
+    INFO() << "DUMPING ALL REGIONS:";
+    INFO() << "====================";
     for(const auto &reg : allocated_regions) {
       print(std::cout, *reg);
     }

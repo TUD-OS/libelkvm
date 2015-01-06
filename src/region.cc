@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <memory>
 
 #include <inttypes.h>
@@ -15,7 +16,8 @@ namespace Elkvm {
       stream << "FREE ";
     }
     stream << std::hex
-      <<"REGION[" << r.getName() << "] guest address: 0x" << r.guest_address()
+      <<"REGION[" << std::setw(36) << r.getName() << "] guest address: "
+      << std::setw(19) << (void*)r.guest_address()
       << " host_p: " << r.base_address() << " size: 0x" << r.size()
       << " last guest address: 0x" << r.guest_address() + r.size() - 1
       << std::endl;

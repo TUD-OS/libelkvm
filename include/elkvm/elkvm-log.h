@@ -12,6 +12,7 @@
 #define LOG_GREEN  "\033[32m"
 #define LOG_YELLOW "\033[33m"
 #define LOG_BLUE   "\033[34;1m"
+#define LOG_MAGENTA "\033[35;1m"
 #define LOG_RESET  "\033[0m"
 
 struct ElkvmLog

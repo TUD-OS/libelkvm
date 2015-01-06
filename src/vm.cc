@@ -25,7 +25,9 @@
 #include <elkvm/vcpu.h>
 
 namespace Elkvm {
-  std::list<VM> vmi;
+    
+std::list<std::shared_ptr<Elkvm::VM> > vmi;
+
 
 int VM::run() {
   bool is_running = 1;
@@ -59,12 +61,12 @@ int VM::run() {
   return 0;
 }
 
+
 std::shared_ptr<VM> create_virtual_hardware(const elkvm_opts * const opts,
         const Elkvm::hypercall_handlers * const hyp,
         const Elkvm::elkvm_handlers * const handlers,
         unsigned cpus,
         int mode) {
-
   auto vm = create_vm_object(opts, hyp, handlers);
   assert(vm != nullptr && "error creating vm object");
 
@@ -73,6 +75,7 @@ std::shared_ptr<VM> create_virtual_hardware(const elkvm_opts * const opts,
 
   return vm;
 }
+
 
 int load_elf_binary(const std::shared_ptr<VM> vm,
         elkvm_opts * opts,
@@ -92,10 +95,10 @@ int load_elf_binary(const std::shared_ptr<VM> vm,
 int setup_proxy_os(const std::shared_ptr<VM> vm) {
   auto vcpu = vm->get_vcpu(0);
 
-  int err = elkvm_gdt_setup(*vm->get_region_manager(), vcpu);
-  assert(err == 0 && "error setting up global descriptor tables");
+  std::shared_ptr<Elkvm::Region> gdt = elkvm_gdt_setup(*vm->get_region_manager(), vcpu);
+  assert(gdt && "error setting up global descriptor tables");
 
-  err = create_idt(vm, vcpu);
+  int err = create_idt(vm, vcpu);
   assert(err == 0 && "error creating idt");
 
   err = create_sysenter(vm, vcpu);
@@ -110,31 +113,6 @@ int setup_proxy_os(const std::shared_ptr<VM> vm) {
   return 0;
 }
 
-std::shared_ptr<VM> create_vm_object(const elkvm_opts * const opts,
-        const Elkvm::hypercall_handlers * const hyp,
-        const Elkvm::elkvm_handlers * const handlers) {
-
-  int vmfd = ioctl(opts->fd, KVM_CREATE_VM, 0);
-  if(vmfd < 0) {
-    return NULL;
-  }
-
-  int run_struct_size = ioctl(opts->fd, KVM_GET_VCPU_MMAP_SIZE, 0);
-  if(run_struct_size < 0) {
-    return NULL;
-  }
-
-  vmi.emplace_back(
-        vmfd,
-        opts->argc,
-        opts->argv,
-        opts->environ,
-        run_struct_size,
-        hyp,
-        handlers,
-        opts->debug);
-  return std::shared_ptr<VM>(&vmi.back());
-}
 
 int create_vcpus(const std::shared_ptr<VM> vm, unsigned cpus) {
   for(unsigned i = 0; i < cpus; i++) {
@@ -144,16 +122,6 @@ int create_vcpus(const std::shared_ptr<VM> vm, unsigned cpus) {
     }
   }
   return 0;
-}
-
-int create_and_setup_environment(const ElfBinary &bin,
-    const std::shared_ptr<VM> vm,
-    elkvm_opts * opts,
-    const std::shared_ptr<VCPU> vcpu) {
-
-  Elkvm::Environment env(bin, vm->get_region_manager());
-  /* gets and sets vcpu->regs */
-  return env.fill(opts, vcpu);
 }
 
 int create_idt(const std::shared_ptr<VM> vm,
@@ -202,8 +170,68 @@ int VM::init_rlimits()
   return 0;
 }
 
+std::shared_ptr<VM> create_vm_object(const elkvm_opts * const opts,
+        const Elkvm::hypercall_handlers * const hyp,
+        const Elkvm::elkvm_handlers * const handlers) {
+
+  int vmfd = ioctl(opts->fd, KVM_CREATE_VM, 0);
+  if(vmfd < 0) {
+    return NULL;
+  }
+
+  int run_struct_size = ioctl(opts->fd, KVM_GET_VCPU_MMAP_SIZE, 0);
+  if(run_struct_size < 0) {
+    return NULL;
+  }
+
+  std::shared_ptr<Elkvm::VM> vmi = std::make_shared<Elkvm::VM>(
+        vmfd,
+        opts->argc,
+        opts->argv,
+        opts->environ,
+        run_struct_size,
+        hyp,
+        handlers,
+        opts->debug);
+  Elkvm::vmi.push_back(vmi);
+  
+  return vmi;
+}
+
+int create_and_setup_environment(const ElfBinary &bin,
+    const std::shared_ptr<VM> vm,
+    elkvm_opts * opts,
+    const std::shared_ptr<VCPU> vcpu) {
+
+  Elkvm::Environment env(bin, vm->get_region_manager());
+  /* gets and sets vcpu->regs */
+  return env.fill(opts, vcpu);
+}
+
 //namespace Elkvm
 }
+
+
+std::shared_ptr<Elkvm::VM>
+elkvm_vm_create_raw(Elkvm::elkvm_opts *opts,
+                    unsigned cpus,
+                    const Elkvm::hypercall_handlers * const hyp,
+                    const Elkvm::elkvm_handlers * const handlers,
+                    int mode,
+                    bool debug)
+{
+  int err = 0;
+  opts->debug = debug;
+
+  auto vmi = Elkvm::create_virtual_hardware(opts, hyp, handlers, cpus, mode);
+  assert(vmi != nullptr && "error creating virtual hardware");
+
+  err = Elkvm::setup_proxy_os(vmi);
+  assert(err == 0 && "error setting up proxy os");
+
+  return vmi;
+}
+
 
 std::shared_ptr<Elkvm::VM>
 elkvm_vm_create(Elkvm::elkvm_opts *opts,

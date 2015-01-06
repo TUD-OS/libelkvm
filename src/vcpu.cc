@@ -185,10 +185,10 @@ void VCPU::print_info() {
 bool VCPU::handle_vm_exit() {
   switch(_kvm_vcpu.exit_reason()) {
     case KVM_EXIT_UNKNOWN:
-      std::cerr << "KVM exit for unknown reason (KVM_EXIT_UNKNOWN)\n"
+        ERROR() << "KVM exit for unknown reason (KVM_EXIT_UNKNOWN)\n"
                 << " Hardware exit reason: " << std::dec
-                << exit_reason() << std::endl;
-      return false;
+                << _kvm_vcpu.exit_reason() << std::endl;
+        return false;
     case KVM_EXIT_FAIL_ENTRY: {
       uint64_t code = hardware_entry_failure_reason();
       fprintf(stderr, "KVM: entry failed, hardware error 0x%lx\n",
