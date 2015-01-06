@@ -329,6 +329,7 @@ namespace Elkvm {
     }
 
     /* slice_base is now always larger than host_p */
+    assert(slice_base >= addr);
     off_t off = slice_base - addr;
 
     if(m.contains_address(slice_base + len)) {
@@ -354,6 +355,7 @@ namespace Elkvm {
           + len));
     assert(0 <= off);
 	assert(off < (off_t)m.get_length());
+  assert(m.get_length() <= m.get_region()->size());
 
     /* unmap the old stuff */
     unsigned pages = pages_from_size(len);
