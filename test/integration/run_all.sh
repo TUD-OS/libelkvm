@@ -33,10 +33,12 @@ print_msg "expect installed?"
 which expect >/dev/null
 return_check
 
-print_msg "/proc/sys/kernel/yama/ptrace_scope set to 0?"
-val=`cat /proc/sys/kernel/yama/ptrace_scope`
-test "x$val" = "x0"
-return_check
+if [ -f /proc/sys/kernel/yama/ptrace_scope ]; then
+	print_msg "/proc/sys/kernel/yama/ptrace_scope set to 0?"
+	val=`cat /proc/sys/kernel/yama/ptrace_scope`
+	test "x$val" = "x0"
+	return_check
+fi
 
 run_test "ELKVM works?" 		001-run.exp
 run_test "Proxy+debug works?" 	002-proxy.exp
