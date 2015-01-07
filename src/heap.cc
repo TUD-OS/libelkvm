@@ -379,9 +379,11 @@ namespace Elkvm {
           + len);
       /* There should be no need to process this mapping any further, because we
        * feed it the split memory region, with the old data inside */
-      Mapping end(r, m.guest_address() + off + len,
-          rem, m.get_prot(), m.get_flags(), m.get_fd(), m.get_offset() + off + len);
-      add_mapping(end);
+      /* XXX this breaks m, because we got m from an iterator
+       * and m is invalidated after create_mapping() */
+      create_mapping(m.guest_address() + off + len, rem, m.get_prot(), m.get_flags(),
+          m.get_fd(), m.get_offset() + off + len, r);
+      assert(m.get_region() != nullptr);
     }
 
     m.set_length(off);

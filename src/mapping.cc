@@ -53,7 +53,10 @@ namespace Elkvm {
   }
 
   void Mapping::set_length(size_t len) {
-    assert(length >= len);
+    assert(length >= len && "mappings can only shrink this way");
+    assert(region != nullptr && "mapping must always have a valid region");
+    assert(region->size() >= len && "mappings cannot be larger than their regions");
+
     length = len;
     mapped_pages = pages_from_size(length);
   }
