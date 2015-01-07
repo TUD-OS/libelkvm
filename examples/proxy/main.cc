@@ -37,13 +37,13 @@ initialize_elkvm(int argc, char**argv, char **env)
 {
   int err = elkvm_init(&elkvm, argc, argv, env);
   if(err) {
-    if(errno == -ENOENT) {
+    if(err == -ENOENT) {
       ERROR() << "/dev/kvm seems not to exist. Check your KVM installation!";
     }
-    if(errno == -EACCES) {
+    if(err == -EACCES) {
       ERROR() << "Access to /dev/kvm was denied. Check if you belong to the 'kvm' group!";
     }
-    ERROR() << "ERROR initializing VM errno: " << -err << "Msg: "
+    ERROR() << "ERROR initializing VM errno: " << -err << " Msg: "
             << strerror(-err);
     abort();
   }
