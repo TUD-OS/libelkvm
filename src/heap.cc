@@ -162,8 +162,12 @@ namespace Elkvm {
   }
 
   Mapping &HeapManager::create_mapping(guestptr_t addr, size_t length, int prot,
-      int flags, int fd, off_t off) {
-    std::shared_ptr<Region> r = _rm->allocate_region(length);
+      int flags, int fd, off_t off, std::shared_ptr<Region> r) {
+
+    if(r == nullptr) {
+      r = _rm->allocate_region(length);
+    }
+
     mappings_for_mmap.emplace_back(r, addr, length, prot, flags, fd, off);
     Mapping &mapping = mappings_for_mmap.back();
     int err = map(mapping);
