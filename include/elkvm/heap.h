@@ -20,8 +20,6 @@ namespace Elkvm {
 
       int grow(size_t sz);
       int shrink(guestptr_t newbrk);
-      Mapping &create_mapping(guestptr_t addr, size_t length, int prot, int flags,
-          int fd, off_t off, std::shared_ptr<Region> r = nullptr);
       void unmap_to_new_size(Mapping &m, size_t new_size);
       guestptr_t create_resized_mapping(Mapping &m, size_t new_size);
 
@@ -44,10 +42,11 @@ namespace Elkvm {
       Mapping &find_mapping(void *host_p);
       bool address_mapped(guestptr_t addr) const;
 
+      Mapping &create_mapping(guestptr_t addr, size_t length, int prot, int flags,
+          int fd, off_t off, std::shared_ptr<Region> r = nullptr);
       Mapping &get_mapping(guestptr_t addr, size_t length, int prot, int flags,
           int fd, off_t off);
 
-      void add_mapping(const Mapping &mapping);
       void free_mapping(Mapping &mapping);
 
       void dump_mappings() const;

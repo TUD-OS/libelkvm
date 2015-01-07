@@ -178,10 +178,6 @@ namespace Elkvm {
     return mapping;
   }
 
-  void HeapManager::add_mapping(const Mapping &mapping) {
-    mappings_for_mmap.push_back(mapping);
-  }
-
   void HeapManager::free_mapping(Mapping &mapping) {
     auto it = std::find(mappings_for_brk.begin(), mappings_for_brk.end(), mapping);
     if(it == mappings_for_brk.end()) {
