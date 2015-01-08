@@ -321,8 +321,8 @@ int create_sysenter(const std::shared_ptr<VM> vm,
     const std::shared_ptr<VCPU> vcpu);
 int create_sighandler(const std::shared_ptr<VM> vm);
 
-std::ostream &print_code(std::ostream &os, const VM &vm, const VCPU &vcpu);
-std::ostream &print_code(std::ostream &os, const VM &vm, const VCPU &vcpu,
+std::ostream &print_code(std::ostream &os, const VM &vm, VCPU &vcpu);
+std::ostream &print_code(std::ostream &os, const VM &vm, VCPU &vcpu,
     guestptr_t addr);
 
 #ifdef HAVE_LIBUDIS86
@@ -330,7 +330,7 @@ std::ostream &print_code(std::ostream &os, const VM &vm, const VCPU &vcpu,
  * \brief Get the next byte of code to be executed.
  * This is mainly here for libudis86 disassembly
  */
-int kvm_vcpu_get_next_code_byte(std::shared_ptr<Elkvm::VCPU> vcpu, uint64_t guest_addr);
+int get_next_code_byte(const VM &vm, VCPU &vcpu, guestptr_t guest_addr);
 
 void elkvm_init_udis86(std::shared_ptr<Elkvm::VCPU> vcpu, int mode);
 #endif

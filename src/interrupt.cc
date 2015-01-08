@@ -15,6 +15,9 @@ int VM::handle_interrupt(std::shared_ptr<VCPU> vcpu) {
     vcpu->get_sregs();
     print(std::cerr, *vcpu);
     print_stack(std::cerr, *this, *vcpu);
+
+    guestptr_t instr = vcpu->get_reg(Elkvm::Reg_t::rsp) + 0x18;
+    print_code(std::cerr, *this, *vcpu, instr);
   }
 
   uint64_t err_code = vcpu->pop();

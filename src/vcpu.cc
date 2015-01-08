@@ -174,11 +174,11 @@ void VCPU::print_info(const VM &vm) {
   || exit_reason() == KVM_EXIT_SHUTDOWN) {
     print(std::cerr, *this);
     print_stack(std::cerr, vm, *this);
-    //kvm_vcpu_dump_code(this);
+    print_code(std::cerr, vm, *this);
   } else if(is_singlestepping && exit_reason() == hypercall_exit) {
     DBG() << "KVM_EXIT_HYPERCALL";
     print(std::cerr, *this);
-    //kvm_vcpu_dump_code(this);
+    print_code(std::cerr, vm, *this);
   }
 }
 

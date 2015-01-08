@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <elkvm/config.h>
 #include <elkvm/elkvm.h>
 #include <elkvm/elkvm-internal.h>
 #include <elkvm/elkvm-log.h>
@@ -261,16 +262,17 @@ int create_and_setup_environment(const ElfBinary &bin,
   return env.fill(opts, vcpu);
 }
 
-std::ostream &print_code(std::ostream &os, const VM &vm, const VCPU vcpu) {
+std::ostream &print_code(std::ostream &os, const VM &vm, VCPU &vcpu) {
   return print_code(os, vm, vcpu, vcpu.get_reg(Elkvm::Reg_t::rip));
 }
 
-std::ostream &print_code(std::ostream &os, const VM &vm, const VCPU &vcpu,
+std::ostream &print_code(std::ostream &os, const VM &vm, VCPU &vcpu,
     guestptr_t addr) {
 #ifdef HAVE_LIBUDIS86
-  int err = get_next_code_byte(vcpu, guest_addr);
+  int err = get_next_code_byte(vm, vcpu, addr);
   if(err) {
-    return;
+    os << "Error in get_next_code_byte();\n";
+    return os;
   }
 
   os << "\n Code:\n"
@@ -286,11 +288,11 @@ std::ostream &print_code(std::ostream &os, const VM &vm, const VCPU &vcpu,
 }
 
 #ifdef HAVE_LIBUDIS86
-int get_next_code_byte(const VM &vm, const VCPU &vcpu, guestptr_t guest_addr) {
-  assert(guest_addr != nullptr);
+int get_next_code_byte(const VM &vm, VCPU &vcpu, guestptr_t guest_addr) {
+  assert(guest_addr != 0x0);
 
   const uint8_t *host_p = static_cast<const uint8_t *>(
-      vm.get_region_manager().get_pager().get_host_p(guest_addr));
+      vm.get_region_manager()->get_pager().get_host_p(guest_addr));
   assert(host_p != nullptr);
 
   const size_t disassembly_size = 40;
