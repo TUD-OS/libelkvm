@@ -307,7 +307,11 @@ std::shared_ptr<Elkvm::VM> attach_vm(int pid)
                                            &remote, 1,
                                            0);
           //INFO() << "Read " << bytes << " bytes from remote process.";
-          assert(bytes == reg.size());
+          if (bytes == -1) {
+              INFO() << "Error reading region [" << std::hex << r->guest_address()
+                     << " - " << (r->guest_address() + reg.size()) << "]";
+              INFO() << "Error message: " << strerror(errno);
+          }
       }
   }
 
