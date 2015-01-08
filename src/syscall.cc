@@ -395,77 +395,6 @@ int Elkvm::VM::handle_syscall(std::shared_ptr<Elkvm::VCPU> vcpu)
   return 0;
 }
 
-static void
-elkvm_unpack_syscall1(std::shared_ptr<Elkvm::VCPU> vcpu,
-                      CURRENT_ABI::paramtype *arg) {
-  *arg = CURRENT_ABI::get_parameter(vcpu, 1);
-}
-
-static void
-elkvm_unpack_syscall2(std::shared_ptr<Elkvm::VCPU> vcpu,
-                      CURRENT_ABI::paramtype *arg1,
-                      CURRENT_ABI::paramtype *arg2)
-{
-  *arg1 = CURRENT_ABI::get_parameter(vcpu, 1);
-  *arg2 = CURRENT_ABI::get_parameter(vcpu, 2);
-}
-
-static void
-elkvm_unpack_syscall3(std::shared_ptr<Elkvm::VCPU> vcpu,
-                      CURRENT_ABI::paramtype *arg1,
-                      CURRENT_ABI::paramtype *arg2,
-                      CURRENT_ABI::paramtype *arg3)
-{
-  *arg1 = CURRENT_ABI::get_parameter(vcpu, 1);
-  *arg2 = CURRENT_ABI::get_parameter(vcpu, 2);
-  *arg3 = CURRENT_ABI::get_parameter(vcpu, 3);
-}
-
-static void
-elkvm_unpack_syscall4(std::shared_ptr<Elkvm::VCPU> vcpu,
-                      CURRENT_ABI::paramtype *arg1,
-                      CURRENT_ABI::paramtype *arg2,
-                      CURRENT_ABI::paramtype *arg3,
-                      CURRENT_ABI::paramtype *arg4)
-{
-  *arg1 = CURRENT_ABI::get_parameter(vcpu, 1);
-  *arg2 = CURRENT_ABI::get_parameter(vcpu, 2);
-  *arg3 = CURRENT_ABI::get_parameter(vcpu, 3);
-  *arg4 = CURRENT_ABI::get_parameter(vcpu, 4);
-}
-
-static void
-elkvm_unpack_syscall5(std::shared_ptr<Elkvm::VCPU> vcpu,
-                      CURRENT_ABI::paramtype *arg1,
-                      CURRENT_ABI::paramtype *arg2,
-                      CURRENT_ABI::paramtype *arg3,
-                      CURRENT_ABI::paramtype *arg4,
-                      CURRENT_ABI::paramtype *arg5)
-{
-  *arg1 = CURRENT_ABI::get_parameter(vcpu, 1);
-  *arg2 = CURRENT_ABI::get_parameter(vcpu, 2);
-  *arg3 = CURRENT_ABI::get_parameter(vcpu, 3);
-  *arg4 = CURRENT_ABI::get_parameter(vcpu, 4);
-  *arg5 = CURRENT_ABI::get_parameter(vcpu, 5);
-}
-
-static void
-elkvm_unpack_syscall6(std::shared_ptr<Elkvm::VCPU> vcpu,
-                      CURRENT_ABI::paramtype *arg1,
-                      CURRENT_ABI::paramtype *arg2,
-                      CURRENT_ABI::paramtype *arg3,
-                      CURRENT_ABI::paramtype *arg4,
-                      CURRENT_ABI::paramtype *arg5,
-                      CURRENT_ABI::paramtype *arg6)
-{
-  *arg1 = CURRENT_ABI::get_parameter(vcpu, 1);
-  *arg2 = CURRENT_ABI::get_parameter(vcpu, 2);
-  *arg3 = CURRENT_ABI::get_parameter(vcpu, 3);
-  *arg4 = CURRENT_ABI::get_parameter(vcpu, 4);
-  *arg5 = CURRENT_ABI::get_parameter(vcpu, 5);
-  *arg6 = CURRENT_ABI::get_parameter(vcpu, 6);
-}
-
 namespace Elkvm {
 
 template<typename T>
@@ -516,7 +445,7 @@ long elkvm_do_read(Elkvm::VM * vmi) {
   char *buf;
   CURRENT_ABI::paramtype count;
 
-  elkvm_unpack_syscall3(vcpu, &fd, &buf_p, &count);
+  vmi->unpack_syscall(&fd, &buf_p, &count);
 
   assert(buf_p != 0x0);
   buf = reinterpret_cast<char *>(vmi->get_region_manager()->get_pager().get_host_p(buf_p));
@@ -582,7 +511,7 @@ long elkvm_do_write(Elkvm::VM * vmi) {
   void *buf;
   CURRENT_ABI::paramtype count = 0x0;
 
-  elkvm_unpack_syscall3(vcpu, &fd, &buf_p, &count);
+  vmi->unpack_syscall(&fd, &buf_p, &count);
 
   assert(buf_p != 0x0);
   buf = vmi->get_region_manager()->get_pager().get_host_p(buf_p);
@@ -642,7 +571,7 @@ long elkvm_do_open(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype flags = 0x0;
   CURRENT_ABI::paramtype mode = 0x0;
 
-  elkvm_unpack_syscall3(vcpu, &pathname_p, &flags, &mode);
+  vmi->unpack_syscall(&pathname_p, &flags, &mode);
 
   assert(pathname_p != 0x0);
   pathname = reinterpret_cast<char *>(vmi->get_region_manager()->get_pager().get_host_p(pathname_p));
@@ -666,7 +595,7 @@ long elkvm_do_close(Elkvm::VM * vmi) {
   std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
   CURRENT_ABI::paramtype fd = 0;
-  elkvm_unpack_syscall1(vcpu, &fd);
+  vmi->unpack_syscall(&fd);
 
   long result = vmi->get_handlers()->close((int)fd);
 
@@ -689,7 +618,7 @@ long elkvm_do_stat(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype buf_p = 0;
   char *path = NULL;
   struct stat *buf;
-  elkvm_unpack_syscall2(vcpu, &path_p, &buf_p);
+  vmi->unpack_syscall(&path_p, &buf_p);
 
   assert(path_p != 0x0);
   path = reinterpret_cast<char *>(vmi->get_region_manager()->get_pager().get_host_p(path_p));
@@ -715,7 +644,7 @@ long elkvm_do_fstat(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype fd = 0;
   CURRENT_ABI::paramtype buf_p = 0;
   struct stat *buf = NULL;
-  elkvm_unpack_syscall2(vcpu, &fd, &buf_p);
+  vmi->unpack_syscall(&fd, &buf_p);
 
   assert(buf_p != 0x0);
   buf = reinterpret_cast<struct stat *>(vmi->get_region_manager()->get_pager().get_host_p(buf_p));
@@ -743,7 +672,7 @@ long elkvm_do_lstat(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype buf_p = 0;
   char *path = NULL;
   struct stat *buf;
-  elkvm_unpack_syscall2(vcpu, &path_p, &buf_p);
+  vmi->unpack_syscall(&path_p, &buf_p);
 
   assert(path_p != 0x0);
   path = reinterpret_cast<char *>(vmi->get_region_manager()->get_pager().get_host_p(path_p));
@@ -775,7 +704,7 @@ long elkvm_do_lseek(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype whence;
   std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
-  elkvm_unpack_syscall3(vcpu, &fd, &off, &whence);
+  vmi->unpack_syscall(&fd, &off, &whence);
 
   long result = vmi->get_handlers()->lseek(fd, off, whence);
   if(vmi->debug_mode()) {
@@ -799,7 +728,7 @@ long elkvm_do_mmap(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype fd     = 0;
   CURRENT_ABI::paramtype off    = 0;
 
-  elkvm_unpack_syscall6(vcpu, &addr, &length, &prot, &flags, &fd, &off);
+  vmi->unpack_syscall(&addr, &length, &prot, &flags, &fd, &off);
 
   /* create a mapping object with the data from the user, this will
    * also allocate the memory for this mapping */
@@ -860,56 +789,13 @@ long elkvm_do_mmap(Elkvm::VM * vmi) {
   return mapping.guest_address();
 }
 
-long elkvm_do_mprotect(Elkvm::VM * vmi) {
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
-
-  guestptr_t addr = 0;
-  CURRENT_ABI::paramtype len = 0;
-  CURRENT_ABI::paramtype prot = 0;
-  elkvm_unpack_syscall3(vcpu, &addr, &len, &prot);
-
-  assert(page_aligned<guestptr_t>(addr) && "mprotect address must be page aligned");
-  if(!vmi->get_heap_manager().address_mapped(addr)) {
-    vmi->get_heap_manager().dump_mappings();
-    vmi->get_region_manager()->dump_regions();
-    INFO() <<"mprotect with invalid address: 0x" << std::hex
-      << addr << std::endl;
-    return -EINVAL;
-  }
-
-  Elkvm::Mapping &mapping = vmi->get_heap_manager().find_mapping(addr);
-  int err = 0;
-  if(mapping.get_length() != len) {
-    /* we need to split this mapping */
-    vmi->get_heap_manager().slice(mapping, addr, len);
-    std::shared_ptr<Elkvm::Region> r = vmi->get_region_manager()->allocate_region(len);
-    Elkvm::Mapping new_mapping(r, addr, len, prot, mapping.get_flags(),
-        mapping.get_fd(), mapping.get_offset());
-    vmi->get_heap_manager().map(new_mapping);
-    vmi->get_heap_manager().add_mapping(new_mapping);
-  } else {
-    /* only modify this mapping */
-    mapping.mprotect(prot);
-    err = vmi->get_heap_manager().map(mapping);
-  }
-
-  if(vmi->debug_mode()) {
-    DBG() << "MPROTEXT requested with address " << (void*)addr
-          << " len " << len << " prot " << std::hex << prot << std::dec;
-    print(std::cout, mapping);
-    DBG() << "RESULT: " << err;
-  }
-
-  return err;
-}
-
 long elkvm_do_munmap(Elkvm::VM * vmi) {
   std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
   guestptr_t addr_p = 0;
   void *addr = NULL;
   CURRENT_ABI::paramtype length = 0;
-  elkvm_unpack_syscall2(vcpu, &addr_p, &length);
+  vmi->unpack_syscall(&addr_p, &length);
 
   if(addr_p != 0x0) {
     addr = vmi->get_region_manager()->get_pager().get_host_p(addr_p);
@@ -933,7 +819,7 @@ long elkvm_do_munmap(Elkvm::VM * vmi) {
 long elkvm_do_brk(Elkvm::VM * vmi) {
   guestptr_t user_brk_req = 0;
   std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
-  elkvm_unpack_syscall1(vcpu, &user_brk_req);
+  vmi->unpack_syscall(&user_brk_req);
 
   if(vmi->debug_mode()) {
     DBG() << "BRK requested with address: " << (void*)user_brk_req
@@ -967,7 +853,7 @@ long elkvm_do_sigaction(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype act_p;
   CURRENT_ABI::paramtype oldact_p;
 
-  elkvm_unpack_syscall3(vcpu, &signum, &act_p, &oldact_p);
+  vmi->unpack_syscall(&signum, &act_p, &oldact_p);
 
   struct sigaction *act = NULL;
   struct sigaction *oldact = NULL;
@@ -1007,7 +893,7 @@ long elkvm_do_sigprocmask(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype set_p;
   CURRENT_ABI::paramtype oldset_p;
 
-  elkvm_unpack_syscall3(vcpu, &how, &set_p, &oldset_p);
+  vmi->unpack_syscall(&how, &set_p, &oldset_p);
 
   sigset_t *set = NULL;
   sigset_t *oldset = NULL;
@@ -1052,7 +938,7 @@ long elkvm_do_ioctl(Elkvm::VM * vmi) {
 
   auto vcpu = vmi->get_vcpu(0);
 
-  elkvm_unpack_syscall3(vcpu, &fd, &request, &argp_p);
+  vmi->unpack_syscall(&fd, &request, &argp_p);
 
   char *argp = static_cast<char *>(
       vmi->get_region_manager()->get_pager().get_host_p(argp_p));
@@ -1108,7 +994,7 @@ long elkvm_do_readv(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype iov_p = 0;
   CURRENT_ABI::paramtype iovcnt = 0;
 
-  elkvm_unpack_syscall3(vcpu, &fd, &iov_p, &iovcnt);
+  vmi->unpack_syscall(&fd, &iov_p, &iovcnt);
 
   struct iovec host_iov[iovcnt];
   elkvm_get_host_iov(vmi, iov_p, iovcnt, host_iov);
@@ -1136,7 +1022,7 @@ long elkvm_do_writev(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype iov_p = 0;
   CURRENT_ABI::paramtype iovcnt = 0;
 
-  elkvm_unpack_syscall3(vcpu, &fd, &iov_p, &iovcnt);
+  vmi->unpack_syscall(&fd, &iov_p, &iovcnt);
 
   struct iovec host_iov[iovcnt];
   elkvm_get_host_iov(vmi, iov_p, iovcnt, host_iov);
@@ -1160,7 +1046,7 @@ long elkvm_do_access(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype path_p;
   CURRENT_ABI::paramtype mode;
 
-  elkvm_unpack_syscall2(vcpu, &path_p, &mode);
+  vmi->unpack_syscall(&path_p, &mode);
 
   assert(path_p != 0x0);
   char *pathname = reinterpret_cast<char *>(vmi->get_region_manager()->get_pager().get_host_p(path_p));
@@ -1193,7 +1079,7 @@ long elkvm_do_pipe(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype pipefd_p = 0x0;
   int *pipefd = NULL;
 
-  elkvm_unpack_syscall1(vcpu, &pipefd_p);
+  vmi->unpack_syscall(&pipefd_p);
 
   pipefd = reinterpret_cast<int *>(vmi->get_region_manager()->get_pager().get_host_p(pipefd_p));
   assert(pipefd != NULL);
@@ -1229,7 +1115,7 @@ long elkvm_do_mremap(Elkvm::VM *vmi __attribute__((unused))) {
   guestptr_t new_address_p = 0x0;
   void *new_address = NULL;
 
-  elkvm_unpack_syscall5(vcpu, &old_address_p, &old_size, &new_size, &flags, &new_address_p);
+  vmi->unpack_syscall(&old_address_p, &old_size, &new_size, &flags, &new_address_p);
 
   if(old_address_p != 0x0) {
     old_address = vmi->get_region_manager()->get_pager().get_host_p(old_address_p);
@@ -1293,7 +1179,7 @@ long elkvm_do_dup(Elkvm::VM * vmi) {
 
   CURRENT_ABI::paramtype oldfd;
 
-  elkvm_unpack_syscall1(vcpu, &oldfd);
+  vmi->unpack_syscall(&oldfd);
 
   if(vmi->debug_mode()) {
     DBG() << "CALLING DUP handler with oldfd " << oldfd << "\n";
@@ -1325,7 +1211,7 @@ long elkvm_do_nanosleep(Elkvm::VM * vmi) {
 
   CURRENT_ABI::paramtype req_p;
   CURRENT_ABI::paramtype rem_p;
-  elkvm_unpack_syscall2(vcpu, &req_p, &rem_p);
+  vmi->unpack_syscall(&req_p, &rem_p);
 
   struct timespec *req = NULL;
   struct timespec *rem = NULL;
@@ -1472,7 +1358,7 @@ long elkvm_do_uname(Elkvm::VM * vmi) {
 
   struct utsname *buf = NULL;
   CURRENT_ABI::paramtype bufp = 0;
-  elkvm_unpack_syscall1(vcpu, &bufp);
+  vmi->unpack_syscall(&bufp);
 
   assert(bufp != 0x0);
   buf = (struct utsname *)vmi->get_region_manager()->get_pager().get_host_p(bufp);
@@ -1537,7 +1423,7 @@ long elkvm_do_fcntl(Elkvm::VM * vmi) {
    */
   CURRENT_ABI::paramtype arg_p = 0;
 
-  elkvm_unpack_syscall3(vcpu, &fd, &cmd, &arg_p);
+  vmi->unpack_syscall(&fd, &cmd, &arg_p);
 
   long result = 0;
   switch(cmd) {
@@ -1591,7 +1477,7 @@ long elkvm_do_truncate(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype length;
   char *path = NULL;
 
-  elkvm_unpack_syscall2(vcpu, &path_p, &length);
+  vmi->unpack_syscall(&path_p, &length);
 
   path = reinterpret_cast<char *>(vmi->get_region_manager()->get_pager().get_host_p(path_p));
   long result = vmi->get_handlers()->truncate(path, length);
@@ -1617,7 +1503,7 @@ long elkvm_do_ftruncate(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype fd = 0;
   CURRENT_ABI::paramtype length;
 
-  elkvm_unpack_syscall2(vcpu, &fd, &length);
+  vmi->unpack_syscall(&fd, &length);
 
   long result = vmi->get_handlers()->ftruncate(fd, length);
   if(vmi->debug_mode()) {
@@ -1642,7 +1528,7 @@ long elkvm_do_getdents(Elkvm::VM * vmi __attribute__((unused))) {
   guestptr_t dirp_p = 0x0;
   CURRENT_ABI::paramtype count = 0;
 
-  elkvm_unpack_syscall3(vcpu, &fd, &dirp_p, &count);
+  vmi->unpack_syscall(&fd, &dirp_p, &count);
 
   struct linux_dirent *dirp = NULL;
   if(dirp_p != 0x0) {
@@ -1677,7 +1563,7 @@ long elkvm_do_getcwd(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype size = 0;
   char *buf = NULL;
 
-  elkvm_unpack_syscall2(vcpu, &buf_p, &size);
+  vmi->unpack_syscall(&buf_p, &size);
 
   buf = reinterpret_cast<char *>(vmi->get_region_manager()->get_pager().get_host_p(buf_p));
 
@@ -1720,7 +1606,7 @@ long elkvm_do_mkdir(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype mode = 0;
   char *pathname = NULL;
 
-  elkvm_unpack_syscall2(vcpu, &pathname_p, &mode);
+  vmi->unpack_syscall(&pathname_p, &mode);
 
   assert(pathname_p != 0x0);
   pathname = reinterpret_cast<char *>(vmi->get_region_manager()->get_pager().get_host_p(pathname_p));
@@ -1759,7 +1645,7 @@ long elkvm_do_unlink(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype pathname_p = 0;
   char *pathname = NULL;
 
-  elkvm_unpack_syscall1(vcpu, &pathname_p);
+  vmi->unpack_syscall(&pathname_p);
 
   assert(pathname_p != 0x0);
   pathname = reinterpret_cast<char *>(vmi->get_region_manager()->get_pager().get_host_p(pathname_p));
@@ -1792,7 +1678,7 @@ long elkvm_do_readlink(Elkvm::VM * vmi) {
   char *path = NULL;
   char *buf = NULL;
 
-  elkvm_unpack_syscall3(vcpu, &path_p, &buf_p, &bufsiz);
+  vmi->unpack_syscall(&path_p, &buf_p, &bufsiz);
 
   path = reinterpret_cast<char *>(vmi->get_region_manager()->get_pager().get_host_p(path_p));
   buf  = reinterpret_cast<char *>(vmi->get_region_manager()->get_pager().get_host_p(buf_p));
@@ -1840,7 +1726,7 @@ long elkvm_do_gettimeofday(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype tv_p = 0;
   CURRENT_ABI::paramtype tz_p = 0;
   std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
-  elkvm_unpack_syscall2(vcpu, &tv_p, &tz_p);
+  vmi->unpack_syscall(&tv_p, &tz_p);
 
   struct timeval *tv = NULL;
   struct timezone *tz = NULL;
@@ -1879,7 +1765,7 @@ long elkvm_do_getrlimit(Elkvm::VM *) {
 //  struct rlimit *rlim = NULL;
 //
 //  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
-//  elkvm_unpack_syscall2(vcpu, &resource, &rlim_p);
+//  vmi->unpack_syscall(&resource, &rlim_p);
 //
 //  assert(rlim_p != 0x0);
 //  rlim = reinterpret_cast<struct rlimit *>(vmi->get_region_manager()->get_pager().get_host_p(rlim_p));
@@ -1905,7 +1791,7 @@ long elkvm_do_getrusage(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype usage_p = 0x0;
   struct rusage *usage = NULL;
 
-  elkvm_unpack_syscall2(vcpu, &who, &usage_p);
+  vmi->unpack_syscall(&who, &usage_p);
 
   assert(usage_p != 0x0);
   assert(who == RUSAGE_SELF);
@@ -1933,7 +1819,7 @@ long elkvm_do_times(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype buf_p = 0x0;
   struct tms *buf = NULL;
 
-  elkvm_unpack_syscall1(vcpu, &buf_p);
+  vmi->unpack_syscall(&buf_p);
   assert(buf_p != 0x0);
 
   buf = reinterpret_cast<struct tms *>(vmi->get_region_manager()->get_pager().get_host_p(buf_p));
@@ -2152,7 +2038,7 @@ long elkvm_do_statfs(Elkvm::VM * vmi __attribute__((unused))) {
   guestptr_t path_p = 0x0;
   guestptr_t buf_p = 0x0;
 
-  elkvm_unpack_syscall2(vcpu, &path_p, &buf_p);
+  vmi->unpack_syscall(&path_p, &buf_p);
 
   char *path = NULL;
   struct statfs *buf = NULL;
@@ -2267,7 +2153,7 @@ long elkvm_do_arch_prctl(Elkvm::VM * vmi) {
     return err;
   }
 
-  elkvm_unpack_syscall2(vcpu, &code, &user_addr);
+  vmi->unpack_syscall(&code, &user_addr);
   assert(user_addr != 0x0);
 
   CURRENT_ABI::paramtype *host_addr = reinterpret_cast<CURRENT_ABI::paramtype *>(
@@ -2508,7 +2394,7 @@ long elkvm_do_time(Elkvm::VM * vmi) {
 
   CURRENT_ABI::paramtype time_p = 0;
   std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
-  elkvm_unpack_syscall1(vcpu, &time_p);
+  vmi->unpack_syscall(&time_p);
 
   time_t *time = NULL;
   if(time_p != 0x0) {
@@ -2541,7 +2427,7 @@ long elkvm_do_futex(Elkvm::VM * vmi) {
   int *uaddr2 = NULL;
 
   std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
-  elkvm_unpack_syscall6(vcpu, &uaddr_p, &op, &val, &timeout_p, &uaddr2_p, &val3);
+  vmi->unpack_syscall(&uaddr_p, &op, &val, &timeout_p, &uaddr2_p, &val3);
 
   if(uaddr_p != 0x0) {
     uaddr = reinterpret_cast<int *>(vmi->get_region_manager()->get_pager().get_host_p(uaddr_p));
@@ -2684,7 +2570,7 @@ long elkvm_do_clock_gettime(Elkvm::VM * vmi) {
   std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
   assert(vcpu != NULL);
 
-  elkvm_unpack_syscall2(vcpu, &clk_id, &tp_p);
+  vmi->unpack_syscall(&clk_id, &tp_p);
   assert(tp_p != 0x0);
 
   tp = reinterpret_cast<struct timespec *>(vmi->get_region_manager()->get_pager().get_host_p(tp_p));
@@ -2708,7 +2594,7 @@ long elkvm_do_clock_nanosleep(Elkvm::VM * vmi __attribute__((unused))) {
 
 long elkvm_do_exit_group(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype status = 0;
-  elkvm_unpack_syscall1(vmi->get_vcpu(0), &status);
+  vmi->unpack_syscall(&status);
 
   vmi->get_handlers()->exit_group(status);
   /* should not be reached... */
@@ -2735,7 +2621,7 @@ long elkvm_do_tgkill(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype tid = 0x0;
   CURRENT_ABI::paramtype sig = 0x0;
 
-  elkvm_unpack_syscall3(vcpu, &tgid, &tid, &sig);
+  vmi->unpack_syscall(&tgid, &tid, &sig);
 
   long result = vmi->get_handlers()->tgkill(tgid, tid, sig);
   if(vmi->debug_mode()) {
@@ -2846,7 +2732,7 @@ long elkvm_do_openat(Elkvm::VM * vmi __attribute__((unused))) {
   guestptr_t pathname_p = 0x0;
   CURRENT_ABI::paramtype flags = 0;
 
-  elkvm_unpack_syscall3(vcpu, &dirfd, &pathname_p, &flags);
+  vmi->unpack_syscall(&dirfd, &pathname_p, &flags);
 
   char *pathname = NULL;
   if(pathname_p != 0x0) {

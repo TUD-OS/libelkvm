@@ -162,8 +162,12 @@ namespace Elkvm {
   }
 
   Mapping &HeapManager::create_mapping(guestptr_t addr, size_t length, int prot,
-      int flags, int fd, off_t off) {
-    std::shared_ptr<Region> r = _rm->allocate_region(length);
+      int flags, int fd, off_t off, std::shared_ptr<Region> r) {
+
+    if(r == nullptr) {
+      r = _rm->allocate_region(length);
+    }
+
     mappings_for_mmap.emplace_back(r, addr, length, prot, flags, fd, off);
     Mapping &mapping = mappings_for_mmap.back();
     int err = map(mapping);
@@ -172,10 +176,6 @@ namespace Elkvm {
     assert(!mapping.get_region()->is_free());
     assert(_rm->find_region(mapping.base_address()) != nullptr);
     return mapping;
-  }
-
-  void HeapManager::add_mapping(const Mapping &mapping) {
-    mappings_for_mmap.push_back(mapping);
   }
 
   void HeapManager::free_mapping(Mapping &mapping) {
@@ -319,6 +319,13 @@ namespace Elkvm {
     return 0;
   }
 
+  void HeapManager::slice_region(Mapping &m, off_t off, size_t len) {
+    auto regions = m.get_region()->slice_center(off, len);
+    assert(m.get_region() != nullptr);
+    _rm->use_region(regions.first);
+    _rm->add_free_region(regions.second);
+  }
+
   void HeapManager::slice(Mapping &m, guestptr_t slice_base, size_t len) {
     assert(m.contains_address(slice_base)
         && "slice address must be contained in mapping");
@@ -329,6 +336,7 @@ namespace Elkvm {
     }
 
     /* slice_base is now always larger than host_p */
+    assert(slice_base >= addr);
     off_t off = slice_base - addr;
 
     if(m.contains_address(slice_base + len)) {
@@ -347,34 +355,40 @@ namespace Elkvm {
     unmap(m, m.guest_address(), pages);
     std::shared_ptr<Region> r = m.move_guest_address(len);
     _rm->add_free_region(r);
+    assert(m.get_region() != nullptr);
   }
 
   void HeapManager::slice_center(Mapping &m, off_t off, size_t len) {
     assert(m.contains_address(reinterpret_cast<char *>(m.base_address()) + off
           + len));
     assert(0 <= off);
-	assert(off < (off_t)m.get_length());
+    assert(off < (off_t)m.get_length());
+    assert(m.get_region() != nullptr);
+
+    assert(m.get_length() <= m.get_region()->size());
 
     /* unmap the old stuff */
     unsigned pages = pages_from_size(len);
     unmap(m, m.guest_address() + off, pages);
 
-    auto regions = m.get_region()->slice_center(off, len);
-    _rm->use_region(regions.first);
-    _rm->add_free_region(regions.second);
+    slice_region(m, off, len);
+    size_t slice_sz = off + len;
+    size_t mapping_sz = m.get_length();
 
-    if(m.get_length() > off + len) {
-      size_t rem = m.get_length() - off - len;
+    /* set the size of the old mapping here, because create_mapping invalidates m */
+    m.set_length(off);
+
+    if(mapping_sz > slice_sz) {
+      size_t rem = mapping_sz - off - len;
       auto r = _rm->find_region(reinterpret_cast<char *>(m.base_address()) + off
           + len);
       /* There should be no need to process this mapping any further, because we
        * feed it the split memory region, with the old data inside */
-      Mapping end(r, m.guest_address() + off + len,
-          rem, m.get_prot(), m.get_flags(), m.get_fd(), m.get_offset() + off + len);
-      add_mapping(end);
+      create_mapping(m.guest_address() + slice_sz, rem, m.get_prot(), m.get_flags(),
+          m.get_fd(), m.get_offset() + slice_sz, r);
+      /* CANNOT use m here anymore, because we got m from an iterator and the
+       * container gets changed by create_mapping! */
     }
-
-    m.set_length(off);
   }
 
   void HeapManager::slice_end(Mapping &m, guestptr_t slice_base) {

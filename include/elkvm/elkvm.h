@@ -20,6 +20,7 @@
 #include <elkvm/types.h>
 #include <elkvm/heap.h>
 #include <elkvm/region_manager.h>
+#include <elkvm/syscall.h>
 
 #define VM_MODE_X86    1
 #define VM_MODE_PAGING 2
@@ -198,6 +199,28 @@ class VM {
 
     int load_flat(Elkvm::elkvm_flat &flat, const std::string path,
         bool kernel);
+
+    void unpack_syscall(CURRENT_ABI::paramtype *arg);
+    void unpack_syscall(CURRENT_ABI::paramtype *arg1,
+        CURRENT_ABI::paramtype *arg2);
+    void unpack_syscall(CURRENT_ABI::paramtype *arg1,
+        CURRENT_ABI::paramtype *arg2,
+        CURRENT_ABI::paramtype *arg3);
+    void unpack_syscall(CURRENT_ABI::paramtype *arg1,
+        CURRENT_ABI::paramtype *arg2,
+        CURRENT_ABI::paramtype *arg3,
+        CURRENT_ABI::paramtype *arg4);
+    void unpack_syscall(CURRENT_ABI::paramtype *arg1,
+        CURRENT_ABI::paramtype *arg2,
+        CURRENT_ABI::paramtype *arg3,
+        CURRENT_ABI::paramtype *arg4,
+        CURRENT_ABI::paramtype *arg5);
+    void unpack_syscall(CURRENT_ABI::paramtype *arg1,
+        CURRENT_ABI::paramtype *arg2,
+        CURRENT_ABI::paramtype *arg3,
+        CURRENT_ABI::paramtype *arg4,
+        CURRENT_ABI::paramtype *arg5,
+        CURRENT_ABI::paramtype *arg6);
 
     std::shared_ptr<RegionManager> get_region_manager() { return _rm; }
     const std::shared_ptr<const RegionManager> get_region_manager() const { return _rm; }
