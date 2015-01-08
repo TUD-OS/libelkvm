@@ -191,17 +191,4 @@ bool host_supports_vmx(void);
 */
 void host_cpuid(uint32_t, uint32_t, uint32_t *, uint32_t *, uint32_t *, uint32_t *);
 
-void kvm_vcpu_dump_code(std::shared_ptr<Elkvm::VCPU> vcpu);
-void kvm_vcpu_dump_code_at(std::shared_ptr<Elkvm::VCPU> vcpu, uint64_t guest_addr);
-
-#ifdef HAVE_LIBUDIS86
-/*
- * \brief Get the next byte of code to be executed.
- * This is mainly here for libudis86 disassembly
- */
-int kvm_vcpu_get_next_code_byte(std::shared_ptr<Elkvm::VCPU> vcpu, uint64_t guest_addr);
-
-void elkvm_init_udis86(std::shared_ptr<Elkvm::VCPU> vcpu, int mode);
-#endif
-
 void print_flags(uint64_t flags);

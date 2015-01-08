@@ -25,7 +25,7 @@
 #include <elkvm/vcpu.h>
 
 namespace Elkvm {
-    
+
 std::list<std::shared_ptr<Elkvm::VM> > vmi;
 
 
@@ -247,7 +247,7 @@ std::shared_ptr<VM> create_vm_object(const elkvm_opts * const opts,
         handlers,
         opts->debug);
   Elkvm::vmi.push_back(vmi);
-  
+
   return vmi;
 }
 
@@ -261,8 +261,58 @@ int create_and_setup_environment(const ElfBinary &bin,
   return env.fill(opts, vcpu);
 }
 
+std::ostream &print_code(std::ostream &os, const VM &vm, const VCPU vcpu) {
+  return print_code(os, vm, vcpu, vcpu.get_reg(Elkvm::Reg_t::rip));
+}
+
+std::ostream &print_code(std::ostream &os, const VM &vm, const VCPU &vcpu,
+    guestptr_t addr) {
+#ifdef HAVE_LIBUDIS86
+  int err = get_next_code_byte(vcpu, guest_addr);
+  if(err) {
+    return;
+  }
+
+  os << "\n Code:\n"
+     <<   " -----\n";
+  while(ud_disassemble(&vcpu.ud_obj)) {
+    os << " " << ud_insn_asm(&vcpu.ud_obj) << std::endl;
+  }
+  os << std::endl;
+  return os;
+#else
+  return os;
+#endif
+}
+
+#ifdef HAVE_LIBUDIS86
+int get_next_code_byte(const VM &vm, const VCPU &vcpu, guestptr_t guest_addr) {
+  assert(guest_addr != nullptr);
+
+  const uint8_t *host_p = static_cast<const uint8_t *>(
+      vm.get_region_manager().get_pager().get_host_p(guest_addr));
+  assert(host_p != nullptr);
+
+  const size_t disassembly_size = 40;
+  ud_set_input_buffer(&vcpu.ud_obj, host_p, disassembly_size);
+
+  return 0;
+}
+
+#endif
 //namespace Elkvm
 }
+
+#ifdef HAVE_LIBUDIS86
+void elkvm_init_udis86(std::shared_ptr<Elkvm::VCPU> vcpu, int mode) {
+  ud_init(&vcpu->ud_obj);
+  switch(mode) {
+    case VM_MODE_X86_64:
+      ud_set_mode(&vcpu->ud_obj, 64);
+  }
+  ud_set_syntax(&vcpu->ud_obj, UD_SYN_INTEL);
+}
+#endif
 
 
 std::shared_ptr<Elkvm::VM>
