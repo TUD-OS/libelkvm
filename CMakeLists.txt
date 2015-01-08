@@ -9,7 +9,7 @@ find_package(Boost 1.54.0 REQUIRED
 include_directories ("${PROJECT_SOURCE_DIR}/include/elkvm" "${PROJECT_SOURCE_DIR}/src" )
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11 -DBOOST_LOG_DYN_LINK")
-add_definitions(-Wall -Wextra)
+add_definitions(-Wall -Wextra -Weffc++)
 add_definitions(-D_PREFIX_="${CMAKE_INSTALL_PREFIX}")
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
