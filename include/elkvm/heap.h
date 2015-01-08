@@ -23,6 +23,8 @@ namespace Elkvm {
       void unmap_to_new_size(Mapping &m, size_t new_size);
       guestptr_t create_resized_mapping(Mapping &m, size_t new_size);
 
+      void slice_region(Mapping &m, off_t off, size_t len);
+
       void free_unused_mappings(guestptr_t brk);
 
     public:

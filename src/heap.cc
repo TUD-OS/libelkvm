@@ -319,6 +319,13 @@ namespace Elkvm {
     return 0;
   }
 
+  void HeapManager::slice_region(Mapping &m, off_t off, size_t len) {
+    auto regions = m.get_region()->slice_center(off, len);
+    assert(m.get_region() != nullptr);
+    _rm->use_region(regions.first);
+    _rm->add_free_region(regions.second);
+  }
+
   void HeapManager::slice(Mapping &m, guestptr_t slice_base, size_t len) {
     assert(m.contains_address(slice_base)
         && "slice address must be contained in mapping");
@@ -364,26 +371,24 @@ namespace Elkvm {
     unsigned pages = pages_from_size(len);
     unmap(m, m.guest_address() + off, pages);
 
-    auto regions = m.get_region()->slice_center(off, len);
-    assert(m.get_region() != nullptr);
-    _rm->use_region(regions.first);
-    _rm->add_free_region(regions.second);
+    slice_region(m, off, len);
+    size_t slice_sz = off + len;
+    size_t mapping_sz = m.get_length();
 
-    if(m.get_length() > off + len) {
-      size_t rem = m.get_length() - off - len;
+    /* set the size of the old mapping here, because create_mapping invalidates m */
+    m.set_length(off);
+
+    if(mapping_sz > slice_sz) {
+      size_t rem = mapping_sz - off - len;
       auto r = _rm->find_region(reinterpret_cast<char *>(m.base_address()) + off
           + len);
       /* There should be no need to process this mapping any further, because we
        * feed it the split memory region, with the old data inside */
-      /* XXX this breaks m, because we got m from an iterator
-       * and m is invalidated after create_mapping() */
-      create_mapping(m.guest_address() + off + len, rem, m.get_prot(), m.get_flags(),
-          m.get_fd(), m.get_offset() + off + len, r);
-      assert(m.get_region() != nullptr);
+      create_mapping(m.guest_address() + slice_sz, rem, m.get_prot(), m.get_flags(),
+          m.get_fd(), m.get_offset() + slice_sz, r);
+      /* CANNOT use m here anymore, because we got m from an iterator and the
+       * container gets changed by create_mapping! */
     }
-
-    m.set_length(off);
-    assert(m.get_region() != nullptr);
   }
 
   void HeapManager::slice_end(Mapping &m, guestptr_t slice_base) {
