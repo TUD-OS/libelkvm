@@ -16,7 +16,11 @@ int VM::handle_interrupt(std::shared_ptr<VCPU> vcpu) {
     print(std::cerr, *vcpu);
     print_stack(std::cerr, *this, *vcpu);
 
-    guestptr_t instr = vcpu->get_reg(Elkvm::Reg_t::rsp) + 0x18;
+    guestptr_t stack_p = vcpu->get_reg(Elkvm::Reg_t::rsp);
+    char *host_p = static_cast<char *>(
+        get_region_manager()->get_pager().get_host_p(stack_p)) + 0x8;
+    assert(host_p != nullptr);
+    guestptr_t instr = *host_p;
     print_code(std::cerr, *this, *vcpu, instr);
   }
 
