@@ -281,10 +281,8 @@ std::ostream &print_code(std::ostream &os, const VM &vm, VCPU &vcpu,
     os << " " << ud_insn_asm(&vcpu.ud_obj) << std::endl;
   }
   os << std::endl;
-  return os;
-#else
-  return os;
 #endif
+  return os;
 }
 
 #ifdef HAVE_LIBUDIS86
