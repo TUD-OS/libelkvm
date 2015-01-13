@@ -38,7 +38,7 @@ namespace Elkvm {
     init_rsp();
 
 #ifdef HAVE_LIBUDIS86
-    elkvm_init_udis86(*this);
+    init_udis86(*this);
 #endif
   }
 

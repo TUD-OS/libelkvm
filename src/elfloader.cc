@@ -19,9 +19,10 @@
 #include <elkvm/pager.h>
 #include <elkvm/region.h>
 #include <elkvm/region_manager.h>
-#include <elkvm/vcpu.h>
 
 namespace Elkvm {
+  class VCPU;
+
   ElfBinary::ElfBinary(std::string pathname, std::shared_ptr<RegionManager> rm,
       HeapManager &hm) :
     _rm(rm),

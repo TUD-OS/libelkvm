@@ -325,14 +325,6 @@ std::ostream &print_code(std::ostream &os, const VM &vm, VCPU &vcpu);
 std::ostream &print_code(std::ostream &os, const VM &vm, VCPU &vcpu,
     guestptr_t addr);
 
-#ifdef HAVE_LIBUDIS86
-/*
- * \brief Get the next byte of code to be executed.
- * This is mainly here for libudis86 disassembly
- */
-int get_next_code_byte(const VM &vm, VCPU &vcpu, guestptr_t guest_addr);
-#endif
-
 } // namespace Elkvm
 
 /*

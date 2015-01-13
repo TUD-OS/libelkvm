@@ -18,6 +18,7 @@ SET( libelkvm_SRCS
   syscall.cc
   syscall_default.cc
   tss.cc
+  udis86.cc
   vcpu.cc
   vm.cc
   vm_internals.cc

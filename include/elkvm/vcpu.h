@@ -1,6 +1,7 @@
 #pragma once
 
 #include <elkvm/config.h>
+#include <elkvm/elkvm-udis86.h>
 #include <elkvm/kvm.h>
 #include <elkvm/regs.h>
 #include <elkvm/stack.h>
@@ -16,10 +17,6 @@
 #endif
 
 namespace Elkvm {
-
-#ifdef HAVE_LIBUDIS86
-void elkvm_init_udis86(VCPU &vcpu);
-#endif
 
 class Segment {
   CURRENT_ABI::paramtype _selector;
