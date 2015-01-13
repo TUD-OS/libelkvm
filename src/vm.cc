@@ -299,20 +299,16 @@ int get_next_code_byte(const VM &vm, VCPU &vcpu, guestptr_t guest_addr) {
   return 0;
 }
 
+void elkvm_init_udis86(VCPU &vcpu) {
+  const auto bits = 64;
+  ud_init(&vcpu.ud_obj);
+  ud_set_mode(&vcpu.ud_obj, bits);
+  ud_set_syntax(&vcpu.ud_obj, UD_SYN_INTEL);
+}
+
 #endif
 //namespace Elkvm
 }
-
-#ifdef HAVE_LIBUDIS86
-void elkvm_init_udis86(std::shared_ptr<Elkvm::VCPU> vcpu, int mode) {
-  ud_init(&vcpu->ud_obj);
-  switch(mode) {
-    case VM_MODE_X86_64:
-      ud_set_mode(&vcpu->ud_obj, 64);
-  }
-  ud_set_syntax(&vcpu->ud_obj, UD_SYN_INTEL);
-}
-#endif
 
 
 std::shared_ptr<Elkvm::VM>

@@ -331,8 +331,6 @@ std::ostream &print_code(std::ostream &os, const VM &vm, VCPU &vcpu,
  * This is mainly here for libudis86 disassembly
  */
 int get_next_code_byte(const VM &vm, VCPU &vcpu, guestptr_t guest_addr);
-
-void elkvm_init_udis86(std::shared_ptr<Elkvm::VCPU> vcpu, int mode);
 #endif
 
 } // namespace Elkvm

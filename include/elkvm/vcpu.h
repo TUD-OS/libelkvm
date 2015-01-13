@@ -17,6 +17,10 @@
 
 namespace Elkvm {
 
+#ifdef HAVE_LIBUDIS86
+void elkvm_init_udis86(VCPU &vcpu);
+#endif
+
 class Segment {
   CURRENT_ABI::paramtype _selector;
   CURRENT_ABI::paramtype _base;
