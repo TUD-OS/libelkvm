@@ -78,8 +78,21 @@ long elkvm_do_socketpair(Elkvm::VM * vmi __attribute__((unused))) {
 }
 
 long elkvm_do_setsockopt(Elkvm::VM * vmi __attribute__((unused))) {
-  ERROR() << "unimplemented"; exit(1);
-  return -ENOSYS;
+  CURRENT_ABI::paramtype sock;
+  CURRENT_ABI::paramtype lvl;
+  CURRENT_ABI::paramtype optname;
+  CURRENT_ABI::paramtype optval;
+  CURRENT_ABI::paramtype optlen;
+
+  void* local_optval = 0;
+
+  vmi->unpack_syscall(&sock, &lvl, &optname, &optval, &optlen);
+
+  if (optval != 0) {
+	local_optval = vmi->get_region_manager()->get_pager().get_host_p(optval);
+  }
+
+  return vmi->get_handlers()->setsockopt(sock, lvl, optname, local_optval, optlen);
 }
 
 long elkvm_do_getsockopt(Elkvm::VM * vmi __attribute__((unused))) {
