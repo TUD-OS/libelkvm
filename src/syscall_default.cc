@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstring>
 #include <linux/futex.h>
+#include <sys/epoll.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/time.h>
@@ -229,6 +230,20 @@ long pass_setsockopt(int sock, int lvl, int optname, const void* optval,
   return setsockopt(sock, lvl, optname, optval, optlen);
 }
 
+long pass_epoll_create(int size) {
+  return epoll_create(size);
+}
+
+
+long pass_epoll_ctl(int epfd, int op, int fd, struct epoll_event* event) {
+  return epoll_ctl(epfd, op, fd, event);
+}
+
+
+long pass_epoll_wait(int epfd, struct epoll_event* events, int max, int timeout) {
+  return epoll_wait(epfd, events, max, timeout);
+}
+
 Elkvm::elkvm_handlers
 Elkvm::default_handlers = {
   .read = pass_read,
@@ -289,6 +304,10 @@ Elkvm::default_handlers = {
   .gettid = pass_gettid,
   .time = pass_time,
   .futex = pass_futex,
+  /* ... */
+  .epoll_create = pass_epoll_create,
+  .epoll_ctl = pass_epoll_ctl,
+  .epoll_wait = pass_epoll_wait,
   /* ... */
   .clock_gettime = pass_clock_gettime,
   .exit_group = pass_exit_group,

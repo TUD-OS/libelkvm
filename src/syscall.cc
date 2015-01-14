@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <asm-generic/fcntl.h>
 #include <asm/prctl.h>
+#include <sys/epoll.h>
 #include <sys/mman.h>
 #include <sys/prctl.h>
 #include <sys/resource.h>
@@ -324,7 +325,7 @@ __attribute__((used))
 
 };
 
-#define DETECT_UNIMPLEMENTED 0
+#define DETECT_UNIMPLEMENTED 1
 #if DETECT_UNIMPLEMENTED
   #define UNIMPLEMENTED_SYSCALL do { \
       ERROR() << "unimplemented"; exit(1); \
@@ -2486,7 +2487,9 @@ long elkvm_do_lookup_dcookie(Elkvm::VM * vmi __attribute__((unused))) {
 }
 
 long elkvm_do_epoll_create(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
+  CURRENT_ABI::paramtype size;
+  vmi->unpack_syscall(&size);
+  return vmi->get_handlers()->epoll_create(size);
 }
 
 long elkvm_do_epoll_ctl_old(Elkvm::VM * vmi __attribute__((unused))) {
@@ -2590,11 +2593,31 @@ long elkvm_do_exit_group(Elkvm::VM * vmi) {
 }
 
 long elkvm_do_epoll_wait(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
+  CURRENT_ABI::paramtype epfd;
+  CURRENT_ABI::paramtype events;
+  CURRENT_ABI::paramtype maxev;
+  CURRENT_ABI::paramtype timeout;
+  vmi->unpack_syscall(&epfd, &events, &maxev, &timeout);
+
+  struct epoll_event* local_events = 0;
+  if (events != 0) {
+    local_events =  reinterpret_cast<struct epoll_event*>(vmi->get_region_manager()->get_pager().get_host_p(events));
+  }
+  return vmi->get_handlers()->epoll_wait(epfd, local_events, maxev, timeout);
 }
 
 long elkvm_do_epoll_ctl(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
+  CURRENT_ABI::paramtype epfd;
+  CURRENT_ABI::paramtype op;
+  CURRENT_ABI::paramtype fd;
+  CURRENT_ABI::paramtype event;
+  struct epoll_event *local_event = 0;
+
+  vmi->unpack_syscall(&epfd, &op, &fd, &event);
+  if (event != 0) {
+    local_event = reinterpret_cast<struct epoll_event*>(vmi->get_region_manager()->get_pager().get_host_p(event));
+  }
+  return vmi->get_handlers()->epoll_ctl(epfd, op, fd, local_event);
 }
 
 long elkvm_do_tgkill(Elkvm::VM * vmi) {

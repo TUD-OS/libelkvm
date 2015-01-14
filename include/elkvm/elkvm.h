@@ -130,6 +130,10 @@ struct elkvm_handlers {
   long (*futex)(int *uaddr, int op, int val, const struct timespec *timeout,
       int *uaddr2, int val3);
   /* ... */
+  long (*epoll_create)(int);
+  long (*epoll_ctl)(int, int, int, struct epoll_event*);
+  long (*epoll_wait)(int, struct epoll_event*, int, int);
+  /* ... */
   long (*clock_gettime) (clockid_t clk_id, struct timespec *tp);
   void (*exit_group) (int status);
   long (*tgkill)(int tgid, int tid, int sig);
