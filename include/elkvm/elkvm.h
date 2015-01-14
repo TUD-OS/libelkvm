@@ -95,6 +95,8 @@ struct elkvm_handlers {
   long (*nanosleep)(const struct timespec *req, struct timespec *rem);
   long (*getpid)(void);
   /* ... */
+  long (*socket)(int, int, int);
+  /* ... */
   long (*getuid)(void);
   long (*getgid)(void);
   /* ... */

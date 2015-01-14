@@ -9,6 +9,7 @@
 #include <sys/mman.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/vfs.h>
 #include <time.h>
@@ -211,6 +212,10 @@ int pass_openat(int dirfd, const char *pathname, int flags) {
   return openat(dirfd, pathname, flags);
 }
 
+long pass_socket(int domain, int type, int protocol) {
+  return socket(domain, type, protocol);
+}
+
 Elkvm::elkvm_handlers
 Elkvm::default_handlers = {
   .read = pass_read,
@@ -240,6 +245,8 @@ Elkvm::default_handlers = {
   .nanosleep = pass_nanosleep,
   /* ... */
   .getpid = pass_getpid,
+  /* ... */
+  .socket = pass_socket,
   /* ... */
   .getuid  = pass_getuid,
   .getgid  = pass_getgid,

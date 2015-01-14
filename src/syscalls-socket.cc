@@ -9,8 +9,12 @@ long elkvm_do_sendfile(Elkvm::VM * vmi __attribute__((unused))) {
 }
 
 long elkvm_do_socket(Elkvm::VM * vmi __attribute__((unused))) {
-  ERROR() << "unimplemented"; exit(1);
-  return -ENOSYS;
+  CURRENT_ABI::paramtype domain;
+  CURRENT_ABI::paramtype type;
+  CURRENT_ABI::paramtype protocol;
+
+  vmi->unpack_syscall(&domain, &type, &protocol);
+  return vmi->get_handlers()->socket(domain, type, protocol);
 }
 
 long elkvm_do_connect(Elkvm::VM * vmi __attribute__((unused))) {
