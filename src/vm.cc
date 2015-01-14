@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <elkvm/config.h>
 #include <elkvm/elkvm.h>
 #include <elkvm/elkvm-internal.h>
 #include <elkvm/elkvm-log.h>
@@ -25,7 +26,7 @@
 #include <elkvm/vcpu.h>
 
 namespace Elkvm {
-    
+
 std::list<std::shared_ptr<Elkvm::VM> > vmi;
 
 
@@ -247,7 +248,7 @@ std::shared_ptr<VM> create_vm_object(const elkvm_opts * const opts,
         handlers,
         opts->debug);
   Elkvm::vmi.push_back(vmi);
-  
+
   return vmi;
 }
 
@@ -263,7 +264,6 @@ int create_and_setup_environment(const ElfBinary &bin,
 
 //namespace Elkvm
 }
-
 
 std::shared_ptr<Elkvm::VM>
 elkvm_vm_create_raw(Elkvm::elkvm_opts *opts,

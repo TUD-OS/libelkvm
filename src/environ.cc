@@ -5,17 +5,18 @@
 #include <elkvm/elfloader.h>
 #include <elkvm/elkvm-internal.h>
 #include <elkvm/environ.h>
-#include <elkvm/vcpu.h>
 #include <elkvm/kvm.h>
 #include <elkvm/region.h>
 #include <elkvm/region_manager.h>
 #include <elkvm/stack.h>
 #include <elkvm/elkvm-log.h>
+#include <elkvm/vcpu.h>
 
 // the global logger object (see elkvm-log.h)
 ElkvmLog globalElkvmLogger;
 
 namespace Elkvm {
+
   Environment::Environment(const ElfBinary &bin, std::shared_ptr<RegionManager> rm) :
     binary(bin)
   {

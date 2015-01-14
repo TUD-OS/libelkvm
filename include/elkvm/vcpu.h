@@ -11,10 +11,6 @@
 #include <cstdbool>
 #include <cstdio>
 
-#ifdef HAVE_LIBUDIS86
-#include <udis86.h>
-#endif
-
 namespace Elkvm {
 
 class Segment {
@@ -90,9 +86,6 @@ class VCPU {
 
   public:
     static const int hypercall_exit = 1;
-#ifdef HAVE_LIBUDIS86
-  ud_t ud_obj;
-#endif
 
     VCPU(std::shared_ptr<Elkvm::RegionManager> rm, int vmfd, unsigned cpu_num);
     /*
@@ -190,18 +183,5 @@ bool host_supports_vmx(void);
  * \brief Get the host CPUID
 */
 void host_cpuid(uint32_t, uint32_t, uint32_t *, uint32_t *, uint32_t *, uint32_t *);
-
-void kvm_vcpu_dump_code(std::shared_ptr<Elkvm::VCPU> vcpu);
-void kvm_vcpu_dump_code_at(std::shared_ptr<Elkvm::VCPU> vcpu, uint64_t guest_addr);
-
-#ifdef HAVE_LIBUDIS86
-/*
- * \brief Get the next byte of code to be executed.
- * This is mainly here for libudis86 disassembly
- */
-int kvm_vcpu_get_next_code_byte(std::shared_ptr<Elkvm::VCPU> vcpu, uint64_t guest_addr);
-
-void elkvm_init_udis86(std::shared_ptr<Elkvm::VCPU> vcpu, int mode);
-#endif
 
 void print_flags(uint64_t flags);
