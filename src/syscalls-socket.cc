@@ -69,8 +69,11 @@ long elkvm_do_bind(Elkvm::VM * vmi __attribute__((unused))) {
 }
 
 long elkvm_do_listen(Elkvm::VM * vmi __attribute__((unused))) {
-  ERROR() << "unimplemented"; exit(1);
-  return -ENOSYS;
+  CURRENT_ABI::paramtype sock;
+  CURRENT_ABI::paramtype backlog;
+
+  vmi->unpack_syscall(&sock, &backlog);
+  return vmi->get_handlers()->listen(sock, backlog);
 }
 
 long elkvm_do_getsockname(Elkvm::VM * vmi __attribute__((unused))) {

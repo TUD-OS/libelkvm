@@ -220,6 +220,10 @@ long pass_bind(int sock, struct sockaddr const *addr, socklen_t addrlen) {
   return bind(sock, addr, addrlen);
 }
 
+long pass_listen(int sock, int backlog) {
+  return listen(sock, backlog);
+}
+
 long pass_setsockopt(int sock, int lvl, int optname, const void* optval,
 					 socklen_t optlen) {
   return setsockopt(sock, lvl, optname, optval, optlen);
@@ -257,6 +261,7 @@ Elkvm::default_handlers = {
   /* ... */
   .socket = pass_socket,
   .bind = pass_bind,
+  .listen = pass_listen,
   /* ... */
   .setsockopt = pass_setsockopt,
   /* ... */

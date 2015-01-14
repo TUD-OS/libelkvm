@@ -98,6 +98,7 @@ struct elkvm_handlers {
   /* ... */
   long (*socket)(int, int, int);
   long (*bind)(int, const struct sockaddr*, socklen_t);
+  long (*listen)(int, int);
   long (*setsockopt)(int, int, int, const void*, socklen_t);
   /* ... */
   long (*getuid)(void);
