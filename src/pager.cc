@@ -551,7 +551,7 @@ guestptr_t next_page(guestptr_t addr) {
 }
 
 int pages_from_size(uint64_t size) {
-  if(size % ELKVM_PAGESIZE) {
+  if(size & ELKVM_PAGE_MASK) {
     return (size / ELKVM_PAGESIZE) + 1;
   } else {
     return size / ELKVM_PAGESIZE;
@@ -567,7 +567,7 @@ unsigned int offset_in_page(guestptr_t addr) {
 }
 
 uint64_t pagesize_align(uint64_t size) {
-  if(size % ELKVM_PAGESIZE) {
+  if(size & ELKVM_PAGE_MASK) {
     return ((size & ~(ELKVM_PAGESIZE-1)) + ELKVM_PAGESIZE);
   } else {
     return size;
