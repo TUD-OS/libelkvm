@@ -216,6 +216,10 @@ long pass_socket(int domain, int type, int protocol) {
   return socket(domain, type, protocol);
 }
 
+long pass_bind(int sock, struct sockaddr const *addr, socklen_t addrlen) {
+  return bind(sock, addr, addrlen);
+}
+
 long pass_setsockopt(int sock, int lvl, int optname, const void* optval,
 					 socklen_t optlen) {
   return setsockopt(sock, lvl, optname, optval, optlen);
@@ -252,6 +256,7 @@ Elkvm::default_handlers = {
   .getpid = pass_getpid,
   /* ... */
   .socket = pass_socket,
+  .bind = pass_bind,
   /* ... */
   .setsockopt = pass_setsockopt,
   /* ... */

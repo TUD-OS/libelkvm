@@ -3,6 +3,7 @@
 #include <poll.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/times.h>
 #include <sys/types.h>
@@ -96,7 +97,7 @@ struct elkvm_handlers {
   long (*getpid)(void);
   /* ... */
   long (*socket)(int, int, int);
-  /* ... */
+  long (*bind)(int, const struct sockaddr*, socklen_t);
   long (*setsockopt)(int, int, int, const void*, socklen_t);
   /* ... */
   long (*getuid)(void);

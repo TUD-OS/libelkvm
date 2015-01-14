@@ -2,6 +2,8 @@
 #include <elkvm/elkvm-log.h>
 
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 long elkvm_do_sendfile(Elkvm::VM * vmi __attribute__((unused))) {
   ERROR() << "unimplemented"; exit(1);
@@ -53,8 +55,17 @@ long elkvm_do_shutdown(Elkvm::VM * vmi __attribute__((unused))) {
 }
 
 long elkvm_do_bind(Elkvm::VM * vmi __attribute__((unused))) {
-  ERROR() << "unimplemented"; exit(1);
-  return -ENOSYS;
+  CURRENT_ABI::paramtype sock;
+  CURRENT_ABI::paramtype addr;
+  CURRENT_ABI::paramtype addrlen;
+
+  vmi->unpack_syscall(&sock, &addr, &addrlen);
+  const struct sockaddr* local_addr = 0;
+  if (addr) {
+	local_addr = reinterpret_cast<const struct sockaddr*>(vmi->get_region_manager()->get_pager().get_host_p(addr));
+  }
+
+  return vmi->get_handlers()->bind(sock, local_addr, addrlen);
 }
 
 long elkvm_do_listen(Elkvm::VM * vmi __attribute__((unused))) {
