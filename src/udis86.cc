@@ -11,6 +11,30 @@
 
 namespace Elkvm {
 
+UDis::UDis(const uint8_t *ptr) {
+ #ifdef HAVE_LIBUDIS86
+   ud_init(&ud_obj);
+   ud_set_mode(&ud_obj, bits);
+   ud_set_syntax(&ud_obj, UD_SYN_INTEL);
+   ud_set_input_buffer(&ud_obj, ptr, disassembly_size);
+ #endif
+}
+
+int UDis::disassemble() {
+ #ifdef HAVE_LIBUDIS86
+   return ud_disassemble(&ud_obj);
+ #else
+   return 0;
+ #endif
+}
+
+std::string UDis::next_insn() {
+ #ifdef HAVE_LIBUDIS86
+   return ud_insn_asm(&ud_obj);
+ #else
+   return "";
+ #endif
+}
 
 std::ostream &print_code(std::ostream &os, const VM &vm, const VCPU &vcpu) {
   return print_code(os, vm, vcpu.get_reg(Elkvm::Reg_t::rip));
