@@ -1,20 +1,51 @@
 #pragma once
+#include <memory>
 
-#include <elkvm/elkvm.h>
+#include <elkvm/config.h>
+
+#ifdef HAVE_LIBUDIS86
+#include <udis86.h>
+#endif
+
 #include <elkvm/types.h>
-#include <elkvm/vcpu.h>
 
 namespace Elkvm {
 
-#ifdef HAVE_LIBUDIS86
+class UDis {
+  private:
+      const unsigned bits = 64;
+      const size_t disassembly_size = 40;
 
-void init_udis86(VCPU &vcpu);
+    #ifdef HAVE_LIBUDIS86
+      ud_t ud_obj;
+    #endif
 
-/*
- * \brief Get the next byte of code to be executed.
- */
-int get_next_code_byte(const VM &vm, VCPU &vcpu, guestptr_t guest_addr);
-#endif
+  public:
+    UDis(const uint8_t *ptr) {
+    #ifdef HAVE_LIBUDIS86
+      ud_init(&ud_obj);
+      ud_set_mode(&ud_obj, bits);
+      ud_set_syntax(&ud_obj, UD_SYN_INTEL);
+      ud_set_input_buffer(&ud_obj, ptr, disassembly_size);
+    #endif
+    }
+
+    int disassemble() {
+    #ifdef HAVE_LIBUDIS86
+      return ud_disassemble(&ud_obj);
+    #else
+      return 0;
+    #endif
+    }
+
+    std::string next_insn() {
+    #ifdef HAVE_LIBUDIS86
+      return ud_insn_asm(&ud_obj);
+    #else
+      return "";
+    #endif
+    }
+};
 
 //namespace Elkvm
 }

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <elkvm/config.h>
-#include <elkvm/elkvm-udis86.h>
 #include <elkvm/kvm.h>
 #include <elkvm/regs.h>
 #include <elkvm/stack.h>
@@ -11,10 +10,6 @@
 
 #include <cstdbool>
 #include <cstdio>
-
-#ifdef HAVE_LIBUDIS86
-#include <udis86.h>
-#endif
 
 namespace Elkvm {
 
@@ -91,9 +86,6 @@ class VCPU {
 
   public:
     static const int hypercall_exit = 1;
-#ifdef HAVE_LIBUDIS86
-  ud_t ud_obj;
-#endif
 
     VCPU(std::shared_ptr<Elkvm::RegionManager> rm, int vmfd, unsigned cpu_num);
     /*

@@ -36,10 +36,6 @@ namespace Elkvm {
     is_singlestepping = false;
     initialize_regs();
     init_rsp();
-
-#ifdef HAVE_LIBUDIS86
-    init_udis86(*this);
-#endif
   }
 
 int VCPU::handle_stack_expansion(uint32_t err __attribute__((unused)),

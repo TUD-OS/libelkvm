@@ -21,7 +21,7 @@ int VM::handle_interrupt(std::shared_ptr<VCPU> vcpu) {
         get_region_manager()->get_pager().get_host_p(stack_p));
     assert(host_p != nullptr);
     guestptr_t instr = *(host_p + 1);
-    print_code(std::cerr, *this, *vcpu, instr);
+    print_code(std::cerr, *this, instr);
   }
 
   uint64_t err_code = vcpu->pop();
