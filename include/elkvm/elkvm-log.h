@@ -8,12 +8,13 @@
 #include <boost/log/support/date_time.hpp>
 #include <boost/log/sources/logger.hpp>
 
-#define LOG_RED    "\033[31;1m"
-#define LOG_GREEN  "\033[32m"
-#define LOG_YELLOW "\033[33m"
-#define LOG_BLUE   "\033[34;1m"
+#define LOG_RED     "\033[31;1m"
+#define LOG_GREEN   "\033[32m"
+#define LOG_YELLOW  "\033[33m"
+#define LOG_BLUE    "\033[34;1m"
 #define LOG_MAGENTA "\033[35;1m"
-#define LOG_RESET  "\033[0m"
+#define LOG_CYAN    "\033[36m"
+#define LOG_RESET   "\033[0m"
 
 struct ElkvmLog
 {

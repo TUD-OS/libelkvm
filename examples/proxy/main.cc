@@ -37,13 +37,13 @@ initialize_elkvm(int argc, char**argv, char **env)
 {
   int err = elkvm_init(&elkvm, argc, argv, env);
   if(err) {
-    if(errno == -ENOENT) {
+    if(err == -ENOENT) {
       ERROR() << "/dev/kvm seems not to exist. Check your KVM installation!";
     }
-    if(errno == -EACCES) {
+    if(err == -EACCES) {
       ERROR() << "Access to /dev/kvm was denied. Check if you belong to the 'kvm' group!";
     }
-    ERROR() << "ERROR initializing VM errno: " << -err << "Msg: "
+    ERROR() << "ERROR initializing VM errno: " << -err << " Msg: "
             << strerror(-err);
     abort();
   }
@@ -307,7 +307,11 @@ std::shared_ptr<Elkvm::VM> attach_vm(int pid)
                                            &remote, 1,
                                            0);
           //INFO() << "Read " << bytes << " bytes from remote process.";
-          assert(bytes == reg.size());
+          if (bytes == -1) {
+              INFO() << "Error reading region [" << std::hex << r->guest_address()
+                     << " - " << (r->guest_address() + reg.size()) << "]";
+              INFO() << "Error message: " << strerror(errno);
+          }
       }
   }
 

@@ -717,6 +717,40 @@ long elkvm_do_lseek(Elkvm::VM * vmi) {
 
 }
 
+static inline void
+log_mmap_args(guestptr_t addr, CURRENT_ABI::paramtype length,
+              CURRENT_ABI::paramtype prot, CURRENT_ABI::paramtype flags,
+              CURRENT_ABI::paramtype fd, CURRENT_ABI::paramtype off)
+{
+  DBG() << LOG_CYAN << "address " << std::hex << addr
+        << " length " << length << LOG_RESET;
+
+  DBG () << LOG_CYAN << "protection: (" << std::hex << prot << ") "
+         << (prot & PROT_NONE ? "PROT_NONE " : "")
+         << (prot & PROT_WRITE ? "PROT_WRITE " : "")
+         << (prot & PROT_READ ? "PROT_READ " : "")
+         << (prot & PROT_EXEC ? "PROT_EXEC " : "") << LOG_RESET;
+
+  DBG () << LOG_CYAN << "flags: (" << std::hex << flags << ") "
+         << (flags & MAP_SHARED ? "MAP_SHARED " : "")
+         << (flags & MAP_PRIVATE ? "MAP_PRIVATE " : "")
+         << (flags & MAP_ANONYMOUS ? "MAP_ANONYMOUS " : "")
+         << (flags & MAP_32BIT ? "MAP_32BIT " : "")
+         << (flags & MAP_DENYWRITE ? "MAP_DENYWRITE " : "")
+         << (flags & MAP_FIXED ? "MAP_FIXED " : "")
+         << (flags & MAP_GROWSDOWN ? "MAP_GROWSDOWN " : "")
+         << (flags & MAP_LOCKED ? "MAP_LOCKED " : "")
+         << (flags & MAP_NONBLOCK ? "MAP_NONBLOCK " : "")
+         << (flags & MAP_NORESERVE ? "MAP_NORESERVE " : "")
+         << (flags & MAP_POPULATE ? "MAP_POPULATE " : "")
+         << (flags & MAP_STACK ? "MAP_STACK " : "")
+         << LOG_RESET;
+
+  DBG() << LOG_CYAN << "fd " << fd << " offset " << off << LOG_RESET;
+}
+
+#define ELKVM_DEBUG_MMAP 0
+
 long elkvm_do_mmap(Elkvm::VM * vmi) {
   /* obtain a region_mapping and fill this with a proposal
    * on how to do the mapping */
@@ -729,6 +763,10 @@ long elkvm_do_mmap(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype off    = 0;
 
   vmi->unpack_syscall(&addr, &length, &prot, &flags, &fd, &off);
+#if ELKVM_DEBUG_MMAP
+  log_mmap_args(addr, length, prot, flags, fd, off);
+  vmi->get_region_manager()->dump_regions();
+#endif
 
   /* create a mapping object with the data from the user, this will
    * also allocate the memory for this mapping */
@@ -785,6 +823,10 @@ long elkvm_do_mmap(Elkvm::VM * vmi) {
   if(result < 0) {
     return -errno;
   }
+
+#if ELKVM_DEBUG_MMAP
+  vmi->get_region_manager()->dump_regions();
+#endif
 
   return mapping.guest_address();
 }

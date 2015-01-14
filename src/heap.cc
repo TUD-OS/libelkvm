@@ -8,6 +8,7 @@
 #include <elkvm/elfloader.h>
 #include <elkvm/heap.h>
 #include <elkvm/region.h>
+#include <elkvm/pager.h>
 #include <elkvm/region_manager.h>
 
 namespace Elkvm {
@@ -128,6 +129,7 @@ namespace Elkvm {
 
   Mapping &HeapManager::get_mapping(guestptr_t addr, size_t length, int prot,
       int flags, int fd, off_t off) {
+    length = pagesize_align(length);
     if(addr && (flags & MAP_FIXED)) {
       /* check if we already have a mapping for that address,
        * if we do, we need to split the old mapping, and replace the contents
@@ -163,6 +165,8 @@ namespace Elkvm {
 
   Mapping &HeapManager::create_mapping(guestptr_t addr, size_t length, int prot,
       int flags, int fd, off_t off, std::shared_ptr<Region> r) {
+
+    length = pagesize_align(length);
 
     if(r == nullptr) {
       r = _rm->allocate_region(length);

@@ -1,0 +1,51 @@
+#!/usr/bin/expect -f
+
+set build $env(ELKVM_BUILD)
+set timeout 7
+log_user 0
+exp_internal 0
+
+proc failure { msg output } {
+	send_user "\n========= $msg =========\n";
+	send_user "Output was:\n";
+	send_user $output;
+	exit 1;
+}
+
+# 1) Launch the process that we want to attach to
+spawn ./hello.attach &
+# 2) Get the PID that hello.attach prints
+expect {
+		-re "I am PID.*--- (.+) ---.*\r"
+		{
+			set attach_id $spawn_id
+			set pid "$expect_out(1,string)\n";
+#send_user "PID: $pid";
+		}
+		eof
+		{
+			failure "Error spawning attach process.\n" $expect_out(buffer)
+		}
+		timeout { failure "TIMEOUT" "" }
+}
+
+# 3) Let it run until the 3rd iteration of the print loop
+expect { 
+	-i $attach_id
+	"hello 3" { }
+	eof { failure "Attach process failed?" $expect_out(buffer) }
+	timeout { failure "Attach process timed timeout?" ""}
+}
+
+# 4) Launch the proxy and attach to previous PID
+spawn $build/examples/proxy/proxy -a $pid
+set proxy_id $spawn_id
+
+# 5) Run the proxy until it prints the 7th loop iteration
+expect {
+	-i $proxy_id
+	"hello 7" { }
+	eof { failure "proxy attach failed?"  $expect_out(buffer)}
+	timeout { failure "proxy attach timed timeout?" ""}
+}
+

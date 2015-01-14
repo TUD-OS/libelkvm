@@ -26,10 +26,13 @@
 #define PT_BIT_LARGEPAGE   (1L << 7)
 #define PT_BIT_NXE         (1L << 63)
 
-#define HOST_PAGESIZE        0x1000
-#define ELKVM_PAGESIZE       0x1000
-#define ELKVM_PAGESIZE_LARGE 0x200000
-#define ELKVM_PAGESIZE_HUGE  0x100000000
+#define HOST_PAGESIZE         0x1000
+#define ELKVM_PAGESIZE        0x1000
+#define ELKVM_PAGE_MASK       (ELKVM_PAGESIZE - 1)
+#define ELKVM_PAGESIZE_LARGE  0x200000
+#define ELKVM_PAGE_LARGE_MASK (ELKVM_PAGESIZE_LARGE - 1)
+#define ELKVM_PAGESIZE_HUGE   0x100000000
+#define ELKVM_PAGE_HUGE_MASK  (ELKVM_PAGESIZE_HUGE - 1)
 /*
  * KVM allows only for 32 memory slots in Linux 3.8
  * and 128 slots on Linux 3.11
