@@ -97,8 +97,10 @@ struct elkvm_handlers {
   long (*getpid)(void);
   /* ... */
   long (*socket)(int, int, int);
+  long (*accept)(int, struct sockaddr*, socklen_t*);
   long (*bind)(int, const struct sockaddr*, socklen_t);
   long (*listen)(int, int);
+  long (*getsockname)(int, struct sockaddr*, socklen_t*);
   long (*setsockopt)(int, int, int, const void*, socklen_t);
   /* ... */
   long (*getuid)(void);

@@ -25,8 +25,22 @@ long elkvm_do_connect(Elkvm::VM * vmi __attribute__((unused))) {
 }
 
 long elkvm_do_accept(Elkvm::VM * vmi __attribute__((unused))) {
-  ERROR() << "unimplemented"; exit(1);
-  return -ENOSYS;
+  CURRENT_ABI::paramtype sock;
+  CURRENT_ABI::paramtype addr;
+  CURRENT_ABI::paramtype len;
+  struct sockaddr* local_addr = 0;
+  socklen_t *local_len = 0;
+
+  vmi->unpack_syscall(&sock, &addr, &len);
+
+  if (addr != 0) {
+	local_addr = reinterpret_cast<struct sockaddr*>(vmi->get_region_manager()->get_pager().get_host_p(addr));
+  }
+  if (len != 0) {
+	local_len =  reinterpret_cast<socklen_t*>(vmi->get_region_manager()->get_pager().get_host_p(len));
+  }
+
+  return vmi->get_handlers()->accept(sock, local_addr, local_len);
 }
 
 long elkvm_do_sendto(Elkvm::VM * vmi __attribute__((unused))) {
@@ -77,8 +91,21 @@ long elkvm_do_listen(Elkvm::VM * vmi __attribute__((unused))) {
 }
 
 long elkvm_do_getsockname(Elkvm::VM * vmi __attribute__((unused))) {
-  ERROR() << "unimplemented"; exit(1);
-  return -ENOSYS;
+  CURRENT_ABI::paramtype sock;
+  CURRENT_ABI::paramtype addr;
+  CURRENT_ABI::paramtype len;
+  struct sockaddr* local_addr = 0;
+  socklen_t *local_len = 0;
+
+  vmi->unpack_syscall(&sock, &addr, &len);
+
+  if (addr != 0) {
+	local_addr = reinterpret_cast<struct sockaddr*>(vmi->get_region_manager()->get_pager().get_host_p(addr));
+  }
+  if (len != 0) {
+	local_len =  reinterpret_cast<socklen_t*>(vmi->get_region_manager()->get_pager().get_host_p(len));
+  }
+  return vmi->get_handlers()->getsockname(sock, local_addr, local_len);
 }
 
 long elkvm_do_getpeername(Elkvm::VM * vmi __attribute__((unused))) {
