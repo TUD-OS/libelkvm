@@ -36,13 +36,13 @@
 
 #include <elkvm/elkvm.h>
 #include <elkvm/elkvm-internal.h>
+#include <elkvm/elkvm-log.h>
 #include <elkvm/debug.h>
+#include <elkvm/gdbstub.h>
 #include <elkvm/pager.h>
 #include <elkvm/regs.h>
 #include <elkvm/region_manager.h>
 #include <elkvm/vcpu.h>
-
-#define NEED_CPU_REG_SHORTCUTS 1
 
 #define GDBSTUB_EXECUTION_BREAKPOINT    (0xac1)
 #define GDBSTUB_TRACE                   (0xac2)
@@ -61,6 +61,47 @@ typedef uint64_t Bit64u;
 static int listen_socket_fd;
 static int socket_fd;
 //static logfunctions *gdbstublog;
+
+namespace Elkvm {
+namespace Debug {
+
+guestptr_t saved_eip = 0;
+
+void handle_continue(char buffer[255], VM &vm) {
+  DBG() << buffer;
+  char buf[255];
+  guestptr_t new_rip;
+  VCPU &vcpu = *vm.get_vcpu(0);
+
+  if (buffer[1] != 0) {
+    new_rip = (guestptr_t) atoi(buffer + 1);
+
+    printf("continuing at 0x%lx\n", new_rip);
+
+    //TODO this is only used here, get rid of it!
+    saved_eip = vcpu.get_reg(Elkvm::Reg_t::rip);
+
+    //BX_CPU_THIS_PTR gen_reg[BX_32BIT_REG_EIP].dword.erx = new_eip;
+    //TODO reset the rip, set kvm_regs
+    vcpu.set_reg(Elkvm::Reg_t::rip, new_rip);
+  }
+
+  vm.run();
+
+  //if (buffer[1] != 0)
+  //{
+  //  BX_CPU_THIS_PTR gen_reg[BX_32BIT_REG_EIP].dword.erx = saved_eip;
+  //}
+
+  buf[0] = 'S';
+  write_signal(&buf[1], SIGTRAP);
+  put_reply(buf);
+}
+
+//namespace Debug
+}
+//namespace Elkvm
+}
 
 static int hex(char ch)
 {
@@ -133,6 +174,7 @@ static void put_reply(const char* buffer)
 
 static void get_command(char* buffer)
 {
+  std::cout << __FILE__ << ":" << __LINE__ << std::endl;
   unsigned char checksum;
   unsigned char xmitcsum;
   char ch;
@@ -155,6 +197,7 @@ static void get_command(char* buffer)
       count++;
     }
     buffer[count] = 0;
+    std::cout << "cmd: " << buffer << std::endl;
 
     if (ch == '#')
     {
@@ -246,8 +289,6 @@ static int other_thread = 0;
 #define NUMREGSBYTES (NUMREGS * 4)
 #endif
 
-guestptr_t saved_eip = 0;
-
 static void write_signal(char* buf, int signal)
 {
   buf[0] = hexchars[signal >> 4];
@@ -264,7 +305,7 @@ static void debug_loop(const std::shared_ptr<Elkvm::VM>& vm) {
   while (ne == 0)
   {
     get_command(buffer);
-    //printf("get_buffer '%s'\t", buffer);
+    DBG() << "get_buffer '" << buffer << "'\t";
 
     // At a minimum, a stub is required to support the ‘g’ and ‘G’
     // commands for register access,
@@ -283,30 +324,7 @@ static void debug_loop(const std::shared_ptr<Elkvm::VM>& vm) {
       // This packet is deprecated for multi-threading support. See [vCont packet]
       case 'c':
       {
-        char buf[255];
-        guestptr_t new_rip;
-
-        if (buffer[1] != 0) {
-          new_rip = (guestptr_t) atoi(buffer + 1);
-
-          printf("continuing at 0x%lx\n", new_rip);
-
-          saved_eip = vcpu->get_reg(Elkvm::Reg_t::rip);
-          //BX_CPU_THIS_PTR gen_reg[BX_32BIT_REG_EIP].dword.erx = new_eip;
-          //TODO reset the rip, set kvm_regs
-          vcpu->set_reg(Elkvm::Reg_t::rip, new_rip);
-        }
-
-        vm->run();
-
-        //if (buffer[1] != 0)
-        //{
-        //  BX_CPU_THIS_PTR gen_reg[BX_32BIT_REG_EIP].dword.erx = saved_eip;
-        //}
-
-        buf[0] = 'S';
-        write_signal(&buf[1], SIGTRAP);
-        put_reply(buf);
+        Elkvm::Debug::handle_continue(buffer, *vm);
         break;
       }
 

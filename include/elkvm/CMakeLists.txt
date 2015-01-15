@@ -7,6 +7,7 @@ SET( libelkvm_MOC_HEADERS
     elkvm-log.h
     elkvm-udis86.h
     environ.h
+    gdbstub.h
     gdt.h
     heap.h
     idt.h
