@@ -317,7 +317,7 @@ unsigned char read_cmd_into_buffer(char *buffer) {
     count++;
   }
   buffer[count] = 0;
-  std::cout << "cmd: " << buffer << std::endl;
+  DBG() << "cmd: " << buffer << std::endl;
   return checksum;
 }
 
