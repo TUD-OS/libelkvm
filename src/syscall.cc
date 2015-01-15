@@ -1571,8 +1571,14 @@ long elkvm_do_getcwd(Elkvm::VM * vmi) {
   }
 }
 
-long elkvm_do_chdir(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
+long elkvm_do_chdir(Elkvm::VM * vmi) {
+  CURRENT_ABI::paramtype path;
+  vmi->unpack_syscall(&path);
+  char *local_path = 0;
+  if (path) {
+    local_path = reinterpret_cast<char*>(vmi->get_region_manager()->get_pager().get_host_p(path));
+  }
+  return vmi->get_handlers()->chdir(local_path);
 }
 
 long elkvm_do_fchdir(Elkvm::VM * vmi __attribute__((unused))) {

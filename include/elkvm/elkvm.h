@@ -115,6 +115,7 @@ struct elkvm_handlers {
   long (*ftruncate) (int fd, off_t length);
   int (*getdents) (unsigned fd, struct linux_dirent *dirp, unsigned count);
   char *(*getcwd) (char *buf, size_t size);
+  int (*chdir)(char const*);
   int (*fchdir)(int);
   long (*mkdir) (const char *pathname, mode_t mode);
   long (*unlink) (const char *pathname);

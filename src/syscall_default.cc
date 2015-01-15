@@ -161,6 +161,10 @@ char *pass_getcwd(char *buf, size_t size) {
   return getcwd(buf, size);
 }
 
+int pass_chdir(char const *path) {
+  return chdir(path);
+}
+
 int pass_fchdir(int fd) {
   return fchdir(fd);
 }
@@ -306,6 +310,7 @@ Elkvm::default_handlers = {
   .ftruncate = pass_ftruncate,
   .getdents = pass_getdents,
   .getcwd = pass_getcwd,
+  .chdir = pass_chdir,
   .fchdir = pass_fchdir,
   .mkdir = pass_mkdir,
   .unlink = pass_unlink,
