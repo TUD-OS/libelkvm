@@ -5,13 +5,16 @@
 #include <cstdio>
 #include <cstring>
 #include <linux/futex.h>
+#include <sys/epoll.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/vfs.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <elkvm/elkvm.h>
 #include <elkvm/syscall.h>
@@ -158,6 +161,14 @@ char *pass_getcwd(char *buf, size_t size) {
   return getcwd(buf, size);
 }
 
+int pass_chdir(char const *path) {
+  return chdir(path);
+}
+
+int pass_fchdir(int fd) {
+  return fchdir(fd);
+}
+
 long pass_mkdir(const char *pathname, mode_t mode) {
   return mkdir(pathname, mode);
 }
@@ -211,6 +222,45 @@ int pass_openat(int dirfd, const char *pathname, int flags) {
   return openat(dirfd, pathname, flags);
 }
 
+long pass_socket(int domain, int type, int protocol) {
+  return socket(domain, type, protocol);
+}
+
+long pass_bind(int sock, struct sockaddr const *addr, socklen_t addrlen) {
+  return bind(sock, addr, addrlen);
+}
+
+long pass_accept(int sock, struct sockaddr* addr, socklen_t *len) {
+  return accept(sock, addr, len);
+}
+
+long pass_listen(int sock, int backlog) {
+  return listen(sock, backlog);
+}
+
+long pass_getsockname(int sock, struct sockaddr* addr, socklen_t *addrlen) {
+  return getsockname(sock, addr, addrlen);
+}
+
+long pass_setsockopt(int sock, int lvl, int optname, const void* optval,
+					 socklen_t optlen) {
+  return setsockopt(sock, lvl, optname, optval, optlen);
+}
+
+long pass_epoll_create(int size) {
+  return epoll_create(size);
+}
+
+
+long pass_epoll_ctl(int epfd, int op, int fd, struct epoll_event* event) {
+  return epoll_ctl(epfd, op, fd, event);
+}
+
+
+long pass_epoll_wait(int epfd, struct epoll_event* events, int max, int timeout) {
+  return epoll_wait(epfd, events, max, timeout);
+}
+
 Elkvm::elkvm_handlers
 Elkvm::default_handlers = {
   .read = pass_read,
@@ -241,6 +291,14 @@ Elkvm::default_handlers = {
   /* ... */
   .getpid = pass_getpid,
   /* ... */
+  .socket = pass_socket,
+  .accept = pass_accept,
+  .bind = pass_bind,
+  .listen = pass_listen,
+  .getsockname = pass_getsockname,
+  /* ... */
+  .setsockopt = pass_setsockopt,
+  /* ... */
   .getuid  = pass_getuid,
   .getgid  = pass_getgid,
   .geteuid = pass_geteuid,
@@ -252,6 +310,8 @@ Elkvm::default_handlers = {
   .ftruncate = pass_ftruncate,
   .getdents = pass_getdents,
   .getcwd = pass_getcwd,
+  .chdir = pass_chdir,
+  .fchdir = pass_fchdir,
   .mkdir = pass_mkdir,
   .unlink = pass_unlink,
   .readlink = pass_readlink,
@@ -265,6 +325,10 @@ Elkvm::default_handlers = {
   .gettid = pass_gettid,
   .time = pass_time,
   .futex = pass_futex,
+  /* ... */
+  .epoll_create = pass_epoll_create,
+  .epoll_ctl = pass_epoll_ctl,
+  .epoll_wait = pass_epoll_wait,
   /* ... */
   .clock_gettime = pass_clock_gettime,
   .exit_group = pass_exit_group,

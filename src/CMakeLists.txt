@@ -9,13 +9,14 @@ SET( libelkvm_SRCS
   interrupt.cc
   kvm.cc
   mapping.cc
-  mprotect.cc
   pager.cc
   region.cc
   region_manager.cc
   signal.cc
   stack.cc
   syscall.cc
+  syscalls-mprotect.cc
+  syscalls-socket.cc
   syscall_default.cc
   tss.cc
   vcpu.cc

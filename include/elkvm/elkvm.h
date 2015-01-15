@@ -3,6 +3,7 @@
 #include <poll.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/times.h>
 #include <sys/types.h>
@@ -95,6 +96,13 @@ struct elkvm_handlers {
   long (*nanosleep)(const struct timespec *req, struct timespec *rem);
   long (*getpid)(void);
   /* ... */
+  long (*socket)(int, int, int);
+  long (*accept)(int, struct sockaddr*, socklen_t*);
+  long (*bind)(int, const struct sockaddr*, socklen_t);
+  long (*listen)(int, int);
+  long (*getsockname)(int, struct sockaddr*, socklen_t*);
+  long (*setsockopt)(int, int, int, const void*, socklen_t);
+  /* ... */
   long (*getuid)(void);
   long (*getgid)(void);
   /* ... */
@@ -107,6 +115,8 @@ struct elkvm_handlers {
   long (*ftruncate) (int fd, off_t length);
   int (*getdents) (unsigned fd, struct linux_dirent *dirp, unsigned count);
   char *(*getcwd) (char *buf, size_t size);
+  int (*chdir)(char const*);
+  int (*fchdir)(int);
   long (*mkdir) (const char *pathname, mode_t mode);
   long (*unlink) (const char *pathname);
   long (*readlink) (const char *path, char *buf, size_t bufsiz);
@@ -123,6 +133,10 @@ struct elkvm_handlers {
   long (*time) (time_t *t);
   long (*futex)(int *uaddr, int op, int val, const struct timespec *timeout,
       int *uaddr2, int val3);
+  /* ... */
+  long (*epoll_create)(int);
+  long (*epoll_ctl)(int, int, int, struct epoll_event*);
+  long (*epoll_wait)(int, struct epoll_event*, int, int);
   /* ... */
   long (*clock_gettime) (clockid_t clk_id, struct timespec *tp);
   void (*exit_group) (int status);
