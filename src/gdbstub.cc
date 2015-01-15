@@ -98,6 +98,20 @@ void handle_continue(char buffer[255], VM &vm) {
   put_reply(buf);
 }
 
+void handle_singlestep(VM &vm) {
+  DBG();
+  char buf[255];
+
+  auto vcpu = *vm.get_vcpu(0);
+  vcpu.singlestep();
+  vm.run();
+  vcpu.singlestep_off();
+
+  buf[0] = 'S';
+  write_signal(&buf[1], SIGTRAP);
+  put_reply(buf);
+}
+
 //namespace Debug
 }
 //namespace Elkvm
@@ -333,16 +347,7 @@ static void debug_loop(const std::shared_ptr<Elkvm::VM>& vm) {
       // This packet is deprecated for multi-threading support. See [vCont packet]
       case 's':
       {
-        char buf[255];
-
-        auto vcpu = vm->get_vcpu(0);
-        vcpu->singlestep();
-        vm->run();
-        vcpu->singlestep_off();
-
-        buf[0] = 'S';
-        write_signal(&buf[1], SIGTRAP);
-        put_reply(buf);
+        Elkvm::Debug::handle_singlestep(*vm);
         break;
       }
 
