@@ -335,6 +335,9 @@ int create_sysenter(const std::shared_ptr<VM> vm,
     const std::shared_ptr<VCPU> vcpu);
 int create_sighandler(const std::shared_ptr<VM> vm);
 
+std::ostream &print_code(std::ostream &os, const VM &vm, const VCPU &vcpu);
+std::ostream &print_code(std::ostream &os, const VM &vm, guestptr_t addr);
+
 } // namespace Elkvm
 
 /*

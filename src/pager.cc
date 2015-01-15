@@ -10,10 +10,11 @@
 #include <elkvm/elkvm.h>
 #include <elkvm/elkvm-internal.h>
 #include <elkvm/pager.h>
-#include <elkvm/vcpu.h>
 #include <elkvm/region.h>
 
 namespace Elkvm {
+  class VCPU;
+
   PagerX86_64::PagerX86_64(int vmfd) :
   _vmfd(vmfd) {
     total_memsz = 0;

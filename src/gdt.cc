@@ -13,7 +13,10 @@
 #include <elkvm/region_manager.h>
 #include <elkvm/regs.h>
 #include <elkvm/tss.h>
-#include <elkvm/vcpu.h>
+
+namespace Elkvm {
+  class VCPU;
+}
 
 std::shared_ptr<Elkvm::Region> elkvm_gdt_setup(Elkvm::RegionManager &rm,
                                                std::shared_ptr<Elkvm::VCPU> vcpu) {

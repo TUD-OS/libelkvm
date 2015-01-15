@@ -67,6 +67,7 @@ namespace Elkvm {
       bool kernel) {
     int fd = open(path.c_str(), O_RDONLY);
     if(fd < 0) {
+      ERROR() << "Could not find flat binary at: " << path << std::endl;
       return -errno;
     }
 
