@@ -14,6 +14,7 @@
 #include <sys/stat.h>
 #include <sys/vfs.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <elkvm/elkvm.h>
 #include <elkvm/syscall.h>
@@ -160,6 +161,10 @@ char *pass_getcwd(char *buf, size_t size) {
   return getcwd(buf, size);
 }
 
+int pass_fchdir(int fd) {
+  return fchdir(fd);
+}
+
 long pass_mkdir(const char *pathname, mode_t mode) {
   return mkdir(pathname, mode);
 }
@@ -301,6 +306,7 @@ Elkvm::default_handlers = {
   .ftruncate = pass_ftruncate,
   .getdents = pass_getdents,
   .getcwd = pass_getcwd,
+  .fchdir = pass_fchdir,
   .mkdir = pass_mkdir,
   .unlink = pass_unlink,
   .readlink = pass_readlink,

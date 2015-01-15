@@ -1576,7 +1576,9 @@ long elkvm_do_chdir(Elkvm::VM * vmi __attribute__((unused))) {
 }
 
 long elkvm_do_fchdir(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
+  CURRENT_ABI::paramtype path;
+  vmi->unpack_syscall(&path);
+  return vmi->get_handlers()->fchdir(path);
 }
 
 long elkvm_do_rename(Elkvm::VM * vmi __attribute__((unused))) {
