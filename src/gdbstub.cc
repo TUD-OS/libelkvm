@@ -307,63 +307,50 @@ static void put_reply(const char* buffer)
   } while (get_debug_char() != '+');
 }
 
-static void get_command(char* buffer)
-{
-  unsigned char checksum;
-  unsigned char xmitcsum;
+unsigned char read_cmd_into_buffer(char *buffer) {
+  unsigned count = 0;
+  unsigned char checksum = 0;
   char ch;
-  unsigned int count;
-  unsigned int i;
+  while ((ch = get_debug_char()) != '#') {
+    checksum = checksum + ch;
+    buffer[count] = ch;
+    count++;
+  }
+  buffer[count] = 0;
+  std::cout << "cmd: " << buffer << std::endl;
+  return checksum;
+}
 
+bool validate_checksum(unsigned char checksum) {
+  unsigned char xmitcsum = hex(get_debug_char()) << 4;
+  xmitcsum += hex(get_debug_char());
+  return xmitcsum == checksum;
+}
+
+static void get_command(char* buffer) {
+  bool checksum_correct = false;
   do {
+    char ch;
     while ((ch = get_debug_char()) != '$');
+    unsigned char checksum = read_cmd_into_buffer(buffer);
 
-    checksum = 0;
-    xmitcsum = 0;
-    count = 0;
-
-    while (1)
-    {
-      ch = get_debug_char();
-      if (ch == '#') break;
-      checksum = checksum + ch;
-      buffer[count] = ch;
-      count++;
-    }
-    buffer[count] = 0;
-    std::cout << "cmd: " << buffer << std::endl;
-
-    if (ch == '#')
-    {
-      xmitcsum = hex(get_debug_char()) << 4;
-      xmitcsum += hex(get_debug_char());
-      if (checksum != xmitcsum)
-      {
-        printf("Bad checksum");
-      }
-    }
-
-    if (checksum != xmitcsum)
-    {
-      put_debug_char('-');
-      flush_debug_buffer();
-    }
-    else
-    {
+    checksum_correct = validate_checksum(checksum);
+    if(checksum_correct) {
       put_debug_char('+');
-      if (buffer[2] == ':')
-      {
+      if (buffer[2] == ':') {
         put_debug_char(buffer[0]);
         put_debug_char(buffer[1]);
-        count = strlen(buffer);
-        for (i = 3; i <= count; i++)
-        {
+        unsigned count = strlen(buffer);
+        for (unsigned i = 3; i <= count; i++) {
           buffer[i - 3] = buffer[i];
         }
       }
-      flush_debug_buffer();
+    } else {
+      ERROR() << "Bad checksum!";
+      put_debug_char('-');
     }
-  } while (checksum != xmitcsum);
+    flush_debug_buffer();
+  } while (!checksum_correct);
 }
 
 void hex2mem(char* buf, unsigned char* mem, int count)
