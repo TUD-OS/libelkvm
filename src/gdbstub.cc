@@ -120,14 +120,13 @@ void handle_memwrite(VM &vm, char buffer[255]) {
 
 void handle_memread(VM &vm, char buffer[255]) {
   DBG();
-  guestptr_t addr;
-  int len;
-  char* ebuf;
 
-  addr = strtoull(&buffer[1], &ebuf, 16);
-  len = strtoul(ebuf + 1, NULL, 16);
+  char* ebuf;
+  guestptr_t addr = strtoull(&buffer[1], &ebuf, 16);
+  int len = strtoul(ebuf + 1, NULL, 16);
 
   DBG() << std::hex << "addr: " << addr << " len: " << len;
+
   if(addr == 0x0) {
     put_reply("");
   } else {
@@ -433,10 +432,8 @@ static void write_signal(char* buf, int signal)
 
 static void debug_loop(const std::shared_ptr<Elkvm::VM>& vm) {
   char buffer[255];
-  int ne = 0;
-  auto vcpu = vm->get_vcpu(0);
 
-  while (ne == 0)
+  while (true)
   {
     get_command(buffer);
     DBG() << "get_buffer '" << buffer << "'\t";
