@@ -56,7 +56,7 @@ namespace Elkvm {
 
     while(list_idx < freelists.size()) {
       auto rit = std::find_if(freelists[list_idx].begin(), freelists[list_idx].end(),
-         [size](std::shared_ptr<Region> a)
+         [size](const std::shared_ptr<Region>& a)
          { assert(a != nullptr); return a->size() >= size; });
       if(rit != freelists[list_idx].end()) {
         auto r = *rit;
@@ -70,7 +70,7 @@ namespace Elkvm {
 
   std::shared_ptr<Region> RegionManager::find_region(const void *host_p) const {
     auto r = std::find_if(allocated_regions.begin(), allocated_regions.end(),
-         [host_p](std::shared_ptr<Region> a)
+         [host_p](const std::shared_ptr<Region>& a)
          { return a->contains_address(host_p); });
     if(r == allocated_regions.end()) {
       return nullptr;
@@ -80,7 +80,7 @@ namespace Elkvm {
 
   std::shared_ptr<Region> RegionManager::find_region(guestptr_t addr) const {
     auto r = std::find_if(allocated_regions.begin(), allocated_regions.end(),
-         [addr](std::shared_ptr<Region> a)
+         [addr](const std::shared_ptr<Region>& a)
          { return a->contains_address(addr); });
     if(r == allocated_regions.end()) {
       return nullptr;
@@ -122,7 +122,7 @@ namespace Elkvm {
 
   void RegionManager::free_region(void *host_p, const size_t sz) {
     auto rit = std::find_if(allocated_regions.begin(), allocated_regions.end(),
-        [host_p](std::shared_ptr<Region> a)
+        [host_p](const std::shared_ptr<Region>& a)
         { return a->contains_address(host_p); });
 
     assert(rit != allocated_regions.end());

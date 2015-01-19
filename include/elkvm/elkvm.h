@@ -327,9 +327,9 @@ std::shared_ptr<VM> create_vm_object(const elkvm_opts * const opts,
     const elkvm_handlers * const handlers);
 int create_vcpus(const std::shared_ptr<VM>& vm, unsigned cpus);
 int create_and_setup_environment(const ElfBinary &bin,
-    const std::shared_ptr<VM> vm,
+    const std::shared_ptr<VM>& vm,
     elkvm_opts * opts,
-    const std::shared_ptr<VCPU> vcpu);
+    const std::shared_ptr<VCPU>& vcpu);
 
 int create_idt(const std::shared_ptr<VM>& vm,
     const std::shared_ptr<VCPU> vcpu);
@@ -371,17 +371,12 @@ elkvm_vm_create_raw(Elkvm::elkvm_opts *,
 /*
  * \brief Emulates (skips) the VMCALL instruction
  */
-void elkvm_emulate_vmcall(std::shared_ptr<Elkvm::VCPU> );
+void elkvm_emulate_vmcall(const std::shared_ptr<Elkvm::VCPU>&);
 int elkvm_dump_valid_msrs(struct elkvm_opts *);
 
 /**
  * \brief Initialize the gdbstub and wait for gdb
  *        to connect
  */
-void elkvm_gdbstub_init(std::shared_ptr<Elkvm::VM> vm);
-
-/**
- * \brief Enable VCPU debug mode
- */
-int elkvm_debug_enable(std::shared_ptr<Elkvm::VCPU> vcpu);
+void elkvm_gdbstub_init(const std::shared_ptr<Elkvm::VM>& vm);
 

@@ -11,7 +11,7 @@
 namespace Elkvm {
 
   bool operator==(const VM &lhs, const VM &rhs);
-  unsigned get_hypercall_type(std::shared_ptr<VCPU>);
+  unsigned get_hypercall_type(const std::shared_ptr<VCPU>&);
 
   //namespace Elkvm
 }

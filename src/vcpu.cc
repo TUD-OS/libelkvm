@@ -405,7 +405,7 @@ void host_cpuid(uint32_t function, uint32_t count,
         *edx = vec[3];
 }
 
-void kvm_vcpu_dump_msr(std::shared_ptr<Elkvm::VCPU> vcpu, uint32_t msr) {
+void kvm_vcpu_dump_msr(const std::shared_ptr<Elkvm::VCPU>& vcpu, uint32_t msr) {
   std::cerr << " MSR: 0x" << std::hex << msr << ": 0x" << vcpu->get_msr(msr)
             << std::endl;
 }

@@ -143,7 +143,7 @@ namespace Elkvm {
 #endif
 
   /* TODO: Should be a function of the vCPU */
-  unsigned get_hypercall_type(std::shared_ptr<VCPU> vcpu)
+  unsigned get_hypercall_type(const std::shared_ptr<VCPU>& vcpu)
   {
     return vcpu->pop();
   }

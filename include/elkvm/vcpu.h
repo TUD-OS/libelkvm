@@ -182,7 +182,7 @@ std::ostream &print_stack(std::ostream &os, const VM &vm, const VCPU &vcpu);
 #define VCPU_MSR_CSTAR  0xC0000083
 #define VCPU_MSR_SFMASK 0XC0000084
 
-void kvm_vcpu_dump_msr(std::shared_ptr<Elkvm::VCPU> vcpu, uint32_t);
+void kvm_vcpu_dump_msr(const std::shared_ptr<Elkvm::VCPU>& vcpu, uint32_t);
 
 /*
  * \brief Returns true if the host supports vmx

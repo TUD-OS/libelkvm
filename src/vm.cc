@@ -254,9 +254,9 @@ std::shared_ptr<VM> create_vm_object(const elkvm_opts * const opts,
 }
 
 int create_and_setup_environment(const ElfBinary &bin,
-    const std::shared_ptr<VM> vm,
+    const std::shared_ptr<VM>& vm,
     elkvm_opts * opts,
-    const std::shared_ptr<VCPU> vcpu) {
+    const std::shared_ptr<VCPU>& vcpu) {
 
   Elkvm::Environment env(bin, vm->get_region_manager());
   /* gets and sets vcpu->regs */
@@ -327,7 +327,7 @@ int Elkvm::VM::chunk_remap(int num, size_t newsize) {
   return 0;
 }
 
-void elkvm_emulate_vmcall(std::shared_ptr<Elkvm::VCPU> vcpu) {
+void elkvm_emulate_vmcall(const std::shared_ptr<Elkvm::VCPU>& vcpu) {
   /* INTEL VMCALL instruction is three bytes long */
   CURRENT_ABI::paramtype rip = vcpu->get_reg(Elkvm::Reg_t::rip);
   vcpu->set_reg(Elkvm::Reg_t::rip, rip += 3);

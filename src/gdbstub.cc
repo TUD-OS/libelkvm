@@ -255,7 +255,7 @@ static void write_signal(char* buf, int signal)
   buf[2] = 0;
 }
 
-static void debug_loop(std::shared_ptr<Elkvm::VM> vm) {
+static void debug_loop(const std::shared_ptr<Elkvm::VM>& vm) {
   char buffer[255];
   char obuf[1024];
   int ne = 0;
@@ -642,7 +642,7 @@ static void wait_for_connect(int portn)
   printf("Connected to %ld.%ld.%ld.%ld\n", ip & 0xff, (ip >> 8) & 0xff, (ip >> 16) & 0xff, (ip >> 24) & 0xff);
 }
 
-void elkvm_gdbstub_init(std::shared_ptr<Elkvm::VM> vm) {
+void elkvm_gdbstub_init(const std::shared_ptr<Elkvm::VM>& vm) {
   int portn = 1234;
 
   /* Wait for connect */
