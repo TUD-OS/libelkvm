@@ -52,10 +52,10 @@ class VM;
  */
 struct hypercall_handlers {
     long (*pre_handler) (Elkvm::VM* vm,
-                         std::shared_ptr<VCPU> vcpu,
+                         const std::shared_ptr<VCPU>& vcpu,
                          int eventtype);
     long (*post_handler) (Elkvm::VM* vm,
-                          std::shared_ptr<VCPU> vcpu,
+                          const std::shared_ptr<VCPU>& vcpu,
                           int eventtype);
 };
 
