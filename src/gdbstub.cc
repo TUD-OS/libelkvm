@@ -64,7 +64,7 @@ gdb_session::gdb_session(Elkvm::VM &vm) {
 }
 
 void gdb_session::handle_continue(char buffer[255], VM &vm) {
-  char buf[255];
+  std::string reply;
 
   if (buffer[1] != 0) {
     auto &vcpu = *vm.get_vcpu(0);
@@ -76,9 +76,9 @@ void gdb_session::handle_continue(char buffer[255], VM &vm) {
 
   vm.run();
 
-  buf[0] = 'S';
-  write_signal(&buf[1], SIGTRAP);
-  put_reply(buf);
+  reply[0] = 'S';
+  write_signal(&reply[1], SIGTRAP);
+  put_reply(reply.c_str());
 }
 
 void gdb_session::handle_singlestep(VM &vm) {
