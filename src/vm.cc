@@ -79,7 +79,7 @@ std::shared_ptr<VM> create_virtual_hardware(const elkvm_opts * const opts,
 }
 
 
-int load_elf_binary(const std::shared_ptr<VM> vm,
+int load_elf_binary(const std::shared_ptr<VM>& vm,
         elkvm_opts * opts,
         const std::string binary) {
 
@@ -94,7 +94,7 @@ int load_elf_binary(const std::shared_ptr<VM> vm,
   return 0;
 }
 
-int setup_proxy_os(const std::shared_ptr<VM> vm) {
+int setup_proxy_os(const std::shared_ptr<VM>& vm) {
   auto vcpu = vm->get_vcpu(0);
 
   std::shared_ptr<Elkvm::Region> gdt = elkvm_gdt_setup(*vm->get_region_manager(), vcpu);
@@ -116,7 +116,7 @@ int setup_proxy_os(const std::shared_ptr<VM> vm) {
 }
 
 
-int create_vcpus(const std::shared_ptr<VM> vm, unsigned cpus) {
+int create_vcpus(const std::shared_ptr<VM>& vm, unsigned cpus) {
   for(unsigned i = 0; i < cpus; i++) {
     int err = vm->add_cpu();
     if(err) {
@@ -126,7 +126,7 @@ int create_vcpus(const std::shared_ptr<VM> vm, unsigned cpus) {
   return 0;
 }
 
-int create_idt(const std::shared_ptr<VM> vm,
+int create_idt(const std::shared_ptr<VM>& vm,
     const std::shared_ptr<VCPU> vcpu) {
   Elkvm::elkvm_flat idth;
 
@@ -139,7 +139,7 @@ int create_idt(const std::shared_ptr<VM> vm,
   return elkvm_idt_setup(*vm->get_region_manager(), vcpu, &idth);
 }
 
-int create_sysenter(const std::shared_ptr<VM> vm,
+int create_sysenter(const std::shared_ptr<VM>& vm,
     const std::shared_ptr<VCPU> vcpu) {
   Elkvm::elkvm_flat sysenter;
   std::string sysenter_path(RES_PATH "/entry");
@@ -155,7 +155,7 @@ int create_sysenter(const std::shared_ptr<VM> vm,
   return 0;
 }
 
-int create_sighandler(const std::shared_ptr<VM> vm) {
+int create_sighandler(const std::shared_ptr<VM>& vm) {
   std::string sighandler_path(RES_PATH "/signal");
   auto sigclean = vm->get_cleanup_flat();
   return vm->load_flat(sigclean, sighandler_path, 0);
