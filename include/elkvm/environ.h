@@ -20,6 +20,9 @@ namespace Elkvm {
       void fix_auxv_dynamic_values(unsigned count);
     public:
       Environment(const ElfBinary &bin, std::shared_ptr<RegionManager> rm);
+      Environment(Environment const&) = delete;
+      Environment& operator=(Environment const&) = delete;
+
       off64_t push_auxv(std::shared_ptr<VCPU> vcpu, char **env_p);
 
       int copy_and_push_str_arr_p(std::shared_ptr<VCPU> vcpu,

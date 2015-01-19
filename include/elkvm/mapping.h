@@ -30,6 +30,32 @@ namespace Elkvm {
       Mapping(std::shared_ptr<Region> r, guestptr_t guest_addr,
           size_t l, int pr, int f, int fdes, off_t off);
 
+      Mapping(const Mapping& orig)
+        : host_p(orig.base_address()),
+          addr(orig.guest_address()),
+          length(orig.get_length()),
+          mapped_pages(orig.get_pages()),
+          prot(orig.get_prot()),
+          flags(orig.get_flags()),
+          fd(orig.get_fd()),
+          offset(orig.get_offset()),
+          region(orig.get_region())
+      { }
+
+      Mapping& operator=(const Mapping& other)
+      {
+        host_p = other.base_address();
+        addr   = other.guest_address();
+        length = other.get_length();
+        mapped_pages = other.get_pages();
+        prot         = other.get_prot();
+        flags        = other.get_flags();
+        fd           = other.get_fd();
+        offset       = other.get_offset();
+        region       = other.get_region();
+        return *this;
+      }
+
       bool anonymous() const { return flags & MAP_ANONYMOUS; }
       bool contains_address(void *p) const;
       bool contains_address(guestptr_t a) const;
@@ -52,7 +78,7 @@ namespace Elkvm {
       unsigned get_pages() const { return mapped_pages; }
       int get_prot() const { return prot; }
       int get_flags() const { return flags; }
-      std::shared_ptr<Region> get_region() { return region; }
+      std::shared_ptr<Region> get_region() const { return region; }
 
       bool all_unmapped() const { return mapped_pages == 0; }
       void set_unmapped() { length = mapped_pages = 0; }

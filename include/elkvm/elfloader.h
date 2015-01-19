@@ -58,6 +58,9 @@ class ElfBinary {
     ElfBinary(std::string pathname, std::shared_ptr<RegionManager> rm,
         HeapManager &hm);
 
+    ElfBinary(ElfBinary const&) = delete;
+    ElfBinary& operator=(ElfBinary const&) = delete;
+
     int load_binary(std::string pathname);
     guestptr_t get_entry_point();
     const struct Elf_auxv &get_auxv() const;

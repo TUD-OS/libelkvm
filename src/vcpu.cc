@@ -31,9 +31,9 @@ namespace Elkvm {
   VCPU::VCPU(std::shared_ptr<Elkvm::RegionManager> rm,
           int vmfd,
           unsigned cpu_num) :
+	  is_singlestepping(false),
       _kvm_vcpu(vmfd, cpu_num),
       stack(rm) {
-    is_singlestepping = false;
     initialize_regs();
     init_rsp();
   }

@@ -68,6 +68,7 @@ std::shared_ptr<VM> create_virtual_hardware(const elkvm_opts * const opts,
         const Elkvm::elkvm_handlers * const handlers,
         unsigned cpus,
         int mode) {
+  (void)mode; // unused warning...
   auto vm = create_vm_object(opts, hyp, handlers);
   assert(vm != nullptr && "error creating vm object");
 

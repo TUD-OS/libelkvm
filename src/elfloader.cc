@@ -25,8 +25,19 @@ namespace Elkvm {
 
   ElfBinary::ElfBinary(std::string pathname, std::shared_ptr<RegionManager> rm,
       HeapManager &hm) :
+    ldr(nullptr),
     _rm(rm),
-    _hm(hm)
+    _hm(hm),
+    fd(-1),
+    e(0),
+    num_phdrs(0),
+    statically_linked(false),
+    shared_object(false),
+    elfclass(-1),
+    loader("undefined ldr"),
+    entry_point(~0ULL),
+    auxv(),
+    text_header()
   {
     auxv.valid = false;
 

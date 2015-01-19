@@ -21,7 +21,9 @@ namespace Elkvm {
       const Elkvm::hypercall_handlers * const hyp_handlers,
       const Elkvm::elkvm_handlers * const handlers,
       int debug) :
+    cpus(),
     _debug(debug == 1),
+    _vm(),
     _rm(std::make_shared<RegionManager>(vmfd)),
     _gdt(nullptr),
     hm(_rm),
@@ -29,11 +31,13 @@ namespace Elkvm {
     _argc(argc),
     _argv(argv),
     _environ(environ),
-    _run_struct_size(run_struct_size)
+    _run_struct_size(run_struct_size),
+    sigs(),
+    sighandler_cleanup(),
+    hypercall_handlers(hyp_handlers),
+    syscall_handlers(handlers)
   {
     _vm.fd = vmfd;
-    hypercall_handlers = hyp_handlers;
-    syscall_handlers   = handlers;
   }
 
   int VM::add_cpu() {

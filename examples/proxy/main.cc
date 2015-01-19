@@ -243,6 +243,8 @@ memory_map_for_pid(int pid, std::list<Mapping>& regions)
 static void
 restore_to_pid(std::shared_ptr<Elkvm::VM> vm, int pid)
 {
+    (void)vm;
+    (void)pid;
     // XXX: Need to update tracee state:
     //   1) Copy modified mem regions
     //      (INCLUDING NEW ALLOCATIONS!!)

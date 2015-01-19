@@ -29,6 +29,8 @@ namespace Elkvm {
 
     public:
       HeapManager(std::shared_ptr<RegionManager> rm) :
+		mappings_for_brk(),
+		mappings_for_mmap(),
         _rm(rm),
         curbrk(0x0)
     {}

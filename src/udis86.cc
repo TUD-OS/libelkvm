@@ -17,6 +17,8 @@ UDis::UDis(const uint8_t *ptr) {
    ud_set_mode(&ud_obj, bits);
    ud_set_syntax(&ud_obj, UD_SYN_INTEL);
    ud_set_input_buffer(&ud_obj, ptr, disassembly_size);
+ #else
+   (void)ptr;
  #endif
 }
 
