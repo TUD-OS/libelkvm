@@ -65,16 +65,11 @@ gdb_session::gdb_session(Elkvm::VM &vm) {
 
 void gdb_session::handle_continue(char buffer[255], VM &vm) {
   char buf[255];
-  guestptr_t new_rip;
-  auto &vcpu = *vm.get_vcpu(0);
 
   if (buffer[1] != 0) {
-    new_rip = (guestptr_t) atoi(buffer + 1);
+    auto &vcpu = *vm.get_vcpu(0);
+    guestptr_t new_rip = static_cast<guestptr_t>(atoi(buffer + 1));
 
-    printf("continuing at 0x%lx\n", new_rip);
-
-    //BX_CPU_THIS_PTR gen_reg[BX_32BIT_REG_EIP].dword.erx = new_eip;
-    //TODO reset the rip, set kvm_regs
     //DBG() << "setting rip to 0x" << std::hex << new_rip << std::endl;
     vcpu.set_reg(Elkvm::Reg_t::rip, new_rip);
   }
