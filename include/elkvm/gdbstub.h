@@ -38,6 +38,7 @@ namespace Debug {
       void handle_qm();
 
       void put_reply(const char* buffer);
+      void put_sigtrap_reply();
       void put_debug_char(char ch);
       void flush_debug_buffer();
       char get_debug_char();

@@ -63,9 +63,14 @@ gdb_session::gdb_session(Elkvm::VM &vm) {
   vm.run();
 }
 
-void gdb_session::handle_continue(char buffer[255], VM &vm) {
+void gdb_session::put_sigtrap_reply() {
   std::string reply;
+  reply[0] = 'S';
+  write_signal(&reply[1], SIGTRAP);
+  put_reply(reply.c_str());
+}
 
+void gdb_session::handle_continue(char buffer[255], VM &vm) {
   if (buffer[1] != 0) {
     auto &vcpu = *vm.get_vcpu(0);
     guestptr_t new_rip = static_cast<guestptr_t>(atoi(buffer + 1));
@@ -75,23 +80,15 @@ void gdb_session::handle_continue(char buffer[255], VM &vm) {
   }
 
   vm.run();
-
-  reply[0] = 'S';
-  write_signal(&reply[1], SIGTRAP);
-  put_reply(reply.c_str());
+  put_sigtrap_reply();
 }
 
 void gdb_session::handle_singlestep(VM &vm) {
-  char buf[255];
-
   auto vcpu = *vm.get_vcpu(0);
   vcpu.singlestep();
   vm.run();
   vcpu.singlestep_off();
-
-  buf[0] = 'S';
-  write_signal(&buf[1], SIGTRAP);
-  put_reply(buf);
+  put_sigtrap_reply();
 }
 
 void gdb_session::handle_memwrite(VM &vm, char buffer[255]) {
