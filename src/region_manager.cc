@@ -9,7 +9,11 @@
 #include <elkvm/region_manager.h>
 
 namespace Elkvm {
-  RegionManager::RegionManager(int vmfd) : pager(vmfd) {
+  RegionManager::RegionManager(int vmfd)
+	: allocated_regions(),
+	  freelists(),
+	  pager(vmfd)
+  {
     auto sysregion = allocate_region(ELKVM_PAGER_MEMSIZE, "ELKVM Pager Memory");
     pager.set_pml4(sysregion);
   }

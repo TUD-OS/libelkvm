@@ -13,7 +13,13 @@
 namespace Elkvm {
 namespace KVM {
 
-VCPU::VCPU(int vmfd, unsigned num) {
+VCPU::VCPU(int vmfd, unsigned num)
+  : fd(-1),
+	regs(),
+	sregs(),
+	run_struct(0),
+	debug()
+{
 
     fd = ioctl(vmfd, KVM_CREATE_VCPU, num);
     assert(fd > 0 && "error creating vcpu");

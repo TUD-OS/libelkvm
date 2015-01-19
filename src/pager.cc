@@ -15,9 +15,15 @@
 namespace Elkvm {
   class VCPU;
 
-  PagerX86_64::PagerX86_64(int vmfd) :
-  _vmfd(vmfd) {
-    total_memsz = 0;
+  PagerX86_64::PagerX86_64(int vmfd)
+	: _vmfd(vmfd),
+      chunks(),
+      host_pml4_p(0),
+      host_next_free_tbl_p(0),
+      guest_next_free(~0ULL),
+      total_memsz(0),
+      free_slots()
+  {
     if(vmfd < 1) {
       throw;
     }

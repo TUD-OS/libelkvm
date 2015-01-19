@@ -21,6 +21,7 @@ struct ElkvmLog
 	boost::log::sources::logger_mt logger;
 
 	ElkvmLog()
+	  : logger()
 	{
 		auto sink = boost::log::add_console_log();
 		boost::log::formatter fm =

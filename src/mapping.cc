@@ -9,8 +9,10 @@
 namespace Elkvm {
   Mapping::Mapping(std::shared_ptr<Region> r,
       guestptr_t guest_addr, size_t l, int pr, int f, int fdes, off_t off) :
+	host_p(0),
     addr(guest_addr),
     length(l),
+	mapped_pages(~0U),
     prot(pr),
     flags(f),
     fd(fdes),

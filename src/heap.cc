@@ -252,6 +252,7 @@ namespace Elkvm {
 
   guestptr_t
   HeapManager::remap(Mapping &m, guestptr_t new_address_p, size_t new_size, int flags) {
+	(void)new_address_p; // unused warning...
     /* 2 simple cases:
      *   1) the mapping gets smaller, just make it so
      *   2) the mapping gets larger but still fits into the region, just make it so

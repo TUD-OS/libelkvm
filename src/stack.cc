@@ -10,7 +10,12 @@
 #include <elkvm/vcpu.h>
 
 namespace Elkvm {
-  Stack::Stack(std::shared_ptr<RegionManager> rm) : _rm(rm) {
+  Stack::Stack(std::shared_ptr<RegionManager> rm)
+    : stack_regions(),
+      _rm(rm),
+      kernel_stack(nullptr),
+      base(~0ULL)
+  {
     /* as the stack grows downward we can initialize its address at the base address
      * of the env region */
     base = LINUX_64_STACK_BASE;
