@@ -95,8 +95,8 @@ void gdb_session::handle_memwrite(VM &vm, char buffer[255]) {
   unsigned char mem[255];
   char* ebuf;
 
-  guestptr_t addr = strtoull(&buffer[1], &ebuf, 16);
-  int len = strtoul(ebuf + 1, &ebuf, 16);
+  guestptr_t addr = strtoull(&buffer[1], &ebuf, base);
+  int len = strtoul(ebuf + 1, &ebuf, base);
   Elkvm::Debug::hex2mem(ebuf + 1, mem, len);
 
   void *host_p = vm.get_region_manager()->get_pager().get_host_p(addr);
@@ -112,8 +112,8 @@ void gdb_session::handle_memwrite(VM &vm, char buffer[255]) {
 void gdb_session::handle_memread(VM &vm, char buffer[255]) {
 
   char* ebuf;
-  guestptr_t addr = strtoull(&buffer[1], &ebuf, 16);
-  int len = strtoul(ebuf + 1, NULL, 16);
+  guestptr_t addr = strtoull(&buffer[1], &ebuf, base);
+  int len = strtoul(ebuf + 1, NULL, base);
 
   //DBG() << std::hex << "addr: " << addr << " len: " << len;
 
@@ -484,12 +484,12 @@ void gdb_session::debug_loop(Elkvm::VM &vm) {
                 // XXX check if this is really needed!
         if (buffer[1] == 'c')
         {
-          continue_thread = strtol(&buffer[2], NULL, 16);
+          continue_thread = strtol(&buffer[2], NULL, base);
           put_reply("OK");
         }
         else if (buffer[1] == 'g')
         {
-          other_thread = strtol(&buffer[2], NULL, 16);
+          other_thread = strtol(&buffer[2], NULL, base);
           put_reply("OK");
         }
         else

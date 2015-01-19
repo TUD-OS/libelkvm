@@ -22,6 +22,8 @@ namespace Debug {
   class gdb_session {
     private:
       const int port = 1234;
+      const int base = 16;
+
       int listen_socket_fd;
       int socket_fd;
 
