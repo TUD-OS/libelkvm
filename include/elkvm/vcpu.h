@@ -39,7 +39,7 @@ class Segment {
 	  _s(0),
 	  _l(0),
 	  _g(0),
-	  _avl(0),
+	  _avl(0)
 	{}
 
     Segment(CURRENT_ABI::paramtype selector,

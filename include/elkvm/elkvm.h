@@ -206,6 +206,9 @@ class VM {
         const Elkvm::elkvm_handlers * const handlers,
         int debug);
 
+    VM(VM const&) = delete;
+    VM& operator=(VM const&) = delete;
+
     int add_cpu();
 
     bool address_mapped(guestptr_t addr) const;
