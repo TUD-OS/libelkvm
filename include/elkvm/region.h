@@ -22,6 +22,10 @@ namespace Elkvm {
         free(f),
         name(title)
     {}
+
+	  Region(const Region&) = delete;
+	  Region& operator=(const Region&) = delete;
+
       void *base_address() const { return host_p; }
       struct elkvm_memory_region *c_region() const;
       bool contains_address(const void *addr) const;

@@ -95,6 +95,10 @@ namespace Elkvm {
 
     public:
       PagerX86_64(int vmfd);
+
+	  PagerX86_64(PagerX86_64 const&) = delete;
+	  PagerX86_64& operator=(PagerX86_64 const&) = delete;
+
       int set_pml4(std::shared_ptr<Region> r);
 
       std::vector<std::shared_ptr<struct kvm_userspace_memory_region *>>::size_type
