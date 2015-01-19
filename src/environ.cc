@@ -18,6 +18,8 @@ ElkvmLog globalElkvmLogger;
 namespace Elkvm {
 
   Environment::Environment(const ElfBinary &bin, std::shared_ptr<RegionManager> rm) :
+	region(nullptr),
+	auxv(0),
     binary(bin)
   {
     /* for now the region to hold env etc. will be 12 pages large */
