@@ -24,12 +24,11 @@
 
 ///* to debug the remote stub use set debug remote 1 in gdb
 
-#include <assert.h>
+#include <cassert>
 #include <ctype.h>
 #include <fcntl.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstring>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -50,8 +49,6 @@
 
 namespace Elkvm {
 namespace Debug {
-
-guestptr_t saved_eip = 0;
 
 gdb_session::gdb_session(Elkvm::VM &vm) {
   /* Wait for connect */
@@ -76,9 +73,6 @@ void gdb_session::handle_continue(char buffer[255], VM &vm) {
 
     printf("continuing at 0x%lx\n", new_rip);
 
-    //TODO this is only used here, get rid of it!
-    saved_eip = vcpu.get_reg(Elkvm::Reg_t::rip);
-
     //BX_CPU_THIS_PTR gen_reg[BX_32BIT_REG_EIP].dword.erx = new_eip;
     //TODO reset the rip, set kvm_regs
     //DBG() << "setting rip to 0x" << std::hex << new_rip << std::endl;
@@ -86,11 +80,6 @@ void gdb_session::handle_continue(char buffer[255], VM &vm) {
   }
 
   vm.run();
-
-  //if (buffer[1] != 0)
-  //{
-  //  BX_CPU_THIS_PTR gen_reg[BX_32BIT_REG_EIP].dword.erx = saved_eip;
-  //}
 
   buf[0] = 'S';
   write_signal(&buf[1], SIGTRAP);
