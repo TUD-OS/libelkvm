@@ -19,6 +19,10 @@
 //  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 //
 /////////////////////////////////////////////////////////////////////////
+//
+//
+
+///* to debug the remote stub use set debug remote 1 in gdb
 
 #include <assert.h>
 #include <ctype.h>
@@ -44,21 +48,29 @@
 #include <elkvm/region_manager.h>
 #include <elkvm/vcpu.h>
 
-//static bx_list_c *gdbstub_list;
-static int listen_socket_fd;
-static int socket_fd;
-//static logfunctions *gdbstublog;
-
 namespace Elkvm {
 namespace Debug {
 
 guestptr_t saved_eip = 0;
 
-void handle_continue(char buffer[255], VM &vm) {
+gdb_session::gdb_session(Elkvm::VM &vm) {
+  /* Wait for connect */
+  std::cout << "Waiting for gdb connection on port " << std::dec << port
+    << std::endl;
+  wait_for_connection();
+
+  /* Do debugger command loop */
+  debug_loop(vm);
+
+  /* CPU loop */
+  vm.run();
+}
+
+void gdb_session::handle_continue(char buffer[255], VM &vm) {
   DBG() << buffer;
   char buf[255];
   guestptr_t new_rip;
-  VCPU &vcpu = *vm.get_vcpu(0);
+  auto &vcpu = *vm.get_vcpu(0);
 
   if (buffer[1] != 0) {
     new_rip = (guestptr_t) atoi(buffer + 1);
@@ -85,7 +97,7 @@ void handle_continue(char buffer[255], VM &vm) {
   put_reply(buf);
 }
 
-void handle_singlestep(VM &vm) {
+void gdb_session::handle_singlestep(VM &vm) {
   DBG();
   char buf[255];
 
@@ -99,14 +111,14 @@ void handle_singlestep(VM &vm) {
   put_reply(buf);
 }
 
-void handle_memwrite(VM &vm, char buffer[255]) {
+void gdb_session::handle_memwrite(VM &vm, char buffer[255]) {
   DBG();
   unsigned char mem[255];
   char* ebuf;
 
   guestptr_t addr = strtoull(&buffer[1], &ebuf, 16);
   int len = strtoul(ebuf + 1, &ebuf, 16);
-  hex2mem(ebuf + 1, mem, len);
+  Elkvm::Debug::hex2mem(ebuf + 1, mem, len);
 
   void *host_p = vm.get_region_manager()->get_pager().get_host_p(addr);
   memcpy(host_p, mem, len);
@@ -118,7 +130,7 @@ void handle_memwrite(VM &vm, char buffer[255]) {
   put_reply("OK");
 }
 
-void handle_memread(VM &vm, char buffer[255]) {
+void gdb_session::handle_memread(VM &vm, char buffer[255]) {
   DBG();
 
   char* ebuf;
@@ -128,7 +140,7 @@ void handle_memread(VM &vm, char buffer[255]) {
   DBG() << std::hex << "addr: " << addr << " len: " << len;
 
   if(addr == 0x0) {
-    put_reply("");
+    put_reply("E33");
   } else {
     void *host_p = vm.get_region_manager()->get_pager().get_host_p(addr);
     DBG() << "host_p: " << host_p;
@@ -136,20 +148,20 @@ void handle_memread(VM &vm, char buffer[255]) {
       char obuf[1024];
       memcpy(obuf, host_p, len);
 
-      mem2hex((Bit8u *)host_p, obuf, len);
+      Elkvm::Debug::mem2hex((Bit8u *)host_p, obuf, len);
       DBG() << obuf;
       put_reply(obuf);
     } else {
-      put_reply("");
+      put_reply("E33");
     }
   }
 }
 
-void handle_regread(VM &vm) {
+void gdb_session::handle_regread(VM &vm) {
   DBG();
 #define PUTREG(buf, val, len) do { \
          Bit64u u = (val); \
-         (buf) = mem2hex((const Bit8u*)&u, (buf), (len)); \
+         (buf) = Elkvm::Debug::mem2hex((const Bit8u*)&u, (buf), (len)); \
       } while (0)
   auto vcpu = *vm.get_vcpu(0);
   char obuf[1024];
@@ -203,14 +215,14 @@ void handle_regread(VM &vm) {
   put_reply(obuf);
 }
 
-void handle_qm() {
+void gdb_session::handle_qm() {
   DBG();
   char obuf[1024];
   sprintf(obuf, "S%02x", SIGTRAP);
   put_reply(obuf);
 }
 
-void handle_query(char buffer[255]) {
+void gdb_session::handle_query(char buffer[255]) {
   if (buffer[1] == 'C')
   {
     char obuf[1024];
@@ -233,11 +245,6 @@ void handle_query(char buffer[255]) {
   }
 }
 
-//namespace Debug
-}
-//namespace Elkvm
-}
-
 static int hex(char ch)
 {
   if ((ch >= 'a') && (ch <= 'f')) return(ch - 'a' + 10);
@@ -248,8 +255,7 @@ static int hex(char ch)
 
 static char buf[4096], *bufptr = buf;
 
-static void flush_debug_buffer()
-{
+void gdb_session::flush_debug_buffer() {
   char *p = buf;
   while (p != bufptr) {
     int n = send(socket_fd, p, bufptr-p, 0);
@@ -262,15 +268,13 @@ static void flush_debug_buffer()
   bufptr = buf;
 }
 
-static void put_debug_char(char ch)
-{
+void gdb_session::put_debug_char(char ch) {
   if (bufptr == buf + sizeof buf)
     flush_debug_buffer();
   *bufptr++ = ch;
 }
 
-static char get_debug_char(void)
-{
+char gdb_session::get_debug_char() {
   char ch;
 
   recv(socket_fd, &ch, 1, 0);
@@ -280,8 +284,7 @@ static char get_debug_char(void)
 
 static const char hexchars[]="0123456789abcdef";
 
-static void put_reply(const char* buffer)
-{
+void gdb_session::put_reply(const char* buffer) {
   unsigned char csum;
   int i;
 
@@ -307,7 +310,7 @@ static void put_reply(const char* buffer)
   } while (get_debug_char() != '+');
 }
 
-unsigned char read_cmd_into_buffer(char *buffer) {
+unsigned char gdb_session::read_cmd_into_buffer(char *buffer) {
   unsigned count = 0;
   unsigned char checksum = 0;
   char ch;
@@ -321,13 +324,13 @@ unsigned char read_cmd_into_buffer(char *buffer) {
   return checksum;
 }
 
-bool validate_checksum(unsigned char checksum) {
+bool gdb_session::validate_checksum(unsigned char checksum) {
   unsigned char xmitcsum = hex(get_debug_char()) << 4;
   xmitcsum += hex(get_debug_char());
   return xmitcsum == checksum;
 }
 
-static void get_command(char* buffer) {
+void gdb_session::get_command(char* buffer) {
   bool checksum_correct = false;
   do {
     char ch;
@@ -410,14 +413,13 @@ static int other_thread = 0;
 #define NUMREGSBYTES (NUMREGS * 4)
 #endif
 
-static void write_signal(char* buf, int signal)
-{
+void gdb_session::write_signal(char* buf, int signal) {
   buf[0] = hexchars[signal >> 4];
   buf[1] = hexchars[signal % 16];
   buf[2] = 0;
 }
 
-static void debug_loop(const std::shared_ptr<Elkvm::VM>& vm) {
+void gdb_session::debug_loop(Elkvm::VM &vm) {
   char buffer[255];
 
   while (true)
@@ -442,7 +444,7 @@ static void debug_loop(const std::shared_ptr<Elkvm::VM>& vm) {
       // This packet is deprecated for multi-threading support. See [vCont packet]
       case 'c':
       {
-        Elkvm::Debug::handle_continue(buffer, *vm);
+        handle_continue(buffer, vm);
         break;
       }
 
@@ -451,7 +453,7 @@ static void debug_loop(const std::shared_ptr<Elkvm::VM>& vm) {
       // This packet is deprecated for multi-threading support. See [vCont packet]
       case 's':
       {
-        Elkvm::Debug::handle_singlestep(*vm);
+        handle_singlestep(vm);
         break;
       }
 
@@ -460,7 +462,7 @@ static void debug_loop(const std::shared_ptr<Elkvm::VM>& vm) {
       // each byte is transmitted as a two-digit hexadecimal number.
       case 'M':
       {
-        Elkvm::Debug::handle_memwrite(*vm, buffer);
+        handle_memwrite(vm, buffer);
         break;
       }
 
@@ -475,7 +477,7 @@ static void debug_loop(const std::shared_ptr<Elkvm::VM>& vm) {
       // devices.
       case 'm':
       {
-        Elkvm::Debug::handle_memread(*vm, buffer);
+        handle_memread(vm, buffer);
         break;
       }
 
@@ -487,12 +489,12 @@ static void debug_loop(const std::shared_ptr<Elkvm::VM>& vm) {
       // ‘g’ Read general registers.
       case 'g':
       {
-        Elkvm::Debug::handle_regread(*vm);
+        handle_regread(vm);
         break;
       }
 
       case '?': {
-        Elkvm::Debug::handle_qm();
+        handle_qm();
         break;
       }
 
@@ -525,7 +527,7 @@ static void debug_loop(const std::shared_ptr<Elkvm::VM>& vm) {
       // General query (‘q’) and set (‘Q’). These packets are described fully in
       // Section E.4 [General Query Packets]
       case 'q':
-        Elkvm::Debug::handle_query(buffer);
+        handle_query(buffer);
         break;
 
       // ‘z type,addr,kind’
@@ -557,8 +559,7 @@ static void debug_loop(const std::shared_ptr<Elkvm::VM>& vm) {
   }
 }
 
-static void wait_for_connect(int portn)
-{
+void gdb_session::wait_for_connection() {
   struct sockaddr_in sockaddr;
   socklen_t sockaddr_len;
   struct protoent *protoent;
@@ -587,7 +588,7 @@ static void wait_for_connect(int portn)
   sockaddr.sin_len = sizeof sockaddr;
 #endif
   sockaddr.sin_family = AF_INET;
-  sockaddr.sin_port = htons(portn);
+  sockaddr.sin_port = htons(port);
   sockaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
   r = bind(listen_socket_fd, (struct sockaddr *)&sockaddr, sizeof(sockaddr));
@@ -628,16 +629,7 @@ static void wait_for_connect(int portn)
   printf("Connected to %ld.%ld.%ld.%ld\n", ip & 0xff, (ip >> 8) & 0xff, (ip >> 16) & 0xff, (ip >> 24) & 0xff);
 }
 
-void elkvm_gdbstub_init(const std::shared_ptr<Elkvm::VM>& vm) {
-  int portn = 1234;
-
-  /* Wait for connect */
-  printf("Waiting for gdb connection on port %d\n", portn);
-  wait_for_connect(portn);
-
-  /* Do debugger command loop */
-  debug_loop(vm);
-
-  /* CPU loop */
-  vm->run();
+//namespace Debug
+}
+//namespace Elkvm
 }
