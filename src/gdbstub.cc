@@ -67,7 +67,6 @@ gdb_session::gdb_session(Elkvm::VM &vm) {
 }
 
 void gdb_session::handle_continue(char buffer[255], VM &vm) {
-  DBG() << buffer;
   char buf[255];
   guestptr_t new_rip;
   auto &vcpu = *vm.get_vcpu(0);
@@ -82,6 +81,7 @@ void gdb_session::handle_continue(char buffer[255], VM &vm) {
 
     //BX_CPU_THIS_PTR gen_reg[BX_32BIT_REG_EIP].dword.erx = new_eip;
     //TODO reset the rip, set kvm_regs
+    //DBG() << "setting rip to 0x" << std::hex << new_rip << std::endl;
     vcpu.set_reg(Elkvm::Reg_t::rip, new_rip);
   }
 
@@ -98,7 +98,6 @@ void gdb_session::handle_continue(char buffer[255], VM &vm) {
 }
 
 void gdb_session::handle_singlestep(VM &vm) {
-  DBG();
   char buf[255];
 
   auto vcpu = *vm.get_vcpu(0);
@@ -112,7 +111,6 @@ void gdb_session::handle_singlestep(VM &vm) {
 }
 
 void gdb_session::handle_memwrite(VM &vm, char buffer[255]) {
-  DBG();
   unsigned char mem[255];
   char* ebuf;
 
@@ -131,25 +129,24 @@ void gdb_session::handle_memwrite(VM &vm, char buffer[255]) {
 }
 
 void gdb_session::handle_memread(VM &vm, char buffer[255]) {
-  DBG();
 
   char* ebuf;
   guestptr_t addr = strtoull(&buffer[1], &ebuf, 16);
   int len = strtoul(ebuf + 1, NULL, 16);
 
-  DBG() << std::hex << "addr: " << addr << " len: " << len;
+  //DBG() << std::hex << "addr: " << addr << " len: " << len;
 
   if(addr == 0x0) {
     put_reply("E33");
   } else {
     void *host_p = vm.get_region_manager()->get_pager().get_host_p(addr);
-    DBG() << "host_p: " << host_p;
+    //DBG() << "host_p: " << host_p;
     if(host_p != nullptr) {
       char obuf[1024];
       memcpy(obuf, host_p, len);
 
       Elkvm::Debug::mem2hex((Bit8u *)host_p, obuf, len);
-      DBG() << obuf;
+      //DBG() << obuf;
       put_reply(obuf);
     } else {
       put_reply("E33");
@@ -158,7 +155,6 @@ void gdb_session::handle_memread(VM &vm, char buffer[255]) {
 }
 
 void gdb_session::handle_regread(VM &vm) {
-  DBG();
 #define PUTREG(buf, val, len) do { \
          Bit64u u = (val); \
          (buf) = Elkvm::Debug::mem2hex((const Bit8u*)&u, (buf), (len)); \
@@ -216,7 +212,6 @@ void gdb_session::handle_regread(VM &vm) {
 }
 
 void gdb_session::handle_qm() {
-  DBG();
   char obuf[1024];
   sprintf(obuf, "S%02x", SIGTRAP);
   put_reply(obuf);
@@ -288,7 +283,7 @@ void gdb_session::put_reply(const char* buffer) {
   unsigned char csum;
   int i;
 
-  DBG() << "put_reply: '" << buffer << "'\n";
+  //DBG() << "put_reply: '" << buffer << "'\n";
 
   do {
     put_debug_char('$');
@@ -320,7 +315,7 @@ unsigned char gdb_session::read_cmd_into_buffer(char *buffer) {
     count++;
   }
   buffer[count] = 0;
-  DBG() << "cmd: " << buffer << std::endl;
+  //DBG() << "cmd: " << buffer << std::endl;
   return checksum;
 }
 
@@ -425,7 +420,7 @@ void gdb_session::debug_loop(Elkvm::VM &vm) {
   while (true)
   {
     get_command(buffer);
-    DBG() << "get_buffer '" << buffer << "'\t";
+    //DBG() << "get_buffer '" << buffer << "'\t";
 
     // At a minimum, a stub is required to support the ‘g’ and ‘G’
     // commands for register access,
