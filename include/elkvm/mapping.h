@@ -30,6 +30,9 @@ namespace Elkvm {
       Mapping(std::shared_ptr<Region> r, guestptr_t guest_addr,
           size_t l, int pr, int f, int fdes, off_t off);
 
+	  Mapping(const Mapping& orig) = delete;
+	  Mapping& operator=(const Mapping& other) = delete;
+
       bool anonymous() const { return flags & MAP_ANONYMOUS; }
       bool contains_address(void *p) const;
       bool contains_address(guestptr_t a) const;
