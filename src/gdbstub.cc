@@ -92,15 +92,15 @@ void gdb_session::handle_singlestep(VM &vm) {
 }
 
 void gdb_session::handle_memwrite(VM &vm, char buffer[255]) {
-  unsigned char mem[255];
   char* ebuf;
 
   guestptr_t addr = strtoull(&buffer[1], &ebuf, base);
   int len = strtoul(ebuf + 1, &ebuf, base);
-  Elkvm::Debug::hex2mem(ebuf + 1, mem, len);
 
-  void *host_p = vm.get_region_manager()->get_pager().get_host_p(addr);
-  memcpy(host_p, mem, len);
+  unsigned char *host_p = static_cast<unsigned char *>(
+      vm.get_region_manager()->get_pager().get_host_p(addr));
+  assert(host_p != nullptr);
+  Elkvm::Debug::hex2mem(ebuf + 1, host_p, len);
   auto vcpu = *vm.get_vcpu(0);
 
   int err = vcpu.enable_software_breakpoints();
