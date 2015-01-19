@@ -30,11 +30,11 @@ int Elkvm::VM::signal_register(int signum, struct sigaction *act,
   assert(signum < _NSIG);
 
   if(oldact != NULL) {
-    memcpy(oldact, get_sig_ptr(signum).get(), sizeof(struct sigaction));
+    memcpy(oldact, const_cast<struct sigaction*>(get_sig_ptr(signum)), sizeof(struct sigaction));
   }
 
   if(act != NULL) {
-    memcpy(get_sig_ptr(signum).get(), act, sizeof(struct sigaction));
+    memcpy(const_cast<struct sigaction*>(get_sig_ptr(signum)), act, sizeof(struct sigaction));
 
     struct sigaction sa;
     sa.sa_handler = elkvm_signal_handler;

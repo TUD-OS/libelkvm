@@ -239,14 +239,13 @@ class VM {
         CURRENT_ABI::paramtype *arg5,
         CURRENT_ABI::paramtype *arg6);
 
-    std::shared_ptr<RegionManager> get_region_manager() { return _rm; }
-    const std::shared_ptr<const RegionManager> get_region_manager() const { return _rm; }
+    const std::shared_ptr<RegionManager>& get_region_manager() const { return _rm; }
     HeapManager &get_heap_manager() { return hm; }
-    std::shared_ptr<VCPU> get_vcpu(int num) const;
+    const std::shared_ptr<VCPU>& get_vcpu(int num) const;
     int get_vmfd() const { return _vmfd; }
     Elkvm::elkvm_flat &get_cleanup_flat();
 
-    std::shared_ptr<Elkvm::Region> get_gdt_region() { return _gdt; }
+    const std::shared_ptr<Elkvm::Region>& get_gdt_region() { return _gdt; }
     void set_gdt_region(std::shared_ptr<Elkvm::Region> gdt) { _gdt = gdt; }
 
     const Elkvm::elkvm_handlers * get_handlers() const
@@ -258,7 +257,7 @@ class VM {
     const Elkvm::hypercall_handlers* get_hyp_handlers() const
     { return this->hypercall_handlers; }
 
-    std::shared_ptr<struct sigaction> get_sig_ptr(unsigned sig) const;
+    const struct sigaction* get_sig_ptr(unsigned sig) const;
 
     int debug_mode() const { return _debug; }
 
@@ -283,9 +282,9 @@ class VM {
     /*
      * Handle VM events
      */
-    int handle_syscall(std::shared_ptr<VCPU>);
-    int handle_interrupt(std::shared_ptr<VCPU>);
-    int handle_hypercall(std::shared_ptr<VCPU>);
+    int handle_syscall(const std::shared_ptr<VCPU>&);
+    int handle_interrupt(const std::shared_ptr<VCPU>&);
+    int handle_hypercall(const std::shared_ptr<VCPU>&);
 
     /*
      * Signal management

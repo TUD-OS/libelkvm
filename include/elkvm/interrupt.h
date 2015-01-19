@@ -19,9 +19,9 @@ namespace Interrupt {
 
   int handle_stack_segment_fault(uint64_t code);
   int handle_general_protection_fault(uint64_t code);
-  int handle_page_fault(VM &vm, std::shared_ptr<VCPU> vcpu,
+  int handle_page_fault(VM &vm, const std::shared_ptr<VCPU>& vcpu,
       uint64_t code);
-  int handle_debug_trap(std::shared_ptr<VCPU> vcpu, uint64_t code);
+  int handle_debug_trap(const std::shared_ptr<VCPU>& vcpu, uint64_t code);
 
   int handle_segfault(guestptr_t pfla);
 }

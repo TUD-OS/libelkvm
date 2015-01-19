@@ -6,7 +6,7 @@
 
 namespace Elkvm {
 
-int VM::handle_interrupt(std::shared_ptr<VCPU> vcpu) {
+int VM::handle_interrupt(const std::shared_ptr<VCPU>& vcpu) {
   uint64_t interrupt_vector = vcpu->pop();
 
   if(debug_mode()) {
@@ -54,7 +54,7 @@ int handle_general_protection_fault(uint64_t code) {
 }
 
 
-int handle_debug_trap(std::shared_ptr<VCPU> vcpu, uint64_t code) {
+int handle_debug_trap(const std::shared_ptr<VCPU>& vcpu, uint64_t code) {
   // code is RIP in this case
   ERROR() << "Debug trap @ RIP " << (void*)code;
   // push RIP back and IRET from handler
@@ -63,7 +63,7 @@ int handle_debug_trap(std::shared_ptr<VCPU> vcpu, uint64_t code) {
 }
 
 int handle_page_fault(VM &vm,
-    std::shared_ptr<VCPU> vcpu,
+    const std::shared_ptr<VCPU>& vcpu,
     uint64_t code) {
   int err = vcpu->get_sregs();
   assert(err == 0 && "error getting vcpu sregs");

@@ -335,7 +335,7 @@ __attribute__((used))
   #define UNIMPLEMENTED_SYSCALL return -ENOSYS;
 #endif
 
-int Elkvm::VM::handle_hypercall(std::shared_ptr<Elkvm::VCPU> vcpu) {
+int Elkvm::VM::handle_hypercall(const std::shared_ptr<Elkvm::VCPU>& vcpu) {
 
   int err = 0;
 
@@ -382,7 +382,7 @@ int Elkvm::VM::handle_hypercall(std::shared_ptr<Elkvm::VCPU> vcpu) {
   return 0;
 }
 
-int Elkvm::VM::handle_syscall(std::shared_ptr<Elkvm::VCPU> vcpu)
+int Elkvm::VM::handle_syscall(const std::shared_ptr<Elkvm::VCPU>& vcpu)
 {
   CURRENT_ABI::paramtype syscall_num = CURRENT_ABI::get_parameter(vcpu, 0);
   if(debug_mode()) {

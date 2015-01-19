@@ -117,7 +117,7 @@ namespace Elkvm {
     return 0;
   }
 
-  std::shared_ptr<VCPU> VM::get_vcpu(int num) const {
+  const std::shared_ptr<VCPU>& VM::get_vcpu(int num) const {
     return cpus.at(num);
   }
 
@@ -125,8 +125,8 @@ namespace Elkvm {
     return sighandler_cleanup;
   }
 
-  std::shared_ptr<struct sigaction> VM::get_sig_ptr(unsigned sig) const {
-    return std::make_shared<struct sigaction>(sigs.signals[sig]);
+  const struct sigaction* VM::get_sig_ptr(unsigned sig) const {
+    return &sigs.signals[sig];
   }
 
   // TODO: needed?
