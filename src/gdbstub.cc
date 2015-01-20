@@ -19,13 +19,16 @@
 //  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 //
 /////////////////////////////////////////////////////////////////////////
+//
+//
 
-#include <assert.h>
+///* to debug the remote stub use set debug remote 1 in gdb
+
+#include <cassert>
 #include <ctype.h>
 #include <fcntl.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstring>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -36,31 +39,187 @@
 
 #include <elkvm/elkvm.h>
 #include <elkvm/elkvm-internal.h>
+#include <elkvm/elkvm-log.h>
 #include <elkvm/debug.h>
+#include <elkvm/gdbstub.h>
 #include <elkvm/pager.h>
 #include <elkvm/regs.h>
 #include <elkvm/region_manager.h>
 #include <elkvm/vcpu.h>
 
-#define NEED_CPU_REG_SHORTCUTS 1
+namespace Elkvm {
+namespace Debug {
 
-#define GDBSTUB_EXECUTION_BREAKPOINT    (0xac1)
-#define GDBSTUB_TRACE                   (0xac2)
-#define GDBSTUB_USER_BREAK              (0xac3)
+gdb_session::gdb_session(Elkvm::VM &vm) {
+  /* Wait for connect */
+  std::cout << "Waiting for gdb connection on port " << std::dec << port
+    << std::endl;
+  wait_for_connection();
 
-typedef unsigned char  Bit8u;
-typedef unsigned short Bit16u;
-typedef unsigned short bx_bool;
-typedef unsigned long  Bit32u;
-typedef uint64_t Bit64u;
+  /* Do debugger command loop */
+  debug_loop(vm);
 
-#define FMT_ADDRX64 "%016lx"
-#define GDBSTUB_STOP_NO_REASON -1
+  /* CPU loop */
+  vm.run();
+}
 
-//static bx_list_c *gdbstub_list;
-static int listen_socket_fd;
-static int socket_fd;
-//static logfunctions *gdbstublog;
+void gdb_session::put_sigtrap_reply() {
+  std::string reply;
+  reply[0] = 'S';
+  write_signal(&reply[1], SIGTRAP);
+  put_reply(reply.c_str());
+}
+
+void gdb_session::handle_continue(char buffer[255], VM &vm) {
+  if (buffer[1] != 0) {
+    auto &vcpu = *vm.get_vcpu(0);
+    guestptr_t new_rip = static_cast<guestptr_t>(atoi(buffer + 1));
+
+    //DBG() << "setting rip to 0x" << std::hex << new_rip << std::endl;
+    vcpu.set_reg(Elkvm::Reg_t::rip, new_rip);
+  }
+
+  vm.run();
+  put_sigtrap_reply();
+}
+
+void gdb_session::handle_singlestep(VM &vm) {
+  auto vcpu = *vm.get_vcpu(0);
+  vcpu.singlestep();
+  vm.run();
+  vcpu.singlestep_off();
+  put_sigtrap_reply();
+}
+
+void gdb_session::handle_memwrite(VM &vm, char buffer[255]) {
+  char* ebuf;
+
+  guestptr_t addr = strtoull(&buffer[1], &ebuf, base);
+  int len = strtoul(ebuf + 1, &ebuf, base);
+
+  unsigned char *host_p = static_cast<unsigned char *>(
+      vm.get_region_manager()->get_pager().get_host_p(addr));
+  assert(host_p != nullptr);
+  Elkvm::Debug::hex2mem(ebuf + 1, host_p, len);
+  auto vcpu = *vm.get_vcpu(0);
+
+  int err = vcpu.enable_software_breakpoints();
+  assert(err == 0 && "could not set guest debug mode");
+
+  put_reply("OK");
+}
+
+void gdb_session::handle_memread(VM &vm, char buffer[255]) {
+
+  char* ebuf;
+  guestptr_t addr = strtoull(&buffer[1], &ebuf, base);
+  int len = strtoul(ebuf + 1, NULL, base);
+
+  //DBG() << std::hex << "addr: " << addr << " len: " << len;
+
+  if(addr == 0x0) {
+    put_reply("E33");
+  } else {
+    void *host_p = vm.get_region_manager()->get_pager().get_host_p(addr);
+    //DBG() << "host_p: " << host_p;
+    if(host_p != nullptr) {
+      char obuf[1024];
+      memcpy(obuf, host_p, len);
+
+      Elkvm::Debug::mem2hex((Bit8u *)host_p, obuf, len);
+      //DBG() << obuf;
+      put_reply(obuf);
+    } else {
+      put_reply("E33");
+    }
+  }
+}
+
+void gdb_session::handle_regread(VM &vm) {
+#define PUTREG(buf, val, len) do { \
+         Bit64u u = (val); \
+         (buf) = Elkvm::Debug::mem2hex((const Bit8u*)&u, (buf), (len)); \
+      } while (0)
+  auto vcpu = *vm.get_vcpu(0);
+  char obuf[1024];
+  char* buf = obuf;
+  PUTREG(buf, vcpu.get_reg(Elkvm::Reg_t::rax), 8);
+  PUTREG(buf, vcpu.get_reg(Elkvm::Reg_t::rbx), 8);
+  PUTREG(buf, vcpu.get_reg(Elkvm::Reg_t::rcx), 8);
+  PUTREG(buf, vcpu.get_reg(Elkvm::Reg_t::rdx), 8);
+  PUTREG(buf, vcpu.get_reg(Elkvm::Reg_t::rsi), 8);
+  PUTREG(buf, vcpu.get_reg(Elkvm::Reg_t::rdi), 8);
+  PUTREG(buf, vcpu.get_reg(Elkvm::Reg_t::rbp), 8);
+  if(vcpu.get_reg(Elkvm::Reg_t::rip) < 0xffff800000000000) {
+    PUTREG(buf, vcpu.get_reg(Elkvm::Reg_t::rsp), 8);
+  } else {
+    /* in kernel mode, figure out the real stack and return that
+     * this really helps with backtraces (hopefully) */
+    guestptr_t *sf = reinterpret_cast<guestptr_t *>(
+        vm.get_region_manager()->get_pager().get_host_p(
+          vcpu.get_reg(Elkvm::Reg_t::rsp) + 24)
+        );
+    guestptr_t real_rsp = *sf;
+    PUTREG(buf, real_rsp, 8);
+  }
+  PUTREG(buf, vcpu.get_reg(Elkvm::Reg_t::r8),  8);
+  PUTREG(buf, vcpu.get_reg(Elkvm::Reg_t::r9),  8);
+  PUTREG(buf, vcpu.get_reg(Elkvm::Reg_t::r10), 8);
+  PUTREG(buf, vcpu.get_reg(Elkvm::Reg_t::r11), 8);
+  PUTREG(buf, vcpu.get_reg(Elkvm::Reg_t::r12), 8);
+  PUTREG(buf, vcpu.get_reg(Elkvm::Reg_t::r13), 8);
+  PUTREG(buf, vcpu.get_reg(Elkvm::Reg_t::r14), 8);
+  PUTREG(buf, vcpu.get_reg(Elkvm::Reg_t::r15), 8);
+  if(vcpu.get_reg(Elkvm::Reg_t::rip) < 0xffff800000000000) {
+    PUTREG(buf, vcpu.get_reg(Elkvm::Reg_t::rip), 8);
+  } else {
+    /* in kernel mode, figure out the real stack and return that
+     * this really helps with backtraces (hopefully) */
+    guestptr_t *sf = reinterpret_cast<guestptr_t *>(
+        vm.get_region_manager()->get_pager().get_host_p(
+          vcpu.get_reg(Elkvm::Reg_t::rsp))
+          );
+    guestptr_t real_rip = *sf;
+    PUTREG(buf, real_rip, 8);
+  }
+  PUTREG(buf, vcpu.get_reg(Elkvm::Reg_t::rflags), 8);
+  PUTREG(buf, vcpu.get_reg(Elkvm::Seg_t::cs).get_base(), 8);
+  PUTREG(buf, vcpu.get_reg(Elkvm::Seg_t::ss).get_base(), 8);
+  PUTREG(buf, vcpu.get_reg(Elkvm::Seg_t::ds).get_base(), 8);
+  PUTREG(buf, vcpu.get_reg(Elkvm::Seg_t::es).get_base(), 8);
+  PUTREG(buf, vcpu.get_reg(Elkvm::Seg_t::fs).get_base(), 8);
+  PUTREG(buf, vcpu.get_reg(Elkvm::Seg_t::gs).get_base(), 8);
+  put_reply(obuf);
+}
+
+void gdb_session::handle_qm() {
+  char obuf[1024];
+  sprintf(obuf, "S%02x", SIGTRAP);
+  put_reply(obuf);
+}
+
+void gdb_session::handle_query(char buffer[255]) {
+  if (buffer[1] == 'C')
+  {
+    char obuf[1024];
+    sprintf(obuf, FMT_ADDRX64, (Bit64u)1);
+    put_reply(obuf);
+  }
+  else if (strncmp(&buffer[1], "Offsets", strlen("Offsets")) == 0)
+  {
+    char obuf[1024];
+    sprintf(obuf, "Text=%x;Data=%x;Bss=%x", 0x0, 0x0, 0x0);
+    put_reply(obuf);
+  }
+  else if (strncmp(&buffer[1], "Supported", strlen("Supported")) == 0)
+  {
+    put_reply("");
+  }
+  else
+  {
+    put_reply(""); /* not supported */
+  }
+}
 
 static int hex(char ch)
 {
@@ -72,8 +231,7 @@ static int hex(char ch)
 
 static char buf[4096], *bufptr = buf;
 
-static void flush_debug_buffer()
-{
+void gdb_session::flush_debug_buffer() {
   char *p = buf;
   while (p != bufptr) {
     int n = send(socket_fd, p, bufptr-p, 0);
@@ -86,15 +244,13 @@ static void flush_debug_buffer()
   bufptr = buf;
 }
 
-static void put_debug_char(char ch)
-{
+void gdb_session::put_debug_char(char ch) {
   if (bufptr == buf + sizeof buf)
     flush_debug_buffer();
   *bufptr++ = ch;
 }
 
-static char get_debug_char(void)
-{
+char gdb_session::get_debug_char() {
   char ch;
 
   recv(socket_fd, &ch, 1, 0);
@@ -104,12 +260,11 @@ static char get_debug_char(void)
 
 static const char hexchars[]="0123456789abcdef";
 
-static void put_reply(const char* buffer)
-{
+void gdb_session::put_reply(const char* buffer) {
   unsigned char csum;
   int i;
 
-  //printf("put_buffer '%s'\n", buffer);
+  //DBG() << "put_reply: '" << buffer << "'\n";
 
   do {
     put_debug_char('$');
@@ -131,62 +286,50 @@ static void put_reply(const char* buffer)
   } while (get_debug_char() != '+');
 }
 
-static void get_command(char* buffer)
-{
-  unsigned char checksum;
-  unsigned char xmitcsum;
+unsigned char gdb_session::read_cmd_into_buffer(char *buffer) {
+  unsigned count = 0;
+  unsigned char checksum = 0;
   char ch;
-  unsigned int count;
-  unsigned int i;
+  while ((ch = get_debug_char()) != '#') {
+    checksum = checksum + ch;
+    buffer[count] = ch;
+    count++;
+  }
+  buffer[count] = 0;
+  //DBG() << "cmd: " << buffer << std::endl;
+  return checksum;
+}
 
+bool gdb_session::validate_checksum(unsigned char checksum) {
+  unsigned char xmitcsum = hex(get_debug_char()) << 4;
+  xmitcsum += hex(get_debug_char());
+  return xmitcsum == checksum;
+}
+
+void gdb_session::get_command(char* buffer) {
+  bool checksum_correct = false;
   do {
+    char ch;
     while ((ch = get_debug_char()) != '$');
+    unsigned char checksum = read_cmd_into_buffer(buffer);
 
-    checksum = 0;
-    xmitcsum = 0;
-    count = 0;
-
-    while (1)
-    {
-      ch = get_debug_char();
-      if (ch == '#') break;
-      checksum = checksum + ch;
-      buffer[count] = ch;
-      count++;
-    }
-    buffer[count] = 0;
-
-    if (ch == '#')
-    {
-      xmitcsum = hex(get_debug_char()) << 4;
-      xmitcsum += hex(get_debug_char());
-      if (checksum != xmitcsum)
-      {
-        printf("Bad checksum");
-      }
-    }
-
-    if (checksum != xmitcsum)
-    {
-      put_debug_char('-');
-      flush_debug_buffer();
-    }
-    else
-    {
+    checksum_correct = validate_checksum(checksum);
+    if(checksum_correct) {
       put_debug_char('+');
-      if (buffer[2] == ':')
-      {
+      if (buffer[2] == ':') {
         put_debug_char(buffer[0]);
         put_debug_char(buffer[1]);
-        count = strlen(buffer);
-        for (i = 3; i <= count; i++)
-        {
+        unsigned count = strlen(buffer);
+        for (unsigned i = 3; i <= count; i++) {
           buffer[i - 3] = buffer[i];
         }
       }
-      flush_debug_buffer();
+    } else {
+      ERROR() << "Bad checksum!";
+      put_debug_char('-');
     }
-  } while (checksum != xmitcsum);
+    flush_debug_buffer();
+  } while (!checksum_correct);
 }
 
 void hex2mem(char* buf, unsigned char* mem, int count)
@@ -246,25 +389,19 @@ static int other_thread = 0;
 #define NUMREGSBYTES (NUMREGS * 4)
 #endif
 
-guestptr_t saved_eip = 0;
-
-static void write_signal(char* buf, int signal)
-{
+void gdb_session::write_signal(char* buf, int signal) {
   buf[0] = hexchars[signal >> 4];
   buf[1] = hexchars[signal % 16];
   buf[2] = 0;
 }
 
-static void debug_loop(const std::shared_ptr<Elkvm::VM>& vm) {
+void gdb_session::debug_loop(Elkvm::VM &vm) {
   char buffer[255];
-  char obuf[1024];
-  int ne = 0;
-  auto vcpu = vm->get_vcpu(0);
 
-  while (ne == 0)
+  while (true)
   {
     get_command(buffer);
-    //printf("get_buffer '%s'\t", buffer);
+    //DBG() << "get_buffer '" << buffer << "'\t";
 
     // At a minimum, a stub is required to support the ‘g’ and ‘G’
     // commands for register access,
@@ -283,30 +420,7 @@ static void debug_loop(const std::shared_ptr<Elkvm::VM>& vm) {
       // This packet is deprecated for multi-threading support. See [vCont packet]
       case 'c':
       {
-        char buf[255];
-        guestptr_t new_rip;
-
-        if (buffer[1] != 0) {
-          new_rip = (guestptr_t) atoi(buffer + 1);
-
-          printf("continuing at 0x%lx\n", new_rip);
-
-          saved_eip = vcpu->get_reg(Elkvm::Reg_t::rip);
-          //BX_CPU_THIS_PTR gen_reg[BX_32BIT_REG_EIP].dword.erx = new_eip;
-          //TODO reset the rip, set kvm_regs
-          vcpu->set_reg(Elkvm::Reg_t::rip, new_rip);
-        }
-
-        vm->run();
-
-        //if (buffer[1] != 0)
-        //{
-        //  BX_CPU_THIS_PTR gen_reg[BX_32BIT_REG_EIP].dword.erx = saved_eip;
-        //}
-
-        buf[0] = 'S';
-        write_signal(&buf[1], SIGTRAP);
-        put_reply(buf);
+        handle_continue(buffer, vm);
         break;
       }
 
@@ -315,16 +429,7 @@ static void debug_loop(const std::shared_ptr<Elkvm::VM>& vm) {
       // This packet is deprecated for multi-threading support. See [vCont packet]
       case 's':
       {
-        char buf[255];
-
-        auto vcpu = vm->get_vcpu(0);
-        vcpu->singlestep();
-        vm->run();
-        vcpu->singlestep_off();
-
-        buf[0] = 'S';
-        write_signal(&buf[1], SIGTRAP);
-        put_reply(buf);
+        handle_singlestep(vm);
         break;
       }
 
@@ -333,20 +438,7 @@ static void debug_loop(const std::shared_ptr<Elkvm::VM>& vm) {
       // each byte is transmitted as a two-digit hexadecimal number.
       case 'M':
       {
-        unsigned char mem[255];
-        char* ebuf;
-
-        guestptr_t addr = strtoull(&buffer[1], &ebuf, 16);
-        int len = strtoul(ebuf + 1, &ebuf, 16);
-        hex2mem(ebuf + 1, mem, len);
-
-        void *host_p = vm->get_region_manager()->get_pager().get_host_p(addr);
-        memcpy(host_p, mem, len);
-        auto vcpu = vm->get_vcpu(0);
-        int err = vcpu->enable_software_breakpoints();
-        assert(err == 0 && "could not set guest debug mode");
-        put_reply("OK");
-
+        handle_memwrite(vm, buffer);
         break;
       }
 
@@ -361,25 +453,7 @@ static void debug_loop(const std::shared_ptr<Elkvm::VM>& vm) {
       // devices.
       case 'm':
       {
-        guestptr_t addr;
-        int len;
-        char* ebuf;
-
-        addr = strtoull(&buffer[1], &ebuf, 16);
-        len = strtoul(ebuf + 1, NULL, 16);
-        if(addr == 0x0) {
-          put_reply("");
-        } else {
-          void *host_p = vm->get_region_manager()->get_pager().get_host_p(addr);
-          if(host_p != NULL) {
-            memcpy(obuf, host_p, len);
-
-            mem2hex((Bit8u *)host_p, obuf, len);
-            put_reply(obuf);
-          } else {
-            put_reply("");
-          }
-        }
+        handle_memread(vm, buffer);
         break;
       }
 
@@ -387,112 +461,18 @@ static void debug_loop(const std::shared_ptr<Elkvm::VM>& vm) {
       // Write register n... with value r... The register number n is in hexadecimal,
       // and r... contains two hex digits for each byte in the register (target byte order).
 //      case 'P':
-//      {
-//        int reg;
-//        Bit64u value;
-//        char* ebuf;
-//
-//        reg = strtoul(&buffer[1], &ebuf, 16);
-//        ++ebuf;
-//        value = read_little_endian_hex(ebuf);
-//
-//        //printf("reg %d set to ", FMT_ADDRX64, reg, value);
-//        switch (reg)
-//        {
-//          case 0:
-//          case 1:
-//          case 2:
-//          case 3:
-//          case 4:
-//          case 5:
-//          case 6:
-//          case 7:
-//          case 8:
-//          case 9:
-//          case 10:
-//          case 11:
-//          case 12:
-//          case 13:
-//          case 14:
-//          case 15:
-//            BX_CPU_THIS_PTR set_reg64(reg, value);
-//            break;
-//
-//          case 16:
-//            RIP = value;
-//            BX_CPU_THIS_PTR invalidate_prefetch_q();
-//            break;
-//
-//          default:
-//            break;
-//        }
-//        put_reply("OK");
-//
-//        break;
-//      }
 
       // ‘g’ Read general registers.
       case 'g':
       {
-#define PUTREG(buf, val, len) do { \
-         Bit64u u = (val); \
-         (buf) = mem2hex((const Bit8u*)&u, (buf), (len)); \
-      } while (0)
-        char* buf = obuf;
-        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::rax), 8);
-        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::rbx), 8);
-        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::rcx), 8);
-        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::rdx), 8);
-        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::rsi), 8);
-        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::rdi), 8);
-        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::rbp), 8);
-        if(vcpu->get_reg(Elkvm::Reg_t::rip) < 0xffff800000000000) {
-          PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::rsp), 8);
-        } else {
-          /* in kernel mode, figure out the real stack and return that
-           * this really helps with backtraces (hopefully) */
-          guestptr_t *sf = reinterpret_cast<guestptr_t *>(
-              vm->get_region_manager()->get_pager().get_host_p(
-                vcpu->get_reg(Elkvm::Reg_t::rsp) + 24)
-              );
-          guestptr_t real_rsp = *sf;
-          PUTREG(buf, real_rsp, 8);
-        }
-        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::r8),  8);
-        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::r9),  8);
-        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::r10), 8);
-        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::r11), 8);
-        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::r12), 8);
-        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::r13), 8);
-        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::r14), 8);
-        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::r15), 8);
-        if(vcpu->get_reg(Elkvm::Reg_t::rip) < 0xffff800000000000) {
-          PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::rip), 8);
-        } else {
-          /* in kernel mode, figure out the real stack and return that
-           * this really helps with backtraces (hopefully) */
-          guestptr_t *sf = reinterpret_cast<guestptr_t *>(
-              vm->get_region_manager()->get_pager().get_host_p(
-                vcpu->get_reg(Elkvm::Reg_t::rsp))
-                );
-          guestptr_t real_rip = *sf;
-          PUTREG(buf, real_rip, 8);
-        }
-        PUTREG(buf, vcpu->get_reg(Elkvm::Reg_t::rflags), 8);
-        PUTREG(buf, vcpu->get_reg(Elkvm::Seg_t::cs).get_base(), 8);
-        PUTREG(buf, vcpu->get_reg(Elkvm::Seg_t::ss).get_base(), 8);
-        PUTREG(buf, vcpu->get_reg(Elkvm::Seg_t::ds).get_base(), 8);
-        PUTREG(buf, vcpu->get_reg(Elkvm::Seg_t::es).get_base(), 8);
-        PUTREG(buf, vcpu->get_reg(Elkvm::Seg_t::fs).get_base(), 8);
-        PUTREG(buf, vcpu->get_reg(Elkvm::Seg_t::gs).get_base(), 8);
-        put_reply(obuf);
+        handle_regread(vm);
         break;
       }
 
-      case '?':
-        sprintf(obuf, "S%02x", SIGTRAP);
-        put_reply(obuf);
+      case '?': {
+        handle_qm();
         break;
+      }
 
       // ‘H op thread-id’
       // Set thread for subsequent operations (‘m’, ‘M’, ‘g’, ‘G’, et.al.). op depends on the
@@ -501,14 +481,15 @@ static void debug_loop(const std::shared_ptr<Elkvm::VM>& vm) {
       // ‘g’ for other operations. The thread designator thread-id has the format
       // and interpretation described in [thread-id syntax]
       case 'H':
+                // XXX check if this is really needed!
         if (buffer[1] == 'c')
         {
-          continue_thread = strtol(&buffer[2], NULL, 16);
+          continue_thread = strtol(&buffer[2], NULL, base);
           put_reply("OK");
         }
         else if (buffer[1] == 'g')
         {
-          other_thread = strtol(&buffer[2], NULL, 16);
+          other_thread = strtol(&buffer[2], NULL, base);
           put_reply("OK");
         }
         else
@@ -522,24 +503,7 @@ static void debug_loop(const std::shared_ptr<Elkvm::VM>& vm) {
       // General query (‘q’) and set (‘Q’). These packets are described fully in
       // Section E.4 [General Query Packets]
       case 'q':
-        if (buffer[1] == 'C')
-        {
-          sprintf(obuf, FMT_ADDRX64, (Bit64u)1);
-          put_reply(obuf);
-        }
-        else if (strncmp(&buffer[1], "Offsets", strlen("Offsets")) == 0)
-        {
-          sprintf(obuf, "Text=%x;Data=%x;Bss=%x", 0x0, 0x0, 0x0);
-          put_reply(obuf);
-        }
-        else if (strncmp(&buffer[1], "Supported", strlen("Supported")) == 0)
-        {
-          put_reply("");
-        }
-        else
-        {
-          put_reply(""); /* not supported */
-        }
+        handle_query(buffer);
         break;
 
       // ‘z type,addr,kind’
@@ -571,8 +535,7 @@ static void debug_loop(const std::shared_ptr<Elkvm::VM>& vm) {
   }
 }
 
-static void wait_for_connect(int portn)
-{
+void gdb_session::wait_for_connection() {
   struct sockaddr_in sockaddr;
   socklen_t sockaddr_len;
   struct protoent *protoent;
@@ -601,7 +564,7 @@ static void wait_for_connect(int portn)
   sockaddr.sin_len = sizeof sockaddr;
 #endif
   sockaddr.sin_family = AF_INET;
-  sockaddr.sin_port = htons(portn);
+  sockaddr.sin_port = htons(port);
   sockaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
   r = bind(listen_socket_fd, (struct sockaddr *)&sockaddr, sizeof(sockaddr));
@@ -642,16 +605,7 @@ static void wait_for_connect(int portn)
   printf("Connected to %ld.%ld.%ld.%ld\n", ip & 0xff, (ip >> 8) & 0xff, (ip >> 16) & 0xff, (ip >> 24) & 0xff);
 }
 
-void elkvm_gdbstub_init(const std::shared_ptr<Elkvm::VM>& vm) {
-  int portn = 1234;
-
-  /* Wait for connect */
-  printf("Waiting for gdb connection on port %d\n", portn);
-  wait_for_connect(portn);
-
-  /* Do debugger command loop */
-  debug_loop(vm);
-
-  /* CPU loop */
-  vm->run();
+//namespace Debug
+}
+//namespace Elkvm
 }

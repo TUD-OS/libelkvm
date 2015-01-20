@@ -1,15 +1,16 @@
 #include <fstream>
 #include <iostream>
+#include <cassert>
 #include <cstring>
+
 #include <elkvm/elkvm.h>
 #include <elkvm/elkvm-log.h>
+#include <elkvm/gdbstub.h>
 #include <elkvm/gdt.h>
 #include <elkvm/kvm.h>
 #include <elkvm/vcpu.h>
-#include <cassert>
 
 #include <stdint.h>
-
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
@@ -418,7 +419,7 @@ int main(int argc, char **argv) {
 
   if(gdb) {
     //gdbstub will take it from here!
-    elkvm_gdbstub_init(vm);
+    Elkvm::Debug::gdb_session gdb(*vm);
     return 0;
   }
 
