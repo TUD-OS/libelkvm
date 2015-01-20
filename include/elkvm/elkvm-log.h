@@ -45,3 +45,38 @@ extern ElkvmLog globalElkvmLogger;
 #define DBG()   MY_LOG_PREFIX
 #define INFO()  MY_LOG_PREFIX
 #define ERROR() MY_LOG_PREFIX << LOG_RED
+
+/* TSC measurement stuff */
+
+static __inline__ __attribute__((used))
+unsigned long long rdtsc(void)
+{
+  unsigned hi, lo;
+  __asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
+  return ( (unsigned long long)lo)|( ((unsigned long long)hi)<<32 );
+}
+
+
+#define TSC_FUNCTION_PROLOG(sample_size) \
+    static const int _tsc_count = (sample_size); /* number of samples */ \
+    static uint64_t _tsc[_tsc_count];   /* sample array */ \
+    static int _tsc_idx = 0;            /* next sample to save */ \
+    static int _tsc_counter = 0;        /* number of sampling intervals */ \
+    uint64_t _tsc1, _tsc2;              /* tsc sample for this call */ \
+    _tsc1 = rdtsc();                    /* entry TSC measure */
+
+#define TSC_END do { \
+    _tsc2 = rdtsc(); \
+    _tsc[_tsc_idx++] = _tsc2 - _tsc1; \
+    if (_tsc_idx == _tsc_count) { \
+        uint64_t _sum = 0; \
+        _tsc_counter += 1; \
+        for (unsigned i = 0; i < _tsc_count; ++i) { \
+            _sum += _tsc[i]; \
+        } \
+        INFO() << "[" << _tsc_counter << "] " << _tsc_count \
+               << " timestamps: " << std::dec \
+               << _sum / _tsc_count << " cycles per call."; \
+        _tsc_idx = 0; \
+    } \
+} while (0)
