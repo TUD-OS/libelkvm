@@ -57,12 +57,14 @@ unsigned long long rdtsc(void)
 }
 
 
-#define TSC_FUNCTION_PROLOG(sample_size) \
+#define TSC_SAMPLE_DATA(sample_size) \
     static const int _tsc_count = (sample_size); /* number of samples */ \
     static uint64_t _tsc[_tsc_count];   /* sample array */ \
     static int _tsc_idx = 0;            /* next sample to save */ \
     static int _tsc_counter = 0;        /* number of sampling intervals */ \
-    uint64_t _tsc1, _tsc2;              /* tsc sample for this call */ \
+    uint64_t _tsc1, _tsc2;              /* tsc sample for this call */
+
+#define TSC_START \
     _tsc1 = rdtsc();                    /* entry TSC measure */
 
 #define TSC_END do { \
