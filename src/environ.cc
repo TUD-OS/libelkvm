@@ -63,6 +63,30 @@ namespace Elkvm {
        * so the dynamic linker loads the correct values
        */
         switch(current_auxv->a_type) {
+          /* XXX add the following auxv types!
+           * AT_SYSINFO_EHDR: 0x7fff848e0000
+           * AT_HWCAP:        bfebfbff
+           * AT_PAGESZ:       4096
+           * AT_CLKTCK:       100
+           * AT_PHDR:         0x400040
+           * AT_PHENT:        56
+           * AT_PHNUM:        8
+           * AT_BASE:         0x7f0204fd2000
+           * AT_FLAGS:        0x0
+           * AT_ENTRY:        0x4003f0
+           * AT_UID:          1000
+           * AT_EUID:         1000
+           * AT_GID:          1000
+           * AT_EGID:         1000
+           * AT_SECURE:       0
+           * AT_RANDOM:       0x7fff848d9519
+           * AT_EXECFN:       /home/flo/work/test_cases/build/hello
+           * AT_PLATFORM:     x86_64
+           */
+
+          case AT_RANDOM:
+            assert(false && "AT_RANDOM found");
+            break;
           case AT_PHDR:
             current_auxv->a_un.a_val = binary.get_auxv().at_phdr;
             all_set |= 0x1;
