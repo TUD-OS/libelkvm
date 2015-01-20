@@ -211,12 +211,11 @@ bool VCPU::handle_vm_exit() {
       get_sregs();
       return false;
     case KVM_EXIT_DEBUG: {
-      /* NO-OP */
-      assert(false && "TODO make debugging api work!");
-      /* XXX rethink debug handling */
-//      int debug_handled = elkvm_handle_debug(vmi);
-//      if(debug_handled == 0) {
-      //}
+      /*
+       * in case we have a gdbstub we can just return,
+       * gdbstub will take care of calling run() again
+       * TODO other cases are currently not handled
+       */
       return false;
     }
     case KVM_EXIT_MMIO:
