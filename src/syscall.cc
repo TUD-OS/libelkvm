@@ -449,7 +449,6 @@ long elkvm_do_read(Elkvm::VM * vmi) {
     ERROR() << "READ handler not found" << LOG_RESET << "\n";
     return -ENOSYS;
   }
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
   CURRENT_ABI::paramtype fd;
   CURRENT_ABI::paramtype buf_p = 0x0;
@@ -2094,7 +2093,7 @@ long elkvm_do_prctl(Elkvm::VM * vmi __attribute__((unused))) {
 long elkvm_do_arch_prctl(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype code = 0;
   CURRENT_ABI::paramtype user_addr = 0;
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
+  const auto& vcpu = vmi->get_vcpu(0);
 
   int err = vcpu->get_sregs();
   if(err) {
