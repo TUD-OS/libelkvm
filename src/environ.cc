@@ -154,22 +154,26 @@ namespace Elkvm {
     return it != itypes.end();
   }
 
+  off64_t Environment::push_auxv_raw(VCPU &vcpu, unsigned count, off64_t offset) {
+    for(unsigned i = 0 ; i < count; auxv--, i++) {
+      if(treat_as_int_type(auxv->a_type)) {
+        vcpu.push(auxv->a_un.a_val);
+      } else {
+        offset = push_string(vcpu, offset);
+      }
+      vcpu.push(auxv->a_type);
+    }
+    return offset;
+  }
+
   off64_t Environment::push_auxv(const std::shared_ptr<VCPU>& vcpu, char **env_p) {
     unsigned count = calc_auxv_num_and_set_auxv(env_p);
-
     off64_t offset = 0;
 
     if(binary.get_auxv().valid) {
       fix_auxv_dynamic_values(count);
     } else {
-      for(unsigned i= 0 ; i < count; auxv--, i++) {
-        if(treat_as_int_type(auxv->a_type)) {
-          vcpu->push(auxv->a_un.a_val);
-        } else {
-          offset = push_string(*vcpu, offset);
-        }
-        vcpu->push(auxv->a_type);
-      }
+      offset = push_auxv_raw(*vcpu, count, offset);
     }
 
     return offset;
