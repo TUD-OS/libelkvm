@@ -16,6 +16,9 @@
 #define LOG_CYAN    "\033[36m"
 #define LOG_RESET   "\033[0m"
 
+#define LOG_GUEST_HOST(guest, host) (void*)guest << " (" << (void*)host << ")"
+#define LOG_DEC_HEX(val) std::dec << val << " (" << std::hex << "0x" << val << ")"
+
 struct ElkvmLog
 {
 	boost::log::sources::logger_mt logger;
