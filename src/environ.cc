@@ -197,7 +197,7 @@ namespace Elkvm {
       return 0;
     }
 
-    char *target = reinterpret_cast<char *>(region->base_address()) + offset;
+    char *target = static_cast<char *>(region->base_address()) + offset;
     guestptr_t guest_virtual = region->guest_address() + offset;
     int bytes = 0;
 
@@ -217,8 +217,10 @@ namespace Elkvm {
       vcpu->push(guest_virtual);
 
       target = target + len;
+      assert(target < static_cast<char *>(region->base_address()) + region->size());
       bytes += len;
       guest_virtual = guest_virtual + len;
+      assert(guest_virtual < region->guest_address() + region->size());
     }
 
     return bytes;
