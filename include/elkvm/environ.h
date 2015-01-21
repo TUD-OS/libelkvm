@@ -18,9 +18,12 @@ namespace Elkvm {
       const ElfBinary &binary;
 
       bool treat_as_int_type(int type) const;
-      off64_t push_string(VCPU &vcpu, off64_t offset) const;
+      off64_t push_str_copy(VCPU& vcpu, off64_t offset,
+          const std::string &str) const;
+
       off64_t push_auxv_raw(VCPU &vcpu, unsigned count, off64_t offset);
       void fix_auxv_dynamic_values(unsigned count);
+
     public:
       Environment(const ElfBinary &bin, std::shared_ptr<RegionManager> rm);
       Environment(Environment const&) = delete;
@@ -30,9 +33,6 @@ namespace Elkvm {
 
       int copy_and_push_str_arr_p(const std::shared_ptr<VCPU>& vcpu,
           off64_t offset, char **str) const;
-
-      off64_t push_str_copy(const std::shared_ptr<VCPU>& vcpu,
-          off64_t offset, std::string str) const;
 
       guestptr_t get_guest_address() const { return region->guest_address(); }
       int fill(elkvm_opts *opts, const std::shared_ptr<VCPU>& vcpu);

@@ -115,19 +115,6 @@ namespace Elkvm {
     assert(all_set == 0x1F && "elf auxv is complete");
   }
 
-  off64_t Environment::push_string(VCPU &vcpu, off64_t offset) const {
-    char *target = static_cast<char *>(region->base_address()) + offset;
-    guestptr_t guest_virtual = region->guest_address() + offset;
-
-    size_t len = strlen(reinterpret_cast<char *>(auxv->a_un.a_val)) + 1;
-    assert((len + offset) < region->size());
-
-    strcpy(target, reinterpret_cast<char *>(auxv->a_un.a_val));
-    vcpu.push(guest_virtual);
-
-    return offset + len;
-  }
-
   bool Environment::treat_as_int_type(int type) const {
     std::vector<int> itypes({
           AT_NULL,
@@ -159,7 +146,8 @@ namespace Elkvm {
       if(treat_as_int_type(auxv->a_type)) {
         vcpu.push(auxv->a_un.a_val);
       } else {
-        offset = push_string(vcpu, offset);
+        offset = push_str_copy(vcpu, offset, std::string(
+              reinterpret_cast<char *>(auxv->a_un.a_val)));
       }
       vcpu.push(auxv->a_type);
     }
@@ -179,15 +167,17 @@ namespace Elkvm {
     return offset;
   }
 
-  off64_t Environment::push_str_copy(const std::shared_ptr<VCPU>& vcpu,
-      off64_t offset, std::string str) const {
+  off64_t Environment::push_str_copy(VCPU& vcpu, off64_t offset,
+      const std::string &str) const {
     char *target = reinterpret_cast<char *>(region->base_address()) + offset;
     guestptr_t guest_virtual = region->guest_address() + offset;
+
     off64_t bytes = str.length() + 1;
+    assert((bytes + offset) < region->size());
 
     strcpy(target, str.c_str());
+    vcpu.push(guest_virtual);
 
-    vcpu->push(guest_virtual);
     return bytes;
   }
 
@@ -218,7 +208,9 @@ namespace Elkvm {
 
       target = target + len;
       assert(target < static_cast<char *>(region->base_address()) + region->size());
+
       bytes += len;
+
       guest_virtual = guest_virtual + len;
       assert(guest_virtual < region->guest_address() + region->size());
     }
@@ -248,7 +240,7 @@ int Environment::fill(elkvm_opts *opts,
 
   /* if the binary is dynamically linked we need to ajdust some stuff */
   if(binary.is_dynamically_linked()) {
-    push_str_copy(vcpu, bytes_total, binary.get_loader());
+    push_str_copy(*vcpu, bytes_total, binary.get_loader());
     opts->argc++;
   }
 
