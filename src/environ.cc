@@ -115,6 +115,19 @@ namespace Elkvm {
     assert(all_set == 0x1F && "elf auxv is complete");
   }
 
+  off64_t Environment::push_string(VCPU &vcpu, off64_t offset) const {
+    char *target = static_cast<char *>(region->base_address()) + offset;
+    guestptr_t guest_virtual = region->guest_address() + offset;
+
+    size_t len = strlen(reinterpret_cast<char *>(auxv->a_un.a_val)) + 1;
+    assert((len + offset) < region->size());
+
+    strcpy(target, reinterpret_cast<char *>(auxv->a_un.a_val));
+    vcpu.push(guest_virtual);
+
+    return offset + len;
+  }
+
   off64_t Environment::push_auxv(const std::shared_ptr<VCPU>& vcpu, char **env_p) {
     unsigned count = calc_auxv_num_and_set_auxv(env_p);
 
@@ -153,13 +166,7 @@ namespace Elkvm {
           case AT_RANDOM:
           case AT_EXECFN:
           case AT_SYSINFO_EHDR:
-            ;
-            char *target = reinterpret_cast<char *>(region->base_address()) + offset;
-            guestptr_t guest_virtual = region->guest_address() + offset;
-            int len = strlen((char *)auxv->a_un.a_val) + 1;
-            strcpy(target, (char *)auxv->a_un.a_val);
-            offset = offset + len;
-            vcpu->push(guest_virtual);
+            offset = push_string(*vcpu, offset);
             break;
         }
         vcpu->push(auxv->a_type);
