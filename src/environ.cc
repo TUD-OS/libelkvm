@@ -128,6 +128,32 @@ namespace Elkvm {
     return offset + len;
   }
 
+  bool Environment::treat_as_int_type(int type) const {
+    std::vector<int> itypes({
+          AT_NULL,
+          AT_IGNORE,
+          AT_EXECFD,
+          AT_PHDR,
+          AT_PHENT,
+          AT_PHNUM,
+          AT_PAGESZ,
+          AT_FLAGS,
+          AT_ENTRY,
+          AT_NOTELF,
+          AT_UID,
+          AT_EUID,
+          AT_GID,
+          AT_EGID,
+          /* not sure about this one, might be a pointer */
+          AT_HWCAP,
+          AT_CLKTCK,
+          AT_SECURE,
+          AT_BASE,
+        });
+    auto it = std::find(itypes.begin(), itypes.end(), type);
+    return it != itypes.end();
+  }
+
   off64_t Environment::push_auxv(const std::shared_ptr<VCPU>& vcpu, char **env_p) {
     unsigned count = calc_auxv_num_and_set_auxv(env_p);
 
@@ -137,37 +163,10 @@ namespace Elkvm {
       fix_auxv_dynamic_values(count);
     } else {
       for(unsigned i= 0 ; i < count; auxv--, i++) {
-        switch(auxv->a_type) {
-          case AT_NULL:
-          case AT_IGNORE:
-          case AT_EXECFD:
-          case AT_PHDR:
-          case AT_PHENT:
-          case AT_PHNUM:
-          case AT_PAGESZ:
-          case AT_FLAGS:
-          case AT_ENTRY:
-          case AT_NOTELF:
-          case AT_UID:
-          case AT_EUID:
-          case AT_GID:
-          case AT_EGID:
-            /* not sure about this one, might be a pointer */
-          case AT_HWCAP:
-          case AT_CLKTCK:
-          case AT_SECURE:
-          case AT_BASE:
-          /*
-           * AT_BASE points to the base address of the dynamic linker
-           */
-            vcpu->push(auxv->a_un.a_val);
-            break;
-          case AT_PLATFORM:
-          case AT_RANDOM:
-          case AT_EXECFN:
-          case AT_SYSINFO_EHDR:
-            offset = push_string(*vcpu, offset);
-            break;
+        if(treat_as_int_type(auxv->a_type)) {
+          vcpu->push(auxv->a_un.a_val);
+        } else {
+          offset = push_string(*vcpu, offset);
         }
         vcpu->push(auxv->a_type);
       }

@@ -17,6 +17,7 @@ namespace Elkvm {
       Elf64_auxv_t *auxv;
       const ElfBinary &binary;
 
+      bool treat_as_int_type(int type) const;
       off64_t push_string(VCPU &vcpu, off64_t offset) const;
       void fix_auxv_dynamic_values(unsigned count);
     public:
