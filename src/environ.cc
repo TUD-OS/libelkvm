@@ -154,14 +154,14 @@ namespace Elkvm {
     return offset;
   }
 
-  off64_t Environment::push_auxv(const std::shared_ptr<VCPU>& vcpu, char **env_p) {
+  off64_t Environment::push_auxv(VCPU& vcpu, char **env_p) {
     unsigned count = calc_auxv_num_and_set_auxv(env_p);
     off64_t offset = 0;
 
     if(binary.get_auxv().valid) {
       fix_auxv_dynamic_values(count);
     } else {
-      offset = push_auxv_raw(*vcpu, count, offset);
+      offset = push_auxv_raw(vcpu, count, offset);
     }
 
     return offset;
@@ -206,7 +206,7 @@ int Environment::fill(elkvm_opts *opts,
   int err = vcpu->get_regs();
   assert(err == 0 && "error getting vcpu");
 
-  off64_t bytes = push_auxv(vcpu, opts->environ);
+  off64_t bytes = push_auxv(*vcpu, opts->environ);
   off64_t bytes_total = bytes;
 
   vcpu->push(0);
