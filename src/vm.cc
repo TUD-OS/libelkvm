@@ -157,8 +157,9 @@ int create_sysenter(const std::shared_ptr<VM>& vm,
 
 int create_sighandler(const std::shared_ptr<VM>& vm) {
   std::string sighandler_path(RES_PATH "/signal");
-  auto sigclean = vm->get_cleanup_flat();
-  return vm->load_flat(sigclean, sighandler_path, 0);
+  auto& sigclean = vm->get_cleanup_flat();
+  int err = vm->load_flat(sigclean, sighandler_path, 0);
+  return err;
 }
 
 void VM::unpack_syscall(CURRENT_ABI::paramtype *arg) {
