@@ -150,7 +150,7 @@ namespace Elkvm {
             vcpu->push(auxv->a_un.a_val);
             break;
           case AT_PLATFORM:
-          case 25:
+          case AT_RANDOM:
           case 31:
           case AT_SYSINFO_EHDR:
             ;
