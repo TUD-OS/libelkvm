@@ -207,22 +207,19 @@ int Environment::fill(elkvm_opts *opts,
   assert(err == 0 && "error getting vcpu");
 
   off64_t bytes = push_auxv(*vcpu, opts->environ);
-  off64_t bytes_total = bytes;
 
   vcpu->push(0);
-  bytes = copy_and_push_str_arr_p(*vcpu, bytes_total, opts->environ);
-  bytes_total = bytes_total + bytes;
+  bytes = copy_and_push_str_arr_p(*vcpu, bytes, opts->environ);
   vcpu->push(0);
   assert(bytes > 0);
 
   /* followed by argv pointers */
-  bytes = copy_and_push_str_arr_p(*vcpu, bytes_total, opts->argv);
-  bytes_total = bytes_total + bytes;
+  bytes = copy_and_push_str_arr_p(*vcpu, bytes, opts->argv);
   assert(bytes > 0);
 
   /* if the binary is dynamically linked we need to ajdust some stuff */
   if(binary.is_dynamically_linked()) {
-    push_str_copy(*vcpu, bytes_total, binary.get_loader());
+    push_str_copy(*vcpu, bytes, binary.get_loader());
     opts->argc++;
   }
 
