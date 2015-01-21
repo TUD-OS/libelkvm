@@ -146,7 +146,7 @@ namespace Elkvm {
       if(treat_as_int_type(auxv->a_type)) {
         vcpu.push(auxv->a_un.a_val);
       } else {
-        offset = push_str_copy(vcpu, offset, std::string(
+        offset += push_str_copy(vcpu, offset, std::string(
               reinterpret_cast<char *>(auxv->a_un.a_val)));
       }
       vcpu.push(auxv->a_type);
@@ -169,16 +169,16 @@ namespace Elkvm {
 
   off64_t Environment::push_str_copy(VCPU& vcpu, off64_t offset,
       const std::string &str) const {
+
     char *target = reinterpret_cast<char *>(region->base_address()) + offset;
     guestptr_t guest_virtual = region->guest_address() + offset;
 
-    off64_t bytes = str.length() + 1;
-    assert((bytes + offset) < region->size());
+    assert((str.length() + offset) < region->size());
+    str.copy(target, str.length());
 
-    strcpy(target, str.c_str());
     vcpu.push(guest_virtual);
 
-    return bytes;
+    return str.length() + 1;
   }
 
   off64_t Environment::copy_and_push_str_arr_p(VCPU& vcpu, off64_t offset,
@@ -194,7 +194,7 @@ namespace Elkvm {
     }
 
     for(i = i - 1; i >= 0; i--) {
-      offset = push_str_copy(vcpu, offset, std::string(str[i]));
+      offset += push_str_copy(vcpu, offset, std::string(str[i]));
     }
 
     return offset;
@@ -209,12 +209,12 @@ int Environment::fill(elkvm_opts *opts,
   off64_t bytes = push_auxv(*vcpu, opts->environ);
 
   vcpu->push(0);
-  bytes = copy_and_push_str_arr_p(*vcpu, bytes, opts->environ);
+  bytes += copy_and_push_str_arr_p(*vcpu, bytes, opts->environ);
   vcpu->push(0);
   assert(bytes > 0);
 
   /* followed by argv pointers */
-  bytes = copy_and_push_str_arr_p(*vcpu, bytes, opts->argv);
+  bytes += copy_and_push_str_arr_p(*vcpu, bytes, opts->argv);
   assert(bytes > 0);
 
   /* if the binary is dynamically linked we need to ajdust some stuff */
