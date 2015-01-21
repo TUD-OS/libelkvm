@@ -20,6 +20,7 @@ namespace Elkvm {
       bool treat_as_int_type(int type) const;
       off64_t push_str_copy(VCPU& vcpu, off64_t offset,
           const std::string &str) const;
+      off64_t copy_and_push_str_arr_p(VCPU& vcpu, off64_t offset, char **str) const;
 
       off64_t push_auxv_raw(VCPU &vcpu, unsigned count, off64_t offset);
       void fix_auxv_dynamic_values(unsigned count);
@@ -31,8 +32,6 @@ namespace Elkvm {
 
       off64_t push_auxv(const std::shared_ptr<VCPU>& vcpu, char **env_p);
 
-      int copy_and_push_str_arr_p(const std::shared_ptr<VCPU>& vcpu,
-          off64_t offset, char **str) const;
 
       guestptr_t get_guest_address() const { return region->guest_address(); }
       int fill(elkvm_opts *opts, const std::shared_ptr<VCPU>& vcpu);

@@ -181,41 +181,23 @@ namespace Elkvm {
     return bytes;
   }
 
-  int Environment::copy_and_push_str_arr_p(const std::shared_ptr<VCPU>& vcpu,
-      off64_t offset, char **str) const {
-    if(str == NULL) {
+  off64_t Environment::copy_and_push_str_arr_p(VCPU& vcpu, off64_t offset,
+      char **str) const {
+    if(str == nullptr) {
       return 0;
     }
 
-    char *target = static_cast<char *>(region->base_address()) + offset;
-    guestptr_t guest_virtual = region->guest_address() + offset;
-    int bytes = 0;
-
-    //first push the environment onto the stack
+    //skip the environment on the stack
     int i = 0;
     while(str[i]) {
       i++;
     }
 
     for(i = i - 1; i >= 0; i--) {
-      int len = strlen(str[i]) + 1;
-
-      //copy the data into the vm memory
-      strcpy(target, str[i]);
-
-      //and push the pointer for the vm
-      vcpu->push(guest_virtual);
-
-      target = target + len;
-      assert(target < static_cast<char *>(region->base_address()) + region->size());
-
-      bytes += len;
-
-      guest_virtual = guest_virtual + len;
-      assert(guest_virtual < region->guest_address() + region->size());
+      offset = push_str_copy(vcpu, offset, std::string(str[i]));
     }
 
-    return bytes;
+    return offset;
   }
 
 
@@ -228,13 +210,13 @@ int Environment::fill(elkvm_opts *opts,
   off64_t bytes_total = bytes;
 
   vcpu->push(0);
-  bytes = copy_and_push_str_arr_p(vcpu, bytes_total, opts->environ);
+  bytes = copy_and_push_str_arr_p(*vcpu, bytes_total, opts->environ);
   bytes_total = bytes_total + bytes;
   vcpu->push(0);
   assert(bytes > 0);
 
   /* followed by argv pointers */
-  bytes = copy_and_push_str_arr_p(vcpu, bytes_total, opts->argv);
+  bytes = copy_and_push_str_arr_p(*vcpu, bytes_total, opts->argv);
   bytes_total = bytes_total + bytes;
   assert(bytes > 0);
 
