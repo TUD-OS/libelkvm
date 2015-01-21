@@ -151,7 +151,7 @@ namespace Elkvm {
             break;
           case AT_PLATFORM:
           case AT_RANDOM:
-          case 31:
+          case AT_EXECFN:
           case AT_SYSINFO_EHDR:
             ;
             char *target = reinterpret_cast<char *>(region->base_address()) + offset;
