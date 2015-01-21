@@ -32,7 +32,7 @@ std::list<std::shared_ptr<Elkvm::VM> > vmi;
 
 int VM::run() {
   bool is_running = 1;
-  auto vcpu = get_vcpu(0);
+  auto& vcpu = get_vcpu(0);
   while(is_running) {
     int err = vcpu->set_regs();
     if(err) {
@@ -85,7 +85,7 @@ int load_elf_binary(const std::shared_ptr<VM>& vm,
 
   Elkvm::ElfBinary bin(binary, vm->get_region_manager(), vm->get_heap_manager());
 
-  auto vcpu = vm->get_vcpu(0);
+  auto& vcpu = vm->get_vcpu(0);
   vcpu->set_entry_point(bin.get_entry_point());
 
   int err = create_and_setup_environment(bin, vm, opts, vcpu);
@@ -95,7 +95,7 @@ int load_elf_binary(const std::shared_ptr<VM>& vm,
 }
 
 int setup_proxy_os(const std::shared_ptr<VM>& vm) {
-  auto vcpu = vm->get_vcpu(0);
+  auto& vcpu = vm->get_vcpu(0);
 
   std::shared_ptr<Elkvm::Region> gdt = elkvm_gdt_setup(*vm->get_region_manager(), vcpu);
   assert(gdt && "error setting up global descriptor tables");
