@@ -53,7 +53,7 @@ int Elkvm::VM::signal_deliver() {
     return 0;
   }
 
-  std::shared_ptr<VCPU> vcpu = get_vcpu(0);
+  const auto & vcpu = get_vcpu(0);
   assert(vcpu != nullptr);
 
   num_pending_signals--;

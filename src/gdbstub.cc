@@ -84,7 +84,7 @@ void gdb_session::handle_continue(char buffer[255], VM &vm) {
 }
 
 void gdb_session::handle_singlestep(VM &vm) {
-  auto vcpu = *vm.get_vcpu(0);
+  auto& vcpu = *vm.get_vcpu(0);
   vcpu.singlestep();
   vm.run();
   vcpu.singlestep_off();
@@ -101,7 +101,7 @@ void gdb_session::handle_memwrite(VM &vm, char buffer[255]) {
       vm.get_region_manager()->get_pager().get_host_p(addr));
   assert(host_p != nullptr);
   Elkvm::Debug::hex2mem(ebuf + 1, host_p, len);
-  auto vcpu = *vm.get_vcpu(0);
+  auto& vcpu = *vm.get_vcpu(0);
 
   int err = vcpu.enable_software_breakpoints();
   assert(err == 0 && "could not set guest debug mode");
@@ -140,7 +140,7 @@ void gdb_session::handle_regread(VM &vm) {
          Bit64u u = (val); \
          (buf) = Elkvm::Debug::mem2hex((const Bit8u*)&u, (buf), (len)); \
       } while (0)
-  auto vcpu = *vm.get_vcpu(0);
+  auto& vcpu = *vm.get_vcpu(0);
   char obuf[1024];
   char* buf = obuf;
   PUTREG(buf, vcpu.get_reg(Elkvm::Reg_t::rax), 8);

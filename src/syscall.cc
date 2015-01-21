@@ -449,7 +449,6 @@ long elkvm_do_read(Elkvm::VM * vmi) {
     ERROR() << "READ handler not found" << LOG_RESET << "\n";
     return -ENOSYS;
   }
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
   CURRENT_ABI::paramtype fd;
   CURRENT_ABI::paramtype buf_p = 0x0;
@@ -515,7 +514,6 @@ long elkvm_do_write(Elkvm::VM * vmi) {
     ERROR() << "WRITE handler not found" << LOG_RESET << "\n";
     return -ENOSYS;
   }
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
   CURRENT_ABI::paramtype fd = 0x0;
   guestptr_t buf_p = 0x0;
@@ -575,7 +573,6 @@ long elkvm_do_open(Elkvm::VM * vmi) {
     ERROR() << "OPEN handler not found\n";
     return -ENOSYS;
   }
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
   CURRENT_ABI::paramtype pathname_p = 0x0;
   char *pathname = NULL;
@@ -603,7 +600,6 @@ long elkvm_do_close(Elkvm::VM * vmi) {
     ERROR () << "CLOSE handler not found\n";
     return -ENOSYS;
   }
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
   CURRENT_ABI::paramtype fd = 0;
   vmi->unpack_syscall(&fd);
@@ -623,7 +619,6 @@ long elkvm_do_stat(Elkvm::VM * vmi) {
     ERROR() << "STAT handler not found" << LOG_RESET << "\n";
     return -ENOSYS;
   }
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
   CURRENT_ABI::paramtype path_p = 0;
   CURRENT_ABI::paramtype buf_p = 0;
@@ -650,7 +645,6 @@ long elkvm_do_fstat(Elkvm::VM * vmi) {
     ERROR() << "FSTAT handler not found\n";
     return -ENOSYS;
   }
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
   CURRENT_ABI::paramtype fd = 0;
   CURRENT_ABI::paramtype buf_p = 0;
@@ -677,7 +671,6 @@ long elkvm_do_lstat(Elkvm::VM * vmi) {
     ERROR() << "LSTAT handler not found" << LOG_RESET << "\n";
     return -ENOSYS;
   }
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
   CURRENT_ABI::paramtype path_p = 0;
   CURRENT_ABI::paramtype buf_p = 0;
@@ -713,7 +706,6 @@ long elkvm_do_lseek(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype fd;
   CURRENT_ABI::paramtype off;
   CURRENT_ABI::paramtype whence;
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
   vmi->unpack_syscall(&fd, &off, &whence);
 
@@ -765,7 +757,6 @@ log_mmap_args(guestptr_t addr, CURRENT_ABI::paramtype length,
 long elkvm_do_mmap(Elkvm::VM * vmi) {
   /* obtain a region_mapping and fill this with a proposal
    * on how to do the mapping */
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
   guestptr_t addr               = 0x0;
   CURRENT_ABI::paramtype length = 0x0;
   CURRENT_ABI::paramtype prot   = 0x0;
@@ -843,7 +834,6 @@ long elkvm_do_mmap(Elkvm::VM * vmi) {
 }
 
 long elkvm_do_munmap(Elkvm::VM * vmi) {
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
   guestptr_t addr_p = 0;
   void *addr = NULL;
@@ -871,7 +861,6 @@ long elkvm_do_munmap(Elkvm::VM * vmi) {
 
 long elkvm_do_brk(Elkvm::VM * vmi) {
   guestptr_t user_brk_req = 0;
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
   vmi->unpack_syscall(&user_brk_req);
 
   if(vmi->debug_mode()) {
@@ -901,7 +890,6 @@ long elkvm_do_sigaction(Elkvm::VM * vmi) {
     return -ENOSYS;
   }
 
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
   CURRENT_ABI::paramtype signum;
   CURRENT_ABI::paramtype act_p;
   CURRENT_ABI::paramtype oldact_p;
@@ -939,8 +927,6 @@ long elkvm_do_sigprocmask(Elkvm::VM * vmi) {
     ERROR() << "SIGPROCMASK handler not found" << LOG_RESET << "\n";
     return -ENOSYS;
   }
-
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
   CURRENT_ABI::paramtype how;
   CURRENT_ABI::paramtype set_p;
@@ -988,8 +974,6 @@ long elkvm_do_ioctl(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype fd;
   CURRENT_ABI::paramtype request;
   CURRENT_ABI::paramtype argp_p;
-
-  auto vcpu = vmi->get_vcpu(0);
 
   vmi->unpack_syscall(&fd, &request, &argp_p);
 
@@ -1041,7 +1025,6 @@ long elkvm_do_readv(Elkvm::VM * vmi) {
     ERROR() << "READV handler not found" << LOG_RESET << "\n";
     return -ENOSYS;
   }
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
   CURRENT_ABI::paramtype fd = 0;
   CURRENT_ABI::paramtype iov_p = 0;
@@ -1069,7 +1052,6 @@ long elkvm_do_writev(Elkvm::VM * vmi) {
     ERROR() << "WRITEV handler not found" << LOG_RESET << "\n";
     return -ENOSYS;
   }
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
   CURRENT_ABI::paramtype fd = 0;
   CURRENT_ABI::paramtype iov_p = 0;
@@ -1094,7 +1076,6 @@ long elkvm_do_access(Elkvm::VM * vmi) {
     ERROR() << "ACCESS handler not found" << LOG_RESET << "\n";
     return -ENOSYS;
   }
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
   CURRENT_ABI::paramtype path_p;
   CURRENT_ABI::paramtype mode;
@@ -1127,8 +1108,6 @@ long elkvm_do_pipe(Elkvm::VM * vmi) {
     return -ENOSYS;
   }
 
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
-
   CURRENT_ABI::paramtype pipefd_p = 0x0;
   int *pipefd = NULL;
 
@@ -1158,8 +1137,6 @@ long elkvm_do_sched_yield(Elkvm::VM * vmi __attribute__((unused))) {
 }
 
 long elkvm_do_mremap(Elkvm::VM *vmi __attribute__((unused))) {
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
-
   guestptr_t old_address_p = 0x0;
   void *old_address = NULL;
   CURRENT_ABI::paramtype old_size = 0;
@@ -1228,8 +1205,6 @@ long elkvm_do_dup(Elkvm::VM * vmi) {
     ERROR() << "DUP handler not found" << LOG_RESET << "\n";
     return -ENOSYS;
   }
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
-
   CURRENT_ABI::paramtype oldfd;
 
   vmi->unpack_syscall(&oldfd);
@@ -1259,8 +1234,6 @@ long elkvm_do_nanosleep(Elkvm::VM * vmi) {
     ERROR() << "NANOSLEEP handler not found" << LOG_RESET << "\n";
     return -ENOSYS;
   }
-
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
   CURRENT_ABI::paramtype req_p;
   CURRENT_ABI::paramtype rem_p;
@@ -1343,8 +1316,6 @@ long elkvm_do_uname(Elkvm::VM * vmi) {
   if(vmi->get_handlers()->uname == NULL) {
     return -ENOSYS;
   }
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
-
   struct utsname *buf = NULL;
   CURRENT_ABI::paramtype bufp = 0;
   vmi->unpack_syscall(&bufp);
@@ -1402,8 +1373,6 @@ long elkvm_do_fcntl(Elkvm::VM * vmi) {
     return -ENOSYS;
   }
 
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
-
   CURRENT_ABI::paramtype fd = 0;
   CURRENT_ABI::paramtype cmd = 0;
   /*
@@ -1460,8 +1429,6 @@ long elkvm_do_truncate(Elkvm::VM * vmi) {
     return -ENOSYS;
   }
 
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
-
   CURRENT_ABI::paramtype path_p = 0;
   CURRENT_ABI::paramtype length;
   char *path = NULL;
@@ -1487,8 +1454,6 @@ long elkvm_do_ftruncate(Elkvm::VM * vmi) {
     return -ENOSYS;
   }
 
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
-
   CURRENT_ABI::paramtype fd = 0;
   CURRENT_ABI::paramtype length;
 
@@ -1510,8 +1475,6 @@ long elkvm_do_getdents(Elkvm::VM * vmi __attribute__((unused))) {
     INFO() <<"GETDENTS handler not found\n";
     return -ENOSYS;
   }
-
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
   CURRENT_ABI::paramtype fd = 0;
   guestptr_t dirp_p = 0x0;
@@ -1545,8 +1508,6 @@ long elkvm_do_getcwd(Elkvm::VM * vmi) {
     ERROR() << "GETCWD handler not found" << LOG_RESET << "\n";
     return -ENOSYS;
   }
-
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
   CURRENT_ABI::paramtype buf_p = 0;
   CURRENT_ABI::paramtype size = 0;
@@ -1597,8 +1558,6 @@ long elkvm_do_mkdir(Elkvm::VM * vmi) {
     return -ENOSYS;
   }
 
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
-
   CURRENT_ABI::paramtype pathname_p = 0;
   CURRENT_ABI::paramtype mode = 0;
   char *pathname = NULL;
@@ -1637,7 +1596,6 @@ long elkvm_do_unlink(Elkvm::VM * vmi) {
     ERROR() << "UNLINK handler not found" << LOG_RESET << "\n";
     return -ENOSYS;
   }
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
   CURRENT_ABI::paramtype pathname_p = 0;
   char *pathname = NULL;
@@ -1666,8 +1624,6 @@ long elkvm_do_readlink(Elkvm::VM * vmi) {
     ERROR() << "READLINK handler not found" << LOG_RESET << "\n";
     return -ENOSYS;
   }
-
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
   CURRENT_ABI::paramtype path_p = 0;
   CURRENT_ABI::paramtype buf_p = 0;
@@ -1722,7 +1678,6 @@ long elkvm_do_gettimeofday(Elkvm::VM * vmi) {
 
   CURRENT_ABI::paramtype tv_p = 0;
   CURRENT_ABI::paramtype tz_p = 0;
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
   vmi->unpack_syscall(&tv_p, &tz_p);
 
   struct timeval *tv = NULL;
@@ -1761,7 +1716,6 @@ long elkvm_do_getrlimit(Elkvm::VM *) {
 //  CURRENT_ABI::paramtype rlim_p = 0x0;
 //  struct rlimit *rlim = NULL;
 //
-//  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 //  vmi->unpack_syscall(&resource, &rlim_p);
 //
 //  assert(rlim_p != 0x0);
@@ -1781,8 +1735,6 @@ long elkvm_do_getrusage(Elkvm::VM * vmi) {
     ERROR() << "GETRUSAGE handler not found" << LOG_RESET << "\n";
     return -ENOSYS;
   }
-
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
   CURRENT_ABI::paramtype who = 0;
   CURRENT_ABI::paramtype usage_p = 0x0;
@@ -1811,7 +1763,6 @@ long elkvm_do_times(Elkvm::VM * vmi) {
     ERROR() << "TIMES handler not found" << LOG_RESET << "\n";
     return -ENOSYS;
   }
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
   CURRENT_ABI::paramtype buf_p = 0x0;
   struct tms *buf = NULL;
@@ -2031,7 +1982,6 @@ long elkvm_do_statfs(Elkvm::VM * vmi __attribute__((unused))) {
     return -ENOSYS;
   }
 
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
   guestptr_t path_p = 0x0;
   guestptr_t buf_p = 0x0;
 
@@ -2143,7 +2093,7 @@ long elkvm_do_prctl(Elkvm::VM * vmi __attribute__((unused))) {
 long elkvm_do_arch_prctl(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype code = 0;
   CURRENT_ABI::paramtype user_addr = 0;
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
+  const auto& vcpu = vmi->get_vcpu(0);
 
   int err = vcpu->get_sregs();
   if(err) {
@@ -2390,7 +2340,6 @@ long elkvm_do_time(Elkvm::VM * vmi) {
   }
 
   CURRENT_ABI::paramtype time_p = 0;
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
   vmi->unpack_syscall(&time_p);
 
   time_t *time = NULL;
@@ -2423,7 +2372,6 @@ long elkvm_do_futex(Elkvm::VM * vmi) {
   const struct timespec *timeout = NULL;
   int *uaddr2 = NULL;
 
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
   vmi->unpack_syscall(&uaddr_p, &op, &val, &timeout_p, &uaddr2_p, &val3);
 
   if(uaddr_p != 0x0) {
@@ -2566,9 +2514,6 @@ long elkvm_do_clock_gettime(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype tp_p = 0x0;
   struct timespec *tp = NULL;
 
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
-  assert(vcpu != NULL);
-
   vmi->unpack_syscall(&clk_id, &tp_p);
   assert(tp_p != 0x0);
 
@@ -2633,8 +2578,6 @@ long elkvm_do_tgkill(Elkvm::VM * vmi) {
     ERROR() << "TGKILL handler not found" << LOG_RESET << "\n";
     return -ENOSYS;
   }
-
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
   CURRENT_ABI::paramtype tgid = 0x0;
   CURRENT_ABI::paramtype tid = 0x0;
@@ -2744,8 +2687,6 @@ long elkvm_do_openat(Elkvm::VM * vmi __attribute__((unused))) {
     ERROR() << "OPENAT handler not found" << LOG_RESET << "\n";
     return -ENOSYS;
   }
-
-  std::shared_ptr<Elkvm::VCPU> vcpu = vmi->get_vcpu(0);
 
   CURRENT_ABI::paramtype dirfd = 0;
   guestptr_t pathname_p = 0x0;

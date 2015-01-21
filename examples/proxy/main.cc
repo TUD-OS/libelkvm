@@ -282,7 +282,7 @@ std::shared_ptr<Elkvm::VM> attach_vm(int pid)
   std::list<Mapping> regions;
   memory_map_for_pid(pid, regions);
 
-  for (auto reg : regions) {
+  for (auto& reg : regions) {
       //INFO() << "size: " << reg.pages();
       std::shared_ptr<Elkvm::Region> r =
           vm->get_region_manager()->allocate_region(reg.size(), "ELVKM::attach");
@@ -326,7 +326,7 @@ std::shared_ptr<Elkvm::VM> attach_vm(int pid)
     perror("ptrace getregs");
     abort();
   }
-  std::shared_ptr<Elkvm::VCPU> cpu = vm->get_vcpu(0);
+  const auto& cpu = vm->get_vcpu(0);
   cpu->set_reg(Elkvm::rax, user_regs.rax);
   cpu->set_reg(Elkvm::rbx, user_regs.rbx);
   cpu->set_reg(Elkvm::rcx, user_regs.rcx);
