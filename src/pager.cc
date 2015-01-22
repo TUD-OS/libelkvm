@@ -29,7 +29,7 @@ namespace Elkvm {
     }
   }
 
-  int PagerX86_64::set_pml4(std::shared_ptr<Region> r) {
+  int PagerX86_64::set_pml4(const std::shared_ptr<Region>& r) {
     host_pml4_p = r->base_address();
     guestptr_t pml4_guest_physical = host_to_guest_physical(host_pml4_p);
     guest_next_free = KERNEL_SPACE_BOTTOM;
@@ -269,7 +269,7 @@ namespace Elkvm {
   }
 
   int PagerX86_64::map_chunk_to_kvm(
-      std::shared_ptr<struct kvm_userspace_memory_region> chunk) {
+      const std::shared_ptr<struct kvm_userspace_memory_region>& chunk) {
       if(chunk->memory_size == 0) {
         free_slots.push_back(chunk->slot);
         auto it = std::find(chunks.begin(), chunks.end(), chunk);
@@ -492,13 +492,13 @@ namespace Elkvm {
     return 0;
   }
 
-  bool contains_address(std::shared_ptr<struct kvm_userspace_memory_region> c,
+  bool contains_address(const std::shared_ptr<struct kvm_userspace_memory_region>& c,
       void *addr) {
     return ((void *)c->userspace_addr <= reinterpret_cast<char *>(addr)) &&
         (addr < (reinterpret_cast<char *>(c->userspace_addr) + c->memory_size));
   }
 
-  bool contains_phys_address(std::shared_ptr<struct kvm_userspace_memory_region> c,
+  bool contains_phys_address(const std::shared_ptr<struct kvm_userspace_memory_region>& c,
       guestptr_t addr) {
     return (c->guest_phys_addr <= addr) &&
         (addr < (c->guest_phys_addr + c->memory_size));
