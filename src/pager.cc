@@ -15,8 +15,148 @@
 namespace Elkvm {
   class VCPU;
 
+  /***************************************************************
+   *                Translation Lookaside Buffers                *
+   *                -----------------------------                *
+   *                                                             *
+   * The classes below implement alternative TLB implementations *
+   * that get_host_p() can use to speed up page lookups.         *
+   *                                                             *
+   * The interface is:                                           *
+   *     guestptr_t TLB::find(guest_ptr_t)                       *
+   *     void set(guestptr_t key, guestptr_t val)                *
+   *                                                             *
+   * There is no interface/inheritance as we want to             *
+   * avoid vtable indirections.                                  *
+   ***************************************************************/
+
+#define TLB_STATS 0 /* set to 1 if you want verbose TLB statistics */
+
+  /*
+   * TLB based on std::map
+   *
+   * This TLB uses a std::map to store page lookups. It is not
+   * bounded by any size limits and will simply become a mirror
+   * of the guest page table after some time. This means that this
+   * TLB might be useful for large, unpredictable workloads as there
+   * will be no problems with cache evictions. However, std::map
+   * works badly for small working sets as lookups are too slow to
+   * improve over what get_host_p does anyway.
+   */
+  class MappedTLB {
+    std::map<guestptr_t, guestptr_t> _entries;  // the actual TLB
+    unsigned _stat_hit, _stat_miss;             // statistics counters
+
+      public:
+        MappedTLB()
+          : _entries(), _stat_hit(0), _stat_miss(0)
+        {
+        }
+
+        guestptr_t find(const guestptr_t entry) {
+          const auto& it = _entries.find(entry & ~ELKVM_PAGE_MASK);
+#if TLB_STATS
+          static int num_find = 0;
+          if (num_find++ > 10000) {
+            INFO() << "MISSES " << _stat_miss << " HITS " << _stat_hit;
+          }
+#endif
+          if (it != _entries.end()) {
+            _stat_hit++;
+            return it->second + (entry & ELKVM_PAGE_MASK);
+          }
+          _stat_miss++;
+          return 0;
+        }
+
+        void set(guestptr_t entry, guestptr_t value) {
+          _entries[entry & ~ELKVM_PAGE_MASK] = value & ~ELKVM_PAGE_MASK;
+        }
+  };
+
+
+  /*
+   * Custom TLB implementation
+   *
+   * This TLB uses a fixed-size array to store TLB entries. Position in the
+   * array is calculated by hash()ing the respective entry value. Evictions
+   * may occur for some workloads - adjusting cache size or hash() function
+   * might help then.
+   */
+  class TLB
+  {
+      std::pair<guestptr_t, guestptr_t> *_entries; // the actual TLB
+      unsigned    _stat_hit;    // statistics counters ...
+      unsigned    _stat_miss;
+      unsigned    _stat_evict;
+      unsigned    _stat_enter;
+
+      enum {
+          NUM_ENTRIES = 0x1000,     // TLB size
+          low_mask    = 0xFFF000,   // hash mask
+          low_shift   = 12,         // hash bit shift
+      };
+
+      inline guestptr_t hash(guestptr_t entry)
+      {
+          return (entry & low_mask) >> low_shift;
+      }
+
+      public:
+          TLB() : _entries(0),
+                  _stat_hit(0),
+                  _stat_miss(0),
+                  _stat_evict(0),
+                  _stat_enter(0)
+          {
+            _entries = new std::pair<guestptr_t,guestptr_t>[NUM_ENTRIES];
+            memset(_entries, 0, NUM_ENTRIES * sizeof(guestptr_t));
+          }
+
+          guestptr_t find(guestptr_t entry)
+          {
+#if TLB_STATS
+            static int num_lookups = 0;
+
+            if (++num_lookups > 100000) {
+              INFO() << "TLB stats: "
+                     << "ADDed: " << _stat_enter
+                     << " HITS: " << _stat_hit
+                     << " MISSES: " << _stat_miss
+                     << " EVICTIONS: " << _stat_evict;
+              num_lookups = 0;
+              _stat_hit = _stat_miss = _stat_evict = _stat_enter = 0;
+            }
+#endif
+
+            guestptr_t h = hash(entry);
+            const auto& lookup = _entries[h];
+            //DBG() << std::hex << "[" << entry << "] " << lookup.first << " -> " << lookup.second;
+            if (lookup.first == (entry & ~ELKVM_PAGE_MASK)) {
+              _stat_hit += 1;
+              return (lookup.second | (entry & ELKVM_PAGE_MASK));
+            }
+            _stat_miss += 1;
+
+            return 0;
+          }
+
+          void set(guestptr_t entry, guestptr_t value)
+          {
+            guestptr_t h = hash(entry);
+            std::pair<guestptr_t, guestptr_t>& tlb_slot = _entries[h];
+
+            _stat_enter++;
+            if (tlb_slot.first != 0) { _stat_evict++; }
+
+            tlb_slot.first = entry & ~ELKVM_PAGE_MASK;
+            tlb_slot.second = value & ~ELKVM_PAGE_MASK;
+            //DBG() << std::hex << "[" << entry << "] " << tlb_slot.first << " -> " << tlb_slot.second;
+          }
+  };
+
   PagerX86_64::PagerX86_64(int vmfd)
-	: _vmfd(vmfd),
+    : _vmfd(vmfd),
       chunks(),
       host_pml4_p(0),
       host_next_free_tbl_p(0),
@@ -231,8 +371,14 @@ namespace Elkvm {
   }
 
   void *PagerX86_64::get_host_p(guestptr_t guest_virtual) const {
+    static TLB tlb;
     if(guest_virtual == 0x0) {
       return nullptr;
+    }
+
+    guestptr_t t = tlb.find(guest_virtual);
+    if (t) {
+      return (void*)t;
     }
 
     ptentry_t *entry = page_table_walk(guest_virtual);
@@ -254,6 +400,7 @@ namespace Elkvm {
       return NULL;
     }
 
+    tlb.set(guest_virtual, ((guest_physical - chunk->guest_phys_addr) + chunk->userspace_addr));
     return (void *)((guest_physical - chunk->guest_phys_addr)
         + chunk->userspace_addr);
   }
