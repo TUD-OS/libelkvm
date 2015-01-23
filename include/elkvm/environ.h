@@ -18,6 +18,7 @@ namespace Elkvm {
       const ElfBinary &binary;
 
       bool treat_as_int_type(int type) const;
+      guestptr_t make_str_copy(const std::string &str, off64_t offset) const;
       off64_t push_str_copy(VCPU& vcpu, off64_t offset,
           const std::string &str) const;
       off64_t copy_and_push_str_arr_p(VCPU& vcpu, off64_t offset, char **str) const;

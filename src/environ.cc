@@ -167,15 +167,20 @@ namespace Elkvm {
     return offset;
   }
 
-  off64_t Environment::push_str_copy(VCPU& vcpu, off64_t offset,
-      const std::string &str) const {
-
+  guestptr_t Environment::make_str_copy(const std::string &str,
+      off64_t offset) const {
     char *target = reinterpret_cast<char *>(region->base_address()) + offset;
     guestptr_t guest_virtual = region->guest_address() + offset;
 
     assert((str.length() + offset) < region->size());
     str.copy(target, str.length());
+    return guest_virtual;
+  }
 
+  off64_t Environment::push_str_copy(VCPU& vcpu, off64_t offset,
+      const std::string &str) const {
+
+    auto guest_virtual = make_str_copy(str, offset);
     vcpu.push(guest_virtual);
 
     return str.length() + 1;
