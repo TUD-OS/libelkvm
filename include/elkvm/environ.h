@@ -18,6 +18,7 @@ namespace Elkvm {
       const ElfBinary &binary;
 
       bool treat_as_int_type(int type) const;
+      off64_t fix_auxv_str_p(uint64_t *val, off64_t offset) const;
       guestptr_t make_str_copy(const std::string &str, off64_t offset) const;
       off64_t push_str_copy(VCPU& vcpu, off64_t offset,
           const std::string &str) const;
@@ -25,7 +26,7 @@ namespace Elkvm {
 
       off64_t push_auxv(VCPU& vcpu, char **env_p);
       off64_t push_auxv_raw(VCPU &vcpu, unsigned count, off64_t offset);
-      void fix_auxv_dynamic_values(unsigned count);
+      off64_t fix_auxv_dynamic_values(unsigned count, off64_t offset);
 
     public:
       Environment(const ElfBinary &bin, std::shared_ptr<RegionManager> rm);

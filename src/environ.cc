@@ -53,7 +53,12 @@ namespace Elkvm {
     return i;
   }
 
-  void Environment::fix_auxv_dynamic_values(unsigned count) {
+  off64_t Environment::fix_auxv_dynamic_values(unsigned count, off64_t offset) {
+    /* TODO we need to find all ptr types and push copies of strs here as well,
+     * then we need to adjust the addresses in the auxv vector, so that ld-linux.so
+     * loads the correct(tm) -- guest virtual -- values into the guest's
+     * auxv vector */
+
     auto current_auxv = auxv;
     short all_set = 0;
 
@@ -107,12 +112,14 @@ namespace Elkvm {
             all_set |= 0x8;
             break;
           case AT_BASE:
-            current_auxv->a_un.a_val = binary.get_auxv().at_base;
+            DBG() << "AT_BASE";
+            offset += fix_auxv_str_p(&current_auxv->a_un.a_val, offset);
             all_set |= 0x10;
             break;
         }
     }
     assert(all_set == 0x1F && "elf auxv is complete");
+    return offset;
   }
 
   bool Environment::treat_as_int_type(int type) const {
@@ -159,7 +166,7 @@ namespace Elkvm {
     off64_t offset = 0;
 
     if(binary.get_auxv().valid) {
-      fix_auxv_dynamic_values(count);
+      offset = fix_auxv_dynamic_values(count, offset);
     } else {
       offset = push_auxv_raw(vcpu, count, offset);
     }
