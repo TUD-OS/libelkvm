@@ -90,6 +90,9 @@ namespace Elkvm {
            * AT_PLATFORM:     x86_64
            */
 
+          case AT_SYSINFO_EHDR:
+            /* TODO find a way to deliberately ignore this one */
+            break;
           case AT_EXECFN:
             offset += fix_auxv_str_p(&current_auxv->a_un.a_val, offset);
             break;
