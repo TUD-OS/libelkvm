@@ -12,7 +12,8 @@ namespace Elkvm {
 
   class Environment {
     private:
-      std::shared_ptr<Region> region;
+      std::shared_ptr<Region> _region;
+
       unsigned calc_auxv_num_and_set_auxv(char **env_p);
       Elf64_auxv_t *auxv;
       const ElfBinary &binary;
@@ -30,13 +31,13 @@ namespace Elkvm {
       off64_t fix_auxv_dynamic_values(unsigned count, off64_t offset);
 
     public:
-      Environment(const ElfBinary &bin, std::shared_ptr<RegionManager> rm);
+      Environment(const ElfBinary &bin, std::shared_ptr<Region> reg);
       Environment(Environment const&) = delete;
       Environment& operator=(Environment const&) = delete;
 
 
 
-      guestptr_t get_guest_address() const { return region->guest_address(); }
+      guestptr_t get_guest_address() const { return _region->guest_address(); }
       int fill(elkvm_opts *opts, const std::shared_ptr<VCPU>& vcpu);
 
   };

@@ -258,7 +258,17 @@ int create_and_setup_environment(const ElfBinary &bin,
     elkvm_opts * opts,
     const std::shared_ptr<VCPU>& vcpu) {
 
-  Elkvm::Environment env(bin, vm->get_region_manager());
+  auto &rm = *vm->get_region_manager();
+  /* for now the region to hold env etc. will be 12 pages large */
+  auto r = rm.allocate_region(12 * ELKVM_PAGESIZE, "ELKVM Environment");
+  assert(r != nullptr && "error getting memory for env");
+
+  Elkvm::Environment env(bin, r);
+
+  int err = rm.get_pager().map_user_page(r->base_address(),
+      r->guest_address(), PT_OPT_WRITE);
+  assert(err == 0 && "error mapping env region");
+
   /* gets and sets vcpu->regs */
   return env.fill(opts, vcpu);
 }

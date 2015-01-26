@@ -7,7 +7,6 @@
 #include <elkvm/environ.h>
 #include <elkvm/kvm.h>
 #include <elkvm/region.h>
-#include <elkvm/region_manager.h>
 #include <elkvm/stack.h>
 #include <elkvm/elkvm-log.h>
 #include <elkvm/vcpu.h>
@@ -17,19 +16,13 @@ ElkvmLog globalElkvmLogger;
 
 namespace Elkvm {
 
-  Environment::Environment(const ElfBinary &bin, std::shared_ptr<RegionManager> rm) :
-	region(nullptr),
-	auxv(0),
+  Environment::Environment(const ElfBinary &bin, std::shared_ptr<Region> reg) :
+    _region(reg),
+    auxv(0),
     binary(bin)
   {
-    /* for now the region to hold env etc. will be 12 pages large */
-    region = rm->allocate_region(12 * ELKVM_PAGESIZE, "ELKVM Environment");
-    assert(region != nullptr && "error getting memory for env");
-    region->set_guest_addr(
-        reinterpret_cast<guestptr_t>(region->base_address()));
-    int err = rm->get_pager().map_user_page(region->base_address(),
-        region->guest_address(), PT_OPT_WRITE);
-    assert(err == 0 && "error mapping env region");
+    _region->set_guest_addr(
+        reinterpret_cast<guestptr_t>(_region->base_address()));
   }
 
   unsigned Environment::calc_auxv_num_and_set_auxv(char **env_p) {
@@ -193,10 +186,10 @@ namespace Elkvm {
 
   guestptr_t Environment::make_str_copy(const std::string &str,
       off64_t offset) const {
-    char *target = reinterpret_cast<char *>(region->base_address()) + offset;
-    guestptr_t guest_virtual = region->guest_address() + offset;
+    char *target = reinterpret_cast<char *>(_region->base_address()) + offset;
+    guestptr_t guest_virtual = _region->guest_address() + offset;
 
-    assert((str.length() + offset) < region->size());
+    assert((str.length() + offset) < _region->size());
     str.copy(target, str.length());
     return guest_virtual;
   }
