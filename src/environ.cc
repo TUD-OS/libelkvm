@@ -89,8 +89,11 @@ namespace Elkvm {
            * AT_PLATFORM:     x86_64
            */
 
+          case AT_EXECFN:
+            offset += fix_auxv_str_p(&current_auxv->a_un.a_val, offset);
+            break;
           case AT_RANDOM:
-            assert(false && "AT_RANDOM found");
+            offset += fix_auxv_str_p(&current_auxv->a_un.a_val, offset);
             break;
           case AT_PHDR:
             current_auxv->a_un.a_val = binary.get_auxv().at_phdr;
@@ -182,6 +185,18 @@ namespace Elkvm {
     assert((str.length() + offset) < region->size());
     str.copy(target, str.length());
     return guest_virtual;
+  }
+
+  off64_t Environment::fix_auxv_str_p(uint64_t *val, off64_t offset) const {
+    char *atr = reinterpret_cast<char *>(*val);
+    DBG() << "ATR: " << atr;
+    std::string str(atr);
+    auto guest_virtual = make_str_copy(str, offset);
+    DBG() << "AT_RANDOM was: 0x" << std::hex << *val
+          << " is: 0x" << guest_virtual;
+    /* TODO adjust the offset! */
+    *val = guest_virtual;
+    return str.length();
   }
 
   off64_t Environment::push_str_copy(VCPU& vcpu, off64_t offset,
