@@ -13,32 +13,43 @@ namespace Elkvm {
   class Environment {
     private:
       std::shared_ptr<Region> _region;
+      std::vector<Elf64_auxv_t> _auxv;
+      std::vector<std::string> _env;
+      std::vector<std::string> _argv;
+      int _argc;
 
-      unsigned calc_auxv_num_and_set_auxv(char **env_p);
-      Elf64_auxv_t *auxv;
       const ElfBinary &binary;
+
+      Elf64_auxv_t *calc_auxv(char **env) const;
+      void fill_argv(char **argv);
+      void fill_env(char **env);
+      void fill_auxv(Elf64_auxv_t *auxv);
+      void fix_auxv_dynamic_values();
 
       bool treat_as_int_type(int type) const;
       bool ignored_type(int type) const;
-      off64_t fix_auxv_str_p(uint64_t *val, off64_t offset) const;
       guestptr_t make_str_copy(const std::string &str, off64_t offset) const;
       off64_t push_str_copy(VCPU& vcpu, off64_t offset,
           const std::string &str) const;
       off64_t copy_and_push_str_arr_p(VCPU& vcpu, off64_t offset, char **str) const;
 
-      off64_t push_auxv(VCPU& vcpu, char **env_p);
-      off64_t push_auxv_raw(VCPU &vcpu, unsigned count, off64_t offset);
-      off64_t fix_auxv_dynamic_values(unsigned count, off64_t offset);
+      off64_t push_auxv_raw(VCPU &vcpu, off64_t offset) const;
+
+      off64_t push_auxv(VCPU& vcpu);
+      off64_t push_env(VCPU& vcpu, off64_t offset) const;
+      off64_t push_argv(VCPU& vcpu, off64_t offset) const;
+      void push_argc(VCPU& vcpu) const;
 
     public:
-      Environment(const ElfBinary &bin, std::shared_ptr<Region> reg);
+      Environment(const ElfBinary &bin, std::shared_ptr<Region> reg, int argc,
+          char **argv, char **env);
       Environment(Environment const&) = delete;
       Environment& operator=(Environment const&) = delete;
 
 
 
       guestptr_t get_guest_address() const { return _region->guest_address(); }
-      int fill(elkvm_opts *opts, const std::shared_ptr<VCPU>& vcpu);
+      int create(VCPU &vcpu);
 
   };
 

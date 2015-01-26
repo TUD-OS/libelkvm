@@ -263,14 +263,14 @@ int create_and_setup_environment(const ElfBinary &bin,
   auto r = rm.allocate_region(12 * ELKVM_PAGESIZE, "ELKVM Environment");
   assert(r != nullptr && "error getting memory for env");
 
-  Elkvm::Environment env(bin, r);
+  Elkvm::Environment env(bin, r, opts->argc, opts->argv, opts->environ);
 
   int err = rm.get_pager().map_user_page(r->base_address(),
       r->guest_address(), PT_OPT_WRITE);
   assert(err == 0 && "error mapping env region");
 
   /* gets and sets vcpu->regs */
-  return env.fill(opts, vcpu);
+  return env.create(*vcpu);
 }
 
 //namespace Elkvm
