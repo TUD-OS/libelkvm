@@ -47,10 +47,11 @@ namespace Elkvm {
 
     unsigned i;
     for(i = 0 ; auxv->a_type != AT_NULL; auxv++, i++);
+    assert(auxv->a_type == AT_NULL);
 
     /* auxv now ponts to the AT_NULL entry at the bottom (highest address)
-     * on the aux vector, we return the amount of entries - 1 */
-    return i;
+     * on the aux vector, we return the amount of entries + 1 */
+    return i+1;
   }
 
   off64_t Environment::fix_auxv_dynamic_values(unsigned count, off64_t offset) {
@@ -141,7 +142,6 @@ namespace Elkvm {
           AT_EUID,
           AT_GID,
           AT_EGID,
-          /* not sure about this one, might be a pointer */
           AT_HWCAP,
           AT_CLKTCK,
           AT_SECURE,
@@ -151,15 +151,26 @@ namespace Elkvm {
     return it != itypes.end();
   }
 
+  bool Environment::ignored_type(int type) const {
+    std::vector<int> ignored({
+        AT_SYSINFO_EHDR
+        });
+    auto it = std::find(std::begin(ignored), std::end(ignored), type);
+    return it != ignored.end();
+  }
+
   off64_t Environment::push_auxv_raw(VCPU &vcpu, unsigned count, off64_t offset) {
+    assert(auxv->a_type == AT_NULL);
     for(unsigned i = 0 ; i < count; auxv--, i++) {
-      if(treat_as_int_type(auxv->a_type)) {
-        vcpu.push(auxv->a_un.a_val);
-      } else {
-        offset += push_str_copy(vcpu, offset, std::string(
-              reinterpret_cast<char *>(auxv->a_un.a_val)));
+      if(!ignored_type(auxv->a_type)) {
+        if(treat_as_int_type(auxv->a_type)) {
+          vcpu.push(auxv->a_un.a_val);
+        } else {
+          offset += push_str_copy(vcpu, offset, std::string(
+                reinterpret_cast<char *>(auxv->a_un.a_val)));
+        }
+        vcpu.push(auxv->a_type);
       }
-      vcpu.push(auxv->a_type);
     }
     return offset;
   }
