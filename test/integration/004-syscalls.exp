@@ -1,0 +1,26 @@
+#!/usr/bin/expect -f
+
+set build $env(ELKVM_BUILD)
+set timeout 5
+log_user 0
+#exp_internal 1
+
+proc failure { msg output } {
+	send_user "\n========= $msg =========\n";
+	send_user "Output was:\n";
+	send_user $output;
+	exit 1;
+}
+
+spawn $build/examples/proxy/proxy ./syscall_test &
+expect {
+		"mmap" { exit 0 }
+		eof
+		{
+			failure "Test terminated prematurely (Expecting 'mmap')" $expect_out(buffer);
+		}
+		timeout
+		{
+			failure "Test timed out. This most likely happens because you did not enable the ELKVM kernel patch." $expect_out(buffer);
+		}
+}
