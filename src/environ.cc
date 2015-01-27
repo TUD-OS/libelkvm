@@ -182,7 +182,7 @@ namespace Elkvm {
     return it != ignored.end();
   }
 
-  off64_t Environment::push_auxv_raw(VCPU &vcpu, off64_t offset) {
+  void Environment::push_auxv_raw(VCPU &vcpu) {
     for(auto &auxv : _auxv) {
       if(!ignored_type(auxv.a_type)) {
         if(treat_as_int_type(auxv.a_type)) {
@@ -193,14 +193,13 @@ namespace Elkvm {
         vcpu.push(auxv.a_type);
       }
     }
-    return offset;
   }
 
   void Environment::push_auxv(VCPU& vcpu) {
     if(binary.get_auxv().valid) {
       fix_auxv_dynamic_values();
     }
-    push_auxv_raw(vcpu, 0);
+    push_auxv_raw(vcpu);
     vcpu.push(0);
   }
 

@@ -47,7 +47,7 @@ namespace Elkvm {
       void push_str_copy(VCPU& vcpu, const std::string &str);
       off64_t copy_and_push_str_arr_p(VCPU& vcpu, off64_t offset, char **str) const;
 
-      off64_t push_auxv_raw(VCPU &vcpu, off64_t offset);
+      void push_auxv_raw(VCPU &vcpu);
 
       void push_auxv(VCPU& vcpu);
       void push_env(VCPU& vcpu);
