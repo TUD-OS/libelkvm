@@ -201,12 +201,14 @@ namespace Elkvm {
       fix_auxv_dynamic_values();
     }
     push_auxv_raw(vcpu, 0);
+    vcpu.push(0);
   }
 
   void Environment::push_env(VCPU& vcpu) {
     for(auto &env : _env) {
       push_str_copy(vcpu, env);
     }
+    vcpu.push(0);
   }
 
   void Environment::push_argv(VCPU& vcpu) {
@@ -229,13 +231,8 @@ int Environment::create(VCPU& vcpu) {
   assert(err == 0 && "error getting vcpu");
 
   push_auxv(vcpu);
-  vcpu.push(0);
-
   push_env(vcpu);
-  vcpu.push(0);
-
   push_argv(vcpu);
-
   push_argc(vcpu);
 
   /* if the binary is dynamically linked we need to ajdust some stuff */
