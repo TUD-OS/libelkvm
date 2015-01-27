@@ -18,12 +18,6 @@ namespace Elkvm {
     public:
       EnvRegion(std::shared_ptr<Region> r);
       guestptr_t write_str(const std::string &str);
-
-      /* TODO remove these */
-      void *base_address() const { return _region->base_address(); }
-      guestptr_t guest_address() const { return _region->guest_address(); }
-      size_t size() const { return _region->size(); }
-
   };
 
   class Environment {
@@ -59,10 +53,6 @@ namespace Elkvm {
           char **argv, char **env);
       Environment(Environment const&) = delete;
       Environment& operator=(Environment const&) = delete;
-
-
-
-      guestptr_t get_guest_address() const { return _region.guest_address(); }
       int create(VCPU &vcpu);
 
   };
