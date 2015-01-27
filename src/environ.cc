@@ -36,6 +36,7 @@ namespace Elkvm {
         < (_region->guest_address() + _region->size()));
 
     str.copy(target, str.length());
+    _offset = noff;
     return guest_virtual;
   }
 
