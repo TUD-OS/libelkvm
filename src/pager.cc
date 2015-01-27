@@ -250,7 +250,7 @@ namespace Elkvm {
     assert(chunks[0]->memory_size >= ELKVM_SYSTEM_MEMSIZE);
 
     memset(host_pml4_p, 0, ELKVM_SYSTEM_MEMSIZE);
-    host_next_free_tbl_p = reinterpret_cast<char *>(host_pml4_p) + HOST_PAGESIZE;
+    host_next_free_tbl_p = static_cast<char *>(host_pml4_p) + HOST_PAGESIZE;
 
     return 0;
   }
@@ -261,7 +261,7 @@ namespace Elkvm {
 
     memset(host_next_free_tbl_p, 0, HOST_PAGESIZE);
     host_next_free_tbl_p =
-      reinterpret_cast<char *>(host_next_free_tbl_p) + HOST_PAGESIZE;
+      static_cast<char *>(host_next_free_tbl_p) + HOST_PAGESIZE;
 
     create_entry(host_entry_p, guest_next_tbl, opts);
     return 0;
@@ -271,7 +271,7 @@ namespace Elkvm {
     printf(" Page Tables:\n");
     printf(" ------------\n");
 
-    dump_table(reinterpret_cast<ptentry_t *>(host_pml4_p), 4);
+    dump_table(static_cast<ptentry_t *>(host_pml4_p), 4);
     printf(" ------------\n");
     return;
   }
@@ -411,7 +411,7 @@ namespace Elkvm {
       return 0;
     }
 
-    return (guestptr_t)(reinterpret_cast<char *>(host_p) - chunk->userspace_addr
+    return (guestptr_t)(static_cast<char *>(host_p) - chunk->userspace_addr
         + chunk->guest_phys_addr);
   }
 
@@ -498,7 +498,7 @@ namespace Elkvm {
 
   int PagerX86_64::map_region(void *start_p, guestptr_t start_addr, unsigned pages,
       ptopt_t opts) {
-    char *current_p = reinterpret_cast<char *>(start_p);
+    char *current_p = static_cast<char *>(start_p);
     guestptr_t current_addr = start_addr;
     for(unsigned i = 0; i < pages; i++) {
       int err = map_user_page(current_p, current_addr, opts);
@@ -515,8 +515,8 @@ namespace Elkvm {
       ptopt_t opts) {
     assert(guest_virtual != 0x0 && "cannot map NULL to somewhere!");
 
-    assert((host_mem_p < reinterpret_cast<char *>(host_pml4_p)) ||
-        host_mem_p >= (reinterpret_cast<char *>(host_pml4_p)
+    assert((host_mem_p < static_cast<char *>(host_pml4_p)) ||
+        host_mem_p >= (static_cast<char *>(host_pml4_p)
           + ELKVM_SYSTEM_MEMSIZE));
 
     /* sanity checks on the offset */
@@ -546,7 +546,7 @@ namespace Elkvm {
   ptentry_t *PagerX86_64::page_table_walk_create(guestptr_t guest_virtual, ptopt_t opts) {
     assert(guest_virtual != 0);
 
-    ptentry_t *table_base = reinterpret_cast<uint64_t *>(host_pml4_p);
+    ptentry_t *table_base = static_cast<uint64_t *>(host_pml4_p);
     /* we should always have paging in place, when this gets called! */
     assert(table_base != NULL);
 
@@ -578,7 +578,7 @@ namespace Elkvm {
     assert(guest_virtual != 0);
     assert(host_pml4_p != NULL);
 
-    ptentry_t *table_base = reinterpret_cast<uint64_t *>(host_pml4_p);
+    ptentry_t *table_base = static_cast<uint64_t *>(host_pml4_p);
     /* we should always have paging in place, when this gets called! */
     assert(table_base != NULL);
 
@@ -641,7 +641,8 @@ namespace Elkvm {
 
   bool contains_address(const std::shared_ptr<struct kvm_userspace_memory_region>& c,
       void *addr) {
-    return ((void *)c->userspace_addr <= reinterpret_cast<char *>(addr)) &&
+    return (reinterpret_cast<void *>(c->userspace_addr)
+        <= static_cast<char *>(addr)) &&
         (addr < (reinterpret_cast<char *>(c->userspace_addr) + c->memory_size));
   }
 
