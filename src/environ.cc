@@ -17,10 +17,27 @@ ElkvmLog globalElkvmLogger;
 namespace Elkvm {
 
   EnvRegion::EnvRegion(std::shared_ptr<Region> r) :
-    _region(r) {
+    _region(r),
+    _offset(r->size()) {
       _region->set_guest_addr(
         reinterpret_cast<guestptr_t>(_region->base_address()));
     }
+
+  guestptr_t EnvRegion::write_str(const std::string &str) {
+    assert(_offset > (str.length() + 1));
+    off64_t noff = _offset - str.length() - 1;
+
+    char *target = static_cast<char *>(_region->base_address()) + noff;
+    assert((target + str.length())
+        < (static_cast<char *>(_region->base_address()) + _region->size()));
+
+    guestptr_t guest_virtual = _region->guest_address() + noff;
+    assert((guest_virtual + str.length())
+        < (_region->guest_address() + _region->size()));
+
+    str.copy(target, str.length());
+    return guest_virtual;
+  }
 
   Environment::Environment(const ElfBinary &bin, std::shared_ptr<Region> reg,
       int argc, char **argv, char **env) :
@@ -165,7 +182,7 @@ namespace Elkvm {
     return it != ignored.end();
   }
 
-  off64_t Environment::push_auxv_raw(VCPU &vcpu, off64_t offset) const {
+  off64_t Environment::push_auxv_raw(VCPU &vcpu, off64_t offset) {
     for(auto &auxv : _auxv) {
       if(!ignored_type(auxv.a_type)) {
         if(treat_as_int_type(auxv.a_type)) {
@@ -191,14 +208,14 @@ namespace Elkvm {
     return offset;
   }
 
-  off64_t Environment::push_env(VCPU& vcpu, off64_t offset) const {
+  off64_t Environment::push_env(VCPU& vcpu, off64_t offset) {
     for(auto &env : _env) {
       offset += push_str_copy(vcpu, offset, env);
     }
     return offset;
   }
 
-  off64_t Environment::push_argv(VCPU& vcpu, off64_t offset) const {
+  off64_t Environment::push_argv(VCPU& vcpu, off64_t offset) {
     for(auto &argv : _argv) {
       offset += push_str_copy(vcpu, offset, argv);
     }
@@ -209,20 +226,10 @@ namespace Elkvm {
     vcpu.push(_argc);
   }
 
-  guestptr_t Environment::make_str_copy(const std::string &str,
-      off64_t offset) const {
-    char *target = reinterpret_cast<char *>(_region.base_address()) + offset;
-    guestptr_t guest_virtual = _region.guest_address() + offset;
-
-    assert((str.length() + offset) < _region.size());
-    str.copy(target, str.length());
-    return guest_virtual;
-  }
-
   off64_t Environment::push_str_copy(VCPU& vcpu, off64_t offset,
-      const std::string &str) const {
+      const std::string &str) {
 
-    auto guest_virtual = make_str_copy(str, offset);
+    auto guest_virtual = _region.write_str(str);
     vcpu.push(guest_virtual);
 
     return str.length() + 1;
