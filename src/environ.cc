@@ -85,11 +85,6 @@ namespace Elkvm {
   }
 
   void Environment::fix_auxv_dynamic_values() {
-    /* TODO we need to find all ptr types and push copies of strs here as well,
-     * then we need to adjust the addresses in the auxv vector, so that ld-linux.so
-     * loads the correct(tm) -- guest virtual -- values into the guest's
-     * auxv vector */
-
     short all_set = 0;
     for(auto &a : _auxv) {
       /*
@@ -97,30 +92,7 @@ namespace Elkvm {
        * so the dynamic linker loads the correct values
        */
         switch(a.a_type) {
-          /* XXX add the following auxv types!
-           * AT_SYSINFO_EHDR: 0x7fff848e0000
-           * AT_HWCAP:        bfebfbff
-           * AT_PAGESZ:       4096
-           * AT_CLKTCK:       100
-           * AT_PHDR:         0x400040
-           * AT_PHENT:        56
-           * AT_PHNUM:        8
-           * AT_BASE:         0x7f0204fd2000
-           * AT_FLAGS:        0x0
-           * AT_ENTRY:        0x4003f0
-           * AT_UID:          1000
-           * AT_EUID:         1000
-           * AT_GID:          1000
-           * AT_EGID:         1000
-           * AT_SECURE:       0
-           * AT_RANDOM:       0x7fff848d9519
-           * AT_EXECFN:       /home/flo/work/test_cases/build/hello
-           * AT_PLATFORM:     x86_64
-           */
 
-          case AT_SYSINFO_EHDR:
-            /* TODO find a way to deliberately ignore this one */
-            break;
           case AT_PHDR:
             a.a_un.a_val = binary.get_auxv().at_phdr;
             all_set |= 0x1;
@@ -133,15 +105,11 @@ namespace Elkvm {
             a.a_un.a_val = binary.get_auxv().at_phnum;
             all_set |= 0x4;
             break;
-          case AT_EXECFD:
-            /* TODO maybe this needs to be removed? */
-            break;
           case AT_ENTRY:
             a.a_un.a_val = binary.get_auxv().at_entry;
             all_set |= 0x8;
             break;
           case AT_BASE:
-            DBG() << "AT_BASE";
             a.a_un.a_val = binary.get_auxv().at_base;
             all_set |= 0x10;
             break;
