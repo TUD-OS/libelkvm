@@ -16,14 +16,18 @@ ElkvmLog globalElkvmLogger;
 
 namespace Elkvm {
 
+  EnvRegion::EnvRegion(std::shared_ptr<Region> r) :
+    _region(r) {
+      _region->set_guest_addr(
+        reinterpret_cast<guestptr_t>(_region->base_address()));
+    }
+
   Environment::Environment(const ElfBinary &bin, std::shared_ptr<Region> reg,
       int argc, char **argv, char **env) :
     _region(reg),
     _argc(argc),
     binary(bin)
   {
-    _region->set_guest_addr(
-        reinterpret_cast<guestptr_t>(_region->base_address()));
     fill_argv(argv),
     fill_env(env);
     auto auxv = calc_auxv(env);
@@ -207,10 +211,10 @@ namespace Elkvm {
 
   guestptr_t Environment::make_str_copy(const std::string &str,
       off64_t offset) const {
-    char *target = reinterpret_cast<char *>(_region->base_address()) + offset;
-    guestptr_t guest_virtual = _region->guest_address() + offset;
+    char *target = reinterpret_cast<char *>(_region.base_address()) + offset;
+    guestptr_t guest_virtual = _region.guest_address() + offset;
 
-    assert((str.length() + offset) < _region->size());
+    assert((str.length() + offset) < _region.size());
     str.copy(target, str.length());
     return guest_virtual;
   }

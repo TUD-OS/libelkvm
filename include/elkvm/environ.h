@@ -10,9 +10,23 @@
 namespace Elkvm {
   class VCPU;
 
-  class Environment {
+  class EnvRegion {
     private:
       std::shared_ptr<Region> _region;
+
+    public:
+      EnvRegion(std::shared_ptr<Region> r);
+
+      /* TODO remove these */
+      void *base_address() const { return _region->base_address(); }
+      guestptr_t guest_address() const { return _region->guest_address(); }
+      size_t size() const { return _region->size(); }
+
+  };
+
+  class Environment {
+    private:
+      EnvRegion _region;
       std::vector<Elf64_auxv_t> _auxv;
       std::vector<std::string> _env;
       std::vector<std::string> _argv;
@@ -48,7 +62,7 @@ namespace Elkvm {
 
 
 
-      guestptr_t get_guest_address() const { return _region->guest_address(); }
+      guestptr_t get_guest_address() const { return _region.guest_address(); }
       int create(VCPU &vcpu);
 
   };
