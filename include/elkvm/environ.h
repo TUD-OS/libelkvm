@@ -44,14 +44,14 @@ namespace Elkvm {
 
       bool treat_as_int_type(int type) const;
       bool ignored_type(int type) const;
-      off64_t push_str_copy(VCPU& vcpu, off64_t offset, const std::string &str);
+      void push_str_copy(VCPU& vcpu, const std::string &str);
       off64_t copy_and_push_str_arr_p(VCPU& vcpu, off64_t offset, char **str) const;
 
       off64_t push_auxv_raw(VCPU &vcpu, off64_t offset);
 
-      off64_t push_auxv(VCPU& vcpu);
-      off64_t push_env(VCPU& vcpu, off64_t offset);
-      off64_t push_argv(VCPU& vcpu, off64_t offset);
+      void push_auxv(VCPU& vcpu);
+      void push_env(VCPU& vcpu);
+      void push_argv(VCPU& vcpu);
       void push_argc(VCPU& vcpu) const;
 
     public:

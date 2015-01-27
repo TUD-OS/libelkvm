@@ -188,8 +188,7 @@ namespace Elkvm {
         if(treat_as_int_type(auxv.a_type)) {
           vcpu.push(auxv.a_un.a_val);
         } else {
-          offset += push_str_copy(vcpu, offset, std::string(
-                reinterpret_cast<char *>(auxv.a_un.a_val)));
+          push_str_copy(vcpu, std::string(reinterpret_cast<char *>(auxv.a_un.a_val)));
         }
         vcpu.push(auxv.a_type);
       }
@@ -197,57 +196,45 @@ namespace Elkvm {
     return offset;
   }
 
-  off64_t Environment::push_auxv(VCPU& vcpu) {
-    off64_t offset = 0;
-
+  void Environment::push_auxv(VCPU& vcpu) {
     if(binary.get_auxv().valid) {
       fix_auxv_dynamic_values();
     }
-    offset = push_auxv_raw(vcpu, offset);
-
-    return offset;
+    push_auxv_raw(vcpu, 0);
   }
 
-  off64_t Environment::push_env(VCPU& vcpu, off64_t offset) {
+  void Environment::push_env(VCPU& vcpu) {
     for(auto &env : _env) {
-      offset += push_str_copy(vcpu, offset, env);
+      push_str_copy(vcpu, env);
     }
-    return offset;
   }
 
-  off64_t Environment::push_argv(VCPU& vcpu, off64_t offset) {
+  void Environment::push_argv(VCPU& vcpu) {
     for(auto &argv : _argv) {
-      offset += push_str_copy(vcpu, offset, argv);
+      push_str_copy(vcpu, argv);
     }
-    return offset;
   }
 
   void Environment::push_argc(VCPU &vcpu) const {
     vcpu.push(_argc);
   }
 
-  off64_t Environment::push_str_copy(VCPU& vcpu, off64_t offset,
-      const std::string &str) {
-
+  void Environment::push_str_copy(VCPU& vcpu, const std::string &str) {
     auto guest_virtual = _region.write_str(str);
     vcpu.push(guest_virtual);
-
-    return str.length() + 1;
   }
 
 int Environment::create(VCPU& vcpu) {
   int err = vcpu.get_regs();
   assert(err == 0 && "error getting vcpu");
 
-  off64_t bytes = push_auxv(vcpu);
+  push_auxv(vcpu);
   vcpu.push(0);
 
-  bytes += push_env(vcpu, bytes);
+  push_env(vcpu);
   vcpu.push(0);
-  assert(bytes > 0);
 
-  bytes += push_argv(vcpu, bytes);
-  assert(bytes > 0);
+  push_argv(vcpu);
 
   push_argc(vcpu);
 
