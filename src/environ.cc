@@ -183,7 +183,8 @@ namespace Elkvm {
   }
 
   void Environment::push_auxv_raw(VCPU &vcpu) {
-    for(auto &auxv : _auxv) {
+    for(auto it = _auxv.rbegin(); it != _auxv.rend(); it++) {
+      auto &auxv  = *it;
       if(!ignored_type(auxv.a_type)) {
         if(treat_as_int_type(auxv.a_type)) {
           vcpu.push(auxv.a_un.a_val);
@@ -204,15 +205,15 @@ namespace Elkvm {
   }
 
   void Environment::push_env(VCPU& vcpu) {
-    for(auto &env : _env) {
-      push_str_copy(vcpu, env);
+    for(auto it = _env.rbegin(); it != _env.rend(); it++) {
+      push_str_copy(vcpu, *it);
     }
     vcpu.push(0);
   }
 
   void Environment::push_argv(VCPU& vcpu) {
-    for(auto &argv : _argv) {
-      push_str_copy(vcpu, argv);
+    for(auto it = _argv.rbegin(); it != _argv.rend(); it++) {
+      push_str_copy(vcpu, *it);
     }
   }
 
