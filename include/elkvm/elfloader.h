@@ -38,7 +38,7 @@ class ElfBinary {
     guestptr_t entry_point;
     struct Elf_auxv auxv;
 
-    int check_elf();
+    int check_elf(bool is_ldr);
     int parse_program();
     void get_dynamic_loader(GElf_Phdr phdr);
     void load_phdr(GElf_Phdr phdr);

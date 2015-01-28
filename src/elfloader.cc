@@ -61,7 +61,7 @@ namespace Elkvm {
       throw;
     }
 
-    int err = check_elf();
+    int err = check_elf(is_ldr);
     if(err) {
       close(fd);
       throw;
@@ -88,7 +88,7 @@ namespace Elkvm {
     }
   }
 
-  int ElfBinary::check_elf() {
+  int ElfBinary::check_elf(bool is_ldr) {
     Elf_Kind ek = elf_kind(e);
     switch(ek) {
       /* only deal with elf binaries for now */
@@ -139,7 +139,7 @@ namespace Elkvm {
           get_dynamic_loader(phdr);
           break;
       }
-      if(!statically_linked) {
+      if(is_ldr) {
         auxv.valid = true;
         auxv.at_entry = entry_point;
         auxv.at_phnum = num_phdrs;
