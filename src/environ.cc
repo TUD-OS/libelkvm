@@ -153,7 +153,7 @@ namespace Elkvm {
 
   void Environment::push_auxv_raw(VCPU &vcpu) {
     for(auto it = _auxv.rbegin(); it != _auxv.rend(); it++) {
-      auto &auxv  = *it;
+      const auto &auxv  = *it;
       if(!ignored_type(auxv.a_type)) {
         if(treat_as_int_type(auxv.a_type)) {
           vcpu.push(auxv.a_un.a_val);
