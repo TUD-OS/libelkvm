@@ -56,7 +56,7 @@ class ElfBinary {
 
   public:
     ElfBinary(std::string pathname, std::shared_ptr<RegionManager> rm,
-        HeapManager &hm);
+        HeapManager &hm, bool is_ldr = false);
 
     ElfBinary(ElfBinary const&) = delete;
     ElfBinary& operator=(ElfBinary const&) = delete;

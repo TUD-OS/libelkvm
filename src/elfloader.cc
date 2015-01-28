@@ -24,7 +24,7 @@ namespace Elkvm {
   class VCPU;
 
   ElfBinary::ElfBinary(std::string pathname, std::shared_ptr<RegionManager> rm,
-      HeapManager &hm) :
+      HeapManager &hm, bool is_ldr) :
     ldr(nullptr),
     _rm(rm),
     _hm(hm),
@@ -39,7 +39,7 @@ namespace Elkvm {
     auxv(),
     text_header()
   {
-    auxv.valid = false;
+    auxv.valid = is_ldr;
 
     if(pathname.empty()) {
       throw;
@@ -405,7 +405,7 @@ namespace Elkvm {
   }
 
   void ElfBinary::load_dynamic() {
-    ldr = std::unique_ptr<ElfBinary>(new ElfBinary(loader, _rm, _hm));
+    ldr = std::unique_ptr<ElfBinary>(new ElfBinary(loader, _rm, _hm, true));
   }
 
   const struct Elf_auxv &ElfBinary::get_auxv() const {
