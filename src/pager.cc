@@ -406,8 +406,8 @@ namespace Elkvm {
   }
 
   guestptr_t PagerX86_64::host_to_guest_physical(void *host_p) const {
-    auto chunk = find_chunk_for_host_p(host_p);
-    if(chunk == NULL) {
+    const auto &chunk = find_chunk_for_host_p(host_p);
+    if(chunk == nullptr) {
       return 0;
     }
 
