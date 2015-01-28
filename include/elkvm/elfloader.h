@@ -33,11 +33,12 @@ class ElfBinary {
     size_t num_phdrs;
     bool statically_linked;
     bool shared_object;
-    int elfclass;
     std::string loader;
     guestptr_t entry_point;
     struct Elf_auxv auxv;
 
+    bool is_valid_elf_kind(Elf *e) const;
+    bool is_valid_elf_class(Elf *e) const;
     int check_elf(bool is_ldr);
     int parse_program();
     void get_dynamic_loader(GElf_Phdr phdr);

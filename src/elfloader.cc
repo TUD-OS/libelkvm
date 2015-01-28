@@ -33,7 +33,6 @@ namespace Elkvm {
     num_phdrs(0),
     statically_linked(false),
     shared_object(false),
-    elfclass(-1),
     loader("undefined ldr"),
     entry_point(~0ULL),
     auxv(),
@@ -88,27 +87,35 @@ namespace Elkvm {
     }
   }
 
-  int ElfBinary::check_elf(bool is_ldr) {
+  bool ElfBinary::is_valid_elf_kind(Elf *e) const {
     Elf_Kind ek = elf_kind(e);
     switch(ek) {
       /* only deal with elf binaries for now */
       case ELF_K_ELF:
-        break;
+        return true;
       case ELF_K_AR:
       case ELF_K_NONE:
       default:
-        return -EINVAL;
+        return false;
     }
+  }
 
+  bool ElfBinary::is_valid_elf_class(Elf *e) const {
     /* for now process only 64bit ELF files */
-    elfclass = gelf_getclass(e);
+    auto elfclass = gelf_getclass(e);
     switch(elfclass) {
       case ELFCLASS64:
-        break;
+        return true;
       case ELFCLASSNONE:
       case ELFCLASS32:
       default:
-        return -EINVAL;
+        return false;
+    }
+  }
+
+  int ElfBinary::check_elf(bool is_ldr) {
+    if(!is_valid_elf_kind(e) || !is_valid_elf_class(e)) {
+      return -EINVAL;
     }
 
     GElf_Ehdr ehdr;
