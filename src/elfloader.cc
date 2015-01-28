@@ -113,6 +113,24 @@ namespace Elkvm {
     }
   }
 
+  void ElfBinary::initialize_interpreter(GElf_Phdr phdr) {
+    statically_linked = false;
+    get_dynamic_loader(phdr);
+  }
+
+  bool ElfBinary::check_phdr_for_interpreter(GElf_Phdr phdr) const {
+    /* a program header's memsize may be larger than or equal to its filesize */
+    if(phdr.p_filesz > phdr.p_memsz) {
+      throw;
+    }
+
+    switch(phdr.p_type) {
+      case PT_INTERP:
+        return true;
+    }
+    return false;
+  }
+
   int ElfBinary::check_elf(bool is_ldr) {
     if(!is_valid_elf_kind(e) || !is_valid_elf_class(e)) {
       return -EINVAL;
@@ -130,29 +148,20 @@ namespace Elkvm {
       return -err;
     }
 
-    statically_linked = true;
     for(unsigned i = 0; i < num_phdrs; i++) {
       GElf_Phdr phdr;
       gelf_getphdr(e, i, &phdr);
-
-      /* a program header's memsize may be larger than or equal to its filesize */
-      if(phdr.p_filesz > phdr.p_memsz) {
-        return -EIO;
-      }
-
-      switch(phdr.p_type) {
-        case PT_INTERP:
-          statically_linked = false;
-          get_dynamic_loader(phdr);
-          break;
-      }
-      if(is_ldr) {
-        auxv.valid = true;
-        auxv.at_entry = entry_point;
-        auxv.at_phnum = num_phdrs;
-        auxv.at_phent = ehdr.e_phentsize;
+      statically_linked = !check_phdr_for_interpreter(phdr);
+      if(!statically_linked) {
+        initialize_interpreter(phdr);
         break;
       }
+    }
+    if(is_ldr) {
+      auxv.valid = true;
+      auxv.at_entry = entry_point;
+      auxv.at_phnum = num_phdrs;
+      auxv.at_phent = ehdr.e_phentsize;
     }
 
     return 0;

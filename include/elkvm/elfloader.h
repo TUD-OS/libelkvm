@@ -39,6 +39,8 @@ class ElfBinary {
 
     bool is_valid_elf_kind(Elf *e) const;
     bool is_valid_elf_class(Elf *e) const;
+    void initialize_interpreter(GElf_Phdr phdr);
+    bool check_phdr_for_interpreter(GElf_Phdr phdr) const;
     int check_elf(bool is_ldr);
     int parse_program();
     void get_dynamic_loader(GElf_Phdr phdr);
