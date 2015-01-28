@@ -409,6 +409,10 @@ namespace Elkvm {
   }
 
   const struct Elf_auxv &ElfBinary::get_auxv() const {
+    if(ldr != nullptr) {
+      return ldr->get_auxv();
+    }
+
     return auxv;
   }
 
