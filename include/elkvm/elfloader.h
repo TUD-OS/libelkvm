@@ -22,13 +22,25 @@ struct Elf_auxv {
   bool valid;
 };
 
+class elf_file {
+  private:
+    int _fd;
+
+  public:
+    elf_file(std::string pathname);
+    ~elf_file();
+    size_t read(char *buf, size_t bytes, off64_t off = 0) const;
+    int fd() const;
+
+};
+
 class ElfBinary {
   private:
     std::unique_ptr<ElfBinary> _ldr;
     std::shared_ptr<RegionManager> _rm;
     HeapManager &_hm;
 
-    int _fd;
+    elf_file _file;
     Elf *_elf_ptr;
     /* this needs to be a size_t because of the decl
      * of elf_getphdrnum */
