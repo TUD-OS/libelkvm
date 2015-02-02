@@ -28,7 +28,7 @@ namespace Elkvm {
     _ldr(nullptr),
     _rm(rm),
     _hm(hm),
-    fd(-1),
+    _fd(-1),
     e(0),
     num_phdrs(0),
     statically_linked(false),
@@ -46,8 +46,8 @@ namespace Elkvm {
 
     auxv.at_base = 0x0;
 
-    fd = open(pathname.c_str(), O_RDONLY);
-    if(fd < 1) {
+    _fd = open(pathname.c_str(), O_RDONLY);
+    if(_fd < 1) {
       throw;
     }
 
@@ -55,14 +55,14 @@ namespace Elkvm {
       throw;
     }
 
-    e = elf_begin(fd, ELF_C_READ, NULL);
+    e = elf_begin(_fd, ELF_C_READ, NULL);
     if(e == NULL) {
       throw;
     }
 
     int err = check_elf(is_ldr);
     if(err) {
-      close(fd);
+      close(_fd);
       throw;
     }
 
@@ -73,7 +73,7 @@ namespace Elkvm {
     }
 
     elf_end(e);
-    close(fd);
+    close(_fd);
     if(err) {
       throw;
     }
@@ -169,14 +169,14 @@ namespace Elkvm {
 
 
   void ElfBinary::get_dynamic_loader(GElf_Phdr phdr) {
-    int off = lseek(fd, phdr.p_offset, SEEK_SET);
+    int off = lseek(_fd, phdr.p_offset, SEEK_SET);
     assert(off >= 0);
 
     /* TODO make this nicer */
     char *l = (char *)malloc(PATH_MAX);
     assert(l != nullptr);
 
-    size_t bytes = read(fd, l, phdr.p_memsz);
+    size_t bytes = read(_fd, l, phdr.p_memsz);
     assert(bytes == phdr.p_memsz && "short read on dynamic loader location");
 
     loader = l;
@@ -335,10 +335,10 @@ namespace Elkvm {
 
     int bytes = 0;
 
-    int off = lseek(fd, phdr.p_offset, SEEK_SET);
+    int off = lseek(_fd, phdr.p_offset, SEEK_SET);
     assert(off >= 0 && "could not seek in file");
 
-    while((bytes = read(fd, buf, bufsize)) > 0) {
+    while((bytes = read(_fd, buf, bufsize)) > 0) {
       remaining_bytes -= bytes;
       if(remaining_bytes < bufsize) {
         bufsize = remaining_bytes;
@@ -363,10 +363,10 @@ namespace Elkvm {
     uint64_t text_end = text_header.p_offset + text_header.p_filesz;
 
     if(text_end > padsize) {
-      int off = lseek(fd, text_end - padsize - 1, SEEK_SET);
+      int off = lseek(_fd, text_end - padsize - 1, SEEK_SET);
       assert(off >= 0 && "seek on binary failed");
 
-      size_t bytes = read(fd, region->base_address(), padsize);
+      size_t bytes = read(_fd, region->base_address(), padsize);
       assert(bytes == padsize && "short read on file");
     } else {
       memset(region->base_address(), 0, padsize);
@@ -381,10 +381,10 @@ namespace Elkvm {
 
     GElf_Phdr data_header = find_data_header();
 
-    int off = lseek(fd, data_header.p_offset, SEEK_SET);
+    int off = lseek(_fd, data_header.p_offset, SEEK_SET);
     assert(off >= 0 && "seek in binary failed");
 
-    size_t bytes = read(fd, host_p, padsize);
+    size_t bytes = read(_fd, host_p, padsize);
     assert(bytes == padsize);
   }
 

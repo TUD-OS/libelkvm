@@ -28,7 +28,7 @@ class ElfBinary {
     std::shared_ptr<RegionManager> _rm;
     HeapManager &_hm;
 
-    int fd;
+    int _fd;
     Elf *e;
     size_t num_phdrs;
     bool statically_linked;
