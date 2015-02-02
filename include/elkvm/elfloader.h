@@ -29,7 +29,7 @@ class ElfBinary {
     HeapManager &_hm;
 
     int _fd;
-    Elf *e;
+    Elf *_elf_ptr;
     size_t num_phdrs;
     bool statically_linked;
     bool shared_object;

@@ -29,7 +29,7 @@ namespace Elkvm {
     _rm(rm),
     _hm(hm),
     _fd(-1),
-    e(0),
+    _elf_ptr(0),
     num_phdrs(0),
     statically_linked(false),
     shared_object(false),
@@ -55,8 +55,8 @@ namespace Elkvm {
       throw;
     }
 
-    e = elf_begin(_fd, ELF_C_READ, NULL);
-    if(e == NULL) {
+    _elf_ptr = elf_begin(_fd, ELF_C_READ, NULL);
+    if(_elf_ptr == nullptr) {
       throw;
     }
 
@@ -72,7 +72,7 @@ namespace Elkvm {
       load_dynamic();
     }
 
-    elf_end(e);
+    elf_end(_elf_ptr);
     close(_fd);
     if(err) {
       throw;
@@ -132,25 +132,25 @@ namespace Elkvm {
   }
 
   int ElfBinary::check_elf(bool is_ldr) {
-    if(!is_valid_elf_kind(e) || !is_valid_elf_class(e)) {
+    if(!is_valid_elf_kind(_elf_ptr) || !is_valid_elf_class(_elf_ptr)) {
       return -EINVAL;
     }
 
     GElf_Ehdr ehdr;
-    if(gelf_getehdr(e, &ehdr) == NULL) {
+    if(gelf_getehdr(_elf_ptr, &ehdr) == NULL) {
       return -EIO;
     }
 
     shared_object = (ehdr.e_type == ET_DYN);
     entry_point = ehdr.e_entry;
-    int err = elf_getphdrnum(e, &num_phdrs);
+    int err = elf_getphdrnum(_elf_ptr, &num_phdrs);
     if(err) {
       return -err;
     }
 
     for(unsigned i = 0; i < num_phdrs; i++) {
       GElf_Phdr phdr;
-      gelf_getphdr(e, i, &phdr);
+      gelf_getphdr(_elf_ptr, i, &phdr);
       statically_linked = !check_phdr_for_interpreter(phdr);
       if(!statically_linked) {
         initialize_interpreter(phdr);
@@ -188,7 +188,7 @@ namespace Elkvm {
 
     for(unsigned i = 0; i < num_phdrs; i++) {
       GElf_Phdr phdr;
-      gelf_getphdr(e, i, &phdr);
+      gelf_getphdr(_elf_ptr, i, &phdr);
 
       /* a program header's memsize may be larger than or equal to its filesize */
       if(phdr.p_filesz > phdr.p_memsz) {
@@ -348,11 +348,11 @@ namespace Elkvm {
   }
 
   void ElfBinary::pad_text_begin(std::shared_ptr<Region> region, size_t padsize) {
-    assert(e != nullptr);
+    assert(_elf_ptr != nullptr);
     assert(region->base_address() != nullptr);
 
     GElf_Ehdr ehdr;
-    gelf_getehdr(e, &ehdr);
+    gelf_getehdr(_elf_ptr, &ehdr);
 
     memcpy(region->base_address(), &ehdr, padsize);
   }
@@ -391,7 +391,7 @@ namespace Elkvm {
   GElf_Phdr ElfBinary::find_data_header() {
     GElf_Phdr phdr;
     for(unsigned i = 0; i < num_phdrs; i++) {
-      gelf_getphdr(e, i, &phdr);
+      gelf_getphdr(_elf_ptr, i, &phdr);
 
       if(phdr.p_type == PT_LOAD &&
           phdr.p_flags & PF_W) {
@@ -407,7 +407,7 @@ namespace Elkvm {
   GElf_Phdr ElfBinary::find_text_header() {
     GElf_Phdr phdr;
     for(unsigned i = 0; i < num_phdrs; i++) {
-      gelf_getphdr(e, i, &phdr);
+      gelf_getphdr(_elf_ptr, i, &phdr);
 
       if(phdr.p_type == PT_LOAD &&
           phdr.p_flags & PF_X) {
