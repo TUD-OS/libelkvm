@@ -88,6 +88,7 @@ class ElfBinary {
         const elf_file &file, const elf_ptr &eptr);
     void load_dynamic();
     GElf_Phdr text_header;
+    GElf_Phdr find_header(const elf_ptr &eptr, unsigned flags);
     GElf_Phdr find_data_header(const elf_ptr &eptr);
     GElf_Phdr find_text_header(const elf_ptr &eptr);
 

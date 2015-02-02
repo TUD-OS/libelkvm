@@ -424,36 +424,28 @@ namespace Elkvm {
     file.read(static_cast<char *>(host_p), padsize, data_header.p_offset);
   }
 
-  GElf_Phdr ElfBinary::find_data_header(const elf_ptr &eptr) {
+  GElf_Phdr ElfBinary::find_header(const elf_ptr &eptr, unsigned flags) {
     GElf_Phdr phdr;
     for(unsigned i = 0; i < _num_phdrs; i++) {
       phdr = eptr.get_phdr(i);
 
       if(phdr.p_type == PT_LOAD &&
-          phdr.p_flags & PF_W) {
+          phdr.p_flags & flags) {
         return phdr;
       }
     }
 
     /* every elf file should have a data header */
-    assert(false && "every elf file should have a data header");
+    assert(false && "every elf file should have a data/text header");
     return phdr;
   }
 
+  GElf_Phdr ElfBinary::find_data_header(const elf_ptr &eptr) {
+    return find_header(eptr, PF_W);
+  }
+
   GElf_Phdr ElfBinary::find_text_header(const elf_ptr &eptr) {
-    GElf_Phdr phdr;
-    for(unsigned i = 0; i < _num_phdrs; i++) {
-      phdr = eptr.get_phdr(i);
-
-      if(phdr.p_type == PT_LOAD &&
-          phdr.p_flags & PF_X) {
-        return phdr;
-      }
-    }
-
-    /* every elf file should have a text header */
-    assert(false && "every elf file should have a text header");
-    return phdr;
+    return find_header(eptr, PF_X);
   }
 
   void ElfBinary::load_dynamic() {
