@@ -24,7 +24,7 @@ struct Elf_auxv {
 
 class ElfBinary {
   private:
-    std::unique_ptr<ElfBinary> ldr;
+    std::unique_ptr<ElfBinary> _ldr;
     std::shared_ptr<RegionManager> _rm;
     HeapManager &_hm;
 

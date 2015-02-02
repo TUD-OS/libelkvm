@@ -25,7 +25,7 @@ namespace Elkvm {
 
   ElfBinary::ElfBinary(std::string pathname, std::shared_ptr<RegionManager> rm,
       HeapManager &hm, bool is_ldr) :
-    ldr(nullptr),
+    _ldr(nullptr),
     _rm(rm),
     _hm(hm),
     fd(-1),
@@ -83,7 +83,7 @@ namespace Elkvm {
     if(statically_linked) {
       return shared_object ? auxv.at_base + entry_point : entry_point;
     } else {
-      return ldr->get_entry_point();
+      return _ldr->get_entry_point();
     }
   }
 
@@ -421,12 +421,12 @@ namespace Elkvm {
   }
 
   void ElfBinary::load_dynamic() {
-    ldr = std::unique_ptr<ElfBinary>(new ElfBinary(loader, _rm, _hm, true));
+    _ldr = std::unique_ptr<ElfBinary>(new ElfBinary(loader, _rm, _hm, true));
   }
 
   const struct Elf_auxv &ElfBinary::get_auxv() const {
-    if(ldr != nullptr) {
-      return ldr->get_auxv();
+    if(_ldr != nullptr) {
+      return _ldr->get_auxv();
     }
 
     return auxv;
