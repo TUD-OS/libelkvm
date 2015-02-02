@@ -41,7 +41,12 @@ class elf_ptr {
   public:
     elf_ptr(const elf_file &file);
     ~elf_ptr();
-    Elf *ptr() const { return _ptr; }
+
+    Elf_Kind get_elf_kind() const;
+    int get_class() const;
+    GElf_Ehdr get_ehdr() const;
+    size_t get_phdrnum() const;
+    GElf_Phdr get_phdr(unsigned i) const;
 };
 
 class ElfBinary {

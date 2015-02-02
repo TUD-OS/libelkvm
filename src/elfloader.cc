@@ -88,6 +88,34 @@ namespace Elkvm {
     elf_end(_ptr);
   }
 
+  Elf_Kind elf_ptr::get_elf_kind() const {
+    return elf_kind(_ptr);
+  }
+
+  int elf_ptr::get_class() const {
+    return gelf_getclass(_ptr);
+  }
+
+  GElf_Ehdr elf_ptr::get_ehdr() const {
+    GElf_Ehdr ehdr;
+    auto err = gelf_getehdr(_ptr, &ehdr);
+    assert(err != nullptr);
+    return ehdr;
+  }
+
+  size_t elf_ptr::get_phdrnum() const {
+    size_t num = 0;
+    int err = elf_getphdrnum(_ptr, &num);
+    assert(err == 0);
+    return num;
+  }
+
+  GElf_Phdr elf_ptr::get_phdr(unsigned i) const {
+    GElf_Phdr phdr;
+    gelf_getphdr(_ptr, i, &phdr);
+    return phdr;
+  }
+
   ElfBinary::ElfBinary(std::string pathname, std::shared_ptr<RegionManager> rm,
       HeapManager &hm, bool is_ldr) :
     _ldr(nullptr),
@@ -130,7 +158,7 @@ namespace Elkvm {
   }
 
   bool ElfBinary::is_valid_elf_kind(const elf_ptr &eptr) const {
-    Elf_Kind ek = elf_kind(eptr.ptr());
+    auto ek = eptr.get_elf_kind();
     switch(ek) {
       /* only deal with elf binaries for now */
       case ELF_K_ELF:
@@ -144,7 +172,7 @@ namespace Elkvm {
 
   bool ElfBinary::is_valid_elf_class(const elf_ptr &eptr) const {
     /* for now process only 64bit ELF files */
-    auto elfclass = gelf_getclass(eptr.ptr());
+    auto elfclass = eptr.get_class();
     switch(elfclass) {
       case ELFCLASS64:
         return true;
@@ -178,21 +206,14 @@ namespace Elkvm {
       return -EINVAL;
     }
 
-    GElf_Ehdr ehdr;
-    if(gelf_getehdr(eptr.ptr(), &ehdr) == NULL) {
-      return -EIO;
-    }
+    auto ehdr = eptr.get_ehdr();
 
     _shared_object = (ehdr.e_type == ET_DYN);
     _entry_point = ehdr.e_entry;
-    int err = elf_getphdrnum(eptr.ptr(), &_num_phdrs);
-    if(err) {
-      return -err;
-    }
 
+    _num_phdrs = eptr.get_phdrnum();
     for(unsigned i = 0; i < _num_phdrs; i++) {
-      GElf_Phdr phdr;
-      gelf_getphdr(eptr.ptr(), i, &phdr);
+      auto phdr = eptr.get_phdr(i);
       _statically_linked = !check_phdr_for_interpreter(phdr);
       if(!_statically_linked) {
         initialize_interpreter(file, phdr);
@@ -224,8 +245,7 @@ namespace Elkvm {
     bool pt_phdr_forbidden = false;
 
     for(unsigned i = 0; i < _num_phdrs; i++) {
-      GElf_Phdr phdr;
-      gelf_getphdr(eptr.ptr(), i, &phdr);
+      auto phdr = eptr.get_phdr(i);
 
       /* a program header's memsize may be larger than or equal to its filesize */
       if(phdr.p_filesz > phdr.p_memsz) {
@@ -376,9 +396,7 @@ namespace Elkvm {
       const elf_ptr &eptr) {
     assert(region->base_address() != nullptr);
 
-    GElf_Ehdr ehdr;
-    gelf_getehdr(eptr.ptr(), &ehdr);
-
+    auto ehdr = eptr.get_ehdr();
     memcpy(region->base_address(), &ehdr, padsize);
   }
 
@@ -409,7 +427,7 @@ namespace Elkvm {
   GElf_Phdr ElfBinary::find_data_header(const elf_ptr &eptr) {
     GElf_Phdr phdr;
     for(unsigned i = 0; i < _num_phdrs; i++) {
-      gelf_getphdr(eptr.ptr(), i, &phdr);
+      phdr = eptr.get_phdr(i);
 
       if(phdr.p_type == PT_LOAD &&
           phdr.p_flags & PF_W) {
@@ -425,7 +443,7 @@ namespace Elkvm {
   GElf_Phdr ElfBinary::find_text_header(const elf_ptr &eptr) {
     GElf_Phdr phdr;
     for(unsigned i = 0; i < _num_phdrs; i++) {
-      gelf_getphdr(eptr.ptr(), i, &phdr);
+      phdr = eptr.get_phdr(i);
 
       if(phdr.p_type == PT_LOAD &&
           phdr.p_flags & PF_X) {
