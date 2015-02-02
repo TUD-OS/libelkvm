@@ -25,7 +25,6 @@ namespace Elkvm {
   class VCPU;
 
   elf_file::elf_file(std::string pathname) {
-    DBG() << "Open: " << pathname;
     _fd = open(pathname.c_str(), O_RDONLY);
     if(_fd < 1) {
       throw;
@@ -37,7 +36,6 @@ namespace Elkvm {
   }
 
   int elf_file::fd() const {
-    DBG() << "Return fd: " << std::dec << _fd << std::endl;
     return _fd;
   }
 
