@@ -122,6 +122,7 @@ namespace Elkvm {
     _num_phdrs(0),
     _statically_linked(false),
     _shared_object(false),
+    _is_ldr(is_ldr),
     _loader("undefined ldr"),
     _entry_point(~0ULL),
     _auxv(),
@@ -131,10 +132,10 @@ namespace Elkvm {
     elf_file file(pathname);
     elf_ptr eptr(file);
 
-    _auxv.valid = is_ldr;
+    _auxv.valid = _is_ldr;
     _auxv.at_base = 0x0;
 
-    int err = check_elf(file, eptr, is_ldr);
+    int err = check_elf(file, eptr);
     if(err) {
       throw;
     }
@@ -199,7 +200,7 @@ namespace Elkvm {
     return false;
   }
 
-  int ElfBinary::check_elf(const elf_file &file, const elf_ptr &eptr, bool is_ldr) {
+  int ElfBinary::check_elf(const elf_file &file, const elf_ptr &eptr) {
     if(!is_valid_elf_kind(eptr) || !is_valid_elf_class(eptr)) {
       return -EINVAL;
     }
@@ -218,7 +219,7 @@ namespace Elkvm {
         break;
       }
     }
-    if(is_ldr) {
+    if(_is_ldr) {
       _auxv.valid = true;
       _auxv.at_entry = _entry_point;
       _auxv.at_phnum = _num_phdrs;

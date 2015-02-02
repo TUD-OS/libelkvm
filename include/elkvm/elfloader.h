@@ -60,6 +60,7 @@ class ElfBinary {
     size_t _num_phdrs;
     bool _statically_linked;
     bool _shared_object;
+    bool _is_ldr;
     std::string _loader;
     guestptr_t _entry_point;
     struct Elf_auxv _auxv;
@@ -68,7 +69,7 @@ class ElfBinary {
     bool is_valid_elf_class(const elf_ptr &eptr) const;
     void initialize_interpreter(const elf_file &file, GElf_Phdr phdr);
     bool check_phdr_for_interpreter(GElf_Phdr phdr) const;
-    int check_elf(const elf_file &file, const elf_ptr &eptr, bool is_ldr);
+    int check_elf(const elf_file &file, const elf_ptr &eptr);
     int parse_program(const elf_file &file, const elf_ptr &eptr);
     void get_dynamic_loader(const elf_file &file, GElf_Phdr phdr);
     void load_phdr(GElf_Phdr phdr, const elf_file &file, const elf_ptr &eptr);
