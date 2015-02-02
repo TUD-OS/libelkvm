@@ -30,21 +30,21 @@ namespace Elkvm {
     _hm(hm),
     _fd(-1),
     _elf_ptr(0),
-    num_phdrs(0),
-    statically_linked(false),
-    shared_object(false),
-    loader("undefined ldr"),
-    entry_point(~0ULL),
-    auxv(),
+    _num_phdrs(0),
+    _statically_linked(false),
+    _shared_object(false),
+    _loader("undefined ldr"),
+    _entry_point(~0ULL),
+    _auxv(),
     text_header()
   {
-    auxv.valid = is_ldr;
+    _auxv.valid = is_ldr;
 
     if(pathname.empty()) {
       throw;
     }
 
-    auxv.at_base = 0x0;
+    _auxv.at_base = 0x0;
 
     _fd = open(pathname.c_str(), O_RDONLY);
     if(_fd < 1) {
@@ -66,7 +66,7 @@ namespace Elkvm {
       throw;
     }
 
-    if(statically_linked) {
+    if(_statically_linked) {
       err = parse_program();
     } else {
       load_dynamic();
@@ -80,8 +80,8 @@ namespace Elkvm {
   }
 
   guestptr_t ElfBinary::get_entry_point() {
-    if(statically_linked) {
-      return shared_object ? auxv.at_base + entry_point : entry_point;
+    if(_statically_linked) {
+      return _shared_object ? _auxv.at_base + _entry_point : _entry_point;
     } else {
       return _ldr->get_entry_point();
     }
@@ -114,7 +114,7 @@ namespace Elkvm {
   }
 
   void ElfBinary::initialize_interpreter(GElf_Phdr phdr) {
-    statically_linked = false;
+    _statically_linked = false;
     get_dynamic_loader(phdr);
   }
 
@@ -141,27 +141,27 @@ namespace Elkvm {
       return -EIO;
     }
 
-    shared_object = (ehdr.e_type == ET_DYN);
-    entry_point = ehdr.e_entry;
-    int err = elf_getphdrnum(_elf_ptr, &num_phdrs);
+    _shared_object = (ehdr.e_type == ET_DYN);
+    _entry_point = ehdr.e_entry;
+    int err = elf_getphdrnum(_elf_ptr, &_num_phdrs);
     if(err) {
       return -err;
     }
 
-    for(unsigned i = 0; i < num_phdrs; i++) {
+    for(unsigned i = 0; i < _num_phdrs; i++) {
       GElf_Phdr phdr;
       gelf_getphdr(_elf_ptr, i, &phdr);
-      statically_linked = !check_phdr_for_interpreter(phdr);
-      if(!statically_linked) {
+      _statically_linked = !check_phdr_for_interpreter(phdr);
+      if(!_statically_linked) {
         initialize_interpreter(phdr);
         break;
       }
     }
     if(is_ldr) {
-      auxv.valid = true;
-      auxv.at_entry = entry_point;
-      auxv.at_phnum = num_phdrs;
-      auxv.at_phent = ehdr.e_phentsize;
+      _auxv.valid = true;
+      _auxv.at_entry = _entry_point;
+      _auxv.at_phnum = _num_phdrs;
+      _auxv.at_phent = ehdr.e_phentsize;
     }
 
     return 0;
@@ -179,14 +179,14 @@ namespace Elkvm {
     size_t bytes = read(_fd, l, phdr.p_memsz);
     assert(bytes == phdr.p_memsz && "short read on dynamic loader location");
 
-    loader = l;
+    _loader = l;
   }
 
   int ElfBinary::parse_program() {
     bool pt_interp_forbidden = false;
     bool pt_phdr_forbidden = false;
 
-    for(unsigned i = 0; i < num_phdrs; i++) {
+    for(unsigned i = 0; i < _num_phdrs; i++) {
       GElf_Phdr phdr;
       gelf_getphdr(_elf_ptr, i, &phdr);
 
@@ -216,7 +216,7 @@ namespace Elkvm {
           load_phdr(phdr);
           break;
         case PT_PHDR:
-          auxv.at_phdr = phdr.p_vaddr;
+          _auxv.at_phdr = phdr.p_vaddr;
           if(pt_phdr_forbidden) {
             return -EINVAL;
           }
@@ -231,10 +231,10 @@ namespace Elkvm {
 
   void ElfBinary::load_phdr(GElf_Phdr phdr) {
     guestptr_t load_addr = phdr.p_vaddr;
-    if(shared_object && phdr.p_vaddr == 0x0) {
-      load_addr = auxv.at_base = LD_LINUX_SO_BASE;
-    } else if(auxv.at_base > 0x0) {
-      load_addr = auxv.at_base + phdr.p_vaddr;
+    if(_shared_object && phdr.p_vaddr == 0x0) {
+      load_addr = _auxv.at_base = LD_LINUX_SO_BASE;
+    } else if(_auxv.at_base > 0x0) {
+      load_addr = _auxv.at_base + phdr.p_vaddr;
     }
 
     size_t total_size = phdr.p_memsz + offset_in_page(load_addr);
@@ -390,7 +390,7 @@ namespace Elkvm {
 
   GElf_Phdr ElfBinary::find_data_header() {
     GElf_Phdr phdr;
-    for(unsigned i = 0; i < num_phdrs; i++) {
+    for(unsigned i = 0; i < _num_phdrs; i++) {
       gelf_getphdr(_elf_ptr, i, &phdr);
 
       if(phdr.p_type == PT_LOAD &&
@@ -406,7 +406,7 @@ namespace Elkvm {
 
   GElf_Phdr ElfBinary::find_text_header() {
     GElf_Phdr phdr;
-    for(unsigned i = 0; i < num_phdrs; i++) {
+    for(unsigned i = 0; i < _num_phdrs; i++) {
       gelf_getphdr(_elf_ptr, i, &phdr);
 
       if(phdr.p_type == PT_LOAD &&
@@ -421,7 +421,7 @@ namespace Elkvm {
   }
 
   void ElfBinary::load_dynamic() {
-    _ldr = std::unique_ptr<ElfBinary>(new ElfBinary(loader, _rm, _hm, true));
+    _ldr = std::unique_ptr<ElfBinary>(new ElfBinary(_loader, _rm, _hm, true));
   }
 
   const struct Elf_auxv &ElfBinary::get_auxv() const {
@@ -429,7 +429,15 @@ namespace Elkvm {
       return _ldr->get_auxv();
     }
 
-    return auxv;
+    return _auxv;
+  }
+
+  bool ElfBinary::is_dynamically_linked() const {
+    return !_statically_linked;
+  }
+
+  std::string ElfBinary::get_loader() const {
+    return _loader;
   }
 
   ptopt_t get_pager_opts_from_phdr_flags(int flags) {

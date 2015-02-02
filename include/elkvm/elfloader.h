@@ -30,12 +30,14 @@ class ElfBinary {
 
     int _fd;
     Elf *_elf_ptr;
-    size_t num_phdrs;
-    bool statically_linked;
-    bool shared_object;
-    std::string loader;
-    guestptr_t entry_point;
-    struct Elf_auxv auxv;
+    /* this needs to be a size_t because of the decl
+     * of elf_getphdrnum */
+    size_t _num_phdrs;
+    bool _statically_linked;
+    bool _shared_object;
+    std::string _loader;
+    guestptr_t _entry_point;
+    struct Elf_auxv _auxv;
 
     bool is_valid_elf_kind(Elf *e) const;
     bool is_valid_elf_class(Elf *e) const;
@@ -67,8 +69,8 @@ class ElfBinary {
     int load_binary(std::string pathname);
     guestptr_t get_entry_point();
     const struct Elf_auxv &get_auxv() const;
-    bool is_dynamically_linked() const { return !statically_linked; }
-    std::string get_loader() const { return loader; }
+    bool is_dynamically_linked() const;
+    std::string get_loader() const;
 };
 
 ptopt_t get_pager_opts_from_phdr_flags(int flags);
