@@ -14,6 +14,7 @@
 #include <elkvm/elfloader.h>
 #include <elkvm/elkvm.h>
 #include <elkvm/elkvm-internal.h>
+#include <elkvm/elkvm-log.h>
 #include <elkvm/kvm.h>
 #include <elkvm/heap.h>
 #include <elkvm/pager.h>
@@ -24,6 +25,7 @@ namespace Elkvm {
   class VCPU;
 
   elf_file::elf_file(std::string pathname) {
+    DBG() << "Open: " << pathname;
     _fd = open(pathname.c_str(), O_RDONLY);
     if(_fd < 1) {
       throw;
@@ -35,6 +37,7 @@ namespace Elkvm {
   }
 
   int elf_file::fd() const {
+    DBG() << "Return fd: " << std::dec << _fd << std::endl;
     return _fd;
   }
 
@@ -69,12 +72,27 @@ namespace Elkvm {
     return read_bytes;
   }
 
+  elf_ptr::elf_ptr(const elf_file &file) {
+    /* always call elf_version first, otherwise elf_begin won't work */
+    if(elf_version(EV_CURRENT) == EV_NONE) {
+      throw;
+    }
+
+    _ptr = elf_begin(file.fd(), ELF_C_READ, NULL);
+    if(_ptr == nullptr) {
+      throw;
+    }
+  }
+
+  elf_ptr::~elf_ptr() {
+    elf_end(_ptr);
+  }
+
   ElfBinary::ElfBinary(std::string pathname, std::shared_ptr<RegionManager> rm,
       HeapManager &hm, bool is_ldr) :
     _ldr(nullptr),
     _rm(rm),
     _hm(hm),
-    _elf_ptr(0),
     _num_phdrs(0),
     _statically_linked(false),
     _shared_object(false),
@@ -85,34 +103,22 @@ namespace Elkvm {
   {
     assert(!pathname.empty() && "cannot load binary from empty pathname");
     elf_file file(pathname);
+    elf_ptr eptr(file);
 
     _auxv.valid = is_ldr;
     _auxv.at_base = 0x0;
 
-    if(elf_version(EV_CURRENT) == EV_NONE) {
-      throw;
-    }
-
-    _elf_ptr = elf_begin(file.fd(), ELF_C_READ, NULL);
-    if(_elf_ptr == nullptr) {
-      throw;
-    }
-
-    int err = check_elf(file, is_ldr);
+    int err = check_elf(file, eptr, is_ldr);
     if(err) {
       throw;
     }
 
     if(_statically_linked) {
-      err = parse_program(file);
+      err = parse_program(file, eptr);
     } else {
       load_dynamic();
     }
 
-    elf_end(_elf_ptr);
-    if(err) {
-      throw;
-    }
   }
 
   guestptr_t ElfBinary::get_entry_point() {
@@ -123,8 +129,8 @@ namespace Elkvm {
     }
   }
 
-  bool ElfBinary::is_valid_elf_kind(Elf *e) const {
-    Elf_Kind ek = elf_kind(e);
+  bool ElfBinary::is_valid_elf_kind(const elf_ptr &eptr) const {
+    Elf_Kind ek = elf_kind(eptr.ptr());
     switch(ek) {
       /* only deal with elf binaries for now */
       case ELF_K_ELF:
@@ -136,9 +142,9 @@ namespace Elkvm {
     }
   }
 
-  bool ElfBinary::is_valid_elf_class(Elf *e) const {
+  bool ElfBinary::is_valid_elf_class(const elf_ptr &eptr) const {
     /* for now process only 64bit ELF files */
-    auto elfclass = gelf_getclass(e);
+    auto elfclass = gelf_getclass(eptr.ptr());
     switch(elfclass) {
       case ELFCLASS64:
         return true;
@@ -167,26 +173,26 @@ namespace Elkvm {
     return false;
   }
 
-  int ElfBinary::check_elf(const elf_file &file, bool is_ldr) {
-    if(!is_valid_elf_kind(_elf_ptr) || !is_valid_elf_class(_elf_ptr)) {
+  int ElfBinary::check_elf(const elf_file &file, const elf_ptr &eptr, bool is_ldr) {
+    if(!is_valid_elf_kind(eptr) || !is_valid_elf_class(eptr)) {
       return -EINVAL;
     }
 
     GElf_Ehdr ehdr;
-    if(gelf_getehdr(_elf_ptr, &ehdr) == NULL) {
+    if(gelf_getehdr(eptr.ptr(), &ehdr) == NULL) {
       return -EIO;
     }
 
     _shared_object = (ehdr.e_type == ET_DYN);
     _entry_point = ehdr.e_entry;
-    int err = elf_getphdrnum(_elf_ptr, &_num_phdrs);
+    int err = elf_getphdrnum(eptr.ptr(), &_num_phdrs);
     if(err) {
       return -err;
     }
 
     for(unsigned i = 0; i < _num_phdrs; i++) {
       GElf_Phdr phdr;
-      gelf_getphdr(_elf_ptr, i, &phdr);
+      gelf_getphdr(eptr.ptr(), i, &phdr);
       _statically_linked = !check_phdr_for_interpreter(phdr);
       if(!_statically_linked) {
         initialize_interpreter(file, phdr);
@@ -213,13 +219,13 @@ namespace Elkvm {
     _loader = l;
   }
 
-  int ElfBinary::parse_program(const elf_file &file) {
+  int ElfBinary::parse_program(const elf_file &file, const elf_ptr &eptr) {
     bool pt_interp_forbidden = false;
     bool pt_phdr_forbidden = false;
 
     for(unsigned i = 0; i < _num_phdrs; i++) {
       GElf_Phdr phdr;
-      gelf_getphdr(_elf_ptr, i, &phdr);
+      gelf_getphdr(eptr.ptr(), i, &phdr);
 
       /* a program header's memsize may be larger than or equal to its filesize */
       if(phdr.p_filesz > phdr.p_memsz) {
@@ -244,7 +250,7 @@ namespace Elkvm {
         case PT_LOAD:
           pt_interp_forbidden = true;
           pt_phdr_forbidden = true;
-          load_phdr(phdr, file);
+          load_phdr(phdr, file, eptr);
           break;
         case PT_PHDR:
           _auxv.at_phdr = phdr.p_vaddr;
@@ -260,7 +266,8 @@ namespace Elkvm {
     return 0;
   }
 
-  void ElfBinary::load_phdr(GElf_Phdr phdr, const elf_file &file) {
+  void ElfBinary::load_phdr(GElf_Phdr phdr, const elf_file &file,
+      const elf_ptr &eptr) {
     guestptr_t load_addr = phdr.p_vaddr;
     if(_shared_object && phdr.p_vaddr == 0x0) {
       load_addr = _auxv.at_base = LD_LINUX_SO_BASE;
@@ -273,7 +280,7 @@ namespace Elkvm {
       _rm->allocate_region(total_size, "ELF PHdr");
     loadable_region->set_guest_addr(page_begin(load_addr));
 
-    int err = load_program_header(phdr, loadable_region, file);
+    int err = load_program_header(phdr, loadable_region, file, eptr);
     assert(err == 0 && "Error in ElfBinary::load_program_header");
 
     ptopt_t opts = get_pager_opts_from_phdr_flags(phdr.p_flags);
@@ -291,7 +298,7 @@ namespace Elkvm {
   }
 
   int ElfBinary::load_program_header(GElf_Phdr phdr, std::shared_ptr<Region> region,
-      const elf_file &file) {
+      const elf_file &file, const elf_ptr &eptr) {
     /*
      * ELF specification says to read the whole page into memory
      * this means we have "dirty" bytes at the beginning and end
@@ -310,25 +317,25 @@ namespace Elkvm {
     return -EIO;
   }
 
-  pad_begin(phdr, region, file);
+  pad_begin(phdr, region, file, eptr);
   read_segment(phdr, region, file);
-  pad_end(phdr, region, file);
+  pad_end(phdr, region, file, eptr);
 
   return 0;
   }
 
   void ElfBinary::pad_begin(GElf_Phdr phdr, std::shared_ptr<Region> region,
-      const elf_file &file) {
+      const elf_file &file, const elf_ptr &eptr) {
     size_t padsize = offset_in_page(phdr.p_vaddr);
 
     if(padsize) {
       if(phdr.p_flags & PF_X) {
         /* executable segment should be text */
-        pad_text_begin(region, padsize);
+        pad_text_begin(region, padsize, eptr);
         return;
       } else if(phdr.p_flags & PF_W) {
         /* writeable segment should be data */
-        pad_data_begin(region, padsize, file);
+        pad_data_begin(region, padsize, file, eptr);
         return;
       }
 
@@ -338,13 +345,13 @@ namespace Elkvm {
   }
 
   void ElfBinary::pad_end(GElf_Phdr phdr, std::shared_ptr<Region> region,
-      const elf_file &file) {
+      const elf_file &file, const elf_ptr &eptr) {
     void *host_p = (char *)region->base_address() + offset_in_page(phdr.p_vaddr) + phdr.p_filesz;
     size_t padsize = page_remain((uint64_t)host_p);
 
     if(phdr.p_flags & PF_X) {
       /* executable segment should be text */
-      pad_text_end(host_p, padsize, file);
+      pad_text_end(host_p, padsize, file, eptr);
       return;
     }
     if(phdr.p_flags & PF_W) {
@@ -365,19 +372,19 @@ namespace Elkvm {
     file.read_segment(buf, phdr.p_filesz, phdr.p_offset);
   }
 
-  void ElfBinary::pad_text_begin(std::shared_ptr<Region> region, size_t padsize) {
-    assert(_elf_ptr != nullptr);
+  void ElfBinary::pad_text_begin(std::shared_ptr<Region> region, size_t padsize,
+      const elf_ptr &eptr) {
     assert(region->base_address() != nullptr);
 
     GElf_Ehdr ehdr;
-    gelf_getehdr(_elf_ptr, &ehdr);
+    gelf_getehdr(eptr.ptr(), &ehdr);
 
     memcpy(region->base_address(), &ehdr, padsize);
   }
 
   void ElfBinary::pad_data_begin(std::shared_ptr<Region> region, size_t padsize,
-      const elf_file &file) {
-    text_header = find_text_header();
+      const elf_file &file, const elf_ptr &eptr) {
+    text_header = find_text_header(eptr);
 
     uint64_t text_end = text_header.p_offset + text_header.p_filesz;
 
@@ -389,19 +396,20 @@ namespace Elkvm {
     }
   }
 
-  void ElfBinary::pad_text_end(void *host_p, size_t padsize, const elf_file &file) {
+  void ElfBinary::pad_text_end(void *host_p, size_t padsize, const elf_file &file,
+      const elf_ptr &eptr) {
     /*
      * find the first page of the data segment and pad the remainder of the
      * last page of text with its contents
      */
-    GElf_Phdr data_header = find_data_header();
+    GElf_Phdr data_header = find_data_header(eptr);
     file.read(static_cast<char *>(host_p), padsize, data_header.p_offset);
   }
 
-  GElf_Phdr ElfBinary::find_data_header() {
+  GElf_Phdr ElfBinary::find_data_header(const elf_ptr &eptr) {
     GElf_Phdr phdr;
     for(unsigned i = 0; i < _num_phdrs; i++) {
-      gelf_getphdr(_elf_ptr, i, &phdr);
+      gelf_getphdr(eptr.ptr(), i, &phdr);
 
       if(phdr.p_type == PT_LOAD &&
           phdr.p_flags & PF_W) {
@@ -414,10 +422,10 @@ namespace Elkvm {
     return phdr;
   }
 
-  GElf_Phdr ElfBinary::find_text_header() {
+  GElf_Phdr ElfBinary::find_text_header(const elf_ptr &eptr) {
     GElf_Phdr phdr;
     for(unsigned i = 0; i < _num_phdrs; i++) {
-      gelf_getphdr(_elf_ptr, i, &phdr);
+      gelf_getphdr(eptr.ptr(), i, &phdr);
 
       if(phdr.p_type == PT_LOAD &&
           phdr.p_flags & PF_X) {

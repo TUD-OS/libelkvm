@@ -32,7 +32,16 @@ class elf_file {
     size_t read(char *buf, size_t bytes, off64_t off = 0) const;
     ssize_t read_segment(char *buf, size_t bytes, off64_t off) const;
     int fd() const;
+};
 
+class elf_ptr {
+  private:
+    Elf *_ptr;
+
+  public:
+    elf_ptr(const elf_file &file);
+    ~elf_ptr();
+    Elf *ptr() const { return _ptr; }
 };
 
 class ElfBinary {
@@ -41,7 +50,6 @@ class ElfBinary {
     std::shared_ptr<RegionManager> _rm;
     HeapManager &_hm;
 
-    Elf *_elf_ptr;
     /* this needs to be a size_t because of the decl
      * of elf_getphdrnum */
     size_t _num_phdrs;
@@ -51,30 +59,32 @@ class ElfBinary {
     guestptr_t _entry_point;
     struct Elf_auxv _auxv;
 
-    bool is_valid_elf_kind(Elf *e) const;
-    bool is_valid_elf_class(Elf *e) const;
+    bool is_valid_elf_kind(const elf_ptr &eptr) const;
+    bool is_valid_elf_class(const elf_ptr &eptr) const;
     void initialize_interpreter(const elf_file &file, GElf_Phdr phdr);
     bool check_phdr_for_interpreter(GElf_Phdr phdr) const;
-    int check_elf(const elf_file &file, bool is_ldr);
-    int parse_program(const elf_file &file);
+    int check_elf(const elf_file &file, const elf_ptr &eptr, bool is_ldr);
+    int parse_program(const elf_file &file, const elf_ptr &eptr);
     void get_dynamic_loader(const elf_file &file, GElf_Phdr phdr);
-    void load_phdr(GElf_Phdr phdr, const elf_file &file);
+    void load_phdr(GElf_Phdr phdr, const elf_file &file, const elf_ptr &eptr);
     int load_program_header(GElf_Phdr phdr, std::shared_ptr<Region> region,
-        const elf_file &file);
+        const elf_file &file, const elf_ptr &eptr);
     void pad_begin(GElf_Phdr phdr, std::shared_ptr<Region> region,
-        const elf_file &file);
+        const elf_file &file, const elf_ptr &eptr);
     void read_segment(GElf_Phdr phdr, std::shared_ptr<Region> region,
         const elf_file &file);
     void pad_end(GElf_Phdr phdr, std::shared_ptr<Region> region,
-        const elf_file &file);
-    void pad_text_begin(std::shared_ptr<Region> region, size_t padsize);
-    void pad_text_end(void *host_p, size_t padsize, const elf_file &file);
+        const elf_file &file, const elf_ptr &eptr);
+    void pad_text_begin(std::shared_ptr<Region> region, size_t padsize,
+        const elf_ptr &eptr);
+    void pad_text_end(void *host_p, size_t padsize, const elf_file &file,
+       const elf_ptr &eptr);
     void pad_data_begin(std::shared_ptr<Region> region, size_t padsize,
-        const elf_file &file);
+        const elf_file &file, const elf_ptr &eptr);
     void load_dynamic();
     GElf_Phdr text_header;
-    GElf_Phdr find_data_header();
-    GElf_Phdr find_text_header();
+    GElf_Phdr find_data_header(const elf_ptr &eptr);
+    GElf_Phdr find_text_header(const elf_ptr &eptr);
 
   public:
     ElfBinary(std::string pathname, std::shared_ptr<RegionManager> rm,
