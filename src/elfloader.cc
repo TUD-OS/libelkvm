@@ -296,11 +296,10 @@ namespace Elkvm {
     }
 
     size_t total_size = phdr.p_memsz + offset_in_page(load_addr);
-    std::shared_ptr<Region> loadable_region =
-      _rm->allocate_region(total_size, "ELF PHdr");
+    auto loadable_region = _rm->allocate_region(total_size, "ELF PHdr");
     loadable_region->set_guest_addr(page_begin(load_addr));
 
-    int err = load_program_header(phdr, loadable_region, file, eptr);
+    int err = load_program_header(phdr, *loadable_region, file, eptr);
     assert(err == 0 && "Error in ElfBinary::load_program_header");
 
     ptopt_t opts = get_pager_opts_from_phdr_flags(phdr.p_flags);
@@ -317,7 +316,7 @@ namespace Elkvm {
     }
   }
 
-  int ElfBinary::load_program_header(GElf_Phdr phdr, std::shared_ptr<Region> region,
+  int ElfBinary::load_program_header(GElf_Phdr phdr, const Region &region,
       const elf_file &file, const elf_ptr &eptr) {
     /*
      * ELF specification says to read the whole page into memory
@@ -333,7 +332,8 @@ namespace Elkvm {
      * Padding in the end may contain file information
      */
 
-  if(!page_aligned<guestptr_t>((uint64_t)region->base_address())) {
+  if(!page_aligned<guestptr_t>(
+        reinterpret_cast<uint64_t>(region.base_address()))) {
     return -EIO;
   }
 
@@ -344,7 +344,7 @@ namespace Elkvm {
   return 0;
   }
 
-  void ElfBinary::pad_begin(GElf_Phdr phdr, std::shared_ptr<Region> region,
+  void ElfBinary::pad_begin(GElf_Phdr phdr, const Region &region,
       const elf_file &file, const elf_ptr &eptr) {
     size_t padsize = offset_in_page(phdr.p_vaddr);
 
@@ -364,10 +364,11 @@ namespace Elkvm {
     }
   }
 
-  void ElfBinary::pad_end(GElf_Phdr phdr, std::shared_ptr<Region> region,
+  void ElfBinary::pad_end(GElf_Phdr phdr, const Region &region,
       const elf_file &file, const elf_ptr &eptr) {
-    void *host_p = (char *)region->base_address() + offset_in_page(phdr.p_vaddr) + phdr.p_filesz;
-    size_t padsize = page_remain((uint64_t)host_p);
+    void *host_p = static_cast<char *>(region.base_address())
+      + offset_in_page(phdr.p_vaddr) + phdr.p_filesz;
+    size_t padsize = page_remain(reinterpret_cast<uint64_t>(host_p));
 
     if(phdr.p_flags & PF_X) {
       /* executable segment should be text */
@@ -385,32 +386,32 @@ namespace Elkvm {
     assert(false);
   }
 
-  void ElfBinary::read_segment(GElf_Phdr phdr, std::shared_ptr<Region> region,
+  void ElfBinary::read_segment(GElf_Phdr phdr, const Region &region,
       const elf_file &file) {
-    char *buf = static_cast<char *>(region->base_address())
+    char *buf = static_cast<char *>(region.base_address())
       + offset_in_page(phdr.p_vaddr);
     file.read_segment(buf, phdr.p_filesz, phdr.p_offset);
   }
 
-  void ElfBinary::pad_text_begin(std::shared_ptr<Region> region, size_t padsize,
+  void ElfBinary::pad_text_begin(const Region &region, size_t padsize,
       const elf_ptr &eptr) {
-    assert(region->base_address() != nullptr);
+    assert(region.base_address() != nullptr);
 
     auto ehdr = eptr.get_ehdr();
-    memcpy(region->base_address(), &ehdr, padsize);
+    memcpy(region.base_address(), &ehdr, padsize);
   }
 
-  void ElfBinary::pad_data_begin(std::shared_ptr<Region> region, size_t padsize,
+  void ElfBinary::pad_data_begin(const Region &region, size_t padsize,
       const elf_file &file, const elf_ptr &eptr) {
     text_header = find_text_header(eptr);
 
     uint64_t text_end = text_header.p_offset + text_header.p_filesz;
 
     if(text_end > padsize) {
-      file.read(static_cast<char *>(region->base_address()), padsize,
+      file.read(static_cast<char *>(region.base_address()), padsize,
           text_end - padsize - 1);
     } else {
-      memset(region->base_address(), 0, padsize);
+      memset(region.base_address(), 0, padsize);
     }
   }
 
