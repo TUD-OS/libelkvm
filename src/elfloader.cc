@@ -47,6 +47,28 @@ namespace Elkvm {
     return read_bytes;
   }
 
+  ssize_t elf_file::read_segment(char *buf, size_t bytes, off64_t off) const {
+    /* make sure we are going to read full pages */
+    constexpr size_t max_bufsize = 0x8000;
+    auto bufsize = bytes < max_bufsize ? bytes : max_bufsize;
+
+    int toff = lseek(_fd, off, SEEK_SET);
+    assert(off == toff && "could not seek in file");
+
+    size_t remaining_bytes = bytes;
+    ssize_t read_bytes = 0;
+    while((read_bytes = ::read(_fd, buf, bufsize)) > 0) {
+      remaining_bytes -= read_bytes;
+      if(remaining_bytes < bufsize) {
+        bufsize = remaining_bytes;
+      }
+      buf += read_bytes;
+    }
+    assert(remaining_bytes == 0);
+
+    return read_bytes;
+  }
+
   ElfBinary::ElfBinary(std::string pathname, std::shared_ptr<RegionManager> rm,
       HeapManager &hm, bool is_ldr) :
     _ldr(nullptr),
@@ -338,26 +360,9 @@ namespace Elkvm {
 
   void ElfBinary::read_segment(GElf_Phdr phdr, std::shared_ptr<Region> region,
       const elf_file &file) {
-    char *buf = (char *)region->base_address() + offset_in_page(phdr.p_vaddr);
-
-    /*
-     * make sure we are going to read full pages
-     */
-    int remaining_bytes = phdr.p_filesz;
-    int bufsize = remaining_bytes < 32768 ? remaining_bytes : 32768;
-
-    int bytes = 0;
-
-    int off = lseek(file.fd(), phdr.p_offset, SEEK_SET);
-    assert(off >= 0 && "could not seek in file");
-
-    while((bytes = read(file.fd(), buf, bufsize)) > 0) {
-      remaining_bytes -= bytes;
-      if(remaining_bytes < bufsize) {
-        bufsize = remaining_bytes;
-      }
-      buf += bytes;
-    }
+    char *buf = static_cast<char *>(region->base_address())
+      + offset_in_page(phdr.p_vaddr);
+    file.read_segment(buf, phdr.p_filesz, phdr.p_offset);
   }
 
   void ElfBinary::pad_text_begin(std::shared_ptr<Region> region, size_t padsize) {

@@ -30,6 +30,7 @@ class elf_file {
     elf_file(std::string pathname);
     ~elf_file();
     size_t read(char *buf, size_t bytes, off64_t off = 0) const;
+    ssize_t read_segment(char *buf, size_t bytes, off64_t off) const;
     int fd() const;
 
 };
