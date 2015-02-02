@@ -40,7 +40,6 @@ class ElfBinary {
     std::shared_ptr<RegionManager> _rm;
     HeapManager &_hm;
 
-    elf_file _file;
     Elf *_elf_ptr;
     /* this needs to be a size_t because of the decl
      * of elf_getphdrnum */
@@ -53,19 +52,24 @@ class ElfBinary {
 
     bool is_valid_elf_kind(Elf *e) const;
     bool is_valid_elf_class(Elf *e) const;
-    void initialize_interpreter(GElf_Phdr phdr);
+    void initialize_interpreter(const elf_file &file, GElf_Phdr phdr);
     bool check_phdr_for_interpreter(GElf_Phdr phdr) const;
-    int check_elf(bool is_ldr);
-    int parse_program();
-    void get_dynamic_loader(GElf_Phdr phdr);
-    void load_phdr(GElf_Phdr phdr);
-    int load_program_header(GElf_Phdr phdr, std::shared_ptr<Region> region);
-    void pad_begin(GElf_Phdr phdr, std::shared_ptr<Region> region);
-    void read_segment(GElf_Phdr phdr, std::shared_ptr<Region> region);
-    void pad_end(GElf_Phdr phdr, std::shared_ptr<Region> region);
+    int check_elf(const elf_file &file, bool is_ldr);
+    int parse_program(const elf_file &file);
+    void get_dynamic_loader(const elf_file &file, GElf_Phdr phdr);
+    void load_phdr(GElf_Phdr phdr, const elf_file &file);
+    int load_program_header(GElf_Phdr phdr, std::shared_ptr<Region> region,
+        const elf_file &file);
+    void pad_begin(GElf_Phdr phdr, std::shared_ptr<Region> region,
+        const elf_file &file);
+    void read_segment(GElf_Phdr phdr, std::shared_ptr<Region> region,
+        const elf_file &file);
+    void pad_end(GElf_Phdr phdr, std::shared_ptr<Region> region,
+        const elf_file &file);
     void pad_text_begin(std::shared_ptr<Region> region, size_t padsize);
-    void pad_text_end(void *host_p, size_t padsize);
-    void pad_data_begin(std::shared_ptr<Region> region, size_t padsize);
+    void pad_text_end(void *host_p, size_t padsize, const elf_file &file);
+    void pad_data_begin(std::shared_ptr<Region> region, size_t padsize,
+        const elf_file &file);
     void load_dynamic();
     GElf_Phdr text_header;
     GElf_Phdr find_data_header();
