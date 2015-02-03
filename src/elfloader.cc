@@ -237,6 +237,7 @@ namespace Elkvm {
 
     file.read(l, phdr.p_memsz, phdr.p_offset);
     _loader = l;
+    free(l);
   }
 
   int ElfBinary::parse_program(const elf_file &file, const elf_ptr &eptr) {
