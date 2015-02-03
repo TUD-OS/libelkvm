@@ -9,10 +9,10 @@
 
 #include <memory>
 
-#define LD_LINUX_SO_BASE 0x1000000
 
 namespace Elkvm {
 
+constexpr guestptr_t loader_base_addr = 0x1000000;
 struct Elf_auxv {
   uint64_t at_phdr;
   uint64_t at_phent;

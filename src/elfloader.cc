@@ -289,7 +289,7 @@ namespace Elkvm {
       const elf_ptr &eptr) {
     guestptr_t load_addr = phdr.p_vaddr;
     if(_shared_object && phdr.p_vaddr == 0x0) {
-      load_addr = _auxv.at_base = LD_LINUX_SO_BASE;
+      load_addr = _auxv.at_base = loader_base_addr;
     } else if(_auxv.at_base > 0x0) {
       load_addr = _auxv.at_base + phdr.p_vaddr;
     }
