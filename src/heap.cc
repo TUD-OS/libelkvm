@@ -197,8 +197,8 @@ namespace Elkvm {
   int HeapManager::init(std::shared_ptr<Region> data, size_t sz) {
     assert(mappings_for_brk.empty() && "heap must not be initialized after use");
     /* XXX sz might be wrong here! */
-    mappings_for_brk.emplace_back(data, data->guest_address(), sz, PROT_READ | PROT_WRITE,
-        MAP_ANONYMOUS, 0, 0);
+    mappings_for_brk.emplace_back(data, data->guest_address(), sz,
+        PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0);
 
     curbrk = next_page(data->guest_address() + sz);
     assert(data->contains_address(curbrk - 1) && "initial brk address must be in data region");

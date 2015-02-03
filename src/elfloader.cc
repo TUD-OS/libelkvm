@@ -140,9 +140,9 @@ namespace Elkvm {
       throw;
     }
 
-    if(_statically_linked) {
-      err = parse_program(file, eptr);
-    } else {
+    err = parse_program(file, eptr);
+    assert(err == 0);
+    if(!_statically_linked) {
       load_dynamic();
     }
 
@@ -311,7 +311,7 @@ namespace Elkvm {
         loadable_region->guest_address(), pages, opts);
     assert(err == 0 && "could not create pt entries for loadable region");
 
-    if(phdr.p_flags & PF_W) {
+    if(_statically_linked && (phdr.p_flags & PF_W)) {
       /* writable region should be data */
       err = _hm.init(loadable_region, total_size);
       assert(err == 0 && "Error initializing heap");
