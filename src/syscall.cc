@@ -851,14 +851,21 @@ long elkvm_do_munmap(Elkvm::VM * vmi) {
     addr = vmi->get_region_manager()->get_pager().get_host_p(addr_p);
   }
 
-  Elkvm::Mapping &mapping = vmi->get_heap_manager().find_mapping(addr);
-  vmi->get_heap_manager().unmap(mapping, addr_p, pages_from_size(length));
+  auto &hm = vmi->get_heap_manager();
+  Elkvm::Mapping &mapping = hm.find_mapping(addr);
+  if(vmi->debug_mode()) {
+    print(std::cout, mapping);
+  }
+  auto pages_left = hm.unmap(mapping, addr_p, pages_from_size(length));
 
   if(vmi->debug_mode()) {
-    DBG() << "MUNMAP requested with address " << (void*)addr_p
-          << " (" << (void*)addr << " len " << length;
-    if(!mapping.all_unmapped()) {
+    DBG() << "MUNMAP requested with address " << std::hex
+      << LOG_GUEST_HOST(addr_p, addr)
+      << " len: 0x" << length;
+    if(pages_left > 0) {
       print(std::cout, mapping);
+    } else {
+      DBG() << "mapping was deleted";
     }
   }
 
