@@ -316,12 +316,13 @@ namespace Elkvm {
     assert(err == 0 && "could not unmap this mapping");
     m.pages_unmapped(pages);
 
-    if(m.get_pages() == 0) {
+    auto pages_left = m.get_pages();
+    if(pages_left == 0) {
       _rm->free_region(m.get_region());
       free_mapping(m);
     }
 
-    return 0;
+    return pages_left;
   }
 
   void HeapManager::slice_region(Mapping &m, off_t off, size_t len) {
