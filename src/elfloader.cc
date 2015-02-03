@@ -288,9 +288,12 @@ namespace Elkvm {
   void ElfBinary::load_phdr(GElf_Phdr phdr, const elf_file &file,
       const elf_ptr &eptr) {
     guestptr_t load_addr = phdr.p_vaddr;
-    if(_shared_object && phdr.p_vaddr == 0x0) {
-      load_addr = _auxv.at_base = loader_base_addr;
-    } else if(_auxv.at_base > 0x0) {
+    if(_is_ldr) {
+      /* we are the dynamic loader, which is a shared_object
+       * therefore we need to modify the load address */
+      if(_auxv.at_base == 0x0) {
+        _auxv.at_base = loader_base_addr;
+      }
       load_addr = _auxv.at_base + phdr.p_vaddr;
     }
 
