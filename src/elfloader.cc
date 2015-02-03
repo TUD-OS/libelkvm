@@ -131,9 +131,8 @@ namespace Elkvm {
     assert(!pathname.empty() && "cannot load binary from empty pathname");
     elf_file file(pathname);
     elf_ptr eptr(file);
+    _auxv.valid = false;
 
-    _auxv.valid = _is_ldr;
-    _auxv.at_base = 0x0;
 
     int err = check_elf(file, eptr);
     if(err) {
@@ -143,6 +142,8 @@ namespace Elkvm {
     err = parse_program(file, eptr);
     assert(err == 0);
     if(!_statically_linked) {
+      _auxv.valid = true;
+      _auxv.at_base = loader_base_addr;
       load_dynamic();
     }
 
@@ -219,7 +220,7 @@ namespace Elkvm {
         break;
       }
     }
-    if(_is_ldr) {
+    if(!_statically_linked) {
       _auxv.valid = true;
       _auxv.at_entry = _entry_point;
       _auxv.at_phnum = _num_phdrs;
@@ -457,10 +458,6 @@ namespace Elkvm {
   }
 
   const struct Elf_auxv &ElfBinary::get_auxv() const {
-    if(_ldr != nullptr) {
-      return _ldr->get_auxv();
-    }
-
     return _auxv;
   }
 
