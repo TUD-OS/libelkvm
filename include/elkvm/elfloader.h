@@ -42,6 +42,9 @@ class elf_ptr {
     elf_ptr(const elf_file &file);
     ~elf_ptr();
 
+    elf_ptr(const elf_ptr &) = delete;
+    elf_ptr operator=(const elf_ptr &) = delete;
+
     Elf_Kind get_elf_kind() const;
     int get_class() const;
     GElf_Ehdr get_ehdr() const;
