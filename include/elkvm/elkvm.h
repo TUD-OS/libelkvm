@@ -243,6 +243,7 @@ class VM {
     HeapManager &get_heap_manager() { return hm; }
     const std::shared_ptr<VCPU>& get_vcpu(int num) const;
     int get_vmfd() const { return _vmfd; }
+    void *host_p(guestptr_t ptr) const { return _rm->get_pager().get_host_p(ptr); }
     Elkvm::elkvm_flat &get_cleanup_flat();
 
     const std::shared_ptr<Elkvm::Region>& get_gdt_region() { return _gdt; }
