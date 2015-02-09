@@ -265,6 +265,10 @@ long pass_epoll_wait(int epfd, struct epoll_event* events, int max, int timeout)
   return epoll_wait(epfd, events, max, timeout);
 }
 
+long pass_set_robust_list(struct robust_list_head *head, size_t len) {
+  return syscall(__NR_set_robust_list, head, len);
+}
+
 Elkvm::elkvm_handlers
 Elkvm::default_handlers = {
   .read = pass_read,
@@ -339,6 +343,8 @@ Elkvm::default_handlers = {
   .exit_group = pass_exit_group,
   .tgkill = pass_tgkill,
   .openat = pass_openat,
+  /* ... */
+  .set_robust_list = pass_set_robust_list,
 
   .bp_callback = NULL,
 };

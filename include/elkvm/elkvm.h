@@ -1,6 +1,7 @@
 #pragma once
 
 #include <poll.h>
+#include <linux/futex.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
@@ -145,6 +146,7 @@ struct elkvm_handlers {
   long (*tgkill)(int tgid, int tid, int sig);
 
   int (*openat) (int dirfd, const char *pathname, int flags);
+  long (*set_robust_list)(struct robust_list_head *head, size_t len);
 
   /* ELKVM debug callbacks */
 

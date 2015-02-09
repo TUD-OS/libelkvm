@@ -319,6 +319,8 @@ __attribute__((used))
   [__NR_inotify_rm_watch]  = { elkvm_do_inotify_rm_watch, "INOTIFY RM WATCH" },
   [__NR_migrate_pages]     = { elkvm_do_migrate_pages, "MIGRATE PAGES" },
   [__NR_openat]          = { elkvm_do_openat, "OPENAT" },
+  [__NR_set_robust_list] = { elkvm_do_set_robust_list, "SET ROBUST LIST" },
+  [__NR_get_robust_list] = { elkvm_do_get_robust_list, "GET ROBUST LIST" },
 
 };
 
@@ -659,10 +661,6 @@ long elkvm_do_lstat(Elkvm::VM * vmi) {
   return result;
 }
 
-long elkvm_do_poll(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
 long elkvm_do_lseek(Elkvm::VM * vmi) {
   if(vmi->get_handlers()->lseek == NULL) {
     ERROR() << "LSEEK handler not found" << LOG_RESET << "\n";
@@ -926,10 +924,6 @@ long elkvm_do_sigprocmask(Elkvm::VM * vmi) {
   return result;
 }
 
-long elkvm_do_sigreturn(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
 long elkvm_do_ioctl(Elkvm::VM * vmi) {
   if(vmi->get_handlers()->ioctl == NULL) {
     ERROR() << "IOCTL handler not found\n";
@@ -967,14 +961,6 @@ long elkvm_do_ioctl(Elkvm::VM * vmi) {
   }
 
   return result;
-}
-
-long elkvm_do_pread64(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_pwrite64(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
 }
 
 void elkvm_get_host_iov(Elkvm::VM * vmi __attribute__((unused)),
@@ -1101,14 +1087,6 @@ long elkvm_do_pipe(Elkvm::VM * vmi) {
   return 0;
 }
 
-long elkvm_do_select(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_sched_yield(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
 long elkvm_do_mremap(Elkvm::VM *vmi __attribute__((unused))) {
   guestptr_t old_address_p = 0x0;
   void *old_address = NULL;
@@ -1149,30 +1127,6 @@ long elkvm_do_mremap(Elkvm::VM *vmi __attribute__((unused))) {
   return vmi->get_heap_manager().remap(mapping, new_address_p, new_size, flags);
 }
 
-long elkvm_do_msync(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_mincore(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_madvise(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_shmget(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_shmat(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_shmctl(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
 long elkvm_do_dup(Elkvm::VM * vmi) {
   if(vmi->get_handlers()->dup == NULL) {
     ERROR() << "DUP handler not found" << LOG_RESET << "\n";
@@ -1192,14 +1146,6 @@ long elkvm_do_dup(Elkvm::VM * vmi) {
   }
 
   return -errno;
-}
-
-long elkvm_do_dup2(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_pause(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
 }
 
 long elkvm_do_nanosleep(Elkvm::VM * vmi) {
@@ -1231,18 +1177,6 @@ long elkvm_do_nanosleep(Elkvm::VM * vmi) {
   return result;
 }
 
-long elkvm_do_getitimer(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_alarm(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_setitimer(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
 long elkvm_do_getpid(Elkvm::VM * vmi) {
   if(vmi->get_handlers()->getpid == NULL) {
     return -ENOSYS;
@@ -1255,34 +1189,6 @@ long elkvm_do_getpid(Elkvm::VM * vmi) {
   }
 
   return pid;
-}
-
-long elkvm_do_clone(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_fork(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_vfork(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_execve(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_exit(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_wait4(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_kill(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
 }
 
 long elkvm_do_uname(Elkvm::VM * vmi) {
@@ -1306,38 +1212,6 @@ long elkvm_do_uname(Elkvm::VM * vmi) {
     Elkvm::dbg_log_result<int>(result);
   }
   return result;
-}
-
-long elkvm_do_semget(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_semop(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_semctl(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_shmdt(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_msgget(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_msgsnd(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_msgrcv(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_msgctl(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
 }
 
 long elkvm_do_fcntl(Elkvm::VM * vmi) {
@@ -1382,18 +1256,6 @@ long elkvm_do_fcntl(Elkvm::VM * vmi) {
   }
 
   return result;
-}
-
-long elkvm_do_flock(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_fsync(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_fdatasync(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
 }
 
 long elkvm_do_truncate(Elkvm::VM * vmi) {
@@ -1521,10 +1383,6 @@ long elkvm_do_fchdir(Elkvm::VM * vmi __attribute__((unused))) {
   return vmi->get_handlers()->fchdir(path);
 }
 
-long elkvm_do_rename(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
 long elkvm_do_mkdir(Elkvm::VM * vmi) {
   if(vmi->get_handlers()->mkdir == NULL) {
     ERROR() << "MKDIR handler not found" << LOG_RESET << "\n";
@@ -1552,18 +1410,6 @@ long elkvm_do_mkdir(Elkvm::VM * vmi) {
 
 }
 
-long elkvm_do_rmdir(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_creat(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_link(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
 long elkvm_do_unlink(Elkvm::VM * vmi) {
   if(vmi->get_handlers()->unlink == NULL) {
     ERROR() << "UNLINK handler not found" << LOG_RESET << "\n";
@@ -1586,10 +1432,6 @@ long elkvm_do_unlink(Elkvm::VM * vmi) {
     }
   }
   return result;
-}
-
-long elkvm_do_symlink(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
 }
 
 long elkvm_do_readlink(Elkvm::VM * vmi) {
@@ -1618,30 +1460,6 @@ long elkvm_do_readlink(Elkvm::VM * vmi) {
     }
   }
   return result;
-}
-
-long elkvm_do_chmod(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_fchmod(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_chown(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_fchown(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_lchown(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_umask(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
 }
 
 long elkvm_do_gettimeofday(Elkvm::VM * vmi) {
@@ -1682,27 +1500,6 @@ long elkvm_do_gettimeofday(Elkvm::VM * vmi) {
   return result;
 }
 
-long elkvm_do_getrlimit(Elkvm::VM *) {
-  /* XXX implement again! */
-    UNIMPLEMENTED_SYSCALL;
-//  CURRENT_ABI::paramtype resource = 0x0;
-//  CURRENT_ABI::paramtype rlim_p = 0x0;
-//  struct rlimit *rlim = NULL;
-//
-//  vmi->unpack_syscall(&resource, &rlim_p);
-//
-//  assert(rlim_p != 0x0);
-//  rlim = reinterpret_cast<struct rlimit *>(vmi->get_region_manager()->get_pager().get_host_p(rlim_p));
-//
-//  memcpy(rlim, &vm->rlimits[resource], sizeof(struct rlimit));
-//  if(vmi->debug_mode()) {
-//    printf("GETRLIMIT with resource: %li rlim: 0x%lx (%p)\n",
-//        resource, rlim_p, rlim);
-//  }
-//
-//  return 0;
-}
-
 long elkvm_do_getrusage(Elkvm::VM * vmi) {
   if(vmi->get_handlers()->getrusage == NULL) {
     ERROR() << "GETRUSAGE handler not found" << LOG_RESET << "\n";
@@ -1725,10 +1522,6 @@ long elkvm_do_getrusage(Elkvm::VM * vmi) {
     DBG() << "RUSAGE with who: " << who << " usage: " << LOG_GUEST_HOST(usage, usage_p);
   }
   return result;
-}
-
-long elkvm_do_sysinfo(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
 }
 
 long elkvm_do_times(Elkvm::VM * vmi) {
@@ -1765,10 +1558,6 @@ long elkvm_do_times(Elkvm::VM * vmi) {
   }
 }
 
-long elkvm_do_ptrace(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
 long elkvm_do_getuid(Elkvm::VM * vmi) {
   if(vmi->get_handlers()->getuid == NULL) {
     ERROR() << "GETUID handler not found" << LOG_RESET << "\n";
@@ -1783,10 +1572,6 @@ long elkvm_do_getuid(Elkvm::VM * vmi) {
   return result;
 }
 
-long elkvm_do_syslog(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
 long elkvm_do_getgid(Elkvm::VM * vmi) {
   if(vmi->get_handlers()->getgid == NULL) {
     ERROR() << "GETGID handler not found" << LOG_RESET << "\n";
@@ -1799,14 +1584,6 @@ long elkvm_do_getgid(Elkvm::VM * vmi) {
   }
 
   return result;
-}
-
-long elkvm_do_setuid(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_setgid(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
 }
 
 long elkvm_do_geteuid(Elkvm::VM * vmi) {
@@ -1835,118 +1612,6 @@ long elkvm_do_getegid(Elkvm::VM * vmi) {
   }
 
   return result;
-}
-
-long elkvm_do_setpgid(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_getppid(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_getpgrp(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_setsid(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_setreuid(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_setregid(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_getgroups(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_setgroups(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_setresuid(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_getresuid(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_setresgid(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_getresgid(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_getpgid(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_setfsuid(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_setfsgid(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_getsid(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_capget(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_capset(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_rt_sigpending(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_rt_sigtimedwait(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_rt_sigqueueinfo(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_rt_sigsuspend(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_sigaltstack(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_utime(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_mknod(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_uselib(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_personality(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_ustat(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
 }
 
 long elkvm_do_statfs(Elkvm::VM * vmi __attribute__((unused))) {
@@ -1981,86 +1646,6 @@ long elkvm_do_statfs(Elkvm::VM * vmi __attribute__((unused))) {
     return 0;
   }
   return -errno;
-}
-
-long elkvm_do_fstatfs(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_sysfs(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_getpriority(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_setpriority(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_sched_setparam(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_sched_getparam(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_sched_setscheduler(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_sched_getscheduler(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_sched_get_priority_max(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_sched_get_priority_min(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_sched_rr_get_interval(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_mlock(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_munlock(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_mlockall(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_munlockall(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_vhangup(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_modify_ldt(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_pivot_root(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_sysctl(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_prctl(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
 }
 
 long elkvm_do_arch_prctl(Elkvm::VM * vmi) {
@@ -2128,114 +1713,6 @@ long elkvm_do_arch_prctl(Elkvm::VM * vmi) {
   return err;
 }
 
-long elkvm_do_adjtimex(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_setrlimit(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_chroot(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_sync(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_acct(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_settimeofday(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_mount(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_umount2(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_swapon(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_swapoff(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_reboot(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_sethostname(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_setdomainname(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_iopl(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_ioperm(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_create_module(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_init_module(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_delete_module(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_get_kernel_syms(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_query_module(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_quotactl(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_nfsservctl(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_getpmsg(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_putpmsg(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_afs_syscall(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_tuxcall(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_security(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
 long elkvm_do_gettid(Elkvm::VM * vmi) {
   if(vmi->get_handlers()->gettid == NULL) {
     ERROR() << "GETTID handler not found" << LOG_RESET << "\n";
@@ -2248,62 +1725,6 @@ long elkvm_do_gettid(Elkvm::VM * vmi) {
     Elkvm::dbg_log_result<int>(result);
   }
   return result;
-}
-
-long elkvm_do_readahead(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_setxattr(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_lsetxattr(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_fsetxattr(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_getxattr(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_lgetxattr(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_fgetxattr(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_listxattr(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_llistxattr(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_flistxattr(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_removexattr(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_lremovexattr(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_fremovexattr(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_tkill(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
 }
 
 long elkvm_do_time(Elkvm::VM * vmi) {
@@ -2375,102 +1796,10 @@ long elkvm_do_futex(Elkvm::VM * vmi) {
 
 }
 
-long elkvm_do_sched_setaffinity(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_sched_getaffinity(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_set_thread_area(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_io_setup(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_io_destroy(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_getevents(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_submit(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_cancel(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_get_thread_area(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_lookup_dcookie(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
 long elkvm_do_epoll_create(Elkvm::VM * vmi __attribute__((unused))) {
   CURRENT_ABI::paramtype size;
   vmi->unpack_syscall(&size);
   return vmi->get_handlers()->epoll_create(size);
-}
-
-long elkvm_do_epoll_ctl_old(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_epoll_wait_old(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_remap_file_pages(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_getdents64(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_restart_syscall(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_semtimedop(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_fadive64(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_timer_create(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_timer_settime(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_timer_gettime(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_timer_getoverrun(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_timer_delete(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_clock_settime(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
 }
 
 long elkvm_do_clock_gettime(Elkvm::VM * vmi) {
@@ -2495,14 +1824,6 @@ long elkvm_do_clock_gettime(Elkvm::VM * vmi) {
     Elkvm::dbg_log_result<int>(result);
   }
   return result;
-}
-
-long elkvm_do_clock_getres(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_clock_nanosleep(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
 }
 
 long elkvm_do_exit_group(Elkvm::VM * vmi) {
@@ -2561,94 +1882,6 @@ long elkvm_do_tgkill(Elkvm::VM * vmi) {
   }
   return result;
 
-}
-
-long elkvm_do_utimes(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_vserver(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_mbind(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_mpolicy(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_get_mempolicy(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_mq_open(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_mq_unlink(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_mq_timedsend(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_mq_timedreceive(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_mq_notify(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_getsetattr(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_kexec_load(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_waitid(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_add_key(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_request_key(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_keyctl(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_ioprio_set(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_ioprio_get(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_inotify_init(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_inotify_add_watch(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_inotify_rm_watch(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_migrate_pages(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
 }
 
 long elkvm_do_openat(Elkvm::VM * vmi __attribute__((unused))) {
