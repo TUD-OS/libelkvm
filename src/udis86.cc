@@ -11,7 +11,8 @@
 
 namespace Elkvm {
 
-UDis::UDis(const uint8_t *ptr) {
+UDis::UDis(const uint8_t *ptr) :
+  ud_obj() {
  #ifdef HAVE_LIBUDIS86
    ud_init(&ud_obj);
    ud_set_mode(&ud_obj, bits);
