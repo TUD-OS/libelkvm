@@ -33,8 +33,14 @@ int Elkvm::VM::signal_register(int signum, struct sigaction *act,
     memcpy(oldact, const_cast<struct sigaction*>(get_sig_ptr(signum)), sizeof(struct sigaction));
   }
 
-  if(act != NULL) {
-    memcpy(const_cast<struct sigaction*>(get_sig_ptr(signum)), act, sizeof(struct sigaction));
+  if(oldact != nullptr) {
+    memcpy(oldact, const_cast<struct sigaction*>(get_sig_ptr(signum)),
+        sizeof(struct sigaction));
+  }
+
+  if(act != nullptr) {
+    memcpy(const_cast<struct sigaction*>(get_sig_ptr(signum)), act,
+        sizeof(struct sigaction));
 
     struct sigaction sa;
     sa.sa_handler = elkvm_signal_handler;
@@ -42,6 +48,10 @@ int Elkvm::VM::signal_register(int signum, struct sigaction *act,
     assert(err == 0);
     sa.sa_flags = 0;
     err = sigaction(signum, &sa, NULL);
+    if(err) {
+      ERROR() << "Error during sigaction: " << std::dec << err
+              << " Msg: " << strerror(errno);
+    }
     assert(err == 0);
   }
 
