@@ -9,10 +9,10 @@
 
 #include <memory>
 
-#define LD_LINUX_SO_BASE 0x1000000
 
 namespace Elkvm {
 
+constexpr guestptr_t loader_base_addr = 0x1000000;
 struct Elf_auxv {
   uint64_t at_phdr;
   uint64_t at_phent;
@@ -22,41 +22,79 @@ struct Elf_auxv {
   bool valid;
 };
 
+class elf_file {
+  private:
+    int _fd;
+
+  public:
+    elf_file(std::string pathname);
+    ~elf_file();
+    size_t read(char *buf, size_t bytes, off64_t off = 0) const;
+    ssize_t read_segment(char *buf, size_t bytes, off64_t off) const;
+    int fd() const;
+};
+
+class elf_ptr {
+  private:
+    Elf *_ptr;
+
+  public:
+    elf_ptr(const elf_file &file);
+    ~elf_ptr();
+
+    Elf_Kind get_elf_kind() const;
+    int get_class() const;
+    GElf_Ehdr get_ehdr() const;
+    size_t get_phdrnum() const;
+    GElf_Phdr get_phdr(unsigned i) const;
+};
+
 class ElfBinary {
   private:
-    std::unique_ptr<ElfBinary> ldr;
+    std::unique_ptr<ElfBinary> _ldr;
     std::shared_ptr<RegionManager> _rm;
     HeapManager &_hm;
 
-    int fd;
-    Elf *e;
-    size_t num_phdrs;
-    bool statically_linked;
-    bool shared_object;
-    int elfclass;
-    std::string loader;
-    guestptr_t entry_point;
-    struct Elf_auxv auxv;
+    /* this needs to be a size_t because of the decl
+     * of elf_getphdrnum */
+    size_t _num_phdrs;
+    bool _statically_linked;
+    bool _shared_object;
+    bool _is_ldr;
+    std::string _loader;
+    guestptr_t _entry_point;
+    struct Elf_auxv _auxv;
 
-    int check_elf();
-    int parse_program();
-    void get_dynamic_loader(GElf_Phdr phdr);
-    void load_phdr(GElf_Phdr phdr);
-    int load_program_header(GElf_Phdr phdr, std::shared_ptr<Region> region);
-    void pad_begin(GElf_Phdr phdr, std::shared_ptr<Region> region);
-    void read_segment(GElf_Phdr phdr, std::shared_ptr<Region> region);
-    void pad_end(GElf_Phdr phdr, std::shared_ptr<Region> region);
-    void pad_text_begin(std::shared_ptr<Region> region, size_t padsize);
-    void pad_text_end(void *host_p, size_t padsize);
-    void pad_data_begin(std::shared_ptr<Region> region, size_t padsize);
+    bool is_valid_elf_kind(const elf_ptr &eptr) const;
+    bool is_valid_elf_class(const elf_ptr &eptr) const;
+    void initialize_interpreter(const elf_file &file, GElf_Phdr phdr);
+    bool check_phdr_for_interpreter(GElf_Phdr phdr) const;
+    int check_elf(const elf_file &file, const elf_ptr &eptr);
+    int parse_program(const elf_file &file, const elf_ptr &eptr);
+    void get_dynamic_loader(const elf_file &file, GElf_Phdr phdr);
+    void load_phdr(GElf_Phdr phdr, const elf_file &file, const elf_ptr &eptr);
+    int load_program_header(GElf_Phdr phdr, const Region &region, const elf_file &file,
+        const elf_ptr &eptr);
+    void pad_begin(GElf_Phdr phdr, const Region &region, const elf_file &file,
+        const elf_ptr &eptr);
+    void read_segment(GElf_Phdr phdr, const Region &region,
+        const elf_file &file);
+    void pad_end(GElf_Phdr phdr, const Region &region, const elf_file &file,
+        const elf_ptr &eptr);
+    void pad_text_begin(const Region &region, size_t padsize, const elf_ptr &eptr);
+    void pad_text_end(void *host_p, size_t padsize, const elf_file &file,
+       const elf_ptr &eptr);
+    void pad_data_begin(const Region &region, size_t padsize, const elf_file &file,
+        const elf_ptr &eptr);
     void load_dynamic();
     GElf_Phdr text_header;
-    GElf_Phdr find_data_header();
-    GElf_Phdr find_text_header();
+    GElf_Phdr find_header(const elf_ptr &eptr, unsigned flags);
+    GElf_Phdr find_data_header(const elf_ptr &eptr);
+    GElf_Phdr find_text_header(const elf_ptr &eptr);
 
   public:
     ElfBinary(std::string pathname, std::shared_ptr<RegionManager> rm,
-        HeapManager &hm);
+        HeapManager &hm, bool is_ldr = false);
 
     ElfBinary(ElfBinary const&) = delete;
     ElfBinary& operator=(ElfBinary const&) = delete;
@@ -64,8 +102,8 @@ class ElfBinary {
     int load_binary(std::string pathname);
     guestptr_t get_entry_point();
     const struct Elf_auxv &get_auxv() const;
-    bool is_dynamically_linked() const { return !statically_linked; }
-    std::string get_loader() const { return loader; }
+    bool is_dynamically_linked() const;
+    std::string get_loader() const;
 };
 
 ptopt_t get_pager_opts_from_phdr_flags(int flags);

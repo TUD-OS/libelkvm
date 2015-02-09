@@ -14,6 +14,7 @@
 #include <elkvm/elfloader.h>
 #include <elkvm/elkvm.h>
 #include <elkvm/elkvm-internal.h>
+#include <elkvm/elkvm-log.h>
 #include <elkvm/kvm.h>
 #include <elkvm/heap.h>
 #include <elkvm/pager.h>
@@ -23,156 +24,229 @@
 namespace Elkvm {
   class VCPU;
 
-  ElfBinary::ElfBinary(std::string pathname, std::shared_ptr<RegionManager> rm,
-      HeapManager &hm) :
-    ldr(nullptr),
-    _rm(rm),
-    _hm(hm),
-    fd(-1),
-    e(0),
-    num_phdrs(0),
-    statically_linked(false),
-    shared_object(false),
-    elfclass(-1),
-    loader("undefined ldr"),
-    entry_point(~0ULL),
-    auxv(),
-    text_header()
-  {
-    auxv.valid = false;
-
-    if(pathname.empty()) {
+  elf_file::elf_file(std::string pathname) {
+    _fd = open(pathname.c_str(), O_RDONLY);
+    if(_fd < 1) {
       throw;
     }
+  }
 
-    auxv.at_base = 0x0;
+  elf_file::~elf_file() {
+    close(_fd);
+  }
 
-    fd = open(pathname.c_str(), O_RDONLY);
-    if(fd < 1) {
-      throw;
+  int elf_file::fd() const {
+    return _fd;
+  }
+
+  size_t elf_file::read(char *buf, size_t bytes, off64_t off) const {
+    int toff = lseek(_fd, off, SEEK_SET);
+    assert(toff == off);
+
+    size_t read_bytes = ::read(_fd, buf, bytes);
+    assert(read_bytes == bytes && "short read on file");
+    return read_bytes;
+  }
+
+  ssize_t elf_file::read_segment(char *buf, size_t bytes, off64_t off) const {
+    /* make sure we are going to read full pages */
+    constexpr size_t max_bufsize = 0x8000;
+    auto bufsize = bytes < max_bufsize ? bytes : max_bufsize;
+
+    int toff = lseek(_fd, off, SEEK_SET);
+    assert(off == toff && "could not seek in file");
+
+    size_t remaining_bytes = bytes;
+    ssize_t read_bytes = 0;
+    while((read_bytes = ::read(_fd, buf, bufsize)) > 0) {
+      remaining_bytes -= read_bytes;
+      if(remaining_bytes < bufsize) {
+        bufsize = remaining_bytes;
+      }
+      buf += read_bytes;
     }
+    assert(remaining_bytes == 0);
 
+    return read_bytes;
+  }
+
+  elf_ptr::elf_ptr(const elf_file &file) {
+    /* always call elf_version first, otherwise elf_begin won't work */
     if(elf_version(EV_CURRENT) == EV_NONE) {
       throw;
     }
 
-    e = elf_begin(fd, ELF_C_READ, NULL);
-    if(e == NULL) {
+    _ptr = elf_begin(file.fd(), ELF_C_READ, NULL);
+    if(_ptr == nullptr) {
       throw;
     }
+  }
 
-    int err = check_elf();
+  elf_ptr::~elf_ptr() {
+    elf_end(_ptr);
+  }
+
+  Elf_Kind elf_ptr::get_elf_kind() const {
+    return elf_kind(_ptr);
+  }
+
+  int elf_ptr::get_class() const {
+    return gelf_getclass(_ptr);
+  }
+
+  GElf_Ehdr elf_ptr::get_ehdr() const {
+    GElf_Ehdr ehdr;
+    auto err = gelf_getehdr(_ptr, &ehdr);
+    assert(err != nullptr);
+    return ehdr;
+  }
+
+  size_t elf_ptr::get_phdrnum() const {
+    size_t num = 0;
+    int err = elf_getphdrnum(_ptr, &num);
+    assert(err == 0);
+    return num;
+  }
+
+  GElf_Phdr elf_ptr::get_phdr(unsigned i) const {
+    GElf_Phdr phdr;
+    gelf_getphdr(_ptr, i, &phdr);
+    return phdr;
+  }
+
+  ElfBinary::ElfBinary(std::string pathname, std::shared_ptr<RegionManager> rm,
+      HeapManager &hm, bool is_ldr) :
+    _ldr(nullptr),
+    _rm(rm),
+    _hm(hm),
+    _num_phdrs(0),
+    _statically_linked(false),
+    _shared_object(false),
+    _is_ldr(is_ldr),
+    _loader("undefined ldr"),
+    _entry_point(~0ULL),
+    _auxv(),
+    text_header()
+  {
+    assert(!pathname.empty() && "cannot load binary from empty pathname");
+    elf_file file(pathname);
+    elf_ptr eptr(file);
+    _auxv.valid = false;
+
+
+    int err = check_elf(file, eptr);
     if(err) {
-      close(fd);
       throw;
     }
 
-    if(statically_linked) {
-      err = parse_program();
-    } else {
+    err = parse_program(file, eptr);
+    assert(err == 0);
+    if(!_statically_linked) {
+      _auxv.valid = true;
+      _auxv.at_base = loader_base_addr;
       load_dynamic();
     }
 
-    elf_end(e);
-    close(fd);
-    if(err) {
-      throw;
-    }
   }
 
   guestptr_t ElfBinary::get_entry_point() {
-    if(statically_linked) {
-      return shared_object ? auxv.at_base + entry_point : entry_point;
+    if(_statically_linked) {
+      return _shared_object ? _auxv.at_base + _entry_point : _entry_point;
     } else {
-      return ldr->get_entry_point();
+      return _ldr->get_entry_point();
     }
   }
 
-  int ElfBinary::check_elf() {
-    Elf_Kind ek = elf_kind(e);
+  bool ElfBinary::is_valid_elf_kind(const elf_ptr &eptr) const {
+    auto ek = eptr.get_elf_kind();
     switch(ek) {
       /* only deal with elf binaries for now */
       case ELF_K_ELF:
-        break;
+        return true;
       case ELF_K_AR:
       case ELF_K_NONE:
       default:
-        return -EINVAL;
+        return false;
     }
+  }
 
+  bool ElfBinary::is_valid_elf_class(const elf_ptr &eptr) const {
     /* for now process only 64bit ELF files */
-    elfclass = gelf_getclass(e);
+    auto elfclass = eptr.get_class();
     switch(elfclass) {
       case ELFCLASS64:
-        break;
+        return true;
       case ELFCLASSNONE:
       case ELFCLASS32:
       default:
-        return -EINVAL;
+        return false;
+    }
+  }
+
+  void ElfBinary::initialize_interpreter(const elf_file &file, GElf_Phdr phdr) {
+    _statically_linked = false;
+    get_dynamic_loader(file, phdr);
+  }
+
+  bool ElfBinary::check_phdr_for_interpreter(GElf_Phdr phdr) const {
+    /* a program header's memsize may be larger than or equal to its filesize */
+    if(phdr.p_filesz > phdr.p_memsz) {
+      throw;
     }
 
-    GElf_Ehdr ehdr;
-    if(gelf_getehdr(e, &ehdr) == NULL) {
-      return -EIO;
+    switch(phdr.p_type) {
+      case PT_INTERP:
+        return true;
+    }
+    return false;
+  }
+
+  int ElfBinary::check_elf(const elf_file &file, const elf_ptr &eptr) {
+    if(!is_valid_elf_kind(eptr) || !is_valid_elf_class(eptr)) {
+      return -EINVAL;
     }
 
-    shared_object = (ehdr.e_type == ET_DYN);
-    entry_point = ehdr.e_entry;
-    int err = elf_getphdrnum(e, &num_phdrs);
-    if(err) {
-      return -err;
-    }
+    auto ehdr = eptr.get_ehdr();
 
-    statically_linked = true;
-    for(unsigned i = 0; i < num_phdrs; i++) {
-      GElf_Phdr phdr;
-      gelf_getphdr(e, i, &phdr);
+    _shared_object = (ehdr.e_type == ET_DYN);
+    _entry_point = ehdr.e_entry;
 
-      /* a program header's memsize may be larger than or equal to its filesize */
-      if(phdr.p_filesz > phdr.p_memsz) {
-        return -EIO;
-      }
-
-      switch(phdr.p_type) {
-        case PT_INTERP:
-          statically_linked = false;
-          get_dynamic_loader(phdr);
-          break;
-      }
-      if(!statically_linked) {
-        auxv.valid = true;
-        auxv.at_entry = entry_point;
-        auxv.at_phnum = num_phdrs;
-        auxv.at_phent = ehdr.e_phentsize;
+    _num_phdrs = eptr.get_phdrnum();
+    for(unsigned i = 0; i < _num_phdrs; i++) {
+      auto phdr = eptr.get_phdr(i);
+      _statically_linked = !check_phdr_for_interpreter(phdr);
+      if(!_statically_linked) {
+        initialize_interpreter(file, phdr);
         break;
       }
+    }
+    if(!_statically_linked) {
+      _auxv.valid = true;
+      _auxv.at_entry = _entry_point;
+      _auxv.at_phnum = _num_phdrs;
+      _auxv.at_phent = ehdr.e_phentsize;
     }
 
     return 0;
   }
 
 
-  void ElfBinary::get_dynamic_loader(GElf_Phdr phdr) {
-    int off = lseek(fd, phdr.p_offset, SEEK_SET);
-    assert(off >= 0);
-
+  void ElfBinary::get_dynamic_loader(const elf_file &file, GElf_Phdr phdr) {
     /* TODO make this nicer */
     char *l = (char *)malloc(PATH_MAX);
     assert(l != nullptr);
 
-    size_t bytes = read(fd, l, phdr.p_memsz);
-    assert(bytes == phdr.p_memsz && "short read on dynamic loader location");
-
-    loader = l;
+    file.read(l, phdr.p_memsz, phdr.p_offset);
+    _loader = l;
+    free(l);
   }
 
-  int ElfBinary::parse_program() {
+  int ElfBinary::parse_program(const elf_file &file, const elf_ptr &eptr) {
     bool pt_interp_forbidden = false;
     bool pt_phdr_forbidden = false;
 
-    for(unsigned i = 0; i < num_phdrs; i++) {
-      GElf_Phdr phdr;
-      gelf_getphdr(e, i, &phdr);
+    for(unsigned i = 0; i < _num_phdrs; i++) {
+      auto phdr = eptr.get_phdr(i);
 
       /* a program header's memsize may be larger than or equal to its filesize */
       if(phdr.p_filesz > phdr.p_memsz) {
@@ -197,10 +271,10 @@ namespace Elkvm {
         case PT_LOAD:
           pt_interp_forbidden = true;
           pt_phdr_forbidden = true;
-          load_phdr(phdr);
+          load_phdr(phdr, file, eptr);
           break;
         case PT_PHDR:
-          auxv.at_phdr = phdr.p_vaddr;
+          _auxv.at_phdr = phdr.p_vaddr;
           if(pt_phdr_forbidden) {
             return -EINVAL;
           }
@@ -213,20 +287,23 @@ namespace Elkvm {
     return 0;
   }
 
-  void ElfBinary::load_phdr(GElf_Phdr phdr) {
+  void ElfBinary::load_phdr(GElf_Phdr phdr, const elf_file &file,
+      const elf_ptr &eptr) {
     guestptr_t load_addr = phdr.p_vaddr;
-    if(shared_object && phdr.p_vaddr == 0x0) {
-      load_addr = auxv.at_base = LD_LINUX_SO_BASE;
-    } else if(auxv.at_base > 0x0) {
-      load_addr = auxv.at_base + phdr.p_vaddr;
+    if(_is_ldr) {
+      /* we are the dynamic loader, which is a shared_object
+       * therefore we need to modify the load address */
+      if(_auxv.at_base == 0x0) {
+        _auxv.at_base = loader_base_addr;
+      }
+      load_addr = _auxv.at_base + phdr.p_vaddr;
     }
 
     size_t total_size = phdr.p_memsz + offset_in_page(load_addr);
-    std::shared_ptr<Region> loadable_region =
-      _rm->allocate_region(total_size, "ELF PHdr");
+    auto loadable_region = _rm->allocate_region(total_size, "ELF PHdr");
     loadable_region->set_guest_addr(page_begin(load_addr));
 
-    int err = load_program_header(phdr, loadable_region);
+    int err = load_program_header(phdr, *loadable_region, file, eptr);
     assert(err == 0 && "Error in ElfBinary::load_program_header");
 
     ptopt_t opts = get_pager_opts_from_phdr_flags(phdr.p_flags);
@@ -236,14 +313,15 @@ namespace Elkvm {
         loadable_region->guest_address(), pages, opts);
     assert(err == 0 && "could not create pt entries for loadable region");
 
-    if(phdr.p_flags & PF_W) {
+    if(_statically_linked && (phdr.p_flags & PF_W)) {
       /* writable region should be data */
       err = _hm.init(loadable_region, total_size);
       assert(err == 0 && "Error initializing heap");
     }
   }
 
-  int ElfBinary::load_program_header(GElf_Phdr phdr, std::shared_ptr<Region> region) {
+  int ElfBinary::load_program_header(GElf_Phdr phdr, const Region &region,
+      const elf_file &file, const elf_ptr &eptr) {
     /*
      * ELF specification says to read the whole page into memory
      * this means we have "dirty" bytes at the beginning and end
@@ -258,28 +336,30 @@ namespace Elkvm {
      * Padding in the end may contain file information
      */
 
-  if(!page_aligned<guestptr_t>((uint64_t)region->base_address())) {
+  if(!page_aligned<guestptr_t>(
+        reinterpret_cast<uint64_t>(region.base_address()))) {
     return -EIO;
   }
 
-  pad_begin(phdr, region);
-  read_segment(phdr, region);
-  pad_end(phdr, region);
+  pad_begin(phdr, region, file, eptr);
+  read_segment(phdr, region, file);
+  pad_end(phdr, region, file, eptr);
 
   return 0;
   }
 
-  void ElfBinary::pad_begin(GElf_Phdr phdr, std::shared_ptr<Region> region) {
+  void ElfBinary::pad_begin(GElf_Phdr phdr, const Region &region,
+      const elf_file &file, const elf_ptr &eptr) {
     size_t padsize = offset_in_page(phdr.p_vaddr);
 
     if(padsize) {
       if(phdr.p_flags & PF_X) {
         /* executable segment should be text */
-        pad_text_begin(region, padsize);
+        pad_text_begin(region, padsize, eptr);
         return;
       } else if(phdr.p_flags & PF_W) {
         /* writeable segment should be data */
-        pad_data_begin(region, padsize);
+        pad_data_begin(region, padsize, file, eptr);
         return;
       }
 
@@ -288,13 +368,15 @@ namespace Elkvm {
     }
   }
 
-  void ElfBinary::pad_end(GElf_Phdr phdr, std::shared_ptr<Region> region) {
-    void *host_p = (char *)region->base_address() + offset_in_page(phdr.p_vaddr) + phdr.p_filesz;
-    size_t padsize = page_remain((uint64_t)host_p);
+  void ElfBinary::pad_end(GElf_Phdr phdr, const Region &region,
+      const elf_file &file, const elf_ptr &eptr) {
+    void *host_p = static_cast<char *>(region.base_address())
+      + offset_in_page(phdr.p_vaddr) + phdr.p_filesz;
+    size_t padsize = page_remain(reinterpret_cast<uint64_t>(host_p));
 
     if(phdr.p_flags & PF_X) {
       /* executable segment should be text */
-      pad_text_end(host_p, padsize);
+      pad_text_end(host_p, padsize, file, eptr);
       return;
     }
     if(phdr.p_flags & PF_W) {
@@ -308,108 +390,83 @@ namespace Elkvm {
     assert(false);
   }
 
-  void ElfBinary::read_segment(GElf_Phdr phdr, std::shared_ptr<Region> region) {
-    char *buf = (char *)region->base_address() + offset_in_page(phdr.p_vaddr);
-
-    /*
-     * make sure we are going to read full pages
-     */
-    int remaining_bytes = phdr.p_filesz;
-    int bufsize = remaining_bytes < 32768 ? remaining_bytes : 32768;
-
-    int bytes = 0;
-
-    int off = lseek(fd, phdr.p_offset, SEEK_SET);
-    assert(off >= 0 && "could not seek in file");
-
-    while((bytes = read(fd, buf, bufsize)) > 0) {
-      remaining_bytes -= bytes;
-      if(remaining_bytes < bufsize) {
-        bufsize = remaining_bytes;
-      }
-      buf += bytes;
-    }
+  void ElfBinary::read_segment(GElf_Phdr phdr, const Region &region,
+      const elf_file &file) {
+    char *buf = static_cast<char *>(region.base_address())
+      + offset_in_page(phdr.p_vaddr);
+    file.read_segment(buf, phdr.p_filesz, phdr.p_offset);
   }
 
-  void ElfBinary::pad_text_begin(std::shared_ptr<Region> region, size_t padsize) {
-    assert(e != nullptr);
-    assert(region->base_address() != nullptr);
+  void ElfBinary::pad_text_begin(const Region &region, size_t padsize,
+      const elf_ptr &eptr) {
+    assert(region.base_address() != nullptr);
 
-    GElf_Ehdr ehdr;
-    gelf_getehdr(e, &ehdr);
-
-    memcpy(region->base_address(), &ehdr, padsize);
+    auto ehdr = eptr.get_ehdr();
+    memcpy(region.base_address(), &ehdr, padsize);
   }
 
-  void ElfBinary::pad_data_begin(std::shared_ptr<Region> region, size_t padsize) {
-    text_header = find_text_header();
+  void ElfBinary::pad_data_begin(const Region &region, size_t padsize,
+      const elf_file &file, const elf_ptr &eptr) {
+    text_header = find_text_header(eptr);
 
     uint64_t text_end = text_header.p_offset + text_header.p_filesz;
 
     if(text_end > padsize) {
-      int off = lseek(fd, text_end - padsize - 1, SEEK_SET);
-      assert(off >= 0 && "seek on binary failed");
-
-      size_t bytes = read(fd, region->base_address(), padsize);
-      assert(bytes == padsize && "short read on file");
+      file.read(static_cast<char *>(region.base_address()), padsize,
+          text_end - padsize - 1);
     } else {
-      memset(region->base_address(), 0, padsize);
+      memset(region.base_address(), 0, padsize);
     }
   }
 
-  void ElfBinary::pad_text_end(void *host_p, size_t padsize) {
+  void ElfBinary::pad_text_end(void *host_p, size_t padsize, const elf_file &file,
+      const elf_ptr &eptr) {
     /*
      * find the first page of the data segment and pad the remainder of the
      * last page of text with its contents
      */
-
-    GElf_Phdr data_header = find_data_header();
-
-    int off = lseek(fd, data_header.p_offset, SEEK_SET);
-    assert(off >= 0 && "seek in binary failed");
-
-    size_t bytes = read(fd, host_p, padsize);
-    assert(bytes == padsize);
+    GElf_Phdr data_header = find_data_header(eptr);
+    file.read(static_cast<char *>(host_p), padsize, data_header.p_offset);
   }
 
-  GElf_Phdr ElfBinary::find_data_header() {
+  GElf_Phdr ElfBinary::find_header(const elf_ptr &eptr, unsigned flags) {
     GElf_Phdr phdr;
-    for(unsigned i = 0; i < num_phdrs; i++) {
-      gelf_getphdr(e, i, &phdr);
+    for(unsigned i = 0; i < _num_phdrs; i++) {
+      phdr = eptr.get_phdr(i);
 
       if(phdr.p_type == PT_LOAD &&
-          phdr.p_flags & PF_W) {
+          phdr.p_flags & flags) {
         return phdr;
       }
     }
 
     /* every elf file should have a data header */
-    assert(false && "every elf file should have a data header");
+    assert(false && "every elf file should have a data/text header");
     return phdr;
   }
 
-  GElf_Phdr ElfBinary::find_text_header() {
-    GElf_Phdr phdr;
-    for(unsigned i = 0; i < num_phdrs; i++) {
-      gelf_getphdr(e, i, &phdr);
+  GElf_Phdr ElfBinary::find_data_header(const elf_ptr &eptr) {
+    return find_header(eptr, PF_W);
+  }
 
-      if(phdr.p_type == PT_LOAD &&
-          phdr.p_flags & PF_X) {
-        return phdr;
-      }
-    }
-
-    /* every elf file should have a text header */
-    assert(false && "every elf file should have a text header");
-    return phdr;
+  GElf_Phdr ElfBinary::find_text_header(const elf_ptr &eptr) {
+    return find_header(eptr, PF_X);
   }
 
   void ElfBinary::load_dynamic() {
-    ldr = std::unique_ptr<ElfBinary>(new ElfBinary(loader, _rm, _hm));
+    _ldr = std::unique_ptr<ElfBinary>(new ElfBinary(_loader, _rm, _hm, true));
   }
 
   const struct Elf_auxv &ElfBinary::get_auxv() const {
-    return auxv;
+    return _auxv;
+  }
+
+  bool ElfBinary::is_dynamically_linked() const {
+    return !_statically_linked;
+  }
+
+  std::string ElfBinary::get_loader() const {
+    return _loader;
   }
 
   ptopt_t get_pager_opts_from_phdr_flags(int flags) {

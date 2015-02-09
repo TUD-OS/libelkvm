@@ -522,6 +522,8 @@ namespace Elkvm {
     /* sanity checks on the offset */
     if(((uint64_t)host_mem_p & (ELKVM_PAGESIZE - 1))
         != (guest_virtual & (ELKVM_PAGESIZE - 1))) {
+      DBG() << "sanity check failed host: " << host_mem_p
+        << "  guest: 0x" << std::hex << guest_virtual;
       return -EIO;
     }
 
@@ -535,6 +537,7 @@ namespace Elkvm {
     if(entry_exists(pt_entry)) {
       if((*pt_entry & 0x000FFFFFFFFFF000)
           != (guest_physical & ~(ELKVM_PAGESIZE-1))) {
+        DBG() << "page already exists";
         return -1;
       }
     }

@@ -7,7 +7,6 @@
 #include <elkvm/environ.h>
 #include <elkvm/kvm.h>
 #include <elkvm/region.h>
-#include <elkvm/region_manager.h>
 #include <elkvm/stack.h>
 #include <elkvm/elkvm-log.h>
 #include <elkvm/vcpu.h>
@@ -17,73 +16,101 @@ ElkvmLog globalElkvmLogger;
 
 namespace Elkvm {
 
-  Environment::Environment(const ElfBinary &bin, std::shared_ptr<RegionManager> rm) :
-	region(nullptr),
-	auxv(0),
-    binary(bin)
-  {
-    /* for now the region to hold env etc. will be 12 pages large */
-    region = rm->allocate_region(12 * ELKVM_PAGESIZE, "ELKVM Environment");
-    assert(region != nullptr && "error getting memory for env");
-    region->set_guest_addr(
-        reinterpret_cast<guestptr_t>(region->base_address()));
-    int err = rm->get_pager().map_user_page(region->base_address(),
-        region->guest_address(), PT_OPT_WRITE);
-    assert(err == 0 && "error mapping env region");
+  EnvRegion::EnvRegion(std::shared_ptr<Region> r) :
+    _region(r),
+    _offset(r->size()) {
+      _region->set_guest_addr(
+        reinterpret_cast<guestptr_t>(_region->base_address()));
+    }
+
+  guestptr_t EnvRegion::write_str(const std::string &str) {
+    assert(_offset > (str.length() + 1));
+    off64_t noff = _offset - str.length() - 1;
+
+    char *target = static_cast<char *>(_region->base_address()) + noff;
+    assert((target + str.length())
+        < (static_cast<char *>(_region->base_address()) + _region->size()));
+
+    guestptr_t guest_virtual = _region->guest_address() + noff;
+    assert((guest_virtual + str.length())
+        < (_region->guest_address() + _region->size()));
+
+    str.copy(target, str.length());
+    _offset = noff;
+    return guest_virtual;
   }
 
-  unsigned Environment::calc_auxv_num_and_set_auxv(char **env_p) {
+  Environment::Environment(const ElfBinary &bin, std::shared_ptr<Region> reg,
+      int argc, char **argv, char **env) :
+    _region(reg),
+    _argc(argc),
+    binary(bin)
+  {
+    fill_argv(argv),
+    fill_env(env);
+    auto auxv = calc_auxv(env);
+    fill_auxv(auxv);
+  }
+
+  Elf64_auxv_t *Environment::calc_auxv(char **env) const {
     /* XXX this breaks, if we do not get the original envp */
 
     /* traverse past the environment */
-    char **auxv_p = env_p;
+    char **auxv_p = env;
     while(*auxv_p != NULL) {
       auxv_p++;
     }
     auxv_p++;
-
-    /* now traverse past the elf auxiliary vector */
-    auxv = (Elf64_auxv_t *)auxv_p;
-
-    unsigned i;
-    for(i = 0 ; auxv->a_type != AT_NULL; auxv++, i++);
-
-    /* auxv now ponts to the AT_NULL entry at the bottom (highest address)
-     * on the aux vector, we return the amount of entries - 1 */
-    return i;
+    return reinterpret_cast<Elf64_auxv_t *>(auxv_p);
   }
 
-  void Environment::fix_auxv_dynamic_values(unsigned count) {
-    auto current_auxv = auxv;
-    short all_set = 0;
+  void Environment::fill_argv(char **argv) {
+    for(int i = 0; i < _argc; i++) {
+      _argv.emplace_back(argv[i]);
+    }
+  }
 
-    for(unsigned i= 0 ; i < count; current_auxv--, i++) {
+  void Environment::fill_env(char **env) {
+    while(*env != nullptr) {
+      _env.emplace_back(*env);
+      env++;
+    }
+  }
+
+  void Environment::fill_auxv(Elf64_auxv_t *auxv) {
+    while(auxv->a_type != AT_NULL) {
+      _auxv.push_back(*auxv);
+      auxv++;
+    }
+  }
+
+  void Environment::fix_auxv_dynamic_values() {
+    short all_set = 0;
+    for(auto &a : _auxv) {
       /*
        * if the binary is dynamically linked, we need to reset these types
        * so the dynamic linker loads the correct values
        */
-        switch(current_auxv->a_type) {
+        switch(a.a_type) {
+
           case AT_PHDR:
-            current_auxv->a_un.a_val = binary.get_auxv().at_phdr;
+            a.a_un.a_val = binary.get_auxv().at_phdr;
             all_set |= 0x1;
             break;
           case AT_PHENT:
-            current_auxv->a_un.a_val = binary.get_auxv().at_phent;
+            a.a_un.a_val = binary.get_auxv().at_phent;
             all_set |= 0x2;
             break;
           case AT_PHNUM:
-            current_auxv->a_un.a_val = binary.get_auxv().at_phnum;
+            a.a_un.a_val = binary.get_auxv().at_phnum;
             all_set |= 0x4;
             break;
-          case AT_EXECFD:
-            /* TODO maybe this needs to be removed? */
-            break;
           case AT_ENTRY:
-            current_auxv->a_un.a_val = binary.get_auxv().at_entry;
+            a.a_un.a_val = binary.get_auxv().at_entry;
             all_set |= 0x8;
             break;
           case AT_BASE:
-            current_auxv->a_un.a_val = binary.get_auxv().at_base;
+            a.a_un.a_val = binary.get_auxv().at_base;
             all_set |= 0x10;
             break;
         }
@@ -91,135 +118,99 @@ namespace Elkvm {
     assert(all_set == 0x1F && "elf auxv is complete");
   }
 
-  off64_t Environment::push_auxv(const std::shared_ptr<VCPU>& vcpu, char **env_p) {
-    unsigned count = calc_auxv_num_and_set_auxv(env_p);
+  bool Environment::treat_as_int_type(int type) const {
+    std::vector<int> itypes({
+          AT_NULL,
+          AT_IGNORE,
+          AT_EXECFD,
+          AT_PHDR,
+          AT_PHENT,
+          AT_PHNUM,
+          AT_PAGESZ,
+          AT_FLAGS,
+          AT_ENTRY,
+          AT_NOTELF,
+          AT_UID,
+          AT_EUID,
+          AT_GID,
+          AT_EGID,
+          AT_HWCAP,
+          AT_CLKTCK,
+          AT_SECURE,
+          AT_BASE,
+        });
+    auto it = std::find(itypes.begin(), itypes.end(), type);
+    return it != itypes.end();
+  }
 
-    off64_t offset = 0;
+  bool Environment::ignored_type(int type) const {
+    std::vector<int> ignored({
+        AT_SYSINFO_EHDR
+        });
+    auto it = std::find(std::begin(ignored), std::end(ignored), type);
+    return it != ignored.end();
+  }
 
-    if(binary.get_auxv().valid) {
-      fix_auxv_dynamic_values(count);
-    } else {
-      for(unsigned i= 0 ; i < count; auxv--, i++) {
-        switch(auxv->a_type) {
-          case AT_NULL:
-          case AT_IGNORE:
-          case AT_EXECFD:
-          case AT_PHDR:
-          case AT_PHENT:
-          case AT_PHNUM:
-          case AT_PAGESZ:
-          case AT_FLAGS:
-          case AT_ENTRY:
-          case AT_NOTELF:
-          case AT_UID:
-          case AT_EUID:
-          case AT_GID:
-          case AT_EGID:
-            /* not sure about this one, might be a pointer */
-          case AT_HWCAP:
-          case AT_CLKTCK:
-          case AT_SECURE:
-          case AT_BASE:
-          /*
-           * AT_BASE points to the base address of the dynamic linker
-           */
-            vcpu->push(auxv->a_un.a_val);
-            break;
-          case AT_PLATFORM:
-          case 25:
-          case 31:
-          case AT_SYSINFO_EHDR:
-            ;
-            char *target = reinterpret_cast<char *>(region->base_address()) + offset;
-            guestptr_t guest_virtual = region->guest_address() + offset;
-            int len = strlen((char *)auxv->a_un.a_val) + 1;
-            strcpy(target, (char *)auxv->a_un.a_val);
-            offset = offset + len;
-            vcpu->push(guest_virtual);
-            break;
+  void Environment::push_auxv_raw(VCPU &vcpu) {
+    for(auto it = _auxv.rbegin(); it != _auxv.rend(); it++) {
+      const auto &auxv  = *it;
+      if(!ignored_type(auxv.a_type)) {
+        if(treat_as_int_type(auxv.a_type)) {
+          vcpu.push(auxv.a_un.a_val);
+        } else {
+          push_str_copy(vcpu, std::string(reinterpret_cast<char *>(auxv.a_un.a_val)));
         }
-        vcpu->push(auxv->a_type);
+        vcpu.push(auxv.a_type);
       }
     }
-
-    return offset;
   }
 
-  off64_t Environment::push_str_copy(const std::shared_ptr<VCPU>& vcpu,
-      off64_t offset, std::string str) const {
-    char *target = reinterpret_cast<char *>(region->base_address()) + offset;
-    guestptr_t guest_virtual = region->guest_address() + offset;
-    off64_t bytes = str.length() + 1;
-
-    strcpy(target, str.c_str());
-
-    vcpu->push(guest_virtual);
-    return bytes;
+  void Environment::push_auxv(VCPU& vcpu) {
+    if(binary.get_auxv().valid) {
+      fix_auxv_dynamic_values();
+    }
+    push_auxv_raw(vcpu);
+    vcpu.push(0);
   }
 
-  int Environment::copy_and_push_str_arr_p(const std::shared_ptr<VCPU>& vcpu,
-      off64_t offset, char **str) const {
-    if(str == NULL) {
-      return 0;
+  void Environment::push_env(VCPU& vcpu) {
+    for(auto it = _env.rbegin(); it != _env.rend(); it++) {
+      push_str_copy(vcpu, *it);
     }
-
-    char *target = reinterpret_cast<char *>(region->base_address()) + offset;
-    guestptr_t guest_virtual = region->guest_address() + offset;
-    int bytes = 0;
-
-    //first push the environment onto the stack
-    int i = 0;
-    while(str[i]) {
-      i++;
-    }
-
-    for(i = i - 1; i >= 0; i--) {
-      int len = strlen(str[i]) + 1;
-
-      //copy the data into the vm memory
-      strcpy(target, str[i]);
-
-      //and push the pointer for the vm
-      vcpu->push(guest_virtual);
-
-      target = target + len;
-      bytes += len;
-      guest_virtual = guest_virtual + len;
-    }
-
-    return bytes;
+    vcpu.push(0);
   }
 
+  void Environment::push_argv(VCPU& vcpu) {
+    for(auto it = _argv.rbegin(); it != _argv.rend(); it++) {
+      push_str_copy(vcpu, *it);
+    }
+  }
 
-int Environment::fill(elkvm_opts *opts,
-    const std::shared_ptr<VCPU>& vcpu) {
-  int err = vcpu->get_regs();
+  void Environment::push_argc(VCPU &vcpu) const {
+    vcpu.push(_argc);
+  }
+
+  void Environment::push_str_copy(VCPU& vcpu, const std::string &str) {
+    auto guest_virtual = _region.write_str(str);
+    vcpu.push(guest_virtual);
+  }
+
+int Environment::create(VCPU& vcpu) {
+  int err = vcpu.get_regs();
   assert(err == 0 && "error getting vcpu");
 
-  off64_t bytes = push_auxv(vcpu, opts->environ);
-  off64_t bytes_total = bytes;
-
-  vcpu->push(0);
-  bytes = copy_and_push_str_arr_p(vcpu, bytes_total, opts->environ);
-  bytes_total = bytes_total + bytes;
-  vcpu->push(0);
-  assert(bytes > 0);
-
-  /* followed by argv pointers */
-  bytes = copy_and_push_str_arr_p(vcpu, bytes_total, opts->argv);
-  bytes_total = bytes_total + bytes;
-  assert(bytes > 0);
+  push_auxv(vcpu);
+  push_env(vcpu);
+  push_argv(vcpu);
+  push_argc(vcpu);
 
   /* if the binary is dynamically linked we need to ajdust some stuff */
-  if(binary.is_dynamically_linked()) {
-    push_str_copy(vcpu, bytes_total, binary.get_loader());
-    opts->argc++;
-  }
+  //if(binary.is_dynamically_linked()) {
+  //  push_str_copy(*vcpu, bytes, binary.get_loader());
+  //  opts->argc++;
+  //}
 
-  /* at last push argc on the stack */
-  vcpu->push(opts->argc);
-
-  err = vcpu->set_regs();
+  err = vcpu.set_regs();
   return err;
 }
 

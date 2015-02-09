@@ -23,9 +23,6 @@
 #include <elkvm/region.h>
 #include <elkvm/elkvm-log.h>
 
-#define LOG_GUEST_HOST(guest, host) (void*)guest << " (" << (void*)host << ")"
-#define LOG_DEC_HEX(val) std::dec << val << " (" << std::hex << "0x" << val << ")"
-
 X86_64_ABI::paramtype
 X86_64_ABI::get_parameter(std::shared_ptr<Elkvm::VCPU> vcpu, unsigned pos)
 {
