@@ -770,10 +770,6 @@ long elkvm_do_migrate_pages(Elkvm::VM * vmi __attribute__((unused))) {
   UNIMPLEMENTED_SYSCALL;
 }
 
-long elkvm_do_set_robust_list(Elkvm::VM *vm __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
 long elkvm_do_get_robust_list(Elkvm::VM *vm __attribute__((unused))) {
   UNIMPLEMENTED_SYSCALL;
 }
