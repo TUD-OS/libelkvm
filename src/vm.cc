@@ -109,9 +109,6 @@ int setup_proxy_os(const std::shared_ptr<VM>& vm) {
   err = create_sighandler(vm);
   assert(err == 0 && "error loading signal handler");
 
-  vm->init_rlimits();
-  assert(err == 0 && "error initializing rlimits");
-
   return 0;
 }
 
@@ -214,16 +211,6 @@ void VM::unpack_syscall(CURRENT_ABI::paramtype *arg1,
   *arg4 = CURRENT_ABI::get_parameter(get_vcpu(0), 4);
   *arg5 = CURRENT_ABI::get_parameter(get_vcpu(0), 5);
   *arg6 = CURRENT_ABI::get_parameter(get_vcpu(0), 6);
-}
-int VM::init_rlimits()
-{
-  for (unsigned i = 0; i < RLIMIT_NLIMITS; ++i) {
-    int err = ::getrlimit(i, &_vm.rlimits[i]);
-    if(err) {
-      return err;
-    }
-  }
-  return 0;
 }
 
 std::shared_ptr<VM> create_vm_object(const elkvm_opts * const opts,

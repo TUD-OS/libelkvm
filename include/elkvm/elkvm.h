@@ -183,11 +183,6 @@ class VM {
      *       subclass if we ever decide to have alternative
      *       virtualization environments
      */
-    struct {
-      int fd;
-      struct rlimit rlimits[RLIMIT_NLIMITS];
-    } _vm;
-
     std::shared_ptr<RegionManager> _rm;
     std::shared_ptr<Elkvm::Region> _gdt;
     HeapManager hm;
@@ -270,14 +265,6 @@ class VM {
      * \brief Put the VM in debug mode
      */
     void set_debug(bool on = true) { _debug = on; }
-
-    /*
-     * Initialize the VM's rlimits.
-     * TODO: move to KVM subclass
-     */
-    int init_rlimits();
-
-
 
     /*
      * Runs all CPUS of the VM
