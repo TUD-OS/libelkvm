@@ -30,7 +30,7 @@ namespace Elkvm {
   static void dbg_log_result(T res);
 
   template<>
-  static void dbg_log_result<char *>(char *res) {
+  void dbg_log_result<char *>(char *res) {
     DBG() << "\tresult: " << res;
     if(res == nullptr) {
       DBG() << "\terrno: " << std::dec << errno << " msg: " << strerror(errno);
@@ -38,7 +38,7 @@ namespace Elkvm {
   }
 
   template<>
-  static void dbg_log_result<int>(int res) {
+  void dbg_log_result<int>(int res) {
     DBG() << "\tresult: " << std::dec << res;
     if(res < 0) {
       DBG() << "\terrno: " << std::dec << errno << " msg: " << strerror(errno);
