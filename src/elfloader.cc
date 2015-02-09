@@ -313,11 +313,13 @@ namespace Elkvm {
         loadable_region->guest_address(), pages, opts);
     assert(err == 0 && "could not create pt entries for loadable region");
 
-    if(_statically_linked && (phdr.p_flags & PF_W)) {
-      /* writable region should be data */
-      err = _hm.init(loadable_region, total_size);
-      assert(err == 0 && "Error initializing heap");
-    }
+    /* writable region should be data,
+     * for dynamic binaries we call init twice, once for the dynamic binary
+     * itself and once for the dynamic loader. this should not be a problem,
+     * because we always call init for the dynamic loader last and we actually
+     * want the brk address set to the dynamic loader's. */
+    err = _hm.init(loadable_region, total_size);
+    assert(err == 0 && "Error initializing heap");
   }
 
   int ElfBinary::load_program_header(GElf_Phdr phdr, const Region &region,
