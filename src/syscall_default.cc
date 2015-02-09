@@ -194,6 +194,10 @@ long pass_statfs(const char *path, struct statfs *buf) {
   return statfs(path, buf);
 }
 
+long pass_setrlimit(int resource, const struct rlimit *rlim) {
+  return setrlimit(resource, rlim);
+}
+
 long pass_gettid() {
   return syscall(__NR_gettid);
 }
@@ -329,6 +333,8 @@ Elkvm::default_handlers = {
   .times = NULL,
   /* ... */
   .statfs = pass_statfs,
+  /* ... */
+  .setrlimit = pass_setrlimit,
   /* ... */
   .gettid = pass_gettid,
   .time = pass_time,

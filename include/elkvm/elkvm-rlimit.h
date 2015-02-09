@@ -14,6 +14,7 @@ class rlimit {
   public:
     rlimit();
     const struct ::rlimit *get(int i) const;
+    void set(int i, const struct ::rlimit *val);
 };
 
 //namespace Elkvm

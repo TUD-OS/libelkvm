@@ -331,6 +331,10 @@ const struct ::rlimit *Elkvm::VM::get_rlimit(int i) const {
   return _rlimit.get(i);
 }
 
+void Elkvm::VM::set_rlimit(int i, const struct ::rlimit *rlim) {
+  _rlimit.set(i, rlim);
+}
+
 Elkvm::rlimit::rlimit() {
   for (auto i = 0; i < RLIMIT_NLIMITS; ++i) {
     int err = ::getrlimit(i, &_rlimits[i]);
@@ -339,8 +343,13 @@ Elkvm::rlimit::rlimit() {
 }
 
 const struct ::rlimit *Elkvm::rlimit::get(int i) const {
-  assert(i < RLIMIT_NLIMITS);
+  assert(0 <= i && i < RLIMIT_NLIMITS);
   return &_rlimits[i];
+}
+
+void Elkvm::rlimit::set(int i, const struct ::rlimit *val) {
+  assert(0 <= i && i < RLIMIT_NLIMITS);
+  _rlimits[i] = *val;
 }
 
 void elkvm_emulate_vmcall(const std::shared_ptr<Elkvm::VCPU>& vcpu) {

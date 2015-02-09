@@ -131,6 +131,8 @@ struct elkvm_handlers {
   /* ... */
   long (*statfs) (const char *path, struct statfs *buf);
   /* ... */
+  long (*setrlimit) (int resource, const struct ::rlimit *rlim);
+  /* ... */
   long (*gettid)(void);
   /* ... */
   long (*time) (time_t *t);
@@ -261,6 +263,7 @@ class VM {
     { return this->hypercall_handlers; }
 
     const struct ::rlimit *get_rlimit(int i) const;
+    void set_rlimit(int i, const struct ::rlimit *rlim);
     const struct sigaction* get_sig_ptr(unsigned sig) const;
 
     int debug_mode() const { return _debug; }
