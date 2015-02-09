@@ -135,6 +135,8 @@ struct elkvm_handlers {
       int *uaddr2, int val3);
   /* ... */
   long (*epoll_create)(int);
+  /* ... */
+  long (*set_tid_address)(int *);
   long (*epoll_ctl)(int, int, int, struct epoll_event*);
   long (*epoll_wait)(int, struct epoll_event*, int, int);
   /* ... */
@@ -243,6 +245,7 @@ class VM {
     HeapManager &get_heap_manager() { return hm; }
     const std::shared_ptr<VCPU>& get_vcpu(int num) const;
     int get_vmfd() const { return _vmfd; }
+    void *host_p(guestptr_t ptr) const { return _rm->get_pager().get_host_p(ptr); }
     Elkvm::elkvm_flat &get_cleanup_flat();
 
     const std::shared_ptr<Elkvm::Region>& get_gdt_region() { return _gdt; }

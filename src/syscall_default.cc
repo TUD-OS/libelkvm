@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstring>
 #include <linux/futex.h>
+#include <linux/unistd.h>
 #include <sys/epoll.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
@@ -251,6 +252,9 @@ long pass_epoll_create(int size) {
   return epoll_create(size);
 }
 
+long pass_set_tid_address(int *tidptr) {
+  return syscall(__NR_set_tid_address, tidptr);
+}
 
 long pass_epoll_ctl(int epfd, int op, int fd, struct epoll_event* event) {
   return epoll_ctl(epfd, op, fd, event);
@@ -327,6 +331,7 @@ Elkvm::default_handlers = {
   .futex = pass_futex,
   /* ... */
   .epoll_create = pass_epoll_create,
+  .set_tid_address = pass_set_tid_address,
   .epoll_ctl = pass_epoll_ctl,
   .epoll_wait = pass_epoll_wait,
   /* ... */

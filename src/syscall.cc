@@ -322,16 +322,6 @@ __attribute__((used))
 
 };
 
-#define DETECT_UNIMPLEMENTED 1
-#if DETECT_UNIMPLEMENTED
-  #define UNIMPLEMENTED_SYSCALL do { \
-      ERROR() << "unimplemented"; exit(1); \
-      return -ENOSYS; \
-    } while (0);
-#else
-  #define UNIMPLEMENTED_SYSCALL return -ENOSYS;
-#endif
-
 int Elkvm::VM::handle_hypercall(const std::shared_ptr<Elkvm::VCPU>& vcpu) {
 
   int err = 0;
@@ -404,27 +394,6 @@ int Elkvm::VM::handle_syscall(const std::shared_ptr<Elkvm::VCPU>& vcpu)
 }
 
 namespace Elkvm {
-
-template<typename T>
-void dbg_log_result(T res) {
-  DBG() << "\tresult: " << res;
-}
-
-template<>
-void dbg_log_result<char *>(char *res) {
-  DBG() << "\tresult: " << res;
-  if(res == nullptr) {
-    DBG() << "\terrno: " << std::dec << errno << " msg: " << strerror(errno);
-  }
-}
-
-template<>
-void dbg_log_result<int>(int res) {
-  DBG() << "\tresult: " << std::dec << res;
-  if(res < 0) {
-    DBG() << "\terrno: " << std::dec << errno << " msg: " << strerror(errno);
-  }
-}
 
 void dbg_log_read(const Elkvm::VM &vm, const int fd, const guestptr_t buf_p,
     const void *buf, const size_t parcount, const size_t count,
@@ -2465,10 +2434,6 @@ long elkvm_do_remap_file_pages(Elkvm::VM * vmi __attribute__((unused))) {
 }
 
 long elkvm_do_getdents64(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_set_tid_address(Elkvm::VM * vmi __attribute__((unused))) {
   UNIMPLEMENTED_SYSCALL;
 }
 
