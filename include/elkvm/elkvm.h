@@ -135,6 +135,8 @@ struct elkvm_handlers {
       int *uaddr2, int val3);
   /* ... */
   long (*epoll_create)(int);
+  /* ... */
+  long (*set_tid_address)(int *);
   long (*epoll_ctl)(int, int, int, struct epoll_event*);
   long (*epoll_wait)(int, struct epoll_event*, int, int);
   /* ... */

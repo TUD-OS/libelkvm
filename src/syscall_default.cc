@@ -327,6 +327,7 @@ Elkvm::default_handlers = {
   .futex = pass_futex,
   /* ... */
   .epoll_create = pass_epoll_create,
+  .set_tid_address = nullptr,
   .epoll_ctl = pass_epoll_ctl,
   .epoll_wait = pass_epoll_wait,
   /* ... */
