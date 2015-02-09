@@ -29,8 +29,13 @@ int Elkvm::VM::signal_register(int signum, struct sigaction *act,
     struct sigaction *oldact) {
   assert(signum < _NSIG);
 
-  if(oldact != NULL) {
-    memcpy(oldact, const_cast<struct sigaction*>(get_sig_ptr(signum)), sizeof(struct sigaction));
+  if(32 <= signum && signum <= 64) {
+    /* these are real-time signals, we need to adjust the signal number,
+     * because this is what the libc did, before the ELKVM proxy kernel
+     * got the syscall, we need to adjust these back
+     * XXX this is a crude and poorly understood hack! */
+    signum = signum % 32;
+    signum += SIGRTMIN;
   }
 
   if(oldact != nullptr) {
