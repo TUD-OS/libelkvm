@@ -19,6 +19,7 @@
 #include <memory>
 
 #include <elkvm/elkvm-log.h>
+#include <elkvm/elkvm-rlimit.h>
 #include <elkvm/types.h>
 #include <elkvm/heap.h>
 #include <elkvm/region_manager.h>
@@ -37,6 +38,7 @@
 namespace Elkvm {
 
 class ElfBinary;
+class rlimit;
 class VCPU;
 class VM;
 
@@ -193,6 +195,7 @@ class VM {
     char **_environ;
     int _run_struct_size;
 
+    rlimit _rlimit;
     elkvm_signals sigs;
     elkvm_flat sighandler_cleanup;
     const Elkvm::hypercall_handlers *hypercall_handlers;
@@ -257,6 +260,7 @@ class VM {
     const Elkvm::hypercall_handlers* get_hyp_handlers() const
     { return this->hypercall_handlers; }
 
+    const struct ::rlimit *get_rlimit(int i) const;
     const struct sigaction* get_sig_ptr(unsigned sig) const;
 
     int debug_mode() const { return _debug; }

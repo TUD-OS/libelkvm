@@ -16,6 +16,7 @@
 #include <elkvm/elkvm.h>
 #include <elkvm/elkvm-internal.h>
 #include <elkvm/elkvm-log.h>
+#include <elkvm/elkvm-rlimit.h>
 #include <elkvm/debug.h>
 #include <elkvm/environ.h>
 #include <elkvm/elfloader.h>
@@ -324,6 +325,22 @@ int Elkvm::VM::chunk_remap(int num, size_t newsize) {
   err = ioctl(get_vmfd(), KVM_SET_USER_MEMORY_REGION, chunk.get());
   assert(err == 0);
   return 0;
+}
+
+const struct ::rlimit *Elkvm::VM::get_rlimit(int i) const {
+  return _rlimit.get(i);
+}
+
+Elkvm::rlimit::rlimit() {
+  for (auto i = 0; i < RLIMIT_NLIMITS; ++i) {
+    int err = ::getrlimit(i, &_rlimits[i]);
+    assert(err == 0 && "error getting rlimits");
+  }
+}
+
+const struct ::rlimit *Elkvm::rlimit::get(int i) const {
+  assert(i < RLIMIT_NLIMITS);
+  return &_rlimits[i];
 }
 
 void elkvm_emulate_vmcall(const std::shared_ptr<Elkvm::VCPU>& vcpu) {

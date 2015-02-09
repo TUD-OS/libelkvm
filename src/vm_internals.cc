@@ -10,6 +10,7 @@
 #include <elkvm/elkvm.h>
 #include <elkvm/elkvm-log.h>
 #include <elkvm/elkvm-internal.h>
+#include <elkvm/elkvm-rlimit.h>
 #include <elkvm/pager.h>
 #include <elkvm/vcpu.h>
 
@@ -31,6 +32,7 @@ namespace Elkvm {
     _argv(argv),
     _environ(environ),
     _run_struct_size(run_struct_size),
+    _rlimit(),
     sigs(),
     sighandler_cleanup(),
     hypercall_handlers(hyp_handlers),
