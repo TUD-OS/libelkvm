@@ -5,6 +5,7 @@ SET( libelkvm_MOC_HEADERS
     elkvm.h
     elkvm-internal.h
     elkvm-log.h
+    elkvm-rlimit.h
     elkvm-udis86.h
     environ.h
     gdbstub.h

@@ -16,6 +16,7 @@
 #include <elkvm/elkvm.h>
 #include <elkvm/elkvm-internal.h>
 #include <elkvm/elkvm-log.h>
+#include <elkvm/elkvm-rlimit.h>
 #include <elkvm/debug.h>
 #include <elkvm/environ.h>
 #include <elkvm/elfloader.h>
@@ -108,9 +109,6 @@ int setup_proxy_os(const std::shared_ptr<VM>& vm) {
 
   err = create_sighandler(vm);
   assert(err == 0 && "error loading signal handler");
-
-  vm->init_rlimits();
-  assert(err == 0 && "error initializing rlimits");
 
   return 0;
 }
@@ -214,16 +212,6 @@ void VM::unpack_syscall(CURRENT_ABI::paramtype *arg1,
   *arg4 = CURRENT_ABI::get_parameter(get_vcpu(0), 4);
   *arg5 = CURRENT_ABI::get_parameter(get_vcpu(0), 5);
   *arg6 = CURRENT_ABI::get_parameter(get_vcpu(0), 6);
-}
-int VM::init_rlimits()
-{
-  for (unsigned i = 0; i < RLIMIT_NLIMITS; ++i) {
-    int err = ::getrlimit(i, &_vm.rlimits[i]);
-    if(err) {
-      return err;
-    }
-  }
-  return 0;
 }
 
 std::shared_ptr<VM> create_vm_object(const elkvm_opts * const opts,
@@ -337,6 +325,31 @@ int Elkvm::VM::chunk_remap(int num, size_t newsize) {
   err = ioctl(get_vmfd(), KVM_SET_USER_MEMORY_REGION, chunk.get());
   assert(err == 0);
   return 0;
+}
+
+const struct ::rlimit *Elkvm::VM::get_rlimit(int i) const {
+  return _rlimit.get(i);
+}
+
+void Elkvm::VM::set_rlimit(int i, const struct ::rlimit *rlim) {
+  _rlimit.set(i, rlim);
+}
+
+Elkvm::rlimit::rlimit() {
+  for (auto i = 0; i < RLIMIT_NLIMITS; ++i) {
+    int err = ::getrlimit(i, &_rlimits[i]);
+    assert(err == 0 && "error getting rlimits");
+  }
+}
+
+const struct ::rlimit *Elkvm::rlimit::get(int i) const {
+  assert(0 <= i && i < RLIMIT_NLIMITS);
+  return &_rlimits[i];
+}
+
+void Elkvm::rlimit::set(int i, const struct ::rlimit *val) {
+  assert(0 <= i && i < RLIMIT_NLIMITS);
+  _rlimits[i] = *val;
 }
 
 void elkvm_emulate_vmcall(const std::shared_ptr<Elkvm::VCPU>& vcpu) {

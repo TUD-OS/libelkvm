@@ -10,6 +10,7 @@
 #include <elkvm/elkvm.h>
 #include <elkvm/elkvm-log.h>
 #include <elkvm/elkvm-internal.h>
+#include <elkvm/elkvm-rlimit.h>
 #include <elkvm/pager.h>
 #include <elkvm/vcpu.h>
 
@@ -23,7 +24,6 @@ namespace Elkvm {
       int debug) :
     cpus(),
     _debug(debug == 1),
-    _vm(),
     _rm(std::make_shared<RegionManager>(vmfd)),
     _gdt(nullptr),
     hm(_rm),
@@ -32,13 +32,12 @@ namespace Elkvm {
     _argv(argv),
     _environ(environ),
     _run_struct_size(run_struct_size),
+    _rlimit(),
     sigs(),
     sighandler_cleanup(),
     hypercall_handlers(hyp_handlers),
     syscall_handlers(handlers)
-  {
-    _vm.fd = vmfd;
-  }
+  {}
 
   int VM::add_cpu() {
     std::shared_ptr<VCPU> vcpu =

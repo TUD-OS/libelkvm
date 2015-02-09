@@ -19,6 +19,7 @@
 #include <memory>
 
 #include <elkvm/elkvm-log.h>
+#include <elkvm/elkvm-rlimit.h>
 #include <elkvm/types.h>
 #include <elkvm/heap.h>
 #include <elkvm/region_manager.h>
@@ -37,6 +38,7 @@
 namespace Elkvm {
 
 class ElfBinary;
+class rlimit;
 class VCPU;
 class VM;
 
@@ -129,6 +131,8 @@ struct elkvm_handlers {
   /* ... */
   long (*statfs) (const char *path, struct statfs *buf);
   /* ... */
+  long (*setrlimit) (int resource, const struct ::rlimit *rlim);
+  /* ... */
   long (*gettid)(void);
   /* ... */
   long (*time) (time_t *t);
@@ -183,11 +187,6 @@ class VM {
      *       subclass if we ever decide to have alternative
      *       virtualization environments
      */
-    struct {
-      int fd;
-      struct rlimit rlimits[RLIMIT_NLIMITS];
-    } _vm;
-
     std::shared_ptr<RegionManager> _rm;
     std::shared_ptr<Elkvm::Region> _gdt;
     HeapManager hm;
@@ -198,6 +197,7 @@ class VM {
     char **_environ;
     int _run_struct_size;
 
+    rlimit _rlimit;
     elkvm_signals sigs;
     elkvm_flat sighandler_cleanup;
     const Elkvm::hypercall_handlers *hypercall_handlers;
@@ -262,6 +262,8 @@ class VM {
     const Elkvm::hypercall_handlers* get_hyp_handlers() const
     { return this->hypercall_handlers; }
 
+    const struct ::rlimit *get_rlimit(int i) const;
+    void set_rlimit(int i, const struct ::rlimit *rlim);
     const struct sigaction* get_sig_ptr(unsigned sig) const;
 
     int debug_mode() const { return _debug; }
@@ -270,14 +272,6 @@ class VM {
      * \brief Put the VM in debug mode
      */
     void set_debug(bool on = true) { _debug = on; }
-
-    /*
-     * Initialize the VM's rlimits.
-     * TODO: move to KVM subclass
-     */
-    int init_rlimits();
-
-
 
     /*
      * Runs all CPUS of the VM
