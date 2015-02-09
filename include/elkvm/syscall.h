@@ -4,6 +4,8 @@
 
 #include <memory>
 
+#include <elkvm/elkvm-log.h>
+
 #define ELKVM_HYPERCALL_SYSCALL   1
 #define ELKVM_HYPERCALL_INTERRUPT 2
 
@@ -23,6 +25,32 @@
 namespace Elkvm {
   class VCPU;
   class VM;
+
+  template<typename T>
+  static void dbg_log_result(T res);
+
+  template<>
+  static void dbg_log_result<char *>(char *res) {
+    DBG() << "\tresult: " << res;
+    if(res == nullptr) {
+      DBG() << "\terrno: " << std::dec << errno << " msg: " << strerror(errno);
+    }
+  }
+
+  template<>
+  static void dbg_log_result<int>(int res) {
+    DBG() << "\tresult: " << std::dec << res;
+    if(res < 0) {
+      DBG() << "\terrno: " << std::dec << errno << " msg: " << strerror(errno);
+    }
+  }
+
+  template<typename T>
+  static void dbg_log_result(T res) {
+    DBG() << "\tresult: " << res;
+  }
+
+
 }
 
 /*

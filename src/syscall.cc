@@ -395,27 +395,6 @@ int Elkvm::VM::handle_syscall(const std::shared_ptr<Elkvm::VCPU>& vcpu)
 
 namespace Elkvm {
 
-template<typename T>
-void dbg_log_result(T res) {
-  DBG() << "\tresult: " << res;
-}
-
-template<>
-void dbg_log_result<char *>(char *res) {
-  DBG() << "\tresult: " << res;
-  if(res == nullptr) {
-    DBG() << "\terrno: " << std::dec << errno << " msg: " << strerror(errno);
-  }
-}
-
-template<>
-void dbg_log_result<int>(int res) {
-  DBG() << "\tresult: " << std::dec << res;
-  if(res < 0) {
-    DBG() << "\terrno: " << std::dec << errno << " msg: " << strerror(errno);
-  }
-}
-
 void dbg_log_read(const Elkvm::VM &vm, const int fd, const guestptr_t buf_p,
     const void *buf, const size_t parcount, const size_t count,
     const size_t result) {
