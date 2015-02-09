@@ -24,7 +24,8 @@
 namespace Elkvm {
   class VCPU;
 
-  elf_file::elf_file(std::string pathname) {
+  elf_file::elf_file(std::string pathname) :
+  _fd(0) {
     _fd = open(pathname.c_str(), O_RDONLY);
     if(_fd < 1) {
       throw;
@@ -70,7 +71,8 @@ namespace Elkvm {
     return read_bytes;
   }
 
-  elf_ptr::elf_ptr(const elf_file &file) {
+  elf_ptr::elf_ptr(const elf_file &file) :
+  _ptr(nullptr) {
     /* always call elf_version first, otherwise elf_begin won't work */
     if(elf_version(EV_CURRENT) == EV_NONE) {
       throw;

@@ -335,7 +335,8 @@ void Elkvm::VM::set_rlimit(int i, const struct ::rlimit *rlim) {
   _rlimit.set(i, rlim);
 }
 
-Elkvm::rlimit::rlimit() {
+Elkvm::rlimit::rlimit() :
+  _rlimits() {
   for (auto i = 0; i < RLIMIT_NLIMITS; ++i) {
     int err = ::getrlimit(i, &_rlimits[i]);
     assert(err == 0 && "error getting rlimits");

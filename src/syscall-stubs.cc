@@ -745,6 +745,66 @@ long elkvm_do_migrate_pages(Elkvm::VM * vmi __attribute__((unused))) {
   UNIMPLEMENTED_SYSCALL;
 }
 
+long elkvm_do_mkdirat(Elkvm::VM *) {
+  UNIMPLEMENTED_SYSCALL;
+}
+
+long elkvm_do_mknodat(Elkvm::VM *) {
+  UNIMPLEMENTED_SYSCALL;
+}
+
+long elkvm_do_fchownat(Elkvm::VM *) {
+  UNIMPLEMENTED_SYSCALL;
+}
+
+long elkvm_do_futimesat(Elkvm::VM *) {
+  UNIMPLEMENTED_SYSCALL;
+}
+
+long elkvm_do_newfstatat(Elkvm::VM *) {
+  UNIMPLEMENTED_SYSCALL;
+}
+
+long elkvm_do_unlinkat(Elkvm::VM *) {
+  UNIMPLEMENTED_SYSCALL;
+}
+
+long elkvm_do_renameat(Elkvm::VM *) {
+  UNIMPLEMENTED_SYSCALL;
+}
+
+long elkvm_do_linkat(Elkvm::VM *) {
+  UNIMPLEMENTED_SYSCALL;
+}
+
+long elkvm_do_symlinkat(Elkvm::VM *) {
+  UNIMPLEMENTED_SYSCALL;
+}
+
+long elkvm_do_readlinkat(Elkvm::VM *) {
+  UNIMPLEMENTED_SYSCALL;
+}
+
+long elkvm_do_fchmodat(Elkvm::VM *) {
+  UNIMPLEMENTED_SYSCALL;
+}
+
+long elkvm_do_faccessat(Elkvm::VM *) {
+  UNIMPLEMENTED_SYSCALL;
+}
+
+long elkvm_do_pselect6(Elkvm::VM *) {
+  UNIMPLEMENTED_SYSCALL;
+}
+
+long elkvm_do_ppoll(Elkvm::VM *) {
+  UNIMPLEMENTED_SYSCALL;
+}
+
+long elkvm_do_unshare(Elkvm::VM *) {
+  UNIMPLEMENTED_SYSCALL;
+}
+
 long elkvm_do_get_robust_list(Elkvm::VM *vm __attribute__((unused))) {
   UNIMPLEMENTED_SYSCALL;
 }

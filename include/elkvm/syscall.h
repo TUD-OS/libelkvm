@@ -30,7 +30,7 @@ namespace Elkvm {
   static void dbg_log_result(T res);
 
   template<>
-  static void dbg_log_result<char *>(char *res) {
+  void dbg_log_result<char *>(char *res) {
     DBG() << "\tresult: " << res;
     if(res == nullptr) {
       DBG() << "\terrno: " << std::dec << errno << " msg: " << strerror(errno);
@@ -38,7 +38,7 @@ namespace Elkvm {
   }
 
   template<>
-  static void dbg_log_result<int>(int res) {
+  void dbg_log_result<int>(int res) {
     DBG() << "\tresult: " << std::dec << res;
     if(res < 0) {
       DBG() << "\terrno: " << std::dec << errno << " msg: " << strerror(errno);
@@ -383,6 +383,21 @@ long elkvm_do_inotify_add_watch(Elkvm::VM *);
 long elkvm_do_inotify_rm_watch(Elkvm::VM *);
 long elkvm_do_migrate_pages(Elkvm::VM *);
 long elkvm_do_openat(Elkvm::VM *);
+long elkvm_do_mkdirat(Elkvm::VM *);
+long elkvm_do_mknodat(Elkvm::VM *);
+long elkvm_do_fchownat(Elkvm::VM *);
+long elkvm_do_futimesat(Elkvm::VM *);
+long elkvm_do_newfstatat(Elkvm::VM *);
+long elkvm_do_unlinkat(Elkvm::VM *);
+long elkvm_do_renameat(Elkvm::VM *);
+long elkvm_do_linkat(Elkvm::VM *);
+long elkvm_do_symlinkat(Elkvm::VM *);
+long elkvm_do_readlinkat(Elkvm::VM *);
+long elkvm_do_fchmodat(Elkvm::VM *);
+long elkvm_do_faccessat(Elkvm::VM *);
+long elkvm_do_pselect6(Elkvm::VM *);
+long elkvm_do_ppoll(Elkvm::VM *);
+long elkvm_do_unshare(Elkvm::VM *);
 long elkvm_do_set_robust_list(Elkvm::VM *);
 long elkvm_do_get_robust_list(Elkvm::VM *);
 
