@@ -383,4 +383,6 @@ long elkvm_do_inotify_add_watch(Elkvm::VM *);
 long elkvm_do_inotify_rm_watch(Elkvm::VM *);
 long elkvm_do_migrate_pages(Elkvm::VM *);
 long elkvm_do_openat(Elkvm::VM *);
+long elkvm_do_set_robust_list(Elkvm::VM *);
+long elkvm_do_get_robust_list(Elkvm::VM *);
 

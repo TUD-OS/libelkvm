@@ -319,6 +319,8 @@ __attribute__((used))
   [__NR_inotify_rm_watch]  = { elkvm_do_inotify_rm_watch, "INOTIFY RM WATCH" },
   [__NR_migrate_pages]     = { elkvm_do_migrate_pages, "MIGRATE PAGES" },
   [__NR_openat]          = { elkvm_do_openat, "OPENAT" },
+  [__NR_set_robust_list] = { elkvm_do_set_robust_list, "SET ROBUST LIST" },
+  [__NR_get_robust_list] = { elkvm_do_get_robust_list, "GET ROBUST LIST" },
 
 };
 
