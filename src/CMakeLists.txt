@@ -18,6 +18,7 @@ SET( libelkvm_SRCS
   syscalls-mprotect.cc
   syscalls-set_tid_address.cc
   syscalls-socket.cc
+  syscall-stubs.cc
   syscall_default.cc
   tss.cc
   udis86.cc
