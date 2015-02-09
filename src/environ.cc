@@ -43,6 +43,9 @@ namespace Elkvm {
   Environment::Environment(const ElfBinary &bin, std::shared_ptr<Region> reg,
       int argc, char **argv, char **env) :
     _region(reg),
+    _auxv(),
+    _env(),
+    _argv(),
     _argc(argc),
     binary(bin)
   {

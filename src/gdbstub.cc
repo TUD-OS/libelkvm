@@ -50,7 +50,9 @@
 namespace Elkvm {
 namespace Debug {
 
-gdb_session::gdb_session(Elkvm::VM &vm) {
+gdb_session::gdb_session(Elkvm::VM &vm) :
+  listen_socket_fd(0),
+  socket_fd(0) {
   /* Wait for connect */
   std::cout << "Waiting for gdb connection on port " << std::dec << port
     << std::endl;
