@@ -401,10 +401,6 @@ long elkvm_do_adjtimex(Elkvm::VM * vmi __attribute__((unused))) {
   UNIMPLEMENTED_SYSCALL;
 }
 
-long elkvm_do_setrlimit(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
 long elkvm_do_chroot(Elkvm::VM * vmi __attribute__((unused))) {
   UNIMPLEMENTED_SYSCALL;
 }

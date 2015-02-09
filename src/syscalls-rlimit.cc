@@ -22,3 +22,6 @@ long elkvm_do_getrlimit(Elkvm::VM *vm) {
   return 0;
 }
 
+long elkvm_do_setrlimit(Elkvm::VM * vmi __attribute__((unused))) {
+  UNIMPLEMENTED_SYSCALL;
+}
