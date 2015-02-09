@@ -322,16 +322,6 @@ __attribute__((used))
 
 };
 
-#define DETECT_UNIMPLEMENTED 1
-#if DETECT_UNIMPLEMENTED
-  #define UNIMPLEMENTED_SYSCALL do { \
-      ERROR() << "unimplemented"; exit(1); \
-      return -ENOSYS; \
-    } while (0);
-#else
-  #define UNIMPLEMENTED_SYSCALL return -ENOSYS;
-#endif
-
 int Elkvm::VM::handle_hypercall(const std::shared_ptr<Elkvm::VCPU>& vcpu) {
 
   int err = 0;
@@ -2465,10 +2455,6 @@ long elkvm_do_remap_file_pages(Elkvm::VM * vmi __attribute__((unused))) {
 }
 
 long elkvm_do_getdents64(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
-long elkvm_do_set_tid_address(Elkvm::VM * vmi __attribute__((unused))) {
   UNIMPLEMENTED_SYSCALL;
 }
 

@@ -10,6 +10,16 @@
 #define ELKVM_HYPERCALL_EXIT      0x42
 #define NUM_SYSCALLS 313
 
+#define DETECT_UNIMPLEMENTED 1
+#if DETECT_UNIMPLEMENTED
+  #define UNIMPLEMENTED_SYSCALL do { \
+      ERROR() << "unimplemented"; exit(1); \
+      return -ENOSYS; \
+    } while (0);
+#else
+  #define UNIMPLEMENTED_SYSCALL return -ENOSYS;
+#endif
+
 namespace Elkvm {
   class VCPU;
   class VM;
