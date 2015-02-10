@@ -15,6 +15,7 @@ SET( libelkvm_SRCS
   signal.cc
   stack.cc
   syscall.cc
+  syscalls-clock.cc
   syscalls-mprotect.cc
   syscalls-rlimit.cc
   syscalls-robust_list.cc

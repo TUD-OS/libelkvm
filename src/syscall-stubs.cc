@@ -649,10 +649,6 @@ long elkvm_do_clock_settime(Elkvm::VM * vmi __attribute__((unused))) {
   UNIMPLEMENTED_SYSCALL;
 }
 
-long elkvm_do_clock_getres(Elkvm::VM * vmi __attribute__((unused))) {
-  UNIMPLEMENTED_SYSCALL;
-}
-
 long elkvm_do_clock_nanosleep(Elkvm::VM * vmi __attribute__((unused))) {
   UNIMPLEMENTED_SYSCALL;
 }
