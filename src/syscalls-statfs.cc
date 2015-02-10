@@ -3,8 +3,8 @@
 #include <elkvm/elkvm.h>
 #include <elkvm/syscall.h>
 
-long elkvm_do_statfs(Elkvm::VM * vmi __attribute__((unused))) {
-  if(vmi->get_handlers()->statfs == NULL) {
+long elkvm_do_statfs(Elkvm::VM * vm) {
+  if(vm->get_handlers()->statfs == nullptr) {
     INFO() <<"STATFS handler not found\n";
     return -ENOSYS;
   }
@@ -12,23 +12,23 @@ long elkvm_do_statfs(Elkvm::VM * vmi __attribute__((unused))) {
   guestptr_t path_p = 0x0;
   guestptr_t buf_p = 0x0;
 
-  vmi->unpack_syscall(&path_p, &buf_p);
+  vm->unpack_syscall(&path_p, &buf_p);
 
-  char *path = NULL;
-  struct statfs *buf = NULL;
+  char *path = nullptr;
+  struct statfs *buf = nullptr;
   if(path_p != 0x0) {
-    path = reinterpret_cast<char *>(vmi->get_region_manager()->get_pager().get_host_p(path_p));
+    path = static_cast<char *>(vm->host_p(path_p));
   }
   if(buf_p != 0x0) {
-    buf = reinterpret_cast<struct statfs *>(
-        vmi->get_region_manager()->get_pager().get_host_p(buf_p));
+    buf = static_cast<struct statfs *>(vm->host_p(buf_p));
   }
 
-  int res = vmi->get_handlers()->statfs(path, buf);
-  if(vmi->debug_mode()) {
-    DBG() << "STATFS path " << LOG_GUEST_HOST(path_p, path)
-          << " buf " << LOG_GUEST_HOST(buf_p, buf);
-    DBG() << "RESULT: " << res << "\n";
+  int res = vm->get_handlers()->statfs(path, buf);
+  if(vm->debug_mode()) {
+    DBG() << "STATFS path: " << LOG_GUEST_HOST(path_p, path)
+          << " [" << std::string(path) << "]"
+          << " buf: " << LOG_GUEST_HOST(buf_p, buf);
+    Elkvm::dbg_log_result(res);
   }
 
   if(res == 0) {
@@ -37,6 +37,6 @@ long elkvm_do_statfs(Elkvm::VM * vmi __attribute__((unused))) {
   return -errno;
 }
 
-long elkvm_do_fstatfs(Elkvm::VM * vmi __attribute__((unused))) {
+long elkvm_do_fstatfs(Elkvm::VM * vm __attribute__((unused))) {
   UNIMPLEMENTED_SYSCALL;
 }
