@@ -17,6 +17,7 @@ SET( libelkvm_SRCS
   syscall.cc
   syscalls-clock.cc
   syscalls-mprotect.cc
+  syscalls-open.cc
   syscalls-rlimit.cc
   syscalls-robust_list.cc
   syscalls-set_tid_address.cc
