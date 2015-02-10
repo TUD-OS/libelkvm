@@ -130,6 +130,7 @@ struct elkvm_handlers {
   long (*times) (struct tms *buf);
   /* ... */
   long (*statfs) (const char *path, struct statfs *buf);
+  int (*fstatfs) (int fd, struct statfs *buf);
   /* ... */
   long (*setrlimit) (int resource, const struct ::rlimit *rlim);
   /* ... */
