@@ -54,8 +54,8 @@ std::ostream &print_code(std::ostream &os __attribute__((unused)),
 
   UDis ud(host_p);
 
-  os << "\n Code:\n"
-     <<   " -----\n";
+  os << "\n Code (from 0x" << std::hex << addr << "):\n"
+     <<   " ------------------------------\n";
   while(ud.disassemble()) {
     os << " " << ud.next_insn() << std::endl;
   }
