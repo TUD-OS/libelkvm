@@ -1806,7 +1806,7 @@ long elkvm_do_tgkill(Elkvm::VM * vmi) {
 
 }
 
-long elkvm_do_openat(Elkvm::VM * vmi __attribute__((unused))) {
+long elkvm_do_openat(Elkvm::VM * vmi) {
   if(vmi->get_handlers()->openat == NULL) {
     ERROR() << "OPENAT handler not found" << LOG_RESET << "\n";
     return -ENOSYS;
