@@ -1033,7 +1033,7 @@ long elkvm_do_pipe(Elkvm::VM * vmi) {
   return 0;
 }
 
-long elkvm_do_mremap(Elkvm::VM *vmi __attribute__((unused))) {
+long elkvm_do_mremap(Elkvm::VM *vmi) {
   guestptr_t old_address_p = 0x0;
   void *old_address = NULL;
   CURRENT_ABI::paramtype old_size = 0;
