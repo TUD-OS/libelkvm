@@ -881,7 +881,7 @@ long elkvm_do_ioctl(Elkvm::VM * vmi) {
   return result;
 }
 
-void elkvm_get_host_iov(Elkvm::VM * vmi __attribute__((unused)),
+void elkvm_get_host_iov(Elkvm::VM * vmi,
     uint64_t iov_p, uint64_t iovcnt, struct iovec *host_iov) {
   struct iovec *guest_iov = NULL;
   assert(iov_p != 0x0);
@@ -1223,7 +1223,7 @@ long elkvm_do_ftruncate(Elkvm::VM * vmi) {
   return result;
 }
 
-long elkvm_do_getdents(Elkvm::VM * vmi __attribute__((unused))) {
+long elkvm_do_getdents(Elkvm::VM * vmi) {
   if(vmi->get_handlers()->getdents == NULL) {
     INFO() <<"GETDENTS handler not found\n";
     return -ENOSYS;
@@ -1295,7 +1295,7 @@ long elkvm_do_chdir(Elkvm::VM * vmi) {
   return vmi->get_handlers()->chdir(local_path);
 }
 
-long elkvm_do_fchdir(Elkvm::VM * vmi __attribute__((unused))) {
+long elkvm_do_fchdir(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype path;
   vmi->unpack_syscall(&path);
   return vmi->get_handlers()->fchdir(path);
@@ -1680,7 +1680,7 @@ long elkvm_do_futex(Elkvm::VM * vmi) {
 
 }
 
-long elkvm_do_epoll_create(Elkvm::VM * vmi __attribute__((unused))) {
+long elkvm_do_epoll_create(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype size;
   vmi->unpack_syscall(&size);
   return vmi->get_handlers()->epoll_create(size);
@@ -1695,7 +1695,7 @@ long elkvm_do_exit_group(Elkvm::VM * vmi) {
   return -ENOSYS;
 }
 
-long elkvm_do_epoll_wait(Elkvm::VM * vmi __attribute__((unused))) {
+long elkvm_do_epoll_wait(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype epfd;
   CURRENT_ABI::paramtype events;
   CURRENT_ABI::paramtype maxev;
@@ -1709,7 +1709,7 @@ long elkvm_do_epoll_wait(Elkvm::VM * vmi __attribute__((unused))) {
   return vmi->get_handlers()->epoll_wait(epfd, local_events, maxev, timeout);
 }
 
-long elkvm_do_epoll_ctl(Elkvm::VM * vmi __attribute__((unused))) {
+long elkvm_do_epoll_ctl(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype epfd;
   CURRENT_ABI::paramtype op;
   CURRENT_ABI::paramtype fd;
