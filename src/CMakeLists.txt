@@ -23,6 +23,7 @@ SET( libelkvm_SRCS
   syscalls-set_tid_address.cc
   syscalls-signal.cc
   syscalls-socket.cc
+  syscalls-statfs.cc
   syscall-stubs.cc
   syscall_default.cc
   tss.cc
