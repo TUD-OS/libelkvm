@@ -215,6 +215,10 @@ long pass_clock_gettime(clockid_t clk_id, struct timespec *tp) {
   return clock_gettime(clk_id, tp);
 }
 
+int pass_clock_getres(clockid_t clk_id, struct timespec *res) {
+  return clock_getres(clk_id, res);
+}
+
 void pass_exit_group(int status) {
   exit(status);
 }
@@ -346,6 +350,7 @@ Elkvm::default_handlers = {
   .epoll_wait = pass_epoll_wait,
   /* ... */
   .clock_gettime = pass_clock_gettime,
+  .clock_getres  = pass_clock_getres,
   .exit_group = pass_exit_group,
   .tgkill = pass_tgkill,
   .openat = pass_openat,
