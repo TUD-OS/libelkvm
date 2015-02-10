@@ -28,7 +28,8 @@ namespace Elkvm {
     std::cout << std::endl << std::endl;
   }
 
-  std::shared_ptr<Region> RegionManager::allocate_region(size_t size, char const* purpose) {
+  std::shared_ptr<Region> RegionManager::allocate_region(size_t size,
+      const std::string &purpose) {
     auto r = find_free_region(size);
 
     if(r == nullptr) {
@@ -88,7 +89,7 @@ namespace Elkvm {
     return *r;
   }
 
-  int RegionManager::add_chunk(const size_t size, char const* purpose) {
+  int RegionManager::add_chunk(const size_t size, const std::string &purpose) {
     void *chunk_p;
     const size_t grow_size = size > ELKVM_SYSTEM_MEMGROW ?
       pagesize_align(size) : ELKVM_SYSTEM_MEMGROW;

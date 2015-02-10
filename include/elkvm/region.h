@@ -15,7 +15,8 @@ namespace Elkvm {
       std::string name;
 
     public:
-      Region(void *chunk_p, size_t size, char const* title="anon region", bool f = true) :
+      Region(void *chunk_p, size_t size, const std::string &title="anon region",
+          bool f = true) :
         host_p(chunk_p),
         addr(0),
         rsize(size),
@@ -40,7 +41,8 @@ namespace Elkvm {
       void set_guest_addr(guestptr_t a) { addr = a; };
       void set_used() { free = false; }
       size_t size() const { return rsize; }
-      std::shared_ptr<Region> slice_begin(const size_t size, char const* purpose="anon region");
+      std::shared_ptr<Region> slice_begin(const size_t size,
+          const std::string &purpose="anon region");
       std::pair<std::shared_ptr<Region>, std::shared_ptr<Region>>
         slice_center(off_t off, size_t len);
       std::string const& getName() const { return this->name; }

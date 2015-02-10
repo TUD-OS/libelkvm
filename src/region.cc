@@ -62,7 +62,8 @@ namespace Elkvm {
     return addr + rsize - 1;
   }
 
-  std::shared_ptr<Region> Region::slice_begin(const size_t size, char const *purpose) {
+  std::shared_ptr<Region> Region::slice_begin(const size_t size,
+      const std::string &purpose) {
     //assert(free);
     assert(size > 0x0);
     assert(rsize > pagesize_align(size));
