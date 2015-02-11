@@ -169,7 +169,9 @@ namespace Elkvm {
     length = pagesize_align(length);
 
     if(r == nullptr) {
-      r = _rm->allocate_region(length);
+      std::ostringstream str;
+      str << "mapping with fd: " << std::dec << fd;
+      r = _rm->allocate_region(length, str.str());
     }
 
     mappings_for_mmap.emplace_back(r, addr, length, prot, flags, fd, off);
