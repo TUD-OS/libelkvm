@@ -81,5 +81,17 @@ BUILD_DIRECTORY/cov/index.html
 You need to enable the libelkvm_generate_coverage option to enable the generation
 of coverage data. Additionally this currently *only works with gcc*.
 
+# Running the examples
+
+The examples are automatically built with the normal make process. The proxy example
+is a simple monitor, which just forwards each system call to the host Linux kernel
+and returns the result to the guest binary. It can be run with:
+
+  ./proxy /PATH/TO/MY/BINARY
+
+You can use the -d switch to enable debug output, which gives you all system calls made
+by the guest binary. The -a option takes the id of a running process and allows you to
+move that process into an ELKVM VM.
+
 
 Happy Hacking! :)
