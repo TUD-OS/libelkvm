@@ -19,11 +19,11 @@ You need to install the following additional packages in your distribution:
 ELKVM uses cmake as a build system, you can build it in any directory you like to.
 In that directory you need to run the following:
 
-cmake PATH_TO_ELKVM_TOPLEVEL_DIRECTORY
-make -C include install
-make
-make install
-ldconfig
+* cmake PATH_TO_ELKVM_TOPLEVEL_DIRECTORY
+* make -C include install
+* make
+* make install
+* ldconfig
 
 This will build the ELKVM library and an example application that just redirects all
 system calls to the host Linux kernel. You can find the source code for this
@@ -35,12 +35,15 @@ If you have libraries (e.g. libudis86) installed in non-standard locations,
 you can tell cmake to search these dirs using the CPATH and LIBRARY_PATH
 environment variable. For example:
 
+```
 CPATH=<udis86 include dir> LIBRARY_PATH=<udis86 library dir> cmake
+```
 
 # Adjusting the Linux kernel
 
 You also need to add the following patch to your Linux kernel for ELKVM to work:
 
+```
 diff --git a/arch/x86/kvm/vmx.c b/arch/x86/kvm/vmx.c
 index 064d0be..501e6a9 100644
 --- a/arch/x86/kvm/vmx.c
@@ -57,6 +60,7 @@ index 064d0be..501e6a9 100644
 +  vcpu->run->exit_reason = KVM_EXIT_HYPERCALL;
 +       return 0;
  }
+```
 
 # Building and Running the Tests
 
