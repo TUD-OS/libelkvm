@@ -1,3 +1,14 @@
+# ELKVM
+ELKVM is a library that allows execution of an  -- 64bit x86 -- ELF binary inside
+a virtual machine and forwards all system calls to a handler in the host user
+land. This can be used to inspect system calls made by a binary or modify the
+results of those system calls.
+
+A high-level design description can be found in my diploma thesis which is online
+at: https://os.inf.tu-dresden.de/papers_ps/pester-diplom.pdf
+
+Two examples on how the API can be used are found in the examples directory.
+
 # Install
 
 You need to install the following additional packages in your distribution:
