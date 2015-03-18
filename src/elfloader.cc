@@ -45,7 +45,6 @@ namespace Elkvm {
     assert(toff == off);
 
     size_t read_bytes = ::read(_fd, buf, bytes);
-    assert(read_bytes == bytes && "short read on file");
     return read_bytes;
   }
 

@@ -2,14 +2,13 @@
 #include <iostream>
 
 #include <errno.h>
-#include <asm-generic/fcntl.h>
+#include <fcntl.h>
 #include <asm/prctl.h>
 #include <sys/epoll.h>
 #include <sys/mman.h>
 #include <sys/prctl.h>
 #include <sys/resource.h>
 #include <sys/times.h>
-#include <sys/vfs.h>
 #include <unistd.h>
 
 #include <elkvm/elkvm.h>
@@ -551,33 +550,6 @@ long elkvm_do_write(Elkvm::VM * vmi) {
   return total;
 }
 
-long elkvm_do_open(Elkvm::VM * vmi) {
-  if(vmi->get_handlers()->open == NULL) {
-    ERROR() << "OPEN handler not found\n";
-    return -ENOSYS;
-  }
-
-  CURRENT_ABI::paramtype pathname_p = 0x0;
-  char *pathname = NULL;
-  CURRENT_ABI::paramtype flags = 0x0;
-  CURRENT_ABI::paramtype mode = 0x0;
-
-  vmi->unpack_syscall(&pathname_p, &flags, &mode);
-
-  assert(pathname_p != 0x0);
-  pathname = reinterpret_cast<char *>(vmi->get_region_manager()->get_pager().get_host_p(pathname_p));
-
-  long result = vmi->get_handlers()->open(pathname, (int)flags, (mode_t)mode);
-
-  if(vmi->debug_mode()) {
-    DBG() << "OPEN file " << pathname << " with flags " << std::hex
-          << flags << " and mode " << mode << std::dec;
-    Elkvm::dbg_log_result<int>(result);
-  }
-
-  return result;
-}
-
 long elkvm_do_close(Elkvm::VM * vmi) {
   if(vmi->get_handlers()->close == NULL) {
     ERROR () << "CLOSE handler not found\n";
@@ -909,7 +881,7 @@ long elkvm_do_ioctl(Elkvm::VM * vmi) {
   return result;
 }
 
-void elkvm_get_host_iov(Elkvm::VM * vmi __attribute__((unused)),
+void elkvm_get_host_iov(Elkvm::VM * vmi,
     uint64_t iov_p, uint64_t iovcnt, struct iovec *host_iov) {
   struct iovec *guest_iov = NULL;
   assert(iov_p != 0x0);
@@ -1251,7 +1223,7 @@ long elkvm_do_ftruncate(Elkvm::VM * vmi) {
   return result;
 }
 
-long elkvm_do_getdents(Elkvm::VM * vmi __attribute__((unused))) {
+long elkvm_do_getdents(Elkvm::VM * vmi) {
   if(vmi->get_handlers()->getdents == NULL) {
     INFO() <<"GETDENTS handler not found\n";
     return -ENOSYS;
@@ -1323,7 +1295,7 @@ long elkvm_do_chdir(Elkvm::VM * vmi) {
   return vmi->get_handlers()->chdir(local_path);
 }
 
-long elkvm_do_fchdir(Elkvm::VM * vmi __attribute__((unused))) {
+long elkvm_do_fchdir(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype path;
   vmi->unpack_syscall(&path);
   return vmi->get_handlers()->fchdir(path);
@@ -1560,40 +1532,6 @@ long elkvm_do_getegid(Elkvm::VM * vmi) {
   return result;
 }
 
-long elkvm_do_statfs(Elkvm::VM * vmi __attribute__((unused))) {
-  if(vmi->get_handlers()->statfs == NULL) {
-    INFO() <<"STATFS handler not found\n";
-    return -ENOSYS;
-  }
-
-  guestptr_t path_p = 0x0;
-  guestptr_t buf_p = 0x0;
-
-  vmi->unpack_syscall(&path_p, &buf_p);
-
-  char *path = NULL;
-  struct statfs *buf = NULL;
-  if(path_p != 0x0) {
-    path = reinterpret_cast<char *>(vmi->get_region_manager()->get_pager().get_host_p(path_p));
-  }
-  if(buf_p != 0x0) {
-    buf = reinterpret_cast<struct statfs *>(
-        vmi->get_region_manager()->get_pager().get_host_p(buf_p));
-  }
-
-  int res = vmi->get_handlers()->statfs(path, buf);
-  if(vmi->debug_mode()) {
-    DBG() << "STATFS path " << LOG_GUEST_HOST(path_p, path)
-          << " buf " << LOG_GUEST_HOST(buf_p, buf);
-    DBG() << "RESULT: " << res << "\n";
-  }
-
-  if(res == 0) {
-    return 0;
-  }
-  return -errno;
-}
-
 long elkvm_do_arch_prctl(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype code = 0;
   CURRENT_ABI::paramtype user_addr = 0;
@@ -1742,34 +1680,10 @@ long elkvm_do_futex(Elkvm::VM * vmi) {
 
 }
 
-long elkvm_do_epoll_create(Elkvm::VM * vmi __attribute__((unused))) {
+long elkvm_do_epoll_create(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype size;
   vmi->unpack_syscall(&size);
   return vmi->get_handlers()->epoll_create(size);
-}
-
-long elkvm_do_clock_gettime(Elkvm::VM * vmi) {
-  if(vmi->get_handlers()->clock_gettime == NULL) {
-    ERROR() << "CLOCK GETTIME handler not found" << LOG_RESET << "\n";
-    return -ENOSYS;
-  }
-
-  CURRENT_ABI::paramtype clk_id = 0x0;
-  CURRENT_ABI::paramtype tp_p = 0x0;
-  struct timespec *tp = NULL;
-
-  vmi->unpack_syscall(&clk_id, &tp_p);
-  assert(tp_p != 0x0);
-
-  tp = reinterpret_cast<struct timespec *>(vmi->get_region_manager()->get_pager().get_host_p(tp_p));
-  assert(tp != NULL);
-
-  long result = vmi->get_handlers()->clock_gettime(clk_id, tp);
-  if(vmi->debug_mode()) {
-    DBG() << "CLOCK GETTIME with clk_id " << clk_id << " tp " << LOG_GUEST_HOST(tp_p, tp);
-    Elkvm::dbg_log_result<int>(result);
-  }
-  return result;
 }
 
 long elkvm_do_exit_group(Elkvm::VM * vmi) {
@@ -1781,7 +1695,7 @@ long elkvm_do_exit_group(Elkvm::VM * vmi) {
   return -ENOSYS;
 }
 
-long elkvm_do_epoll_wait(Elkvm::VM * vmi __attribute__((unused))) {
+long elkvm_do_epoll_wait(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype epfd;
   CURRENT_ABI::paramtype events;
   CURRENT_ABI::paramtype maxev;
@@ -1795,7 +1709,7 @@ long elkvm_do_epoll_wait(Elkvm::VM * vmi __attribute__((unused))) {
   return vmi->get_handlers()->epoll_wait(epfd, local_events, maxev, timeout);
 }
 
-long elkvm_do_epoll_ctl(Elkvm::VM * vmi __attribute__((unused))) {
+long elkvm_do_epoll_ctl(Elkvm::VM * vmi) {
   CURRENT_ABI::paramtype epfd;
   CURRENT_ABI::paramtype op;
   CURRENT_ABI::paramtype fd;
@@ -1828,36 +1742,4 @@ long elkvm_do_tgkill(Elkvm::VM * vmi) {
   }
   return result;
 
-}
-
-long elkvm_do_openat(Elkvm::VM * vmi __attribute__((unused))) {
-  if(vmi->get_handlers()->openat == NULL) {
-    ERROR() << "OPENAT handler not found" << LOG_RESET << "\n";
-    return -ENOSYS;
-  }
-
-  CURRENT_ABI::paramtype dirfd = 0;
-  guestptr_t pathname_p = 0x0;
-  CURRENT_ABI::paramtype flags = 0;
-
-  vmi->unpack_syscall(&dirfd, &pathname_p, &flags);
-
-  char *pathname = NULL;
-  if(pathname_p != 0x0) {
-    pathname = reinterpret_cast<char *>(
-        vmi->get_region_manager()->get_pager().get_host_p(pathname_p));
-  }
-
-  int res = vmi->get_handlers()->openat((int)dirfd, pathname, (int)flags);
-  if(vmi->debug_mode()) {
-    DBG() << "OPENAT with dirfd " << dirfd << " pathname " << LOG_GUEST_HOST(pathname_p, pathname)
-          << " flags " << flags;
-    DBG() << "RESULT: " << res << "\n";
-  }
-
-  if(res < 0) {
-    return -errno;
-  }
-
-  return res;
 }

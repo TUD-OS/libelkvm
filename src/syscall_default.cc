@@ -194,6 +194,10 @@ long pass_statfs(const char *path, struct statfs *buf) {
   return statfs(path, buf);
 }
 
+int pass_fstatfs(int fd, struct statfs *buf) {
+  return fstatfs(fd, buf);
+}
+
 long pass_setrlimit(int resource, const struct rlimit *rlim) {
   return setrlimit(resource, rlim);
 }
@@ -213,6 +217,10 @@ long pass_futex(int *uaddr, int op, int val, const struct timespec *timeout,
 
 long pass_clock_gettime(clockid_t clk_id, struct timespec *tp) {
   return clock_gettime(clk_id, tp);
+}
+
+int pass_clock_getres(clockid_t clk_id, struct timespec *res) {
+  return clock_getres(clk_id, res);
 }
 
 void pass_exit_group(int status) {
@@ -333,6 +341,7 @@ Elkvm::default_handlers = {
   .times = NULL,
   /* ... */
   .statfs = pass_statfs,
+  .fstatfs = pass_fstatfs,
   /* ... */
   .setrlimit = pass_setrlimit,
   /* ... */
@@ -346,6 +355,7 @@ Elkvm::default_handlers = {
   .epoll_wait = pass_epoll_wait,
   /* ... */
   .clock_gettime = pass_clock_gettime,
+  .clock_getres  = pass_clock_getres,
   .exit_group = pass_exit_group,
   .tgkill = pass_tgkill,
   .openat = pass_openat,

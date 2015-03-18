@@ -15,12 +15,15 @@ SET( libelkvm_SRCS
   signal.cc
   stack.cc
   syscall.cc
+  syscalls-clock.cc
   syscalls-mprotect.cc
+  syscalls-open.cc
   syscalls-rlimit.cc
   syscalls-robust_list.cc
   syscalls-set_tid_address.cc
   syscalls-signal.cc
   syscalls-socket.cc
+  syscalls-statfs.cc
   syscall-stubs.cc
   syscall_default.cc
   tss.cc
